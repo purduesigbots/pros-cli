@@ -6,15 +6,14 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class App {
@@ -115,9 +114,9 @@ public class App {
         // Try to fetch the latest kernel version online if kernel is undefined
         if (kernel == null || kernel.isEmpty()) {
             if (verbose) System.out.println("Determining latest kernel from internet");
-            URL url = new URL(site + "/latest.kernels");
+            URL url = new URL(site + "/latest.kernel");
             try {
-                kernel = downloadString(url);
+                kernel = downloadString(url).trim();
                 if (verbose) System.out.println("Latest kernel version is " + kernel);
             } catch (IOException e) {
                 if (verbose) System.out.println("Unable to fetch kernel from " + url.toExternalForm());
@@ -125,9 +124,9 @@ public class App {
         }
 
         // Couldn't fetch latest online, look for highest (alphabetically) local kernel
+        String[] subdirs = kernelDirectory.list((dir, name) -> new File(dir, name).isDirectory());
+        Arrays.sort(subdirs);
         if (kernel == null || kernel.isEmpty()) {
-            String[] subdirs = kernelDirectory.list((dir, name) -> new File(dir, name).isDirectory());
-            Arrays.sort(subdirs);
             if (verbose) System.out.println("All local kernels: " + Arrays.toString(subdirs));
             if (subdirs.length > 0)
                 kernel = subdirs[0];
@@ -138,6 +137,49 @@ public class App {
             System.err.println("Error: Could not determine a target kernel.");
             System.exit(1);
         }
+
+        // determine if we have the downloaded kernel, if not: download it
+        if (!Arrays.asList(subdirs).contains(kernel)) {
+            if (verbose) System.out.println(kernel + " must be downloaded");
+            URL url = new URL(site + "/" + kernel + ".zip");
+            try {
+                ZipInputStream zipInputStream = new ZipInputStream(url.openStream());
+                File kernelDir = new File(kernelDirectory, kernel);
+                if (!kernelDir.exists()) kernelDir.mkdirs();
+                ZipEntry zipEntry;
+                while ((zipEntry = zipInputStream.getNextEntry()) != null) { // Decompress downloaded zip
+                    if (zipEntry.getName().endsWith("/")) continue; // skip folders, they will be created from the files
+
+                    File newFile = new File(kernelDir, zipEntry.getName());
+                    if (verbose) System.out.println("Decompressing " + zipEntry.getName() + " to " +
+                            kernelDir.toPath().toString());
+                    new File(newFile.getParent()).mkdirs();
+                    FileOutputStream fileOutputStream = new FileOutputStream(newFile);
+
+                    int len;
+                    byte[] buffer = new byte[1024];
+
+                    while ((len = zipInputStream.read(buffer)) > 0) {
+                        fileOutputStream.write(buffer, 0, len);
+                    }
+
+                    fileOutputStream.close();
+                }
+
+                zipInputStream.closeEntry();
+                zipInputStream.close();
+            } catch (IOException e) {
+                System.out.println("Unable to download requested kernel at " + url.toString());
+            }
+        }
+        if (Arrays.asList(subdirs).contains(kernel)) {
+            if (verbose) System.out.println(kernel + " is available locally.");
+        } else { // give up we don't have a kernel or a locally available kernel yet
+            System.err.println("Error: Could not obtain kernel " + kernel + ". Unable to download and not avaialable locally.");
+        }
+
+        if (verbose) System.out.println("Kernel directory is " + kernelDirectory + FILE_SEP + kernel + "\n");
+
     }
 
     /**
