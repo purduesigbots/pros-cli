@@ -25,8 +25,8 @@
         <module name="purdueros-cli" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="purdueros-cli" target="1.5" />
+    <bytecodeTargetLevel target="1.8">
+      <module name="purdueros-cli" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
