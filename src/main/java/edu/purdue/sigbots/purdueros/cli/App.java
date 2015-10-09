@@ -1,5 +1,7 @@
 package edu.purdue.sigbots.purdueros.cli;
 
+import edu.purdue.sigbots.purdueros.cli.kernels.DefaultLoader;
+import edu.purdue.sigbots.purdueros.cli.kernels.LoaderInterface;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.action.StoreTrueArgumentAction;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
@@ -8,6 +10,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 
 import java.io.*;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,7 +18,7 @@ import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-@SuppressWarnings("ResultOfMethodCallIgnored")
+@SuppressWarnings({"ResultOfMethodCallIgnored", "unchecked"})
 public class App {
     private static final String OS_WINDOWS = "windows";
     private static final String OS_NIX = "nix";
@@ -55,25 +58,6 @@ public class App {
         boolean verbose = args.getBoolean("verbose");
         String site = args.getString("site");
         if (site.endsWith("/")) site = site.substring(0, site.length() - 1);
-
-        // Resolve directory. Create the path if it doesn't exist.
-        Path directory = null;
-        try {
-            directory = createPathIfNotExists(args.getString("directory"));
-        } catch (NoSuchFileException e) {
-            System.err.print("Directory not found. Creating...");
-            File file = new File(args.getString("directory"));
-            file.mkdirs();
-            try {
-                directory = file.toPath().toRealPath();
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
-            System.out.println("\rDirectory not found. Created...");
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
         // Determine OS for later file operations
         String os = System.getProperty("os.name").toLowerCase();
@@ -180,6 +164,48 @@ public class App {
 
         if (verbose) System.out.println("Kernel directory is " + kernelDirectory + FILE_SEP + kernel + "\n");
 
+        // Resolve directory. Create the path if it doesn't exist.
+        Path directory;
+        try {
+            directory = createPathIfNotExists(args.getString("directory"));
+        } catch (NoSuchFileException e) {
+            System.err.print("Directory not found. Creating...");
+            File file = new File(args.getString("directory"));
+            file.mkdirs();
+            directory = file.toPath().toRealPath();
+            System.out.println("\rDirectory not found. Created...");
+        }
+
+        // Resolve project name
+        String projectName = args.getString("name");
+        if (projectName == null || projectName.isEmpty())
+            projectName = directory.getFileName().toString();
+
+        Class kernelLoaderClass = DefaultLoader.class;
+        try {
+            URL url = new File(kernelDirectory + FILE_SEP + kernel + FILE_SEP + kernel + ".class").toURI().toURL();
+            ClassLoader loader = new URLClassLoader(new URL[]{url});
+            kernelLoaderClass = loader.loadClass("edu.purdue.sigbots.purdueros.kernels.loaders." + kernel);
+            if (!kernelLoaderClass.isAssignableFrom(LoaderInterface.class)) throw new Exception();
+        } catch (Exception e) { // If the class didn't load properly, use the default class
+        }
+
+        LoaderInterface kernelLoader = (LoaderInterface) kernelLoaderClass.getConstructor().newInstance();
+
+        if (new File(directory.toUri()).exists()) {
+            if (args.getBoolean("force"))
+                kernelLoader.createProject(directory.toString(),
+                        kernelDirectory + FILE_SEP + kernel,
+                        projectName);
+            else
+                kernelLoader.upgradeProject(directory.toString(),
+                        kernelDirectory + FILE_SEP + kernel,
+                        projectName);
+        } else {
+            kernelLoader.createProject(directory.toString(),
+                    kernelDirectory + FILE_SEP + kernel,
+                    projectName);
+        }
     }
 
     /**
