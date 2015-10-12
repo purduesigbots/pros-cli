@@ -1,7 +1,7 @@
 package edu.purdue.sigbots.purdueros.cli;
 
 import edu.purdue.sigbots.purdueros.cli.kernels.DefaultLoader;
-import edu.purdue.sigbots.purdueros.cli.kernels.LoaderInterface;
+import edu.purdue.sigbots.purdueros.cli.kernels.Loader;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.action.StoreTrueArgumentAction;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
@@ -86,9 +86,12 @@ public class App {
 
         if (verbose) System.out.println("Kernel directory is " + kernelDirectory.toString());
 
+        // List kernels only if requested.
         if (args.getBoolean("list_kernels")) {
+            String text = "Downloading and checking locally...";
+            System.out.print(text);
             URL url = new URL(site + "/kernels.list");
-            System.out.println(downloadString(url));
+            System.out.println("\r" + text.replaceAll("(?s).", " ") + "\r" + downloadString(url));
             System.exit(0);
         }
 
@@ -127,22 +130,26 @@ public class App {
             if (verbose) System.out.println(kernel + " must be downloaded");
             URL url = new URL(site + "/" + kernel + ".zip");
             try {
+                // Make the URL input stream a zip input stream
                 ZipInputStream zipInputStream = new ZipInputStream(url.openStream());
                 File kernelDir = new File(kernelDirectory, kernel);
                 if (!kernelDir.exists()) kernelDir.mkdirs();
                 ZipEntry zipEntry;
-                while ((zipEntry = zipInputStream.getNextEntry()) != null) { // Decompress downloaded zip
+                while ((zipEntry = zipInputStream.getNextEntry()) != null) { // Decompress downloaded zip entry by entry
                     if (zipEntry.getName().endsWith("/")) continue; // skip folders, they will be created from the files
 
                     File newFile = new File(kernelDir, zipEntry.getName());
-                    if (verbose) System.out.println("Decompressing " + zipEntry.getName() + " to " +
-                            kernelDir.toPath().toString());
-                    new File(newFile.getParent()).mkdirs();
+                    if (verbose) {
+                        System.out.format("Decompressing %s to %s\n", zipEntry.getName(), kernelDir.toPath().toString());
+                    }
+
+                    new File(newFile.getParent()).mkdirs(); // make directory structure to the file
+
                     FileOutputStream fileOutputStream = new FileOutputStream(newFile);
 
+                    // write to the file
                     int len;
                     byte[] buffer = new byte[1024];
-
                     while ((len = zipInputStream.read(buffer)) > 0) {
                         fileOutputStream.write(buffer, 0, len);
                     }
@@ -157,7 +164,9 @@ public class App {
             }
         }
         if (Arrays.asList(subdirs).contains(kernel)) {
-            if (verbose) System.out.println(kernel + " is available locally.");
+            if (verbose) {
+                System.out.println(kernel + " is available locally.");
+            }
         } else { // give up we don't have a kernel or a locally available kernel yet
             System.err.println("Error: Could not obtain kernel " + kernel + ". Unable to download and not avaialable locally.");
         }
@@ -186,25 +195,34 @@ public class App {
             URL url = new File(kernelDirectory + FILE_SEP + kernel + FILE_SEP + kernel + ".class").toURI().toURL();
             ClassLoader loader = new URLClassLoader(new URL[]{url});
             kernelLoaderClass = loader.loadClass("edu.purdue.sigbots.purdueros.kernels.loaders." + kernel);
-            if (!kernelLoaderClass.isAssignableFrom(LoaderInterface.class)) throw new Exception();
+            if (!kernelLoaderClass.isAssignableFrom(Loader.class)) throw new Exception();
         } catch (Exception e) { // If the class didn't load properly, use the default class
         }
 
-        LoaderInterface kernelLoader = (LoaderInterface) kernelLoaderClass.getConstructor().newInstance();
+        Loader kernelLoader = (Loader) kernelLoaderClass
+                .getConstructor(String.class, String.class, String.class)
+                .newInstance(directory.toString(), kernelDirectory + FILE_SEP + kernel, projectName);
 
         if (new File(directory.toUri()).exists()) {
-            if (args.getBoolean("force"))
-                kernelLoader.createProject(directory.toString(),
-                        kernelDirectory + FILE_SEP + kernel,
-                        projectName);
-            else
-                kernelLoader.upgradeProject(directory.toString(),
-                        kernelDirectory + FILE_SEP + kernel,
-                        projectName);
+            if (args.getBoolean("force")) {
+                if (verbose) {
+                    System.out.println("Overwriting folder structure in " + directory.toString());
+                }
+                kernelLoader.createProject();
+            } else if (kernelLoader.isUpgradeableProject()) {
+                if (verbose) {
+                    System.out.println("Upgrading project in " + directory.toString());
+                }
+                kernelLoader.upgradeProject();
+            } else {
+                System.out.println("Unable to upgrade this project. " +
+                        "Use force (-f, --force) to overwrite existing folder structure");
+            }
         } else {
-            kernelLoader.createProject(directory.toString(),
-                    kernelDirectory + FILE_SEP + kernel,
-                    projectName);
+            if (verbose) {
+                System.out.println("Creating project in " + directory.toString());
+            }
+            kernelLoader.createProject();
         }
     }
 
