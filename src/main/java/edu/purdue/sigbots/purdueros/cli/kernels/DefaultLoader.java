@@ -9,47 +9,53 @@ import java.nio.file.StandardCopyOption;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class DefaultLoader extends Loader {
-    private static final String FILE_SEP = System.getProperty("file.separator");
     private static final String TEMPLATE_TEXT = "Default_VeX_Cortex";
-    private String[] upgradeFiles = new String[]{
-            "firmware" + FILE_SEP + "libccos.a",
+    private final String[] upgradeFiles = new String[]{
+            "firmware" + FILE_SEP + "libccos.a", // this file must exist in order for isUpgradeableProject to pass
             "firmware" + FILE_SEP + "uniflash.jar",
             "include" + FILE_SEP + "API.h",
             "src" + FILE_SEP + "Makefile",
             "Makefile",
             "common.mk"
     };
-    private String[] templatedFiles = new String[]{
-            ".project"
+    private final String[] eclipseFiles = new String[]{
+            ".project",
+            ".cproject"
+    };
+    private final String[] templatedFiles = new String[]{
+
     };
 
-    public DefaultLoader(String projectPath, String kernelPath, String projectName) {
-        super(projectPath, kernelPath, projectName);
+    public DefaultLoader(String projectPath, String kernelPath, String projectName, String environments) {
+        super(projectPath, kernelPath, projectName, environments);
     }
 
     @Override
     public void createProject() throws IOException {
-        if (!projectPath.endsWith(FILE_SEP)) projectPath += FILE_SEP;
-        if (!kernelPath.endsWith(FILE_SEP)) kernelPath += FILE_SEP;
-        if (projectName == null) projectName = "";
-
         File projectFile = new File(projectPath);
         if (projectFile.exists())
             FileUtils.deleteDirectory(projectFile);
 
         FileUtils.copyDirectory(new File(kernelPath), projectFile);
 
+        if (!environments.contains("eclipse")) {
+            for (String eclipseFile : eclipseFiles)
+                FileUtils.deleteQuietly(new File(projectPath, eclipseFile));
+        } else {
+            replaceTextInFile(projectPath + ".project", TEMPLATE_TEXT, projectName);
+        }
+
+        /* TODO: support the other environments */
+
         for (String templateFile : templatedFiles) {
             replaceTextInFile(projectPath + templateFile, TEMPLATE_TEXT, projectName);
         }
-        System.out.println("Creating project!");
+
+        System.out.println("Created project!");
     }
 
     @Override
     public void upgradeProject() throws IOException {
-        if (!projectPath.endsWith(FILE_SEP)) projectPath += FILE_SEP;
-        if (!kernelPath.endsWith(FILE_SEP)) kernelPath += FILE_SEP;
-        System.out.println("Upgrading project!");
         for (String file : upgradeFiles) {
             System.out.println("Upgrading " + file);
             InputStream inputStream = new FileInputStream(kernelPath + file);
@@ -57,13 +63,22 @@ public class DefaultLoader extends Loader {
             new File(filePath.toString()).mkdirs();
             Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
+        if (!environments.contains("eclipse")) {
+            for (String file : eclipseFiles) {
+                System.out.println("Upgrading " + file);
+                InputStream inputStream = new FileInputStream(kernelPath + file);
+                Path filePath = new File(projectPath + file).toPath();
+                new File(filePath.toString()).mkdirs();
+                Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
+            }
+            replaceTextInFile(projectPath + ".project", TEMPLATE_TEXT, projectName);
+        }
         System.out.println("\nUpgraded project to " + new File(kernelPath).getName());
     }
 
     @Override
     public boolean isUpgradeableProject() throws IOException {
-
-        return false;
+        return new File(projectPath + upgradeFiles[0]).exists();
     }
 
     private void replaceTextInFile(String path, String original, String replacement) throws IOException {
