@@ -1,3 +1,3 @@
 Manifest-Version: 1.0
-Main-Class: edu.purdue.sigbots.purdueros.cli.App
-    
+Main-Class: edu.purdue.sigbots.ros.cli.Application
+
