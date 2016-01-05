@@ -1,9 +1,34 @@
+/*******************************************************************************
+ * Copyright (c) 2015, Purdue University ACM SIG BOTS.
+ * All rights reserved.
+ * <p>
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * <p>
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * * Neither the name of the Purdue University ACM SIG BOTS nor the
+ * names of its contributors may be used to endorse or promote products
+ * derived from this software without specific prior written permission.
+ * <p>
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ ******************************************************************************/
+
 package edu.purdue.sigbots.ros.cli;
 
-import edu.purdue.sigbots.ros.cli.commands.Command;
-import edu.purdue.sigbots.ros.cli.commands.CreateCommand;
-import edu.purdue.sigbots.ros.cli.commands.FetchCommand;
-import edu.purdue.sigbots.ros.cli.commands.UpgradeCommand;
+import edu.purdue.sigbots.ros.cli.commands.*;
 import edu.purdue.sigbots.ros.cli.updater.PROSActions;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.action.StoreTrueArgumentAction;
@@ -20,39 +45,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Scanner;
 
-public class Application {
-    public static Path getLocalKernelRepository(PROSActions actions) {
-        Path localKernelRepository = actions.getLocalKernelRepository();
-        if (localKernelRepository == null || localKernelRepository.toString().isEmpty()) {
-            System.out.println("The local kernel directory is not set.");
-            localKernelRepository = actions.suggestLocalKernelRepository();
-            if (localKernelRepository != null) {
-                System.out.printf("Where should local kernels be stored? [%s] ", localKernelRepository.toString());
-                String response = new Scanner(System.in).nextLine();
-                if (!response.isEmpty()) {
-                    localKernelRepository = Paths.get(response);
-                }
-
-            } else {
-                System.out.printf("Where should local kernels be stored? ");
-                String response = new Scanner(System.in).nextLine();
-                if (!response.isEmpty() && Files.isWritable(Paths.get(response))) {
-                    localKernelRepository = Paths.get(response);
-                } else {
-                    System.out.println("Not a valid location");
-                    System.exit(-1);
-                }
-            }
-            try {
-                actions.setLocalKernelRepository(localKernelRepository);
-                System.out.println("Local kernels will be stored at " + actions.getLocalKernelRepository().toString());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-        }
-        return localKernelRepository;
-    }
+class Application {
 
     public static void main(String[] args) {
         ArgumentParser argumentParser = ArgumentParsers.newArgumentParser("pros");
@@ -60,8 +53,12 @@ public class Application {
         argumentParser.version("0.2.0");
         argumentParser.defaultHelp(true);
         argumentParser.addArgument("--version").action(new VersionArgumentAction());
+        argumentParser.epilog("This program licensed under the revised BSD license. (c) 2015 PURDUE ACM SIGBOTS");
 
         Subparsers subparsers = argumentParser.addSubparsers().title("command");
+
+        checkLocalKernelRepository(new PROSActions());
+        getUpdateSite(new PROSActions());
 
         // <editor-fold desc="Create subparser">
         Subparser createParser = subparsers.addParser("create")
@@ -87,7 +84,7 @@ public class Application {
                 .help("Don't prompt to overwrite existing directory");
         createParser.addArgument("-v", "--verbose")
                 .action(new StoreTrueArgumentAction())
-                .help("Use this valg to enable verbose output.");
+                .help("Use this flag to enable verbose output.");
         // </editor-fold>
 
 
@@ -151,7 +148,7 @@ public class Application {
         // <editor-fold desc="Config Command">
         Subparser configParser = subparsers.addParser("config")
                 .defaultHelp(true)
-                .setDefault("handler", FetchCommand.class);
+                .setDefault("handler", ConfigCommand.class);
         configParser.addArgument("variable")
                 .help("Variable to configure.");
         configParser.addArgument("value")
@@ -170,8 +167,6 @@ public class Application {
             verbose = namespace.getBoolean("verbose");
         }
         PROSActions actions = new PROSActions(verbose, System.out, System.err);
-        getLocalKernelRepository(actions);
-        getUpdateSite(actions);
 
         Object handler = namespace.get("handler");
         if (handler != null && handler instanceof Class<?>) {
@@ -186,7 +181,7 @@ public class Application {
         }
     }
 
-    public static URL getUpdateSite(PROSActions actions) {
+    private static URL getUpdateSite(PROSActions actions) {
         URL updateSite = actions.getUpdateSite();
         if (updateSite == null) {
             System.out.println("Update site is not set.");
@@ -221,5 +216,37 @@ public class Application {
             }
         }
         return updateSite;
+    }
+
+
+    private static void checkLocalKernelRepository(PROSActions actions) {
+        Path localKernelRepository = actions.getLocalRepositoryPath();
+        if (localKernelRepository == null || localKernelRepository.toString().isEmpty()) {
+            System.out.println("The local kernel directory is not set.");
+            localKernelRepository = actions.suggestLocalKernelRepository();
+            if (localKernelRepository != null) {
+                System.out.printf("Where should local kernels be stored? [%s] ", localKernelRepository.toString());
+                String response = new Scanner(System.in).nextLine();
+                if (!response.isEmpty()) {
+                    localKernelRepository = Paths.get(response);
+                }
+
+            } else {
+                System.out.printf("Where should local kernels be stored? ");
+                String response = new Scanner(System.in).nextLine();
+                if (!response.isEmpty() && Files.isWritable(Paths.get(response))) {
+                    localKernelRepository = Paths.get(response);
+                } else {
+                    System.out.println("Not a valid location");
+                    System.exit(-1);
+                }
+            }
+            try {
+                actions.setLocalKernelRepository(localKernelRepository);
+                System.out.println("Local kernels will be stored at " + actions.getLocalRepositoryPath().toString());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

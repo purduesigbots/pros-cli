@@ -38,7 +38,7 @@ optional arguments:
                          environments are determined  by  the kernel loader
                          and can be  found  using  'pros  fetch  KERNEL -e'
   -f, --force            Don't  prompt  to   overwrite  existing  directory
-  -v, --verbose          Use this valg to  enable verbose output.
+  -v, --verbose          Use this flag to  enable verbose output.
 ```
 
 ```
@@ -83,3 +83,7 @@ optional arguments:
 Without -e, -d, or  -c,  will  list  if  the  specified kernel is available
 locally and/or online.
 ```
+
+### Random notes (aka the backlog)
+
+For some reason, the purdueros-cli.jar artifact doesn't get the right manifest when it is built by IntelliJ. The correct manifest is at src/main/java/META-INF/MANIFEST.MF . You can edit the manifest using 7-zip and manually replace the contents there.

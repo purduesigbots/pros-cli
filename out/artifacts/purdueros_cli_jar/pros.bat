@@ -1,2 +1,2 @@
 @echo off
-java -jar purdueros-cli.jar %*
+java -jar %~dp0\purdueros-cli.jar %*

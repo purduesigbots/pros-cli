@@ -1,3 +1,31 @@
+/*******************************************************************************
+ * Copyright (c) 2015, Purdue University ACM SIG BOTS.
+ * All rights reserved.
+ * <p>
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * <p>
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * * Neither the name of the Purdue University ACM SIG BOTS nor the
+ * names of its contributors may be used to endorse or promote products
+ * derived from this software without specific prior written permission.
+ * <p>
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ ******************************************************************************/
+
 package edu.purdue.sigbots.ros.cli.updater;
 
 import com.sun.istack.internal.NotNull;
@@ -23,9 +51,10 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+@SuppressWarnings("WeakerAccess")
 public class PROSActions {
-    protected static final Path SETTINGS_PATH = Paths.get(System.getProperty("user.home"), ".pros", "cli.settings");
-    protected final boolean verbose;
+    private static final Path SETTINGS_PATH = Paths.get(System.getProperty("user.home"), ".pros", "cli.settings");
+    private final boolean verbose;
     private final PrintStream out;
     private final PrintStream err;
 
@@ -53,14 +82,6 @@ public class PROSActions {
         this.out = out;
         this.err = err;
     }
-
-    /**
-     * @param updateSite A temporary updateSite that overrides the default updateSite URL
-     */
-    public PROSActions(boolean verbose, PrintStream out, PrintStream err, URL updateSite) {
-        this(verbose, out, err);
-        this.updateSite = updateSite;
-    }
     // </editor-fold>
 
     // <editor-fold desc="Update Site Methods">
@@ -83,13 +104,7 @@ public class PROSActions {
      * @throws IOException An IOException is thrown if there is an issue serializing the settings
      */
     public void setUpdateSite(URL updateSite) throws IOException {
-        PROSSettings settings = new PROSSettings(SETTINGS_PATH);
-        settings.setUpdateSite(updateSite);
-        try {
-            settings.serialize();
-        } finally {
-            this.updateSite = updateSite;
-        }
+        setUpdateSite(updateSite, true);
     }
 
     /**
@@ -101,7 +116,13 @@ public class PROSActions {
      */
     public void setUpdateSite(URL updateSite, boolean serialize) throws IOException {
         if (serialize) {
-            setUpdateSite(updateSite);
+            PROSSettings settings = new PROSSettings(SETTINGS_PATH);
+            settings.setUpdateSite(updateSite);
+            try {
+                settings.serialize();
+            } finally {
+                this.updateSite = updateSite;
+            }
         } else {
             this.updateSite = updateSite;
         }
@@ -113,56 +134,8 @@ public class PROSActions {
     public URL suggestUpdateSite() {
         try {
             return new URL("https://raw.githubusercontent.com/edjubuh/purdueros-kernels/master");
-        } catch (MalformedURLException ignored) {
+        } catch (MalformedURLException ignored) { // shouldn't happen, ever.
             return null;
-        }
-    }
-
-    /**
-     * Downloads a specified kernel.
-     * Prints a line to the output stream each time for every file/directory to extract (if verbose)
-     *
-     * @param kernel A valid kernel string
-     * @throws IOException An IOException is thrown if the kernel did not exist at the update site
-     *                     or if there was an issue extracting the kernel to the local kernel repository
-     * @implNote It is recommended to verify that the kernel exists at the update site before calling this method
-     * use <code>resolveKernelUpdateRequest(kernel)</code> to determine if kernel is valid
-     */
-    public void downloadKernel(String kernel) throws IOException {
-        URL kernelUrl = new URL(String.format("%s/%s.zip", getUpdateSite().toString(), kernel));
-        Path localKernel = getLocalKernelRepository().resolve(kernel);
-        if (Files.exists(localKernel)) {
-            Files.walkFileTree(localKernel, new SimpleFileDeleter());
-        }
-        URLConnection urlConnection = kernelUrl.openConnection();
-        urlConnection.connect();
-        try (ZipInputStream zipInputStream = new ZipInputStream(urlConnection.getInputStream())) {
-            ZipEntry zipEntry;
-            while ((zipEntry = zipInputStream.getNextEntry()) != null) {
-                if (verbose) {
-                    out.printf("Extracting %s\r\n", zipEntry.getName());
-                }
-                Path zipEntryPath = localKernel.resolve(zipEntry.getName());
-                if (zipEntry.isDirectory()) {
-                    Files.createDirectories(zipEntryPath);
-                } else {
-                    Files.createDirectories(zipEntryPath.getParent());
-                    Files.copy(zipInputStream, zipEntryPath);
-                }
-            }
-        }
-    }
-
-    public void deleteKernel(String kernel) throws IOException {
-        if (kernel == null || kernel.isEmpty()) {
-            return;
-        }
-        if (kernel.equalsIgnoreCase("all")) {
-            kernel = ".*";
-        }
-
-        for (String k : resolveKernelLocalRequest(kernel)) {
-            Files.walkFileTree(findKernelDirectory(k), new SimpleFileDeleter());
         }
     }
     // </editor-fold>
@@ -172,7 +145,7 @@ public class PROSActions {
     /**
      * @return Lazily-loaded or cached local kernel repository Path
      */
-    public Path getLocalKernelRepository() {
+    public Path getLocalRepositoryPath() {
         if (localKernelRepository != null) {
             return localKernelRepository;
         }
@@ -187,14 +160,7 @@ public class PROSActions {
      * @throws IOException An IOException is thrown if there is an issue serializing the settings
      */
     public void setLocalKernelRepository(Path localKernelRepository) throws IOException {
-        PROSSettings settings = new PROSSettings(SETTINGS_PATH);
-        settings.setKernelDirectory(localKernelRepository);
-        Files.createDirectories(localKernelRepository);
-        try {
-            settings.serialize();
-        } finally {
-            this.localKernelRepository = localKernelRepository;
-        }
+        setLocalKernelRepository(localKernelRepository, true);
     }
 
     /**
@@ -206,7 +172,14 @@ public class PROSActions {
      */
     public void setLocalKernelRepository(Path localKernelRepository, boolean serialize) throws IOException {
         if (serialize) {
-            setLocalKernelRepository(localKernelRepository);
+            PROSSettings settings = new PROSSettings(SETTINGS_PATH);
+            settings.setKernelDirectory(localKernelRepository);
+            Files.createDirectories(localKernelRepository);
+            try {
+                settings.serialize();
+            } finally {
+                this.localKernelRepository = localKernelRepository;
+            }
         } else {
             this.localKernelRepository = localKernelRepository;
         }
@@ -224,18 +197,14 @@ public class PROSActions {
 
     /**
      * @return Returns a list of the names of the directories (kernels) inside the local kernel repository
+     * @throws IOException an IOException is thrown if there was an exception accessing the local repository
      */
-    public List<String> getLocalKernels() {
-        try {
-            Files.createDirectories(getLocalKernelRepository());
-            return Files.list(getLocalKernelRepository())
-                    .filter(f -> Files.isDirectory(f))
-                    .map(p -> p.getFileName().toString())
-                    .collect(Collectors.toList()); // :) lambdas
-        } catch (IOException e) {
-            e.printStackTrace(err);
-        }
-        return null;
+    private List<String> getLocalKernels() throws IOException {
+        Files.createDirectories(getLocalRepositoryPath());
+        return Files.list(getLocalRepositoryPath())
+                .filter(f -> Files.isDirectory(f))
+                .map(p -> p.getFileName().toString())
+                .collect(Collectors.toList());
     }
 
     /**
@@ -243,15 +212,16 @@ public class PROSActions {
      * @throws IOException An IOException is thrown if there was an error downloading the kernels.list
      */
     @NotNull
-    public List<String> getOnlineKernels() throws IOException {
+    private List<String> getOnlineKernels() throws IOException {
         URL kernelsListURL = new URL(getUpdateSite().toExternalForm() + "/kernels.list");
         URLConnection urlConnection = kernelsListURL.openConnection();
         urlConnection.connect();
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
         ArrayList<String> kernelList = new ArrayList<>();
         String line;
-        while ((line = bufferedReader.readLine()) != null)
+        while ((line = bufferedReader.readLine()) != null) {
             kernelList.add(line);
+        }
         return kernelList;
     }
 
@@ -275,6 +245,13 @@ public class PROSActions {
         return map;
     }
 
+    /**
+     * @param kernel A regular expression to match kernels to
+     * @return Returns a map of Strings to KernelAvailabilityFlag values. Each String corresponds to an available kernel
+     * anywhere. The associated value with each string is a composite KernelAvailabilityFlag. See implementation note.
+     * @throws IOException Thrown if there was an issue fetching the online kernels (See <code>getOnlineKernels</code>
+     * @implNote See implementation note for getAllKernels()
+     */
     @NotNull
     public Map<String, Integer> getAllKernels(String kernel) throws IOException {
         if (kernel == null || kernel.equalsIgnoreCase("all") || kernel.matches(" *")) {
@@ -292,6 +269,31 @@ public class PROSActions {
     }
 
     /**
+     * Silently fails to add all local or all update site kernels. May result in only local, only update site, or no
+     * kernels to be in the map.
+     *
+     * @return Returns a map of Strings to KernelAvailabilityFlag values. Each String corresponds to an available kernel
+     * anywhere. The associated value with each string is a composite KernelAvailabilityFlag. See implementation note
+     * @implNote See implementation note for getAllKernels()
+     */
+    public Map<String, Integer> getAllKernelsForce() {
+        Map<String, Integer> map = new HashMap<>();
+        try {
+            getLocalKernels().forEach(k -> map.put(k,
+                    map.getOrDefault(k, 0) | KernelAvailabilityFlag.KERNEL_AVAILABLE_LOCAL.getValue()));
+        } catch (IOException e) {
+            e.printStackTrace(err);
+        }
+        try {
+            getOnlineKernels().forEach(k -> map.put(k,
+                    map.getOrDefault(k, 0) | KernelAvailabilityFlag.KERNEL_AVAILABLE_ONLINE.getValue()));
+        } catch (IOException e) {
+            e.printStackTrace(err);
+        }
+        return map;
+    }
+
+    /**
      * Resolves kernel requests into a set of valid Strings that can be requested
      * according to kernels.list (or latest.kernel)
      *
@@ -302,9 +304,11 @@ public class PROSActions {
      * @throws IOException An IOException if there was a problem fetching either latest.kernel or executing getOnlineKernels
      */
     @NotNull
-    public Set<String> resolveKernelUpdateRequest(@NotNull String request) throws IOException {
+    public Set<String> resolveKernelUpdateRequest(String request) throws IOException {
         HashSet<String> set = new HashSet<>();
-        if (request.equalsIgnoreCase("latest")) {
+        if (request == null || request.isEmpty() || request.equalsIgnoreCase("all")) {
+            set.addAll(getOnlineKernels());
+        } else if (request.equalsIgnoreCase("latest")) {
             URL latestKernelURL = new URL(getUpdateSite().toExternalForm() + "/latest.kernel");
             URLConnection urlConnection = latestKernelURL.openConnection();
             urlConnection.connect();
@@ -312,8 +316,6 @@ public class PROSActions {
                          new BufferedReader(new InputStreamReader(urlConnection.getInputStream()))) {
                 set.add(bufferedReader.readLine());
             }
-        } else if (request.equalsIgnoreCase("all")) {
-            set.addAll(getOnlineKernels());
         } else {
             getOnlineKernels().forEach(s -> {
                 if (s.matches(request)) {
@@ -329,9 +331,10 @@ public class PROSActions {
      * local kernel repository
      *
      * @param request A regular expression to find kernels.
-     *                If request is "latest", then the highest alphanumeric kernel is returned. A singleton is guaranteed.
-     * @return A set of valid Strings representing kernels that can be targeted
-     * @throws IOException An IOException is thrown if there was a problem accessing the local kernel repository (see getLocalKernels)
+     *                <p>
+     *                If request is "latest", then the highest alphanumeric kernel is returned.
+     *                A singleton is guaranteed in this case.
+     * @return A set of valid Strings representing kernels that can be targeted (may be empty)
      */
     @NotNull
     public Set<String> resolveKernelLocalRequest(@Nullable String request) throws IOException {
@@ -362,13 +365,21 @@ public class PROSActions {
     // </editor-fold>
 
     // <editor-fold desc="Kernel Loader Helper Methods">
+
+    /**
+     * Finds an appropriate Loader for the given kernel directory. The class is expected to be
+     * edu.purdue.sigbots.ros.cli.kernels.2b10Loader where 2b10 is the name of the kernel directory (the kernel version)
+     *
+     * @param kernelDirectory A path to a kernel directory
+     * @return A class object that extends Loader
+     */
     private Class<? extends Loader> findKernelLoader(Path kernelDirectory) {
         Class<?> kernelLoaderClass = DefaultLoader.class;
         try {
             URL kernelUrl = kernelDirectory.toUri().toURL();
             ClassLoader classLoader = new URLClassLoader(new URL[]{kernelUrl});
             kernelLoaderClass = classLoader.loadClass(
-                    String.format("%s.%s", this.getClass().getPackage().toString(), kernelDirectory.getFileName())
+                    String.format("%s.%sLoader", this.getClass().getPackage().toString(), kernelDirectory.getFileName())
             );
             if (!kernelLoaderClass.isAssignableFrom(Loader.class)) {
                 if (verbose) {
@@ -387,74 +398,219 @@ public class PROSActions {
         if (verbose) {
             out.printf("Using %s kernel loader\r\n", kernelLoaderClass.getSimpleName());
         }
+        // Should be able to safely ignore the unchecked warning as kernelLoaderClass.isAssignableFrom ensures it is ok to cast
+        //noinspection unchecked
         return (Class<? extends Loader>) kernelLoaderClass;
     }
 
-    public Loader createLoader(Class<? extends Loader> kernelLoaderClass)
-            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        return kernelLoaderClass.getConstructor(Boolean.class, PrintStream.class, PrintStream.class).newInstance(verbose, out, err);
+    /**
+     * Create a Loader object
+     *
+     * @param kernelLoaderClass A class that extends Loader usually found by findKernelLoader
+     * @return A Loader object, or, if something went wrong, null (the stack trace will be printed to err if verbose is set to true)
+     */
+    public Loader createLoader(Class<? extends Loader> kernelLoaderClass) {
+        try {
+            return kernelLoaderClass.getConstructor(Boolean.class, PrintStream.class, PrintStream.class).newInstance(verbose, out, err);
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            if (verbose) {
+                e.printStackTrace(err);
+            }
+            return null;
+        }
     }
 
+    /**
+     * @param kernel A valid kernel string
+     * @return Returns a resolved path with the kernel appended and does not check if the directory actually exists
+     */
     public Path findKernelDirectory(String kernel) {
-        return getLocalKernelRepository().resolve(kernel);
+        return getLocalRepositoryPath().resolve(kernel);
     }
     // </editor-fold>
 
     // <editor-fold desc="Project load methods">
+
+    /**
+     * Creates a project at the specified project location. Any files that already exist will be overwritten
+     *
+     * @param kernel          A valid kernel string that will be automatically passed to findKernelDirectory
+     * @param projectLocation A valid path that is accessible
+     * @param environments    A list of strings that specifies the environments to target.
+     *                        It is safe to have extra environments in this list.
+     * @throws IOException Thrown if there was an exception copying the project.
+     *                     The copying process is non-transactional and an exception may be thrown in the middle of the copying
+     *                     process, so some files may have been copied while others have not.
+     */
     public void createProject(String kernel, Path projectLocation, List<String> environments) throws IOException {
         createProject(findKernelDirectory(kernel), projectLocation, environments);
     }
 
+    /**
+     * Creates a project at the specified project location. Any files that already exist will be overwritten
+     *
+     * @param kernelDirectory A valid kernel directory
+     * @param projectLocation A valid path that is accessible
+     * @param environments    A list of strings that specifies the environments to target.
+     *                        It is safe to have extra environments in this list.
+     * @throws IOException Thrown if there was an exception copying the project.
+     *                     The copying process is non-transactional and an exception may be thrown in the middle of the copying
+     *                     process, so some files may have been copied while others have not.
+     */
     public void createProject(Path kernelDirectory, Path projectLocation, List<String> environments) throws IOException {
         Class<? extends Loader> kernelLoaderClass = findKernelLoader(kernelDirectory);
-        try {
-            createLoader(kernelLoaderClass).createProject(kernelDirectory, projectLocation, environments);
-        } catch (InstantiationException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-            e.printStackTrace(err);
+        Loader loader = createLoader(kernelLoaderClass);
+        if (loader != null) {
+            loader.createProject(kernelDirectory, projectLocation, environments);
+        } else {
+            out.printf("Error loading %s. Turn on the verbose option to debug\r\n", kernelLoaderClass.getName());
         }
-
     }
 
-    public void upgradeProject(String kernel, Path projectPath, List<String> environments) throws IOException {
-        upgradeProject(findKernelDirectory(kernel), projectPath, environments);
+    /**
+     * Upgrades a project at the specified project location.
+     *
+     * @param kernel           A valid kernel string that is passed to findKernelDirectory
+     * @param projectDirectory A valid path that is accessible
+     * @param environments     A list of strings that specifies the environments to target.
+     *                         It is safe to have extra environments in this list.
+     *                         If the list is empty, then the desired action of the Loader is to determine which
+     *                         environments were previously targeted and upgrade those. May or may not have been
+     *                         implemented by the loader.
+     * @throws IOException Thrown if there was an exception copying the project.
+     *                     The copying process is non-transactional and an exception may be thrown in the middle of the copying
+     *                     process, so some files may have been copied while others have not.
+     */
+    public void upgradeProject(String kernel, Path projectDirectory, List<String> environments) throws IOException {
+        upgradeProject(findKernelDirectory(kernel), projectDirectory, environments);
     }
 
-    public void upgradeProject(Path kernelDirectory, Path projectLocation, List<String> environments) throws IOException {
+    /**
+     * Upgrades a project at the specified project location.
+     *
+     * @param kernelDirectory  A valid kernel directory
+     * @param projectDirectory A valid path that is accessible
+     * @param environments     A list of strings that specifies the environments to target.
+     *                         It is safe to have extra environments in this list.
+     *                         If the list is empty, then the desired action of the Loader is to determine which
+     *                         environments were previously targeted and upgrade those. May or may not have been
+     *                         implemented by the loader.
+     * @throws IOException Thrown if there was an exception copying the project.
+     *                     The copying process is non-transactional and an exception may be thrown in the middle of the copying
+     *                     process, so some files may have been copied while others have not.
+     */
+    public void upgradeProject(Path kernelDirectory, Path projectDirectory, List<String> environments) throws IOException {
         Class<? extends Loader> kernelLoaderClass = findKernelLoader(kernelDirectory);
-        try {
-            createLoader(kernelLoaderClass).upgradeProject(kernelDirectory, projectLocation, environments);
-        } catch (NoSuchMethodException | InstantiationException | InvocationTargetException | IllegalAccessException e) {
-            e.printStackTrace();
+        Loader loader = createLoader(kernelLoaderClass);
+        if (loader != null) {
+            createLoader(kernelLoaderClass).upgradeProject(kernelDirectory, projectDirectory, environments);
+        } else {
+            out.printf("Error loading %s. Turn on the verbose option to debug\r\n", kernelLoaderClass.getName());
         }
     }
 
+    /**
+     * Lists all environments available for the kernel loader to target
+     *
+     * @param kernel A valid kernel string that is passed to findKernelDirectory
+     * @return A map of string and set of strings where the key is a kernel and the value is a set of targetable environment strings
+     * @throws IOException Thrown if there was an issue creating the Loader or accessing the kernel directory
+     */
     public Map<String, Set<String>> listEnvironments(String kernel) throws IOException {
         Map<String, Set<String>> environmentsMap = new HashMap<>();
         if (verbose) {
             System.out.printf("Resolved %s to %s\r\n", kernel, resolveKernelLocalRequest(kernel));
         }
         for (String k : resolveKernelLocalRequest(kernel)) {
-            Class<? extends Loader> kernelLoaderClass = findKernelLoader(findKernelDirectory(k));
-            try {
-                environmentsMap.put(k,
-                        createLoader(kernelLoaderClass).getAvailableEnvironments(findKernelDirectory(k)));
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
-                e.printStackTrace();
-            }
+            environmentsMap.put(k, listEnvironments(findKernelDirectory(k)));
         }
         return environmentsMap;
     }
 
+    /**
+     * Lists all environments available for the kernel loader to target
+     *
+     * @param kernelPath A valid local kernel path
+     * @return A map of string and set of strings where the key is a kernel and the value is a set of targetable environment strings
+     * @throws IOException Thrown if there was an issue creating the Loader or accessing the kernel directory
+     */
     public Set<String> listEnvironments(Path kernelPath) throws IOException {
         Class<? extends Loader> kernelLoaderClass = findKernelLoader(kernelPath);
-        try {
+        Loader loader = createLoader(kernelLoaderClass);
+        if (loader != null) {
             return createLoader(kernelLoaderClass).getAvailableEnvironments(kernelPath);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
-            e.printStackTrace();
+        } else {
+            out.printf("Error loading %s. Turn on the verbose option to debug\r\n", kernelLoaderClass.getName());
+            return null;
         }
-        return null;
+    }
+    // </editor-fold>
+
+    // <editor-fold desc="Local kernel management methods">
+
+    /**
+     * Downloads a specified kernel. This method does not check if kernel is on kernels.list
+     * <p>
+     * Prints a line to the output stream each time for every file/directory to extract (if verbose)
+     *
+     * @param kernel A valid kernel string
+     * @throws IOException An IOException is thrown if the kernel did not exist at the update site
+     *                     or if there was an issue extracting the kernel to the local kernel repository
+     * @implNote It is recommended to verify that the kernel exists at the update site before calling this method
+     * use <code>resolveKernelUpdateRequest(kernel)</code> to determine if kernel is valid
+     */
+    public void downloadKernel(String kernel) throws IOException {
+        URL kernelUrl = new URL(String.format("%s/%s.zip", getUpdateSite().toString(), kernel));
+        Path localKernel = getLocalRepositoryPath().resolve(kernel);
+
+        if (Files.exists(localKernel)) { // delete already existing kernel template
+            Files.walkFileTree(localKernel, new SimpleFileDeleter(localKernel, verbose));
+        }
+
+        URLConnection urlConnection = kernelUrl.openConnection();
+        urlConnection.connect();
+        try (ZipInputStream zipInputStream = new ZipInputStream(urlConnection.getInputStream())) {
+            ZipEntry zipEntry;
+            while ((zipEntry = zipInputStream.getNextEntry()) != null) {
+                if (verbose) {
+                    out.printf("Extracting %s\r\n", zipEntry.getName());
+                }
+
+                Path zipEntryPath = localKernel.resolve(zipEntry.getName());
+                if (zipEntry.isDirectory()) {
+                    Files.createDirectories(zipEntryPath);
+                } else {
+                    Files.createDirectories(zipEntryPath.getParent());
+                    Files.copy(zipInputStream, zipEntryPath);
+                }
+            }
+        }
     }
 
+    /**
+     * Recursively deletes local kernel directory(s).
+     *
+     * @param kernel A regular expression to match local kernels to.
+     * @throws IOException Thrown if there was an error resolving the kernel request or deleting the directory
+     */
+    public void deleteKernel(String kernel) throws IOException {
+        if (kernel == null || kernel.isEmpty()) {
+            return;
+        }
 
+        for (String k : resolveKernelLocalRequest(kernel)) {
+            deleteKernel(findKernelDirectory(k));
+        }
+    }
+
+    /**
+     * Recursively deletes a local kernel directory (or really any directory)
+     *
+     * @param kernelDirectory A path to a local kernel directory
+     * @throws IOException Thrown if there was an error deleting the directory
+     */
+    public void deleteKernel(Path kernelDirectory) throws IOException {
+        Files.walkFileTree(kernelDirectory, new SimpleFileDeleter(kernelDirectory, verbose));
+    }
     // </editor-fold>
 }
