@@ -28,8 +28,6 @@
 
 package edu.purdue.sigbots.ros.cli.kernels;
 
-import com.sun.istack.internal.Nullable;
-
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Path;
@@ -57,7 +55,7 @@ public abstract class Loader {
      *                     The copying process is non-transactional and an exception may be thrown in the middle of the copying
      *                     process, so some files may have been copied while others have not.
      */
-    public abstract void createProject(Path kernelPath, Path projectPath, @Nullable List<String> environments) throws IOException;
+    public abstract void createProject(Path kernelPath, Path projectPath, List<String> environments) throws IOException;
 
     /**
      * Upgrades a project, overwriting any existing files that were previously there, but does not delete extra files
@@ -70,7 +68,7 @@ public abstract class Loader {
      *                     The copying process is non-transactional and an exception may be thrown in the middle of the copying
      *                     process, so some files may have been copied while others have not.
      */
-    public abstract void upgradeProject(Path kernelPath, Path projectPath, @Nullable List<String> environments) throws IOException;
+    public abstract void upgradeProject(Path kernelPath, Path projectPath, List<String> environments) throws IOException;
 
     /**
      * @param kernelPath A valid path to a kernel directory

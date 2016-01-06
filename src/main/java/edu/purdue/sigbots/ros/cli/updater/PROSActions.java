@@ -28,8 +28,6 @@
 
 package edu.purdue.sigbots.ros.cli.updater;
 
-import com.sun.istack.internal.NotNull;
-import com.sun.istack.internal.Nullable;
 import edu.purdue.sigbots.ros.cli.SimpleFileDeleter;
 import edu.purdue.sigbots.ros.cli.kernels.DefaultLoader;
 import edu.purdue.sigbots.ros.cli.kernels.Loader;
@@ -133,7 +131,7 @@ public class PROSActions {
      */
     public URL suggestUpdateSite() {
         try {
-            return new URL("https://raw.githubusercontent.com/edjubuh/purdueros-kernels/master");
+            return new URL("https://raw.githubusercontent.com/purduesigbots/purdueros-kernels/master");
         } catch (MalformedURLException ignored) { // shouldn't happen, ever.
             return null;
         }
@@ -211,7 +209,6 @@ public class PROSActions {
      * @return Returns a list of the names of kernels available on the update site, as determined by the kernels.list
      * @throws IOException An IOException is thrown if there was an error downloading the kernels.list
      */
-    @NotNull
     private List<String> getOnlineKernels() throws IOException {
         URL kernelsListURL = new URL(getUpdateSite().toExternalForm() + "/kernels.list");
         URLConnection urlConnection = kernelsListURL.openConnection();
@@ -235,7 +232,6 @@ public class PROSActions {
      * a KernelAvailabilityFlag to a different type. <code>getSuggestedKernelMapping</code> returns a default mapping
      * to Strings.
      */
-    @NotNull
     public Map<String, Integer> getAllKernels() throws IOException {
         HashMap<String, Integer> map = new HashMap<>();
         getLocalKernels().forEach(k -> map.put(k,
@@ -252,7 +248,6 @@ public class PROSActions {
      * @throws IOException Thrown if there was an issue fetching the online kernels (See <code>getOnlineKernels</code>
      * @implNote See implementation note for getAllKernels()
      */
-    @NotNull
     public Map<String, Integer> getAllKernels(String kernel) throws IOException {
         if (kernel == null || kernel.equalsIgnoreCase("all") || kernel.matches(" *")) {
             kernel = ".*";
@@ -303,7 +298,6 @@ public class PROSActions {
      * @return A set of valid Strings representing kernels that can be downloaded
      * @throws IOException An IOException if there was a problem fetching either latest.kernel or executing getOnlineKernels
      */
-    @NotNull
     public Set<String> resolveKernelUpdateRequest(String request) throws IOException {
         HashSet<String> set = new HashSet<>();
         if (request == null || request.isEmpty() || request.equalsIgnoreCase("all")) {
@@ -336,8 +330,7 @@ public class PROSActions {
      *                A singleton is guaranteed in this case.
      * @return A set of valid Strings representing kernels that can be targeted (may be empty)
      */
-    @NotNull
-    public Set<String> resolveKernelLocalRequest(@Nullable String request) throws IOException {
+    public Set<String> resolveKernelLocalRequest(String request) throws IOException {
         if (request == null || request.isEmpty()) {
             return Collections.emptySet();
         }

@@ -28,8 +28,6 @@
 
 package edu.purdue.sigbots.ros.cli.updater;
 
-import com.sun.istack.internal.NotNull;
-
 import java.util.*;
 
 /**
@@ -111,7 +109,6 @@ public enum KernelAvailabilityFlag {
      * @return Returns a default map to be used by <code>valueToMappedSet</code>. KERNEL_AVAILABLE_LOCAL maps to
      * the string "local" and KERNEL_AVAILABLE_ONLINE maps to the string "online"
      */
-    @NotNull
     public static Map<KernelAvailabilityFlag, String> getSuggestedKernelMapping() {
         HashMap<KernelAvailabilityFlag, String> map = new HashMap<>();
         map.put(KernelAvailabilityFlag.KERNEL_AVAILABLE_LOCAL, "local");
