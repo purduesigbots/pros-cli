@@ -1,10 +1,15 @@
 <component name="ArtifactManager">
-  <artifact type="jar" build-on-make="true" name="purdueros-cli:jar">
+  <artifact build-on-make="true" name="purdueros-cli:jar">
     <output-path>$PROJECT_DIR$/out/artifacts/purdueros_cli_jar</output-path>
-    <root id="archive" name="purdueros-cli.jar">
-      <element id="module-output" name="purdueros-cli" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/net/sourceforge/argparse4j/argparse4j/0.6.0/argparse4j-0.6.0.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/commons-io/commons-io/2.4/commons-io-2.4.jar" path-in-jar="/" />
+    <root id="root">
+      <element id="archive" name="purdueros-cli.jar">
+        <element id="module-output" name="purdueros-cli" />
+        <element id="directory" name="META-INF">
+          <element id="dir-copy" path="$PROJECT_DIR$/src/main/java/META-INF" />
+        </element>
+      </element>
+      <element id="library" level="project" name="net.sourceforge.argparse4j:argparse4j:0.7.0" />
+      <element id="library" level="project" name="Maven: net.sourceforge.argparse4j:argparse4j:0.7.0" />
     </root>
   </artifact>
 </component>
