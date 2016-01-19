@@ -84,6 +84,9 @@ Without -e, -d, or  -c,  will  list  if  the  specified kernel is available
 locally and/or online.
 ```
 
-### Random notes (aka the backlog)
+### Roadmap
 
-For some reason, the purdueros-cli.jar artifact doesn't get the right manifest when it is built by IntelliJ. The correct manifest is at src/main/java/META-INF/MANIFEST.MF . You can edit the manifest using 7-zip and manually replace the contents there.
+- Add better support for secured update sites (maybe jgit to enable ssh-protected git repos following site manifest)
+- Migrate uniflash, Eclipse flasher into PROS CLI
+
+
