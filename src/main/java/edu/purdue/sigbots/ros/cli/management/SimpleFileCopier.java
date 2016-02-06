@@ -26,37 +26,50 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-package edu.purdue.sigbots.ros.cli.commands;
-
-import edu.purdue.sigbots.ros.cli.management.PROSActions;
-import net.sourceforge.argparse4j.inf.Namespace;
+package edu.purdue.sigbots.ros.cli.management;
 
 import java.io.IOException;
-import java.nio.file.Paths;
+import java.io.PrintStream;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 
-public class ConfigCommand extends Command {
+public class SimpleFileCopier extends SimpleFileVisitor<Path> {
+    protected final boolean verbose;
+    protected final PrintStream out;
+    private final Path sourcePath;
+    private final Path destinationPath;
+
+    public SimpleFileCopier(boolean verbose, PrintStream out, Path sourcePath, Path destinationPath) {
+        this.verbose = verbose;
+        this.out = out;
+        this.sourcePath = sourcePath;
+        this.destinationPath = destinationPath;
+    }
+
     @Override
-    public void handleArguments(Namespace arguments, PROSActions actions) {
-        String variable = arguments.getString("variable");
-        String value = arguments.get("value");
-        if (variable.equalsIgnoreCase("updateSite") || variable.equalsIgnoreCase("update-site")) {
-            if (value != null && !value.isEmpty()) {
-                try {
-                    actions.setUpdateSite(value);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            System.out.printf("Update site is set to: %s\r\n", actions.getUpdateSite());
-        } else if (variable.equalsIgnoreCase("localRepository") || variable.equalsIgnoreCase("local-repository")) {
-            if (value != null && !value.isEmpty()) {
-                try {
-                    actions.setLocalKernelRepository(Paths.get(value));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            System.out.printf("Local kernel repository is set to: %s", actions.getLocalRepositoryPath());
+    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attributes) throws IOException {
+        Path destinationDirectory = destinationPath.resolve(sourcePath.relativize(dir));
+        if (verbose) {
+            out.printf("Creating directory %s%s\r\n", destinationPath.relativize(destinationDirectory),
+                    System.getProperty("file.separator"));
         }
+        if (Files.notExists(destinationDirectory)) {
+            Files.createDirectories(destinationDirectory);
+        }
+        return FileVisitResult.CONTINUE;
+    }
+
+    @Override
+    public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) throws IOException {
+        if (verbose) {
+            out.printf("Copying file %s\r\n", sourcePath.relativize(file));
+        }
+        Path destinationFile = destinationPath.resolve(sourcePath.relativize(file));
+        if (Files.notExists(destinationFile)) {
+            Files.createDirectories(destinationFile.getParent());
+            Files.createFile(destinationFile);
+        }
+        Files.copy(file, destinationFile, StandardCopyOption.REPLACE_EXISTING);
+        return FileVisitResult.CONTINUE;
     }
 }

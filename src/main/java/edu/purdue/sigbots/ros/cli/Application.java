@@ -29,7 +29,7 @@
 package edu.purdue.sigbots.ros.cli;
 
 import edu.purdue.sigbots.ros.cli.commands.*;
-import edu.purdue.sigbots.ros.cli.updater.PROSActions;
+import edu.purdue.sigbots.ros.cli.management.PROSActions;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.action.StoreTrueArgumentAction;
 import net.sourceforge.argparse4j.impl.action.VersionArgumentAction;
@@ -37,8 +37,7 @@ import net.sourceforge.argparse4j.inf.*;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -50,10 +49,10 @@ class Application {
     public static void main(String[] args) {
         ArgumentParser argumentParser = ArgumentParsers.newArgumentParser("pros");
         argumentParser.description("Create and upgrade PROS projects from an update site.");
-        argumentParser.version("0.2.0");
+        argumentParser.version("0.5.0");
         argumentParser.defaultHelp(true);
         argumentParser.addArgument("--version").action(new VersionArgumentAction());
-        argumentParser.epilog("This program licensed under the revised BSD license. (c) 2015 PURDUE ACM SIGBOTS");
+        argumentParser.epilog("This program licensed under the revised BSD license. (c) 2016 PURDUE ACM SIGBOTS");
 
         Subparsers subparsers = argumentParser.addSubparsers().title("command");
 
@@ -126,7 +125,11 @@ class Application {
                 .nargs("?")
                 .metavar("SITE")
                 .setDefault(getUpdateSite(new PROSActions()))
-                .help("Specify site to do online operations with.");
+                .help("Specify site to do online operations with. If an obvious Git URL is used (starting with " +
+                        "'ssh://', 'git://', or ending with '.git'), then the Git update site provider will be used. " +
+                        "All kernels on the remote repository will be fetched and merged-theirs - online kernel " +
+                        "listings are not guaranteed to be accurate. A Git site can be forced by appending the url with " +
+                        "\"git clone <url>\".");
 
         MutuallyExclusiveGroup mutuallyExclusiveGroup = fetchParser.addMutuallyExclusiveGroup();
         mutuallyExclusiveGroup.addArgument("-e", "--environments")
@@ -166,7 +169,7 @@ class Application {
         if (namespace.getBoolean("verbose") != null) {
             verbose = namespace.getBoolean("verbose");
         }
-        PROSActions actions = new PROSActions(verbose, System.out, System.err);
+        final PROSActions actions = new PROSActions(verbose, System.out, System.err);
 
         Object handler = namespace.get("handler");
         if (handler != null && handler instanceof Class<?>) {
@@ -181,8 +184,8 @@ class Application {
         }
     }
 
-    private static URL getUpdateSite(PROSActions actions) {
-        URL updateSite = actions.getUpdateSite();
+    private static URI getUpdateSite(PROSActions actions) {
+        URI updateSite = actions.getUpdateSite();
         if (updateSite == null) {
             System.out.println("Update site is not set.");
             updateSite = actions.suggestUpdateSite();
@@ -191,10 +194,16 @@ class Application {
                 String response = (new Scanner(System.in)).nextLine();
                 if (!response.isEmpty()) {
                     try {
-                        updateSite = new URL(response);
-                    } catch (MalformedURLException e) {
+                        actions.setUpdateSite(response);
+                    } catch (IOException e) {
                         e.printStackTrace();
-                        System.exit(-1);
+                    }
+                    updateSite = actions.getUpdateSite();
+                } else {
+                    try {
+                        actions.setUpdateSite(actions.suggestUpdateSite().toString());
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
             } else {
@@ -202,17 +211,12 @@ class Application {
                 String response = (new Scanner(System.in)).nextLine();
                 if (!response.isEmpty()) {
                     try {
-                        updateSite = new URL(response);
-                    } catch (MalformedURLException e) {
+                        actions.setUpdateSite(response);
+                    } catch (IOException e) {
                         e.printStackTrace();
-                        System.exit(-1);
                     }
+                    updateSite = actions.getUpdateSite();
                 }
-            }
-            try {
-                actions.setUpdateSite(updateSite);
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
         return updateSite;

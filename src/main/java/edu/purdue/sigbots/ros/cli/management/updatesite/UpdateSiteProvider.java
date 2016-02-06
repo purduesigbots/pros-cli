@@ -26,11 +26,24 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-package edu.purdue.sigbots.ros.cli.commands;
+package edu.purdue.sigbots.ros.cli.management.updatesite;
 
 import edu.purdue.sigbots.ros.cli.management.PROSActions;
-import net.sourceforge.argparse4j.inf.Namespace;
 
-public abstract class Command {
-    public abstract void handleArguments(Namespace arguments, PROSActions actions);
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
+
+public interface UpdateSiteProvider {
+    boolean claimsURIString(String string, PROSActions caller);
+
+    URI reformURIString(String string, PROSActions caller);
+
+    boolean canHandleURI(URI uri, PROSActions caller);
+
+    List<String> getAvailableKernels(URI uri, PROSActions caller) throws IOException;
+
+    String getLatestKernel(URI uri, PROSActions caller) throws IOException;
+
+    void downloadKernel(String kernel, PROSActions caller) throws IOException;
 }

@@ -26,11 +26,28 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-package edu.purdue.sigbots.ros.cli.commands;
+package edu.purdue.sigbots.ros.cli.management;
 
-import edu.purdue.sigbots.ros.cli.management.PROSActions;
-import net.sourceforge.argparse4j.inf.Namespace;
+import java.io.*;
 
-public abstract class Command {
-    public abstract void handleArguments(Namespace arguments, PROSActions actions);
+public class StreamGobbler extends Thread {
+    private final InputStream inputStream;
+    private final PrintStream outputStream;
+
+    public StreamGobbler(InputStream inputStream, PrintStream outputStream) {
+        this.inputStream = inputStream;
+        this.outputStream = outputStream;
+    }
+
+    public void run() {
+        try {
+            InputStreamReader isr = new InputStreamReader(inputStream);
+            BufferedReader br = new BufferedReader(isr);
+            String line;
+            while ((line = br.readLine()) != null)
+                outputStream.println(line);
+        } catch (IOException ioe) {
+            ioe.printStackTrace(outputStream);
+        }
+    }
 }

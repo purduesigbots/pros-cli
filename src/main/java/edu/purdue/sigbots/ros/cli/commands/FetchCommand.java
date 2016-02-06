@@ -28,12 +28,11 @@
 
 package edu.purdue.sigbots.ros.cli.commands;
 
-import edu.purdue.sigbots.ros.cli.updater.KernelAvailabilityFlag;
-import edu.purdue.sigbots.ros.cli.updater.PROSActions;
+import edu.purdue.sigbots.ros.cli.management.KernelAvailabilityFlag;
+import edu.purdue.sigbots.ros.cli.management.PROSActions;
 import net.sourceforge.argparse4j.inf.Namespace;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,7 +41,7 @@ public class FetchCommand extends Command {
     public void handleArguments(Namespace arguments, PROSActions actions) {
         try {
             // Will not change update site if no update site was specified as the default site is the site determined be PROSActions
-            actions.setUpdateSite(new URL(arguments.getString("site")), false);
+            actions.setUpdateSite(arguments.getString("site"), false);
         } catch (IOException ignored) { // safely ignored as not serializing
         }
 

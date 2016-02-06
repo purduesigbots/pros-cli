@@ -1,5 +1,5 @@
-<!--
-  ~ Copyright (c) 2015, Purdue University ACM SIG BOTS.
+<!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  ~ Copyright (c) 2016, Purdue University ACM SIG BOTS.
   ~ All rights reserved.
   ~
   ~ Redistribution and use in source and binary forms, with or without
@@ -24,46 +24,87 @@
   ~ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
   ~ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   ~ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  -->
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~-->
 
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>edu.purdue.sigbots.purdueros.cli</groupId>
+    <groupId>edu.purdue.sigbots.purdueros.cli.purdueros.cli</groupId>
     <artifactId>pros</artifactId>
-    <version>0.1.0</version>
+    <name>pros</name>
+    <url>https://github.com/purduesigbots/purdueros-cli</url>
+    <version>0.5.0</version>
     <packaging>jar</packaging>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>jgit-repository</id>
+            <url>https://repo.eclipse.org/content/groups/releases/</url>
+        </repository>
+    </repositories>
 
     <build>
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.5</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.6</version>
+                <configuration>
+                    <finalName>pros-${project.version}-bundled</finalName>
+                    <appendAssemblyId>false</appendAssemblyId>
+                    <archive>
+                        <manifest>
+                            <mainClass>edu.purdue.sigbots.ros.cli.Application</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
                 <executions>
                     <execution>
-                        <phase>package</phase>
+                        <id>make-assembly</id> <!-- this is used for inheritance merges -->
+                        <phase>package</phase> <!-- bind to the packaging phase -->
                         <goals>
-                            <goal>shade</goal>
+                            <goal>single</goal>
                         </goals>
                     </execution>
                 </executions>
-                <configuration>
-                    <shadedArtifactAttached>true
-                    </shadedArtifactAttached> <!-- Make the shaded artifact not the main one -->
-                    <shadedClassifierName>shaded</shadedClassifierName> <!-- set the suffix to the shaded jar -->
-                </configuration>
             </plugin>
+            <!--<plugin>-->
+            <!--<groupId>org.apache.maven.plugins</groupId>-->
+            <!--<artifactId>maven-shade-plugin</artifactId>-->
+            <!--<version>2.4.3</version>-->
+            <!--<executions>-->
+            <!--<execution>-->
+            <!--<phase>package</phase>-->
+            <!--<goals>-->
+            <!--<goal>shade</goal>-->
+            <!--</goals>-->
+            <!--</execution>-->
+            <!--</executions>-->
+            <!--<configuration>-->
+            <!--<shadedArtifactAttached>true-->
+            <!--</shadedArtifactAttached> &lt;!&ndash; Make the shaded artifact not the main one &ndash;&gt;-->
+            <!--<shadedClassifierName>shaded</shadedClassifierName> &lt;!&ndash; set the suffix to the shaded jar &ndash;&gt;-->
+            <!--</configuration>-->
+            <!--</plugin>-->
             <plugin>
                 <groupId>com.akathist.maven.plugins.launch4j</groupId>
                 <artifactId>launch4j-maven-plugin</artifactId>
+                <version>1.7.8</version>
                 <executions>
                     <execution>
                         <id>l4j-clui</id>
@@ -74,7 +115,7 @@
                         <configuration>
                             <headerType>console</headerType>
                             <outfile>target/pros.exe</outfile>
-                            <jar>target/pros-0.1.0-shaded.jar</jar>
+                            <jar>target/pros-${project.version}-bundled.jar</jar>
                             <errTitle>pros</errTitle>
                             <classPath>
                                 <mainClass>edu.purdue.sigbots.ros.cli.Application</mainClass>
@@ -85,12 +126,12 @@
                                 <minVersion>1.8.0</minVersion>
                             </jre>
                             <versionInfo>
-                                <fileVersion>0.1.0.0</fileVersion>
-                                <txtFileVersion>0.1.0.0</txtFileVersion>
+                                <fileVersion>${project.version}.0</fileVersion>
+                                <txtFileVersion>${project.version}.0</txtFileVersion>
                                 <fileDescription>Purdue Robotics Operating System</fileDescription>
                                 <copyright>Copyright (c) PURDUE ACM SIG BOTS</copyright>
-                                <productVersion>0.1.0.0</productVersion>
-                                <txtProductVersion>0.1.0.0</txtProductVersion>
+                                <productVersion>${project.version}.0</productVersion>
+                                <txtProductVersion>${project.version}s.0</txtProductVersion>
                                 <productName>PROS</productName>
                                 <internalName>purdueros-cli</internalName>
                                 <originalFilename>pros.exe</originalFilename>
@@ -99,15 +140,13 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.19.1</version>
+            </plugin>
         </plugins>
     </build>
-
-    <name>pros</name>
-    <url>http://maven.apache.org</url>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
 
 
     <dependencies>
@@ -115,6 +154,75 @@
             <groupId>net.sourceforge.argparse4j</groupId>
             <artifactId>argparse4j</artifactId>
             <version>0.7.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>15.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.cedarsoftware</groupId>
+            <artifactId>json-io</artifactId>
+            <version>4.3.0</version>
+        </dependency>
+        <!--JGit Stuff-->
+        <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit</artifactId>
+            <version>4.2.0.201601211800-r</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit.http.server</artifactId>
+            <version>4.2.0.201601211800-r</version>
+        </dependency>
+        <!-- used by jgit -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-nop</artifactId>
+            <version>1.7.2</version>
+        </dependency>
+        <!--<dependency>-->
+        <!--<groupId>com.jcraft</groupId>-->
+        <!--<artifactId>jsch.agentproxy.core</artifactId>-->
+        <!--<version>0.0.9</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+        <!--<groupId>com.jcraft</groupId>-->
+        <!--<artifactId>jsch.agentproxy.jsch</artifactId>-->
+        <!--<version>0.0.9</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+        <!--<groupId>com.jcraft</groupId>-->
+        <!--<artifactId>jsch.agentproxy.pageant</artifactId>-->
+        <!--<version>0.0.9</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+        <!--<groupId>com.jcraft</groupId>-->
+        <!--<artifactId>jsch.agentproxy.sshagent</artifactId>-->
+        <!--<version>0.0.9</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+        <!--<groupId>com.jcraft</groupId>-->
+        <!--<artifactId>jsch.agentproxy.sshj</artifactId>-->
+        <!--<version>0.0.9</version>-->
+        <!--</dependency>-->
+        <!--<dependency>-->
+        <!--<groupId>com.jcraft</groupId>-->
+        <!--<artifactId>jsch.agentproxy.connector-factory</artifactId>-->
+        <!--<version>0.0.9</version>-->
+        <!--</dependency>-->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
+            <version>1.3</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

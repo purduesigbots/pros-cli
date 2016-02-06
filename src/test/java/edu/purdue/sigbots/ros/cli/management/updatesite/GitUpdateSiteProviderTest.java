@@ -26,11 +26,31 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-package edu.purdue.sigbots.ros.cli.commands;
+package edu.purdue.sigbots.ros.cli.management.updatesite;
 
-import edu.purdue.sigbots.ros.cli.management.PROSActions;
-import net.sourceforge.argparse4j.inf.Namespace;
+import org.junit.Test;
 
-public abstract class Command {
-    public abstract void handleArguments(Namespace arguments, PROSActions actions);
+import java.net.URI;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class GitUpdateSiteProviderTest {
+
+    @Test
+    public void testCanHandleURI() throws Exception {
+        GitUpdateSiteProvider provider = new GitUpdateSiteProvider();
+        assertTrue(provider.canHandleURI(URI.create("git://github.com/git"), null));
+        assertFalse(provider.canHandleURI(URI.create("https://github.com/notarepo"), null));
+    }
+
+    @Test
+    public void testGetAvailableKernels() throws Exception {
+
+    }
+
+    @Test
+    public void testGetLatestKernel() throws Exception {
+
+    }
 }

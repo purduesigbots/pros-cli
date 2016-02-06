@@ -28,7 +28,7 @@
 
 package edu.purdue.sigbots.ros.cli.commands;
 
-import edu.purdue.sigbots.ros.cli.updater.PROSActions;
+import edu.purdue.sigbots.ros.cli.management.PROSActions;
 import net.sourceforge.argparse4j.inf.Namespace;
 
 import java.io.IOException;

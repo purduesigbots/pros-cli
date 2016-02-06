@@ -26,11 +26,39 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-package edu.purdue.sigbots.ros.cli.commands;
+package edu.purdue.sigbots.ros.cli.management;
 
-import edu.purdue.sigbots.ros.cli.management.PROSActions;
-import net.sourceforge.argparse4j.inf.Namespace;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 
-public abstract class Command {
-    public abstract void handleArguments(Namespace arguments, PROSActions actions);
+public class SimpleFileDeleter extends SimpleFileVisitor<Path> {
+    private final boolean verbose;
+    private final Path rootPath;
+
+    public SimpleFileDeleter(Path rootPath, boolean verbose) {
+        this.rootPath = rootPath;
+        this.verbose = verbose;
+    }
+
+    @Override
+    public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) throws IOException {
+        if (verbose) {
+            System.out.println("Deleting " + rootPath.relativize(file));
+        }
+        Files.delete(file);
+        return FileVisitResult.CONTINUE;
+    }
+
+    @Override
+    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+        if (verbose) {
+            System.out.println("Deleting " + rootPath.relativize(dir) + System.getProperty("file.separator"));
+        }
+        Files.delete(dir);
+        return FileVisitResult.CONTINUE;
+    }
 }

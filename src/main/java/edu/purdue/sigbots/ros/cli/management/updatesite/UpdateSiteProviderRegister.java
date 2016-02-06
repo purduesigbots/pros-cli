@@ -26,37 +26,61 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-package edu.purdue.sigbots.ros.cli.commands;
+package edu.purdue.sigbots.ros.cli.management.updatesite;
 
 import edu.purdue.sigbots.ros.cli.management.PROSActions;
-import net.sourceforge.argparse4j.inf.Namespace;
 
-import java.io.IOException;
-import java.nio.file.Paths;
+import java.net.URI;
+import java.util.*;
 
-public class ConfigCommand extends Command {
-    @Override
-    public void handleArguments(Namespace arguments, PROSActions actions) {
-        String variable = arguments.getString("variable");
-        String value = arguments.get("value");
-        if (variable.equalsIgnoreCase("updateSite") || variable.equalsIgnoreCase("update-site")) {
-            if (value != null && !value.isEmpty()) {
-                try {
-                    actions.setUpdateSite(value);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            System.out.printf("Update site is set to: %s\r\n", actions.getUpdateSite());
-        } else if (variable.equalsIgnoreCase("localRepository") || variable.equalsIgnoreCase("local-repository")) {
-            if (value != null && !value.isEmpty()) {
-                try {
-                    actions.setLocalKernelRepository(Paths.get(value));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            System.out.printf("Local kernel repository is set to: %s", actions.getLocalRepositoryPath());
+public final class UpdateSiteProviderRegister {
+    private static Set<UpdateSiteProvider> updateSiteProviders;
+    private static Map<URI, UpdateSiteProvider> uriCache = new HashMap<>();
+
+    private UpdateSiteProviderRegister() {
+    }
+
+    public static void registerUpdateSiteProvider(UpdateSiteProvider provider) {
+        if (updateSiteProviders == null) {
+            updateSiteProviders = new LinkedHashSet<>();
         }
+
+        updateSiteProviders.add(provider);
+    }
+
+    public static Set<UpdateSiteProvider> getUpdateSiteProviders() {
+        return updateSiteProviders;
+    }
+
+    public static void replaceUpdateSiteProviders(Set<UpdateSiteProvider> providersList) {
+        updateSiteProviders = providersList;
+    }
+
+    public static UpdateSiteProvider findUpdateSiteProvider(URI uri, PROSActions caller) {
+        if (uriCache.containsKey(uri)) {
+            return uriCache.get(uri);
+        }
+        if (updateSiteProviders == null) {
+            throw new NoSuchElementException("Could not resolve a URI handler as the list has not been initialized.");
+        }
+        for (UpdateSiteProvider provider : updateSiteProviders) {
+            if (provider.canHandleURI(uri, caller)) {
+                uriCache.put(uri, provider);
+                return provider;
+            }
+        }
+        throw new NoSuchElementException("Could not resolve a URI handler for this request (" + uri.toASCIIString() + ")");
+    }
+
+    public static UpdateSiteProvider getClaimingUpdateSiteProvider(String string, PROSActions caller) {
+        if (updateSiteProviders == null) {
+            return null;
+        }
+        for (UpdateSiteProvider provider : updateSiteProviders) {
+            if (provider.claimsURIString(string, caller)) {
+                return provider;
+            }
+        }
+        return null;
     }
 }
