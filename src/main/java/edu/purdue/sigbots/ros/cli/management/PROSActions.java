@@ -246,7 +246,7 @@ public class PROSActions {
     private List<String> getLocalKernels() throws IOException {
         Files.createDirectories(getLocalRepositoryPath());
         return Files.list(getLocalRepositoryPath())
-                .filter(f -> Files.isDirectory(f) && !f.getFileName().startsWith("."))
+                .filter(f -> Files.isDirectory(f) && !f.getFileName().toString().startsWith("."))
                 .map(p -> p.getFileName().toString())
                 .collect(Collectors.toList());
     }

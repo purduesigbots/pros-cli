@@ -26,18 +26,39 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-package edu.purdue.sigbots.ros.cli;
+package edu.purdue.sigbots.ros.cli.management;
 
-import edu.purdue.sigbots.ros.cli.management.PROSActions;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.net.URI;
+import java.nio.file.Paths;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class PROSActionsTest {
+
+    @Before
+    public void setUp() {
+        Class<PROSActions> prosActionsClass = PROSActions.class;
+        try {
+            Field settingsPathField = prosActionsClass.getDeclaredField("SETTINGS_PATH");
+            settingsPathField.setAccessible(true);
+
+            Field modifiersField = Field.class.getDeclaredField("modifiers");
+            modifiersField.setAccessible(true);
+            modifiersField.setInt(settingsPathField, settingsPathField.getModifiers() & ~Modifier.FINAL);
+
+            settingsPathField.set(null, Paths.get("out", "test", "cli-settings.json"));
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+
+    }
+
     @Test
     public void testGetUpdateSite() throws Exception {
         URI testURI = URI.create("test://pros");

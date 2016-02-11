@@ -26,11 +26,37 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-package edu.purdue.sigbots.ros.cli.commands;
+package edu.purdue.sigbots.ros.cli.management.commands;
 
 import edu.purdue.sigbots.ros.cli.management.PROSActions;
 import net.sourceforge.argparse4j.inf.Namespace;
 
-public abstract class Command {
-    public abstract void handleArguments(Namespace arguments, PROSActions actions);
+import java.io.IOException;
+import java.nio.file.Paths;
+
+public class ConfigCommand extends Command {
+    @Override
+    public void handleArguments(Namespace arguments, PROSActions actions) {
+        String variable = arguments.getString("variable");
+        String value = arguments.get("value");
+        if (variable.equalsIgnoreCase("updateSite") || variable.equalsIgnoreCase("update-site")) {
+            if (value != null && !value.isEmpty()) {
+                try {
+                    actions.setUpdateSite(value);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            System.out.printf("Update site is set to: %s\r\n", actions.getUpdateSite());
+        } else if (variable.equalsIgnoreCase("localRepository") || variable.equalsIgnoreCase("local-repository")) {
+            if (value != null && !value.isEmpty()) {
+                try {
+                    actions.setLocalKernelRepository(Paths.get(value));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            System.out.printf("Local kernel repository is set to: %s", actions.getLocalRepositoryPath());
+        }
+    }
 }

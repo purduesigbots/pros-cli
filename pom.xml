@@ -66,7 +66,7 @@
                     <appendAssemblyId>false</appendAssemblyId>
                     <archive>
                         <manifest>
-                            <mainClass>edu.purdue.sigbots.ros.cli.Application</mainClass>
+                            <mainClass>Application</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
@@ -118,7 +118,7 @@
                             <jar>target/pros-${project.version}-bundled.jar</jar>
                             <errTitle>pros</errTitle>
                             <classPath>
-                                <mainClass>edu.purdue.sigbots.ros.cli.Application</mainClass>
+                                <mainClass>Application</mainClass>
                                 <addDependencies>true</addDependencies>
                                 <jarLocation>lib/</jarLocation>
                             </classPath>

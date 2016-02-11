@@ -77,7 +77,7 @@ public class GitUpdateSiteProvider implements UpdateSiteProvider {
         pullLatestGitRepository(uri, caller);
 
         return Files.list(caller.getLocalRepositoryPath())
-                .filter(f -> Files.isDirectory(f) && !f.getFileName().startsWith("."))
+                .filter(f -> Files.isDirectory(f) && !f.getFileName().toString().startsWith("."))
                 .map(p -> p.getFileName().toString())
                 .collect(Collectors.toList());
     }

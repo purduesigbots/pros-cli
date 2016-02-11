@@ -26,7 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-package edu.purdue.sigbots.ros.cli.commands;
+package edu.purdue.sigbots.ros.cli.management.commands;
 
 import edu.purdue.sigbots.ros.cli.management.KernelAvailabilityFlag;
 import edu.purdue.sigbots.ros.cli.management.PROSActions;

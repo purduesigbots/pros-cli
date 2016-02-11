@@ -26,10 +26,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-package edu.purdue.sigbots.ros.cli;
+package edu.purdue.sigbots.ros.cli.management;
 
-import edu.purdue.sigbots.ros.cli.commands.*;
-import edu.purdue.sigbots.ros.cli.management.PROSActions;
+import edu.purdue.sigbots.ros.cli.management.commands.*;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.action.StoreTrueArgumentAction;
 import net.sourceforge.argparse4j.impl.action.VersionArgumentAction;

@@ -26,7 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 
-package edu.purdue.sigbots.ros.cli.commands;
+package edu.purdue.sigbots.ros.cli.management.commands;
 
 import edu.purdue.sigbots.ros.cli.management.PROSActions;
 import net.sourceforge.argparse4j.inf.Namespace;
@@ -39,8 +39,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
-public class UpgradeCommand extends Command {
-
+public class CreateCommand extends Command {
     @Override
     public void handleArguments(Namespace arguments, PROSActions actions) {
         boolean verbose = arguments.getBoolean("verbose");
@@ -75,16 +74,32 @@ public class UpgradeCommand extends Command {
                     System.exit(1);
                 }
             } else {
+                assert kernels.size() == 0;
                 System.out.println("No kernels were matched. If the kernel exists on the update site, " +
                         "try 'pros fetch KERNEL' to pull from the update site.");
                 System.exit(1);
             }
             // </editor-fold>
 
-            // Ensure project is acceptable to upgrade
+            // Ensure project is acceptable to create
             if (Files.exists(projectPath) && !Files.isDirectory(projectPath)) {
-                System.out.println("Project is a file. Cannot upgrade a file.");
-                System.exit(-1);
+                if (arguments.getBoolean("force")) {
+                    Files.delete(projectPath);
+                } else {
+                    System.out.print("The directory specified is either a file. Delete it? [y/N] ");
+                    if ((new Scanner(System.in)).nextLine().matches("[Yy].*")) {
+                        Files.delete(projectPath);
+                    }
+                }
+            } else if (Files.exists(projectPath) && Files.isDirectory(projectPath)) {
+                if (arguments.getBoolean("force")) {
+                    System.out.println("Directory already exists. Acting as total project upgrade.\r\n" +
+                            "Delete directory first to create fresh project.");
+                } else {
+                    System.out.println("Directory already exists. Delete directory first to create fresh project " +
+                            "or use --force to copy all appropriate files from the kernel directory.");
+                    System.exit(-1);
+                }
             }
 
             // Ensure environments are ok
@@ -96,7 +111,7 @@ public class UpgradeCommand extends Command {
                 System.exit(-1);
             }
 
-            actions.upgradeProject(kernel, projectPath, environments);
+            actions.createProject(kernel, projectPath, environments);
         } catch (IOException e) {
             e.printStackTrace();
         }
