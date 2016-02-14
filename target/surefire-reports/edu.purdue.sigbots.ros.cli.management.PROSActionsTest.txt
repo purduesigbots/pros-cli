@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: edu.purdue.sigbots.ros.cli.management.PROSActionsTest
+-------------------------------------------------------------------------------
+Tests run: 23, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.566 sec - in edu.purdue.sigbots.ros.cli.management.PROSActionsTest

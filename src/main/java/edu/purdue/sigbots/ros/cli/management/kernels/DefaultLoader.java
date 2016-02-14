@@ -119,7 +119,7 @@ public class DefaultLoader extends Loader {
                 }
                 Files.copy(originPath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
                 if (verbose) {
-                    out.printf("Copying file %s\r\n", sourcePath.relativize(kernelPath));
+                    out.printf("Copying file %s\r\n", sourcePath);
                 }
             }
         }

@@ -60,7 +60,7 @@ class PROSSettings implements Serializable {
             InputStream inputStream = Files.newInputStream(location, StandardOpenOption.READ);
             PROSSettings settings = (PROSSettings) JsonReader.jsonToJava(inputStream, null);
             this.setKernelDirectory(settings.getKernelDirectory());
-            this.setUpdateSite(settings.getUpdateSite());
+            this.setUpdateSite(URI.create(settings.getUpdateSite().toString()));
         } catch (JsonIoException | IOException ignored) {
         }
     }

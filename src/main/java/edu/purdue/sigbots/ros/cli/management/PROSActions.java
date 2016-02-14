@@ -30,10 +30,7 @@ package edu.purdue.sigbots.ros.cli.management;
 
 import edu.purdue.sigbots.ros.cli.management.kernels.DefaultLoader;
 import edu.purdue.sigbots.ros.cli.management.kernels.Loader;
-import edu.purdue.sigbots.ros.cli.management.updatesite.GitUpdateSiteProvider;
-import edu.purdue.sigbots.ros.cli.management.updatesite.URLUpdateSiteProvider;
-import edu.purdue.sigbots.ros.cli.management.updatesite.UpdateSiteProvider;
-import edu.purdue.sigbots.ros.cli.management.updatesite.UpdateSiteProviderRegister;
+import edu.purdue.sigbots.ros.cli.management.updatesite.*;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -279,24 +276,24 @@ public class PROSActions {
     }
 
     /**
-     * @param kernel A regular expression to match kernels to
+     * @param filter A regular expression to match kernels to
      * @return Returns a map of Strings to KernelAvailabilityFlag values. Each String corresponds to an available kernel
      * anywhere. The associated value with each string is a composite KernelAvailabilityFlag. See implementation note.
      * @throws IOException Thrown if there was an issue fetching the online kernels (See <code>getOnlineKernels</code>
      * @implNote See implementation note for getAllKernels()
      */
-    public Map<String, Integer> getAllKernels(String kernel) throws IOException {
-        if (kernel == null || kernel.equalsIgnoreCase("all") || kernel.matches(" *")) {
-            kernel = ".*";
+    public Map<String, Integer> getAllKernels(String filter) throws IOException {
+        if (filter == null || filter.equalsIgnoreCase("all") || filter.matches(" *")) {
+            filter = ".*";
         }
         Map<String, Integer> map = getAllKernels();
-        if (kernel.equalsIgnoreCase("latest")) {
+        if (filter.equalsIgnoreCase("latest")) {
             String[] array = map.keySet().toArray(new String[map.keySet().size()]);
             Arrays.sort(array);
             return Collections.singletonMap(array[array.length - 1], map.get(array[array.length - 1]));
         }
-        final String finalKernel = kernel;
-        map.keySet().stream().filter(k -> !k.matches(finalKernel)).forEach(map::remove);
+        final String finalFilter = filter;
+        map.keySet().stream().filter(k -> !k.matches(finalFilter)).forEach(map::remove);
         return map;
     }
 

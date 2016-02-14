@@ -118,7 +118,7 @@
                             <jar>target/pros-${project.version}-bundled.jar</jar>
                             <errTitle>pros</errTitle>
                             <classPath>
-                                <mainClass>Application</mainClass>
+                                <mainClass>edu.purdue.sigbots.ros.cli.management.Application</mainClass>
                                 <addDependencies>true</addDependencies>
                                 <jarLocation>lib/</jarLocation>
                             </classPath>
