@@ -69,10 +69,12 @@ public class URLUpdateSiteProvider implements UpdateSiteProvider {
             urlConnection.setAllowUserInteraction(true);
             urlConnection.connect();
             return true;
+        } catch(UnknownHostException e) {
+            return false;
         } catch (MalformedURLException | IllegalArgumentException e) {
             return false;
         } catch (IOException e) {
-            return e instanceof UnknownHostException;
+            return false;
         }
     }
 
