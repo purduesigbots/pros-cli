@@ -66,7 +66,7 @@
                     <appendAssemblyId>false</appendAssemblyId>
                     <archive>
                         <manifest>
-                            <mainClass>Application</mainClass>
+                            <mainClass>edu.purdue.sigbots.ros.cli.management.Application</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

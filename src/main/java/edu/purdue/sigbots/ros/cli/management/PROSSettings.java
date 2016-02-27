@@ -56,6 +56,9 @@ class PROSSettings implements Serializable {
 
     public PROSSettings(Path location) {
         this.location = location;
+        if (!Files.exists(location)) {
+            return;
+        }
         try {
             InputStream inputStream = Files.newInputStream(location, StandardOpenOption.READ);
             PROSSettings settings = (PROSSettings) JsonReader.jsonToJava(inputStream, null);
