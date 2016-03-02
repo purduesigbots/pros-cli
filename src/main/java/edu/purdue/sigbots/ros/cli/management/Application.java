@@ -158,6 +158,8 @@ class Application {
                 .help("Optional value to set. If no value is provided, the current stored value will be returned.");
         // </editor-fold>
 
+        TerminalCommand.createArgs(subparsers.addParser("terminal"));
+
         Namespace namespace = argumentParser.parseArgsOrFail(args);
         if (namespace == null) {
             System.err.println("Error parsing arguments");

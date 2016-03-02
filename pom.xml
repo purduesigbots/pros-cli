@@ -83,24 +83,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!--<plugin>-->
-            <!--<groupId>org.apache.maven.plugins</groupId>-->
-            <!--<artifactId>maven-shade-plugin</artifactId>-->
-            <!--<version>2.4.3</version>-->
-            <!--<executions>-->
-            <!--<execution>-->
-            <!--<phase>package</phase>-->
-            <!--<goals>-->
-            <!--<goal>shade</goal>-->
-            <!--</goals>-->
-            <!--</execution>-->
-            <!--</executions>-->
-            <!--<configuration>-->
-            <!--<shadedArtifactAttached>true-->
-            <!--</shadedArtifactAttached> &lt;!&ndash; Make the shaded artifact not the main one &ndash;&gt;-->
-            <!--<shadedClassifierName>shaded</shadedClassifierName> &lt;!&ndash; set the suffix to the shaded jar &ndash;&gt;-->
-            <!--</configuration>-->
-            <!--</plugin>-->
             <plugin>
                 <groupId>com.akathist.maven.plugins.launch4j</groupId>
                 <artifactId>launch4j-maven-plugin</artifactId>
@@ -182,36 +164,11 @@
             <artifactId>slf4j-nop</artifactId>
             <version>1.7.2</version>
         </dependency>
-        <!--<dependency>-->
-        <!--<groupId>com.jcraft</groupId>-->
-        <!--<artifactId>jsch.agentproxy.core</artifactId>-->
-        <!--<version>0.0.9</version>-->
-        <!--</dependency>-->
-        <!--<dependency>-->
-        <!--<groupId>com.jcraft</groupId>-->
-        <!--<artifactId>jsch.agentproxy.jsch</artifactId>-->
-        <!--<version>0.0.9</version>-->
-        <!--</dependency>-->
-        <!--<dependency>-->
-        <!--<groupId>com.jcraft</groupId>-->
-        <!--<artifactId>jsch.agentproxy.pageant</artifactId>-->
-        <!--<version>0.0.9</version>-->
-        <!--</dependency>-->
-        <!--<dependency>-->
-        <!--<groupId>com.jcraft</groupId>-->
-        <!--<artifactId>jsch.agentproxy.sshagent</artifactId>-->
-        <!--<version>0.0.9</version>-->
-        <!--</dependency>-->
-        <!--<dependency>-->
-        <!--<groupId>com.jcraft</groupId>-->
-        <!--<artifactId>jsch.agentproxy.sshj</artifactId>-->
-        <!--<version>0.0.9</version>-->
-        <!--</dependency>-->
-        <!--<dependency>-->
-        <!--<groupId>com.jcraft</groupId>-->
-        <!--<artifactId>jsch.agentproxy.connector-factory</artifactId>-->
-        <!--<version>0.0.9</version>-->
-        <!--</dependency>-->
+        <dependency>
+            <groupId>org.scream3r</groupId>
+            <artifactId>jssc</artifactId>
+            <version>2.8.0</version>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -223,6 +180,16 @@
             <artifactId>hamcrest-library</artifactId>
             <version>1.3</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.jna</groupId>
+            <artifactId>jna</artifactId>
+            <version>3.0.5</version>
+        </dependency>
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna-platform</artifactId>
+            <version>4.2.1</version>
         </dependency>
     </dependencies>
 </project>
