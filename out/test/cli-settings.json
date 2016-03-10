@@ -1,8 +1,0 @@
-{
-  "@type":"edu.purdue.sigbots.ros.cli.management.PROSSettings",
-  "kernelDirectory":"C:\\Users\\Elliot\\OneDrive\\pros\\purdueros-cli",
-  "updateSite":{
-    "string":"test://pros"
-  },
-  "updateSiteProviderClass":null
-}

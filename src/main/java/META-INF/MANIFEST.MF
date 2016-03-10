@@ -1,4 +1,0 @@
-Manifest-Version: 1.0
-Class-Path: argparse4j-0.7.0.jar
-Main-Class: edu.purdue.sigbots.ros.cli.management.Application
-
