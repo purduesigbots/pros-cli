@@ -1,9 +1,4 @@
-def suggest_update_site():
-    return "https://raw.githubusercontent.com/purduesigbots/purdueros-kernels/master"
+import prosconductor
 
-
-local_kernel_repository_path = None
-def get_local_kernel_repository_path():
-    if local_kernel_repository_path is not None:
-        return local_kernel_repository_path
-    return "hello"
+def list_online_kernels(update_site):
+    update_site.provider
