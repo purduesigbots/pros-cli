@@ -1,3 +1,4 @@
+import click
 import json
 import os
 from json import decoder
@@ -6,9 +7,10 @@ import prosconductor
 
 kernel_repo = os.path.normpath(os.path.expanduser('~/.pros/kernels'))
 dropin_repo = os.path.normpath(os.path.expanduser('~/.pros/dropins'))
+config_file = os.path.expanduser("~/.pros/cli-config.json")
 
 
-def __init__(path=os.path.expanduser("~/.pros/cli-config.json")):
+def __init__(path=config_file):
     global __payload
     global __path
 
@@ -23,7 +25,9 @@ def __init__(path=os.path.expanduser("~/.pros/cli-config.json")):
     else:
         __payload = json.loads('{}')
 
+
 __init__()
+
 
 def get_payload(self):
     return self.__payload
@@ -43,7 +47,8 @@ def set_update_sites(sites):
 def add_update_site(site):
     if 'updateSites' not in __payload:
         __payload['updateSites'] = dict()
-    __payload['updateSites'][site] = repr(prosconductor.updatesite.find_update_site_provider(site))
+    provider = prosconductor.updatesite.find_update_site_provider(site)
+    __payload['updateSites'][site] = provider.__module__ + '.' + provider.__name__
 
 
 # def get_kernel_directory(self):
@@ -57,5 +62,5 @@ def add_update_site(site):
 
 def serialize():
     file = open(__path, 'w')
-    json.dump(__payload, file)
+    json.dump(__payload, file, indent=4)
     file.close()

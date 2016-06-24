@@ -26,3 +26,4 @@ def find_update_site_provider(uri):
             return provider
 
     return updatesite.DefaultUpdateSiteProvider
+

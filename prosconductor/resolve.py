@@ -14,7 +14,7 @@ def get_local_kernels():
 
 
 def resolve_kernel_request(kernel):
-    if kernel is None or not kernel:
+    if kernel is None or not kernel or not get_local_kernels():
         return []
     if kernel.lower() == 'all':
         kernel = '.*'

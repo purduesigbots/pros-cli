@@ -1,4 +1,4 @@
-class DefaultUpdateSiteProvider:
+class DefaultUpdateSiteProvider(object):
     def claims_uri(self, uri):
         return False
 

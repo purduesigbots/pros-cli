@@ -5,16 +5,17 @@ setup(
     name='purdueros-cli',
     version='2.0',
     packages=['prosconductor', 'proscli'],
-    url='',
+    url='https://github.com/purduesigbots/purdueros-cli',
     license='',
     author='Purdue ACM Sigbots',
-    author_email='',
+    author_email='pros_development@cs.purdue.edu',
     description='',
     install_requires=[
-        'click'
+        'click',
+        'pyserial'
     ],
     entry_points="""
         [console_scripts]
-        pros-cli=proscli.main:cli
+        pros=proscli.main:cli
         """
 )

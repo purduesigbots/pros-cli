@@ -36,8 +36,9 @@ class UrlUpdateSiteProvider(DefaultUpdateSiteProvider):
 
     def get_available_kernels(self, uri):
         try:
-            return urllib.request.urlopen(urllib.parse.urljoin(uri + '/', './kernels.list')).read().decode()
-        except (urllib.error.URLError, urllib.error.HTTPError, UnicodeDecodeError):
+            return urllib.request.urlopen(urllib.parse.urljoin(uri + '/', './kernels.list')).read().decode().split()
+        except (urllib.error.URLError, urllib.error.HTTPError, UnicodeDecodeError) as e:
+            print(uri + ' -> ' + str(e))
             return []
 
     def get_latest_kernel(self, uri):
