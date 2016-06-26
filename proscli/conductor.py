@@ -1,21 +1,7 @@
-import os
-
+from proscli.utils import default_cfg, default_options
+import prosconductor.updatesite
 import click
-
-import prosconductor
-
-
-class ArgPayload:
-    def __init__(self):
-        self.verbosity = 0
-
-
-pass_args = click.make_pass_decorator(ArgPayload, ensure=True)
-
-
-def verbosity(context, param, value):
-    context.obj.verbosity += value
-    prosconductor.verbosity = context.obj.verbosity
+import sys
 
 
 @click.group()
@@ -24,69 +10,56 @@ def conductor_cli():
 
 
 @conductor_cli.group()
-@click.option('--verbose', '-v', count=True)
-@pass_args
-def conduct(config, verbose):
-    config.verbosity += verbose
+@default_options
+def conduct():
     pass
 
 
 @conduct.command()
-@click.option('--kernel', '-k', default='latest', metavar='<version>',
-              help='Specify kernel version to target.')
-@click.option('--drop-in', '-d', multiple=True)
-@click.option('--verbose', '-v', count=True)
-@click.option('--force', '-f', is_flag=True)
-@click.argument('directory', type=click.Path())
-@pass_args
-def create(config, kernel, drop_in, verbose, force, directory):
-    config.verbosity += verbose
-    if config.verbosity > 0:
-        click.echo('Verbosity level set to: ' + repr(config.verbosity))
-    kernels = prosconductor.resolve.resolve_kernel_request(kernel)
-    if len(kernels) == 0:
-        click.echo('No kernels were matched to the pattern ' + kernel +
-                   ' Try a new pattern or fetching the kernel using \'pros conduct fetch ' + kernel + '\'',
-                   err=True)
-        exit(1)
-    elif len(kernels) == 1:
-        kernel = kernels[0]
-    else:
-        while kernel not in kernels:
-            kernel = click.prompt('Multiple kernels were matched. Please select one (' + ', '.join(kernels) + ')')
-            if kernel not in kernels and config.verbosity > 0:
-                click.echo('Not a valid response', err=True)
-                exit(1)
-
-    directory = os.path.normpath(os.path.expanduser(directory))
-    if os.path.isfile(directory):
-        if not force:
-            click.confirm('Directory specified is already a file. Delete it?', abort=True)
-        os.remove(directory)
-    if os.path.isdir(directory) and len(os.listdir(directory)) > 0 and not force:
-        click.confirm('Non-empty directory specified. Copy files regardless? ' +
-                      'Note: this option will overwrite any existing files', abort=True)
-
-    # TODO: verify drop-ins exist
-    print(prosconductor.dropins.get_available_dropins(kernel))
-
-    # TODO: determine kernel loader
-    prosconductor.create_project(kernel, directory, drop_in)
-
-
-def add_update_site(context, param, value):
-    if value is tuple:
-        [add_update_site(context, param, val) for val in value]
-    else:
-        if value not in prosconductor.config.get_update_sites().keys():
-            prosconductor.config.add_update_site(value)
+@default_cfg
+def hello(cfg):
+    # click.echo(repr(cfg.proj_cfg))
+    # click.echo(repr(prosconductor.updatesite.get_kernels()))
+    cfg.proj_cfg.save()
 
 
 @conduct.command()
-@click.option('--verbose', '-v', count=True, callback=verbosity)
-@click.option('--site', '-s', multiple=True, default=prosconductor.config.get_update_sites(),
-              callback=add_update_site, expose_value=False)
-@click.option('--add-site', callback=add_update_site, expose_value=False)
-@pass_args
-def fetch(config, verbose):
-    click.echo(prosconductor.config.get_update_sites())
+@click.option('-p', '--update-site', metavar='KEY', default=None,
+              help='Specify the registrar key to download the kernel with')
+@click.option('-k', '--kernel', metavar='KERNEL', default='latest', help='Specify the kernel to use.')
+@click.option('-f', '--force', is_flag=True, default=False, help='Overwrite any existing files without prompt.')
+@click.argument('dir', default='.')
+@default_cfg
+def create(cfg, force, update_site, kernel, dir):
+    kernels = list(prosconductor.updatesite.get_kernels())
+    kernels.sort()
+    if kernel.lower() == 'latest':
+        kernel = kernels[-1]
+    elif kernel not in kernels:
+        kernel = None
+    if kernel is None:
+        click.echo('Error! Kernel not found!')
+        exit(1)
+
+    options = [p.id for p in prosconductor.updatesite.get_kernels()[kernel]]
+    if update_site is None:
+        if len(options) > 1:
+            update_site = click.prompt('Please select a update_site to obtain {} from'.format(kernel),
+                                       type=click.Choice(options), show_default=True,
+                                       default='cache' if 'cache' in options else options[0])
+        else:
+            update_site = options[0]
+
+    if update_site not in options:
+        click.echo('update_site not in available providers')
+        exit(1)
+    update_site = [u for u in prosconductor.updatesite.get_kernels()[kernel] if u.id == update_site][0]
+    provider = prosconductor.updatesite.get_all_providers()[update_site.registrar]
+    try:
+        update_site.registrar_options['_force'] = force
+        provider.create_proj(update_site, kernel, dir, update_site.registrar_options)
+    except FileExistsError as e:
+        click.echo('Error! File {} already exists! Delete it or run '
+                   '\'pros {} --force\' to automatically overwrite any pre-existing files'.format(e.args[0], ' '.join(sys.argv[1:])),
+                   err=True)
+        exit(1)

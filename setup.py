@@ -1,10 +1,11 @@
 from distutils.core import setup
 
+# setup.py for non-frozen builds
 
 setup(
     name='purdueros-cli',
-    version='2.0',
-    packages=['prosconductor', 'proscli'],
+    version='2.beta',
+    packages=['prosflasher', 'proscli', 'prosconfig'],
     url='https://github.com/purduesigbots/purdueros-cli',
     license='',
     author='Purdue ACM Sigbots',
@@ -12,7 +13,8 @@ setup(
     description='',
     install_requires=[
         'click',
-        'pyserial'
+        'pyserial',
+        'cachetools'
     ],
     entry_points="""
         [console_scripts]

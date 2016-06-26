@@ -1,4 +1,4 @@
 
         [console_scripts]
-        pros-cli=proscli.main:cli
+        pros=proscli.main:cli
         

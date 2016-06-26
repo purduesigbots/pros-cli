@@ -1,2 +1,3 @@
 proscli
-prosconductor
+prosconfig
+prosflasher

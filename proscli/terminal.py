@@ -2,7 +2,6 @@ import click
 import serial
 import serial.tools.miniterm
 import prosflasher.ports
-import threading
 
 
 @click.group()
@@ -13,6 +12,8 @@ def terminal_cli():
 @terminal_cli.command(short_help='Open terminal with the microcontroller')
 @click.argument('port', default='default')
 def terminal(port):
+    click.echo(click.style('NOTE: This is an early prototype of the terminal. Nothing is guaranteed to work.',
+                           blink=True, bold=True))
     if port == 'default':
         if len(prosflasher.ports.list_com_ports()) == 1:
             port = prosflasher.ports.list_com_ports()[0].device

@@ -2,17 +2,26 @@ import click
 import serial
 import prosflasher.upload
 import time
+from proscli.utils import debug
+from prosflasher import adr_to_str, bytes_to_str
 
 ACK = 0x79
 MAX_WRITE_SIZE = 256
+
+
+def debug_response(command, response, fmt='STM BL RESPONSE TO 0x{}: {}'):
+    if not isinstance(command, str):
+        command = bytes_to_str(command)
+    if not isinstance(response, str):
+        response = bytes_to_str(response)
+    debug(fmt.format(command, response))
 
 
 def send_bootloader_command(port, command, response_size=1):
     port.write([command, 0xff - command])
     port.flush()
     response = port.read(response_size)
-    if prosflasher.upload.__verbose and response is not None:
-        click.echo('STM BL RESPONSE ({:02X}) '.format(command) + ''.join('0x{:02X} '.format(x) for x in response))
+    debug_response(command, response)
     return response
 
 
@@ -40,13 +49,12 @@ def prepare_bootloader(port):
     port.write([0x7f])
     port.flush()
     response = port.read(1)
-    if response is not None and prosflasher.upload.__verbose:
-        click.echo('STM BL RESPONSE: ' + ''.join('0x{:02X} '.format(x) for x in response))
+    debug_response(0x07f, response)
     if response is None or len(response) != 1 or response[0] != ACK:
         click.echo('failed')
         return False
     click.echo('complete')
-    if prosflasher.upload.__verbose:
+    if click.get_current_context().obj.verbosity > 1:
         click.echo('Extra commands:')
         send_bootloader_command(port, 0x00, 15)
         send_bootloader_command(port, 0x01, 5)
@@ -62,12 +70,10 @@ def read_memory(port, start_address, size=0x100):
     if response is None or response[0] != 0x79:
         click.echo('failed (could not begin read)')
         return False
-    click.echo('ADDRESS COMMAND: ' + ''.join('0x{:02X} '.format(x) for x in response))
     port.write(start_address)
     port.flush()
     response = port.read(1)
-    if prosflasher.upload.__verbose and response is not None:
-        click.echo('STM BL RESPONSE (address) ' + ''.join('0x{:02X} '.format(x) for x in response))
+    debug_response('address', response)
     if response is None or response[0] != 0x79:
         click.echo('failed (address not accepted)')
         return False
@@ -75,8 +81,7 @@ def read_memory(port, start_address, size=0x100):
     port.write([size, 0xff - size])
     port.flush()
     response = port.read(1)
-    if prosflasher.upload.__verbose and response is not None:
-        click.echo('STM BL RESPONSE (size) ' + ''.join('0x{:02X} '.format(x) for x in response))
+    debug_response('size', response)
     if response is None or response[0] != 0x79:
         click.echo('failed (size not accepted)')
         return False
@@ -111,9 +116,7 @@ def write_flash(port, start_address, data):
         return False
     port.read_all()
     start_address = compute_address_commandable(start_address)
-    if prosflasher.upload.__verbose:
-        click.echo('(writing {} bytes to {})'.format(len(data), adr_to_str(start_address)))
-
+    debug('Writing {} bytes to {}'.format(len(data), adr_to_str(start_address)))
     response = send_bootloader_command(port, 0x31)
     if response is None or response[0] != ACK:
         click.echo('failed (write command not accepted)')
@@ -121,9 +124,7 @@ def write_flash(port, start_address, data):
     port.write(start_address)
     port.flush()
     response = port.read(1)
-    if prosflasher.upload.__verbose:
-        click.echo('Response to {}: 0x{}'.format(''.join('{:02X} '.format(x) for x in start_address),
-                                                 ''.join('{:02X} '.format(x) for x in response)))
+    debug_response(adr_to_str(start_address), response)
     if response is None or response[0] != ACK:
         click.echo('failed (address not accepted)')
         return False
@@ -163,8 +164,7 @@ def upload_binary(port, file):
 def send_go_command(port, address):
     click.echo('Executing binary...', nl=False)
     address = compute_address_commandable(address)
-    if prosflasher.upload.__verbose:
-        click.echo('Executing binary at {}'.format(adr_to_str(address)))
+    debug('Executing binary at {}'.format(adr_to_str(address)))
 
     response = send_bootloader_command(port, 0x21, 1)
     if response is None or response[0] != ACK:
@@ -176,5 +176,3 @@ def send_go_command(port, address):
     return True
 
 
-def adr_to_str(address):
-    return '0x{}({:02X})'.format(''.join('{:02X}'.format(x) for x in address[:-1]), address[-1])
