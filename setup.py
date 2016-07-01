@@ -18,6 +18,6 @@ setup(
     ],
     entry_points="""
         [console_scripts]
-        pros=proscli.main:cli
+        pros=proscli.main:main
         """
 )

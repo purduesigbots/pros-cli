@@ -9,11 +9,30 @@ def conductor_cli():
     pass
 
 
-@conductor_cli.group()
+@conductor_cli.group(help='Create, upgrade, and add dropins to projects.')
 @default_options
 def conduct():
     pass
 
+
+@conduct.command('list')
+@click.option('--sort-by', type=click.Choice(['kernel', 'site']), default='kernel')
+@click.option('--category', type=click.Choice(['all', 'kernels', 'dropins']), default='all')
+@click.argument('filter', default='.*')
+@default_cfg
+def list_available(cfg, sort_by, category, filter):
+    if sort_by == 'kernel':
+        if category == 'all' or category == 'kernels':
+            click.echo('KERNEL\t\tSITES')
+            for kernel in prosconductor.updatesite.get_kernels():
+                click.echo('{}\t\t{}'
+                           .format(kernel, ', '.join(s.id for s in prosconductor.updatesite.get_kernels()[kernel])))
+            click.echo()
+        if category == 'all' or category == 'dropins':
+            click.echo('DROPIN\t\tSITES')
+            click.echo('not yet implemented')
+
+    pass
 
 @conduct.command()
 @default_cfg
@@ -28,6 +47,7 @@ def hello(cfg):
               help='Specify the registrar key to download the kernel with')
 @click.option('-k', '--kernel', metavar='KERNEL', default='latest', help='Specify the kernel to use.')
 @click.option('-f', '--force', is_flag=True, default=False, help='Overwrite any existing files without prompt.')
+@click.option('-c', '--cache', is_flag=True, default=True, help='Caches the result in the local default cache.')
 @click.argument('dir', default='.')
 @default_cfg
 def create(cfg, force, update_site, kernel, dir):

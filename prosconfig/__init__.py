@@ -9,6 +9,9 @@ import prosconductor.updatesite.localprovider
 import prosconductor.updatesite
 
 
+# this file contains all of the various config files classes, including the global config file,
+# per project config, and kernel template config file
+
 def get_state():
     return click.get_current_context().obj
 
@@ -76,11 +79,16 @@ class ProsConfig(Config):
     def __init__(self, file=os.path.join(click.get_app_dir('PROS'), 'config.json')):
         super(ProsConfig, self).__init__(file)
         if 'update_sites' not in self.__dict__:
-            self.update_sites = {prosconductor.updatesite.UpdateSite(
-                uri=click.get_app_dir('PROS'),
-                registrar=prosconductor.updatesite.localprovider.LocalProvider.get_key(),
-                id='default-cache'
-            )}
+            self.update_sites = {
+                prosconductor.updatesite.UpdateSite(
+                    uri=click.get_app_dir('PROS'),
+                    registrar=prosconductor.updatesite.localprovider.LocalProvider.get_key(),
+                    id='default-cache'),
+                prosconductor.updatesite.UpdateSite(
+                    uri='ftp://ftp.pros.rocks',
+                    registrar=prosconductor.updatesite.ftpprovider.FtpProvider.get_key(),
+                    id='main')
+            }
         if 'default_dropins' not in self.__dict__:
             self.default_dropins = []
         if 'providers' not in self.__dict__:
@@ -98,3 +106,22 @@ def find_project(path):
             return pros_cfg
         search_dir = ntpath.split(search_dir)[:-1][0]  # move to parent dir
     return None
+
+
+class KernelConfig(Config):
+    def __init__(self, file):
+        super(KernelConfig, self).__init__(file)
+        if 'kernel' not in self.__dict__:
+            self.kernel = ntpath.split(file)[-2]
+        if 'dropins' not in self.__dict__:
+            self.dropins = []
+        if 'output' not in self.__dict__:
+            self.output = 'bin/output.bin'
+        if 'upgrade_files' not in self.__dict__:
+            self.upgrade_files = [
+                'firmware/*'
+            ]
+        if 'exclude_files' not in self.__dict__:
+            self.exclude_files = []
+        if 'loader' not in self.__dict__:
+            self.loader = None

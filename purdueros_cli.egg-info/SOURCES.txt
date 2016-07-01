@@ -1,5 +1,3 @@
-MANIFEST.in
-global.config
 proscli/__init__.py
 proscli/build.py
 proscli/conductor.py

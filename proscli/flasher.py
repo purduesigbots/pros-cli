@@ -46,8 +46,8 @@ def flash(ctx, save_file_system, y, port, binary):
             click.echo('No microcontrollers were found. Please plug in a cortex or manually specify a serial port.\n',
                        err=True)
             exit(1)
-        port = prosflasher.ports.list_com_ports()[0].device
-        if port is not None and y is False:
+        port = ports[0].device
+        if len(ports) > 1 and port is not None and y is False:
             click.confirm('Download to ' + port, default=True, abort=True, prompt_suffix='?')
     if port == 'all':
         port = [p.device for p in prosflasher.ports.list_com_ports()]
@@ -117,7 +117,7 @@ def find_binary(path, ctx=proscli.utils.State()):
 @flasher_cli.command('poll', short_help='Polls a microcontroller for its system info')
 @click.option('-y', '--yes', is_flag=True, default=False,
               help='Automatically say yes to all confirmations.')
-@click.argument('port', default='auto')
+@click.argument('port', default='all')
 @default_cfg
 def get_sys_info(cfg, yes, port):
     if port == 'auto':
@@ -135,8 +135,6 @@ def get_sys_info(cfg, yes, port):
             click.echo('No microcontrollers were found. Please plug in a cortex or manually specify a serial port.\n',
                        err=True)
             exit(1)
-        if yes is False:
-            click.confirm('Poll ' + ', '.join(port), default=True, abort=True, prompt_suffix='?')
     else:
         port = [port]
 
@@ -148,9 +146,13 @@ def get_sys_info(cfg, yes, port):
 
 
 @flasher_cli.command(short_help='List connected microcontrollers')
-@click.option('-v', '--verbose', is_flag=True)
-def lsusb(verbose):
-    click.echo(prosflasher.ports.create_port_list(verbose))
+@default_cfg
+def lsusb(cfg):
+    if len(prosflasher.ports.list_com_ports()) == 0 or prosflasher.ports.list_com_ports() is None:
+        click.echo('No serial ports found.')
+    else:
+        click.echo('Available Ports:')
+        click.echo(prosflasher.ports.create_port_list(cfg.verbosity > 0))
 
 
 @flasher_cli.command(name='dump-cortex', short_help='Dumps user flash contents to a specified file')
