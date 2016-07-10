@@ -12,7 +12,7 @@ def list_com_ports():
     """
     :return: Returns a list of valid serial ports that we believe are VEX Cortex Microcontrollers
     """
-    return [x for x in serial.tools.list_ports.comports() if x.vid in USB_VID or 'vex' in x.product.lower()]
+    return [x for x in serial.tools.list_ports.comports() if x.vid is not None and (x.vid in USB_VID or 'vex' in x.product.lower())]
 
 
 def create_serial(port):

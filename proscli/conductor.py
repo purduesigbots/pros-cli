@@ -1,85 +1,93 @@
-from proscli.utils import default_cfg, default_options
-import prosconductor.updatesite
 import click
-import sys
+import os.path
+from proscli.utils import default_cfg, default_options
+import prosconductor.providers
+from prosconductor.providers import TemplateTypes
+import prosconductor.providers.utils
+import tabulate
+from typing import List
 
 
 @click.group()
+@default_options
 def conductor_cli():
     pass
 
 
-@conductor_cli.group(help='Create, upgrade, and add dropins to projects.')
+@conductor_cli.group(short_help='Perform project management tasks for PROS')
 @default_options
 def conduct():
     pass
 
 
-@conduct.command('list')
-@click.option('--sort-by', type=click.Choice(['kernel', 'site']), default='kernel')
-@click.option('--category', type=click.Choice(['all', 'kernels', 'dropins']), default='all')
-@click.argument('filter', default='.*')
-@default_cfg
-def list_available(cfg, sort_by, category, filter):
-    if sort_by == 'kernel':
-        if category == 'all' or category == 'kernels':
-            click.echo('KERNEL\t\tSITES')
-            for kernel in prosconductor.updatesite.get_kernels():
-                click.echo('{}\t\t{}'
-                           .format(kernel, ', '.join(s.id for s in prosconductor.updatesite.get_kernels()[kernel])))
-            click.echo()
-        if category == 'all' or category == 'dropins':
-            click.echo('DROPIN\t\tSITES')
-            click.echo('not yet implemented')
+@conduct.command('lsdepot', short_help='List registered depots')
+@default_options
+def list_depots():
+    depots = prosconductor.providers.utils.get_all_depot_configs()
+    if not bool(depots):
+        click.echo('No depots currently registered! Use `pros conduct add-depot` to add a new depot')
+    else:
+        click.echo([(d.name, d.registrar, d.location) for d in depots])
+        click.echo(tabulate.tabulate([(d.name, d.registrar, d.location) for d in depots],
+                                     ['Name', 'Registrar', 'Location'], tablefmt='simple'))
 
+
+def validate_name(ctx, param, value):
+    if os.path.isdir(os.path.join(ctx.obj.pros_cfg.directory, value)):
+        if value == 'purdueros-mainline':
+            raise click.BadParameter('Cannot override purdueros-mainline!')
+
+        click.confirm('A depot with the name {} already exists. Do you want to overwrite it?'.format(value),
+                      prompt_suffix=' ', abort=True, default=True)
+    return value
+
+
+def available_providers() -> List[str]:
+    return prosconductor.providers.utils.get_all_provider_types().keys()
+
+
+@conduct.command('add-depot', short_help='Add a depot to PROS')
+@click.option('--name', metavar='NAME', prompt=True, callback=validate_name,
+              help='Unique name of the new depot')
+@click.option('--registrar', metavar='REGISTRAR', prompt=True, type=click.Choice(available_providers()),
+              help='Registrar of the new depot')
+@click.option('--location', metavar='LOCATION', prompt=True,
+              help='Online location of the new depot')
+@default_cfg
+def add_depot(cfg, name, registrar, location):
+    options = prosconductor.providers.utils.get_all_provider_types(cfg.pros_cfg)[registrar](None)\
+        .configure_registar_options()
+    prosconductor.providers.DepotConfig(name=name, registrar=registrar, location=location, registrar_options=options,
+                                        root_dir=cfg.pros_cfg.directory)
     pass
 
-@conduct.command()
+
+@conduct.command('rm-depot', short_help='Remove a depot from PROS')
+@click.option('--name', metavar='NAME', prompt=True, help='Name of the depot')
 @default_cfg
-def hello(cfg):
-    # click.echo(repr(cfg.proj_cfg))
-    # click.echo(repr(prosconductor.updatesite.get_kernels()))
-    cfg.proj_cfg.save()
+def remove_depot(cfg, name):
+    if name == 'purdueros-mainline':
+        raise click.BadParameter('Cannot delete purdueros-mainline!')
+
+    for depot in [d for d in prosconductor.providers.utils.get_all_depot_configs(cfg.pros_cfg) if d.name == name]:
+        click.echo('Removing {} ({})'.format(depot.name, depot.location))
+        depot.delete()
 
 
-@conduct.command()
-@click.option('-p', '--update-site', metavar='KEY', default=None,
-              help='Specify the registrar key to download the kernel with')
-@click.option('-k', '--kernel', metavar='KERNEL', default='latest', help='Specify the kernel to use.')
-@click.option('-f', '--force', is_flag=True, default=False, help='Overwrite any existing files without prompt.')
-@click.option('-c', '--cache', is_flag=True, default=True, help='Caches the result in the local default cache.')
-@click.argument('dir', default='.')
+@conduct.command('lstemplate', short_help='List all available templates')
+@click.option('--kernels', 'template_types', flag_value=[TemplateTypes.kernel])
+@click.option('--libraries', 'template_types', flag_value=[TemplateTypes.library])
+@click.option('--all', 'template_types', default=True,
+              flag_value=[TemplateTypes.library, TemplateTypes.kernel])
 @default_cfg
-def create(cfg, force, update_site, kernel, dir):
-    kernels = list(prosconductor.updatesite.get_kernels())
-    kernels.sort()
-    if kernel.lower() == 'latest':
-        kernel = kernels[-1]
-    elif kernel not in kernels:
-        kernel = None
-    if kernel is None:
-        click.echo('Error! Kernel not found!')
-        exit(1)
-
-    options = [p.id for p in prosconductor.updatesite.get_kernels()[kernel]]
-    if update_site is None:
-        if len(options) > 1:
-            update_site = click.prompt('Please select a update_site to obtain {} from'.format(kernel),
-                                       type=click.Choice(options), show_default=True,
-                                       default='cache' if 'cache' in options else options[0])
-        else:
-            update_site = options[0]
-
-    if update_site not in options:
-        click.echo('update_site not in available providers')
-        exit(1)
-    update_site = [u for u in prosconductor.updatesite.get_kernels()[kernel] if u.id == update_site][0]
-    provider = prosconductor.updatesite.get_all_providers()[update_site.registrar]
-    try:
-        update_site.registrar_options['_force'] = force
-        provider.create_proj(update_site, kernel, dir, update_site.registrar_options)
-    except FileExistsError as e:
-        click.echo('Error! File {} already exists! Delete it or run '
-                   '\'pros {} --force\' to automatically overwrite any pre-existing files'.format(e.args[0], ' '.join(sys.argv[1:])),
-                   err=True)
-        exit(1)
+def list_templates(cfg, template_types):
+    result = prosconductor.providers.utils.get_all_available_templates(cfg.pros_cfg, template_types=template_types)
+    if TemplateTypes.kernel in template_types:
+        click.echo('Available kernels:')
+        click.echo(tabulate.tabulate(
+            # complicated list comprehension
+            sum([[(i.version, d.depot.config.name, 'online' if d.online else '', 'offline' if d.offline else '') for d in ds]
+                 for i, ds in result[TemplateTypes.kernel].items()], []),
+            headers=['Version', 'Depot', 'Online', 'Offline']
+        ))
+        # click.echo(tabulate.tabulate([(i.version, d.depot.config.name, d.offline) for (i, d) in ds for (i, ds) in result[TemplateTypes.kernel].items()]))

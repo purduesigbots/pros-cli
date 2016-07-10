@@ -20,7 +20,8 @@ setup(
         'click',
         'pyserial',
         'cx_Freeze',
-        'cachetools'
+        'cachetools',
+        'requests'
     ],
     executables=[Executable('proscli/main.py', targetName=targetName)]
 )

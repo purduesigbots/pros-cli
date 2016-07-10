@@ -14,7 +14,10 @@ setup(
     install_requires=[
         'click',
         'pyserial',
-        'cachetools'
+        'cachetools',
+        'requests',
+        'jsonpickle',
+        'tabulate'
     ],
     entry_points="""
         [console_scripts]

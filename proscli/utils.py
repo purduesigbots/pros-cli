@@ -1,5 +1,6 @@
 import click
-import prosconfig
+import prosconfig.cliconfig
+
 
 class State(object):
     def __init__(self):
@@ -7,7 +8,7 @@ class State(object):
         self.debug = False
         self.machine_output = False
         self.log_key = 'purdueros-logging'
-        self.proj_cfg = prosconfig.ProsConfig()
+        self.pros_cfg = prosconfig.cliconfig.CliConfig()
 
 pass_state = click.make_pass_decorator(State, ensure=True)
 

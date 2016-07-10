@@ -3,11 +3,9 @@ import os
 import os.path
 import ntpath
 import sys
-import logging
 import prosflasher.ports
 import prosflasher.upload
 import prosconfig
-import proscli.utils
 from proscli.utils import default_cfg
 
 
@@ -67,6 +65,12 @@ def flash(ctx, save_file_system, y, port, binary):
 
     binary = find_binary(binary)
 
+    if binary is None:
+        click.echo('No binary was found! Ensure you are in a built PROS project (run make) '
+                   'or specify the file with the -f flag',
+                   err=True)
+        click.get_current_context().exit()
+
     if ctx.verbosity > 3:
         click.echo('Final binary is {}'.format(binary))
 
@@ -75,7 +79,7 @@ def flash(ctx, save_file_system, y, port, binary):
         prosflasher.upload.upload(p, binary, ctx)
 
 
-def find_binary(path, ctx=proscli.utils.State()):
+def find_binary(path):
     """
     Helper function for finding the binary associated with a project
 
@@ -96,21 +100,23 @@ def find_binary(path, ctx=proscli.utils.State()):
     # logger.debug('Finding binary for {}'.format(path))
     if os.path.isfile(path):
         if ntpath.basename(path) == 'pros.config':
-            pros_cfg = prosconfig.ProjectConfig(file=path)
+            pros_cfg = prosconfig.ProjectConfig(path)
             return os.path.join(path, pros_cfg.output)
         return path
     elif os.path.isdir(path):
-        cfg = prosconfig.find_project(path)
-        if cfg is not None:
-            return os.path.join(cfg.path, cfg.output)
-
-        for n in range(10):
-            dirs = [d for d in os.listdir(search_dir)
-                    if os.path.isdir(os.path.join(path, search_dir, d)) and d == 'bin']
-            if len(dirs) == 1:  # found a bin directory
-                if os.path.isfile(os.path.join(path, search_dir, 'bin', 'output.bin')):
-                    return os.path.join(path, search_dir, 'bin', 'output.bin')
-            search_dir = ntpath.split(search_dir)[:-1][0]  # move to parent dir
+        try:
+            cfg = prosconfig.ProjectConfig(path, raise_on_error=True)
+            if cfg is not None and os.path.isfile(os.path.join(cfg.directory, cfg.output)):
+                return os.path.join(cfg.directory, cfg.output)
+        except prosconfig.ConfigNotFoundException:
+            search_dir = path
+            for n in range(10):
+                dirs = [d for d in os.listdir(search_dir)
+                        if os.path.isdir(os.path.join(path, search_dir, d)) and d == 'bin']
+                if len(dirs) == 1:  # found a bin directory
+                    if os.path.isfile(os.path.join(path, search_dir, 'bin', 'output.bin')):
+                        return os.path.join(path, search_dir, 'bin', 'output.bin')
+                search_dir = ntpath.split(search_dir)[:-1][0]  # move to parent dir
     return None
 
 

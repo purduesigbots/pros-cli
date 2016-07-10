@@ -1,127 +1,92 @@
-import os
-import os.path
-import json
-import ntpath
 import click
+import json.decoder
+import jsonpickle
+import os.path
+import proscli.utils
 
-import prosconductor.updatesite.ftpprovider
-import prosconductor.updatesite.localprovider
-import prosconductor.updatesite
 
-
-# this file contains all of the various config files classes, including the global config file,
-# per project config, and kernel template config file
-
-def get_state():
-    return click.get_current_context().obj
+class ConfigNotFoundException(Exception):
+    def __init__(self, message, *args, **kwargs):
+        super(ConfigNotFoundException, self).__init__(args, kwargs)
+        self.message = message
 
 
 class Config(object):
-    class Encoder(json.JSONEncoder):
-        def default(self, o):
-            if not isinstance(o, object):
-                return super(Config.Encoder, self).default(o)
-            d = o.__dict__
-            for attr in o.__dict__.keys():
-                if hasattr(o.__getattribute__(attr), '__dict__'):
-                    d[attr] = self.default(o)
-            return d
+    def __init__(self, file: str, error_on_decode: bool=False):
+        self.save_file = file   # type: str
+        self.__ignored = ['save_file', '_Config__ignored']  # type: list(str)
+        if file:
+            if os.path.isfile(file):
+                with open(file, 'r') as f:
+                    try:
+                        self.__dict__.update(jsonpickle.decode(f.read()).__dict__)
+                    except json.decoder.JSONDecodeError:
+                        if error_on_decode:
+                            raise
+                        else:
+                            pass
+            elif os.path.isdir(file):
+                raise ValueError('{} must be a file, not a directory'.format(file))
+            else:
+                try:
+                    self.save()
+                except Exception:
+                    pass
 
-    class Decoder(json.JSONDecoder):
-        def __init__(self, *args, **kwargs):
-            super(Config.Decoder, self).__init__(object_hook=self.object_hook, *args, **kwargs)
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        if '_Config__ignored' in self.__dict__:
+            for key in [k for k in self.__ignored if k in state]:
+                del state[key]
+        return state
 
-        @staticmethod
-        def object_hook(d):
-            if not isinstance(d, dict):
-                return d
-            if 'update_sites' in d:
-                sites = d['update_sites']
-                d['update_sites'] = set()
-                for site in sites:
-                    d['update_sites'].append(prosconductor.updatesite.UpdateSite(d=site))
-            return d
+    def __setstate__(self, state):
+        self.__dict__.update(state)
 
-    def __init__(self, file):
-        if os.path.isfile(file):
-            with open(file, 'r') as f:
-                self.__dict__ = json.loads(f.read(), cls=Config.Decoder)
-        if not os.path.isdir(file):
-            self.path = ntpath.split(file)[:-1][0]
-            self.save_path = file
-        self.__ignored = ['_Config__ignored', 'path', 'save_path']
+    def delete(self):
+        if os.path.isfile(self.save_file):
+            os.remove(self.save_file)
 
     def save(self, file=None):
         if file is None:
-            file = self.save_path
-        dictionary = {k: self.__dict__[k] for k in self.__dict__ if k not in self.__ignored}
-        os.makedirs(ntpath.split(file)[:-1][0], exist_ok=True)
+            file = self.save_file
+        if isinstance(click.get_current_context().obj, proscli.utils.State) and click.get_current_context().obj.debug:
+            proscli.utils.debug('Pretty Formatting {} File'.format(self.__class__.__name__))
+            jsonpickle.set_encoder_options('json', sort_keys=True, indent=4)
+        else:
+            jsonpickle.set_encoder_options('json', sort_keys=True)
+        if os.path.dirname(file):
+            os.makedirs(os.path.dirname(file), exist_ok=True)
         with open(file, 'w') as f:
-            f.write(json.dumps(dictionary, indent=True, cls=Config.Encoder))
-        pass
+            f.write(jsonpickle.encode(self))
 
-    def __repr__(self):
-        return '{}: {}'.format(type(self).__name__, repr(self.__dict__))
+    @property
+    def directory(self) -> str:
+        return os.path.dirname(os.path.abspath(self.save_file))
 
 
 class ProjectConfig(Config):
-    def __init__(self, file):
-        super(ProjectConfig, self).__init__(file)
-        if 'kernel' not in self.__dict__:
-            self.kernel = None
-        if 'dropins' not in self.__dict__:
-            self.dropins = []
-        if 'output' not in self.__dict__:
-            self.output = 'bin/output.bin'
+    def __init__(self, path: str='.', raise_on_error: bool=True):
+        file = ProjectConfig.find_project(path)
+        if file is None and raise_on_error:
+            raise ConfigNotFoundException('A project config was not found for {}'.format(path))
+
+        self.kernel = None
+        self.libraries = []
+        self.output = 'bin/output.bin'
+        super(ProjectConfig, self).__init__(file, error_on_decode=raise_on_error)
+
+    @staticmethod
+    def find_project(path: str) -> str:
+        if os.path.isfile(path):
+            return path
+        elif os.path.isdir(path):
+            for n in range(10):
+                files = [f for f in os.listdir(path)
+                         if os.path.isfile(os.path.join(path, f)) and f.lower() == 'project.pros']
+                if len(files) == 1:  # found a project.pros file!
+                    return os.path.join(path, files[0])
+                path = os.path.dirname(path)
+        return None
 
 
-class ProsConfig(Config):
-    def __init__(self, file=os.path.join(click.get_app_dir('PROS'), 'config.json')):
-        super(ProsConfig, self).__init__(file)
-        if 'update_sites' not in self.__dict__:
-            self.update_sites = {
-                prosconductor.updatesite.UpdateSite(
-                    uri=click.get_app_dir('PROS'),
-                    registrar=prosconductor.updatesite.localprovider.LocalProvider.get_key(),
-                    id='default-cache'),
-                prosconductor.updatesite.UpdateSite(
-                    uri='ftp://ftp.pros.rocks',
-                    registrar=prosconductor.updatesite.ftpprovider.FtpProvider.get_key(),
-                    id='main')
-            }
-        if 'default_dropins' not in self.__dict__:
-            self.default_dropins = []
-        if 'providers' not in self.__dict__:
-            self.providers = [prosconductor.updatesite.ftpprovider.__file__,
-                              prosconductor.updatesite.localprovider.__file__]
-
-
-def find_project(path):
-    search_dir = path
-    for n in range(10):
-        files = [f for f in os.listdir(search_dir)
-                 if os.path.isfile(os.path.join(search_dir, f)) and f == 'pros.config']
-        if len(files) == 1:  # we found a pros.config file
-            pros_cfg = ProjectConfig(os.path.join(search_dir, files[0]))
-            return pros_cfg
-        search_dir = ntpath.split(search_dir)[:-1][0]  # move to parent dir
-    return None
-
-
-class KernelConfig(Config):
-    def __init__(self, file):
-        super(KernelConfig, self).__init__(file)
-        if 'kernel' not in self.__dict__:
-            self.kernel = ntpath.split(file)[-2]
-        if 'dropins' not in self.__dict__:
-            self.dropins = []
-        if 'output' not in self.__dict__:
-            self.output = 'bin/output.bin'
-        if 'upgrade_files' not in self.__dict__:
-            self.upgrade_files = [
-                'firmware/*'
-            ]
-        if 'exclude_files' not in self.__dict__:
-            self.exclude_files = []
-        if 'loader' not in self.__dict__:
-            self.loader = None
