@@ -1,10 +1,14 @@
+import click
+from functools import lru_cache
 import importlib.util
 import os
+import re
 from prosconductor.providers import DepotProvider, DepotConfig, TemplateTypes, Identifier, TemplateDescriptor
 from prosconfig.cliconfig import CliConfig
-from typing import Dict, List
+from typing import Dict, List, Union
 
 
+@lru_cache()
 def get_all_provider_types(pros_cfg: CliConfig = None) -> Dict[str, type]:
     if pros_cfg is None:
         pros_cfg = CliConfig()
@@ -17,6 +21,7 @@ def get_all_provider_types(pros_cfg: CliConfig = None) -> Dict[str, type]:
     return {x.registrar: x for x in DepotProvider.__subclasses__()}
 
 
+@lru_cache()
 def get_provider(depot: DepotConfig,
                  pros_cfg: CliConfig = None
                  ) -> DepotProvider:
@@ -27,28 +32,30 @@ def get_provider(depot: DepotConfig,
         return None
 
 
-def get_all_depot_configs(pros_cfg: CliConfig = None) -> List[DepotConfig]:
+@lru_cache()
+def get_depot_config(name: str, pros_cfg: CliConfig = None) -> DepotConfig:
     if pros_cfg is None:
         pros_cfg = CliConfig()
 
-    result = list()  # type: List[prosconductor.providers.DepotConfig]
-    for dir in [os.path.join(pros_cfg.directory, d) for d in os.listdir(pros_cfg.directory)
-                if os.path.isdir(os.path.join(pros_cfg.directory, d))]:
-        if 'depot.pros' in os.listdir(dir):
-            result.append(DepotConfig(os.path.join(dir, 'depot.pros')))
-
-    return result
+    return DepotConfig(os.path.join(pros_cfg.directory, name, 'depot.pros'))
 
 
-def get_all_depots(pros_cfg: CliConfig = None) -> List[DepotProvider]:
+def get_depot_configs(pros_cfg: CliConfig = None, filters: List[str]=None) -> List[DepotConfig]:
     if pros_cfg is None:
         pros_cfg = CliConfig()
+    if filters is None:
+        filters = ['.*']
+    return [depot for depot in [get_depot_config(d, pros_cfg=pros_cfg) for d in os.listdir(pros_cfg.directory)]
+            if depot.name and not all(m is None for m in [re.fullmatch(string=depot.name, pattern=f) for f in filters])]
 
-    return [get_provider(depot, pros_cfg) for depot in get_all_depot_configs(pros_cfg)]
+
+def get_depots(pros_cfg: CliConfig = None, filters: List[str]=None) -> List[DepotProvider]:
+    return [get_provider(depot, pros_cfg) for depot in get_depot_configs(pros_cfg, filters)
+            if get_provider(depot, pros_cfg) is not None]
 
 
-def get_all_available_templates(pros_cfg: CliConfig = None, template_types: List[TemplateTypes] = None) \
-        -> Dict[TemplateTypes, Dict[Identifier, List[TemplateDescriptor]]]:
+def get_available_templates(pros_cfg: CliConfig = None, template_types: List[TemplateTypes] = None,
+                            filters: List[str]=[]) -> Dict[TemplateTypes, Dict[Identifier, List[TemplateDescriptor]]]:
     if pros_cfg is None:
         pros_cfg = CliConfig()
     if template_types is None:
@@ -58,7 +65,7 @@ def get_all_available_templates(pros_cfg: CliConfig = None, template_types: List
     for template_type in template_types:
         result[template_type] = dict()
 
-    for depot in get_all_depots(pros_cfg):
+    for depot in [depot for depot in get_depots(pros_cfg, filters)]:
         if bool(depot.config.types) and not bool([t for t in template_types if t in depot.config.types]):
             continue  # No intersection between the types declared by the depot and requested types
         templates = dict()

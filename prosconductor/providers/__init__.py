@@ -3,7 +3,7 @@ import collections
 import enum
 import os.path
 from prosconfig import Config
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Union
 
 
 class InvalidIdentifierException(Exception):
@@ -71,10 +71,10 @@ class DepotProvider(object):
         """
         pass
 
-    def download(self, identifier: Identifier):
+    def download(self, identifier: Identifier) -> bool:
         """
         Downloads the specified template with the given name and version
-        :return:
+        :return: True if successful, False if not
         """
         pass
 
@@ -94,7 +94,25 @@ class DepotProvider(object):
                                                                version=template_config.version))
         return result
 
+    def verify_configuration(self) -> bool:
+        """
+        Verifies the current configuration (i.e. is the location valid)
+        :return: Something falsey if valid, an exception (to be raised or displayed)
+        """
+        pass
+
     @staticmethod
     def configure_registar_options():
         pass
+
+
+def get_template_dir(depot: Union[str, DepotConfig, DepotProvider], identifier: Identifier) -> str:
+    if isinstance(depot, DepotConfig):
+        depot = depot.name
+    elif isinstance(depot, DepotProvider):
+        depot = depot.config.name
+    elif not isinstance(depot, str):
+        raise ValueError('Depot must a str, DepotConfig, or DepotProvider')
+    assert isinstance(depot, str)
+    return os.path.join(click.get_app_dir('PROS'), depot, '{}-{}'.format(identifier.name, identifier.version))
 

@@ -21,9 +21,10 @@ def conduct():
 
 
 @conduct.command('lsdepot', short_help='List registered depots')
+
 @default_options
 def list_depots():
-    depots = prosconductor.providers.utils.get_all_depot_configs()
+    depots = prosconductor.providers.utils.get_depot_configs()
     if not bool(depots):
         click.echo('No depots currently registered! Use `pros conduct add-depot` to add a new depot')
     else:
@@ -69,7 +70,7 @@ def remove_depot(cfg, name):
     if name == 'purdueros-mainline':
         raise click.BadParameter('Cannot delete purdueros-mainline!')
 
-    for depot in [d for d in prosconductor.providers.utils.get_all_depot_configs(cfg.pros_cfg) if d.name == name]:
+    for depot in [d for d in prosconductor.providers.utils.get_depot_configs(cfg.pros_cfg) if d.name == name]:
         click.echo('Removing {} ({})'.format(depot.name, depot.location))
         depot.delete()
 
@@ -79,9 +80,22 @@ def remove_depot(cfg, name):
 @click.option('--libraries', 'template_types', flag_value=[TemplateTypes.library])
 @click.option('--all', 'template_types', default=True,
               flag_value=[TemplateTypes.library, TemplateTypes.kernel])
+@click.argument('filters', metavar='REGEX', nargs=-1)
 @default_cfg
-def list_templates(cfg, template_types):
-    result = prosconductor.providers.utils.get_all_available_templates(cfg.pros_cfg, template_types=template_types)
+def list_templates(cfg, template_types, filters):
+    """
+    List templates with the applied filters
+    """
+    filters = [f for f in filters if f is not None]
+    if not filters:
+        filters = ['.*']
+    if filters != ['.*']:
+        click.echo('Providers matching any of {}: {}'
+                   .format(filters,
+                           [d.name for d in prosconductor.providers.utils.get_depot_configs(cfg.pros_cfg, filters)]))
+    result = prosconductor.providers.utils.get_available_templates(cfg.pros_cfg,
+                                                                   template_types=template_types,
+                                                                   filters=filters)
     if TemplateTypes.kernel in template_types:
         click.echo('Available kernels:')
         click.echo(tabulate.tabulate(
@@ -90,4 +104,23 @@ def list_templates(cfg, template_types):
                  for i, ds in result[TemplateTypes.kernel].items()], []),
             headers=['Version', 'Depot', 'Online', 'Offline']
         ))
-        # click.echo(tabulate.tabulate([(i.version, d.depot.config.name, d.offline) for (i, d) in ds for (i, ds) in result[TemplateTypes.kernel].items()]))
+
+
+@conduct.command(short_help='Download a template')
+@click.argument('name', default='kernel')
+@click.argument('version', default='latest')
+@click.argument('depot', default='auto')
+@default_cfg
+def download(cfg, name, version, depot):
+    """
+    Download a template with the specified parameters.
+
+    If the arguments are `download latest` or `download latest kernel`, the latest kernel will be downloaded
+    """
+    if name == 'latest':
+        name = 'kernel'
+        if version == 'kernel':
+            version = 'latest'
+
+    prosconductor.providers.utils.get_provider(prosconductor.providers.utils.get_depot_config(depot), pros_cfg=cfg.pros_cfg)\
+        .download(prosconductor.providers.Identifier(name, version))
