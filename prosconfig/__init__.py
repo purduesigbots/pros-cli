@@ -2,7 +2,9 @@ import click
 import json.decoder
 import jsonpickle
 import os.path
+import proscli
 import proscli.utils
+from typing import List
 
 
 class ConfigNotFoundException(Exception):
@@ -12,7 +14,8 @@ class ConfigNotFoundException(Exception):
 
 
 class Config(object):
-    def __init__(self, file: str, error_on_decode: bool=False):
+    def __init__(self, file: str, error_on_decode: bool=False, ctx=None):
+        proscli.utils.debug('Opening {} ({})'.format(file, self.__class__.__name__), ctx=ctx)
         self.save_file = file   # type: str
         self.__ignored = ['save_file', '_Config__ignored']  # type: list(str)
         if file:
@@ -20,7 +23,7 @@ class Config(object):
                 with open(file, 'r') as f:
                     try:
                         self.__dict__.update(jsonpickle.decode(f.read()).__dict__)
-                    except json.decoder.JSONDecodeError:
+                    except (json.decoder.JSONDecodeError, AttributeError):
                         if error_on_decode:
                             raise
                         else:
@@ -66,14 +69,16 @@ class Config(object):
 
 
 class ProjectConfig(Config):
-    def __init__(self, path: str='.', raise_on_error: bool=True):
+    def __init__(self, path: str='.', create: bool=False, raise_on_error: bool=True):
         file = ProjectConfig.find_project(path)
-        if file is None and raise_on_error:
+        if file is None and create:
+            file = os.path.join(path, 'project.pros')
+        elif file is None and raise_on_error:
             raise ConfigNotFoundException('A project config was not found for {}'.format(path))
 
-        self.kernel = None
-        self.libraries = []
-        self.output = 'bin/output.bin'
+        self.kernel = None  # type: str
+        self.libraries = []  # type: List[str]
+        self.output = 'bin/output.bin'  # type: str
         super(ProjectConfig, self).__init__(file, error_on_decode=raise_on_error)
 
     @staticmethod

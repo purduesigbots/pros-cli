@@ -93,6 +93,7 @@ class GithubReleasesDepotProvider(DepotProvider):
                 dr = requests.get(asset['url'], headers=self.create_headers('application/octet-stream'), stream=True)
                 if dr.status_code == 200 or dr.status_code == 302:
                     with tempfile.NamedTemporaryFile(delete=False) as tf:
+                        # todo: no temp file necessary - go straight from download to zipfile extraction
                         with click.progressbar(length=asset['size'],
                                                label='Downloading {} (v: {})'.format(asset['name'],
                                                                                      identifier.version)) \
@@ -100,13 +101,14 @@ class GithubReleasesDepotProvider(DepotProvider):
                             for chunk in dr.iter_content(128):
                                 tf.write(chunk)
                                 progress_bar.update(128)
-                        tf.close()
+                        tf.close()  # need to close since opening again as ZipFile
                         with zipfile.ZipFile(tf.name) as zf:
                             with click.progressbar(length=len(zf.namelist()),
                                                    label='Extracting {}'.format(asset['name'])) as progress_bar:
                                 for file in zf.namelist():
                                     zf.extract(file, path=template_dir)
                                     progress_bar.update(1)
+                        os.remove(tf.name)
                     click.echo('Template downloaded to {}'.format(template_dir))
                     return True
                 else:

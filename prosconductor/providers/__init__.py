@@ -3,6 +3,7 @@ import collections
 import enum
 import os.path
 from prosconfig import Config
+import shutil
 from typing import List, Dict, Set, Union
 
 
@@ -12,7 +13,7 @@ class InvalidIdentifierException(Exception):
         super(InvalidIdentifierException, self).__init__(args, kwargs)
 
 
-Identifier = collections.namedtuple('Identifier', ['name', 'version'])
+Identifier = collections.namedtuple('Identifier', ['name', 'version', 'depot_registrar'])
 
 
 class TemplateTypes(enum.Enum):
@@ -25,11 +26,11 @@ TemplateDescriptor = collections.namedtuple('TemplateDescriptor', ['depot', 'off
 
 class DepotConfig(Config):
     def __init__(self,
-                 file: str=None,
-                 name: str=None, registrar: str=None, location: str=None,
-                 registrar_options: dict=None,
-                 types: List[TemplateTypes]=None,
-                 root_dir: str=None):
+                 file: str = None,
+                 name: str = None, registrar: str = None, location: str = None,
+                 registrar_options: dict = None,
+                 types: List[TemplateTypes] = None,
+                 root_dir: str = None):
         self.name = name  # type: str
         self.registrar = registrar  # type: str
         self.location = location  # type: str
@@ -41,17 +42,21 @@ class DepotConfig(Config):
 
     def delete(self):
         super(DepotConfig, self).delete()
-        os.removedirs(self.directory)
+        shutil.rmtree(self.directory)
 
 
 class TemplateConfig(Config):
     def __init__(self, file):
         self.name = None  # type: str
         self.version = None  # type: str
-        self.depot = None  # type: DepotConfig
+        self.depot = None  # type: str
         self.template_ignore = []  # type: List[str]
         self.upgrade_paths = []  # type: List[str]
         super(TemplateConfig, self).__init__(file)
+
+    @property
+    def identifier(self):
+        return Identifier(self.name, self.version, self.depot)
 
 
 class DepotProvider(object):
@@ -60,7 +65,7 @@ class DepotProvider(object):
     def __init__(self, config: DepotConfig):
         self.config = config
 
-    def list_all(self, template_types: List[TemplateTypes]=None) -> Dict[TemplateTypes, List[Identifier]]:
+    def list_all(self, template_types: List[TemplateTypes] = None) -> Dict[TemplateTypes, List[Identifier]]:
         pass
 
     def list_latest(self, name: str):
@@ -78,7 +83,7 @@ class DepotProvider(object):
         """
         pass
 
-    def list_local(self, template_types: List[TemplateTypes]=None) -> Dict[TemplateTypes, Set[Identifier]]:
+    def list_local(self, template_types: List[TemplateTypes] = None) -> Dict[TemplateTypes, Set[Identifier]]:
         if template_types is None:
             template_types = [TemplateTypes.kernel, TemplateTypes.library]
 
@@ -87,11 +92,10 @@ class DepotProvider(object):
             result[template_type] = set()
 
         for item in [os.path.join(self.config.directory, x) for x in os.listdir(self.config.directory)
-                                   if os.path.isdir(os.path.join(self.config.directory, x))]:
-            if TemplateTypes.kernel in template_types and 'kernel.pros' in os.listdir(item):
-                template_config = TemplateConfig(os.path.join(item, 'kernel.pros'))
-                result[TemplateTypes.kernel].add(Identifier(name=template_config.name,
-                                                               version=template_config.version))
+                     if os.path.isdir(os.path.join(self.config.directory, x))]:
+            if TemplateTypes.kernel in template_types and 'template.pros' in os.listdir(item):
+                template_config = TemplateConfig(os.path.join(item, 'template.pros'))
+                result[TemplateTypes.kernel].add(template_config.identifier)
         return result
 
     def verify_configuration(self) -> bool:
@@ -115,4 +119,3 @@ def get_template_dir(depot: Union[str, DepotConfig, DepotProvider], identifier: 
         raise ValueError('Depot must a str, DepotConfig, or DepotProvider')
     assert isinstance(depot, str)
     return os.path.join(click.get_app_dir('PROS'), depot, '{}-{}'.format(identifier.name, identifier.version))
-

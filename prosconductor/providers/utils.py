@@ -22,12 +22,12 @@ def get_all_provider_types(pros_cfg: CliConfig = None) -> Dict[str, type]:
 
 
 @lru_cache()
-def get_provider(depot: DepotConfig,
-                 pros_cfg: CliConfig = None
-                 ) -> DepotProvider:
+def get_depot(depot_cfg: DepotConfig,
+              pros_cfg: CliConfig = None
+              ) -> DepotProvider:
     providers = get_all_provider_types(pros_cfg)
-    if depot.registrar in providers:
-        return providers[depot.registrar](depot)
+    if depot_cfg.registrar in providers:
+        return providers[depot_cfg.registrar](depot_cfg)
     else:
         return None
 
@@ -43,15 +43,16 @@ def get_depot_config(name: str, pros_cfg: CliConfig = None) -> DepotConfig:
 def get_depot_configs(pros_cfg: CliConfig = None, filters: List[str]=None) -> List[DepotConfig]:
     if pros_cfg is None:
         pros_cfg = CliConfig()
-    if filters is None:
+    if filters is None or not filters:
         filters = ['.*']
-    return [depot for depot in [get_depot_config(d, pros_cfg=pros_cfg) for d in os.listdir(pros_cfg.directory)]
-            if depot.name and not all(m is None for m in [re.fullmatch(string=depot.name, pattern=f) for f in filters])]
+    return [depot for depot in [get_depot_config(d, pros_cfg=pros_cfg) for d in os.listdir(pros_cfg.directory)
+                                if os.path.isdir(os.path.join(pros_cfg.directory, d))]
+            if depot.name and not all(m is None for m in [re.match(string=depot.name, pattern=f) for f in filters])]
 
 
 def get_depots(pros_cfg: CliConfig = None, filters: List[str]=None) -> List[DepotProvider]:
-    return [get_provider(depot, pros_cfg) for depot in get_depot_configs(pros_cfg, filters)
-            if get_provider(depot, pros_cfg) is not None]
+    return [get_depot(depot, pros_cfg) for depot in get_depot_configs(pros_cfg, filters)
+            if get_depot(depot, pros_cfg) is not None]
 
 
 def get_available_templates(pros_cfg: CliConfig = None, template_types: List[TemplateTypes] = None,
@@ -82,3 +83,5 @@ def get_available_templates(pros_cfg: CliConfig = None, template_types: List[Tem
                                        online=identifier in online[template_type],
                                        offline=identifier in offline[template_type]))
     return result
+
+

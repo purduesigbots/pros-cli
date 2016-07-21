@@ -60,7 +60,7 @@ Joystick: F/W {} w/ {:1.2f}V
 
 
 # THIS MANAGES THE UPLOAD PROCESS FOR A GIVEN PORT/BINARY PAIR
-def upload(port, binary, ctx=proscli.utils.State()):
+def upload(port, binary, no_poll: bool = False, ctx=proscli.utils.State()):
     if not os.path.isfile(binary):
         click.echo('Failed to download... file does not exist')
         return False
@@ -70,14 +70,18 @@ def upload(port, binary, ctx=proscli.utils.State()):
         return
     try:
         stop_user_code(port, ctx)
-        sys_info = ask_sys_info(port, ctx)
-        if sys_info is None:
-            time.sleep(1.5)
-            sys_info = ask_sys_info(port)
+        if not no_poll:
+            sys_info = ask_sys_info(port, ctx)
             if sys_info is None:
-                click.echo('Failed to get system info... Try again', err=True)
-                exit(1)
-        click.echo(repr(sys_info))
+                time.sleep(1.5)
+                sys_info = ask_sys_info(port)
+                if sys_info is None:
+                    click.echo('Failed to get system info... Try again', err=True)
+                    exit(1)
+            click.echo(repr(sys_info))
+        else:
+            sys_info = SystemInfo()
+            sys_info.connection_type = ConnectionType.serial_usb  # assume this
         if sys_info.connection_type == ConnectionType.unknown:
             click.confirm('Unable to determine system type. It may be necessary to press the '
                           'programming button on the programming kit. Continue?', abort=True, default=True)
@@ -115,6 +119,7 @@ def stop_user_code(port, ctx=proscli.utils.State()):
     if not port.is_open:
         port.open()
     port.flush()
+    port.read(port.in_waiting)
     for stopbit in stopbits:
         port.write([stopbit])
     port.flush()
@@ -132,6 +137,7 @@ def ask_sys_info(port, ctx=proscli.utils.State()):
     configure_port(port, serial.PARITY_NONE)
     debug('SYS INFO BITS: {}  PORT CFG: {}'.format(bytes_to_str(sys_info_bits), repr(port)), ctx)
     for _ in itertools.repeat(None, 10):
+        port.read(port.in_waiting)
         port.write(sys_info_bits)
         port.flush()
         time.sleep(0.1)
@@ -167,6 +173,7 @@ def send_to_download_channel(port, ctx=proscli.utils.State()):
     configure_port(port, serial.PARITY_EVEN)
     debug('DL CH BITS: {}  PORT CFG: {}'.format(bytes_to_str(download_ch_bits), repr(port)), ctx)
     for _ in itertools.repeat(None, 5):
+        port.read(port.in_waiting)
         port.write(download_ch_bits)
         port.flush()
         time.sleep(0.25)
@@ -186,6 +193,7 @@ def expose_bootloader(port, ctx=proscli.utils.State()):
     configure_port(port, serial.PARITY_NONE)
     port.flush()
     debug('EXPOSE BL BITS: {}  PORT CFG: {}'.format(bytes_to_str(bootloader_bits), repr(port)), ctx)
+    port.read(port.in_waiting)
     for _ in itertools.repeat(None, 5):
         port.write(bootloader_bits)
         port.flush()
@@ -200,6 +208,7 @@ def reset_cortex(port, ctx=proscli.utils.State()):
     configure_port(port, serial.PARITY_NONE)
     debug('RESET CORTEX. PORT CFG: {}'.format(repr(port)), ctx)
     port.flush()
+    port.read(port.in_waiting)
     port.write([20])
     port.flush()
     click.echo('complete')

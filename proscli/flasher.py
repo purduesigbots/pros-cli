@@ -23,10 +23,11 @@ def flasher_cli():
 @click.option('-f', '-b', '--file', '--binary', default='default', metavar='FILE',
               help='Specifies a binary file, project directory, or project config file.')
 @click.option('-p', '--port', default='auto', metavar='PORT', help='Specifies the serial port.')
+@click.option('--no-poll', is_flag=True, default=False)
 @default_cfg
 # @click.option('-m', '--strategy', default='cortex', metavar='STRATEGY',
 #               help='Specify the microcontroller upload strategy. Not currently used.')
-def flash(ctx, save_file_system, y, port, binary):
+def flash(ctx, save_file_system, y, port, binary, no_poll):
     """Upload binaries to the microcontroller. A serial port and binary file need to be specified.
 
     By default, the port is automatically selected (if you want to be pendantic, 'auto').
@@ -76,7 +77,7 @@ def flash(ctx, save_file_system, y, port, binary):
 
     click.echo('Flashing ' + binary + ' to ' + ', '.join(port))
     for p in port:
-        prosflasher.upload.upload(p, binary, ctx)
+        prosflasher.upload.upload(p, binary, no_poll, ctx)
 
 
 def find_binary(path):

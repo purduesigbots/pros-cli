@@ -1,8 +1,7 @@
 import click
 
 import proscli
-from proscli.utils import default_options, default_cfg
-import prosconfig
+from proscli.utils import default_options
 
 
 def main():
@@ -20,12 +19,6 @@ import prosconductor.providers.utils
 @default_options
 @click.pass_context
 def help_cmd(ctx):
-    # click.echo(ctx.parent.get_help())
-    # cfg = prosconfig.ProsConfig()
-    # cfg.save()
-    # mainline = prosconductor.providers.DepotConfig(name='purdueros-mainline', location='edjubuh/purdueros',
-    #                                                registrar='github-releases')
-    # provider = prosconductor.providers.utils.get_provider(mainline)
     click.echo(prosconductor.providers.utils.get_all_available_templates())
 
 

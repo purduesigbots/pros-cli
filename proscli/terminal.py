@@ -1,6 +1,5 @@
 import click
-import serial
-import serial.tools.miniterm
+import proscli.serial_terminal
 import prosflasher.ports
 
 
@@ -19,22 +18,29 @@ def terminal(port):
             port = prosflasher.ports.list_com_ports()[0].device
         elif len(prosflasher.ports.list_com_ports()) > 1:
             click.echo('Multiple ports were found:')
-
-            port = click.prompt('Multiple ports found. Please se')
+            click.echo(prosflasher.ports.create_port_list())
+            port = click.prompt('Select a port to open',
+                                type=click.Choice([p.device for p in prosflasher.ports.list_com_ports()]))
         else:
             click.echo('No ports were found.')
             exit()
 
     ser = prosflasher.ports.create_serial(port)
-    term = serial.tools.miniterm.Miniterm(ser, echo=click.echo)
-    term.set_rx_encoding('UTF-8')
-    term.set_tx_encoding('UTF-8')
-    term.exit_character = '\x03'
-    try:
-        term.start()
-        term.join()
-    except KeyboardInterrupt:
+    term = proscli.serial_terminal.Terminal(ser)
+    term.start()
+    while(term.alive):
         pass
-    except serial.serialutil.SerialException:
-        click.echo('Disconnected from microcontroller')
-    term.close()
+    term.join()
+    ser.close()
+    # term = serial.tools.miniterm.Miniterm(ser, echo=click.echo)
+    # term.set_rx_encoding('UTF-8')
+    # term.set_tx_encoding('UTF-8')
+    # term.exit_character = '\x03'
+    # try:
+    #     term.start()
+    #     term.join()
+    # except KeyboardInterrupt:
+    #     pass
+    # except serial.serialutil.SerialException:
+    #     click.echo('Disconnected from microcontroller')
+    # term.close()
