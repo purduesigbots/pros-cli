@@ -45,8 +45,7 @@ class GithubReleasesDepotProvider(DepotProvider):
             template_types = [TemplateTypes.kernel, TemplateTypes.library]
         config = self.config
         proscli.utils.debug('Fetching listing for {} at {} using {}'.format(config.name, config.location, self.registrar))
-        r = requests.get('https://api.github.com/repos/{}/releases'.format(config.location),
-                         headers=self.create_headers())
+        r = requests.get('https://api.github.com/repos/{}/releases'.format(config.location), headers=self.create_headers())
         if r.status_code == 200:
             response = dict()  # type: Dict[TemplateTypes, Set[Identifier]]
             json = r.json()
@@ -60,13 +59,15 @@ class GithubReleasesDepotProvider(DepotProvider):
                     if asset['name'].lower() == 'kernel-template.zip' and TemplateTypes.kernel in template_types:
                         if TemplateTypes.kernel not in response:
                             response[TemplateTypes.kernel] = set()
-                        response[TemplateTypes.kernel].add(Identifier(name='kernel', version=release['tag_name']))
+                        response[TemplateTypes.kernel].add(Identifier(name='kernel', version=release['tag_name'],
+                                                                      depot_registrar=self.config.registrar))
                     elif TemplateTypes.library in template_types:
                         # if the name isn't kernel-template.zip, then it's a library
                         if TemplateTypes.library not in response:
                             response[TemplateTypes.library] = set()
                         response[TemplateTypes.library].add(
-                            Identifier(name=asset['name'][:-len('-template.zip')], version=release['tag_name']))
+                            Identifier(name=asset['name'][:-len('-template.zip')], version=release['tag_name'],
+                                       depot_registrar=self.config.registrar))
 
             return response
         else:

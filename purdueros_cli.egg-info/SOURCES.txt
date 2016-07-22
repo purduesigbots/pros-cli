@@ -3,9 +3,12 @@ proscli/build.py
 proscli/conductor.py
 proscli/flasher.py
 proscli/main.py
+proscli/serial_terminal.py
+proscli/state.py
 proscli/terminal.py
 proscli/utils.py
 prosconfig/__init__.py
+prosconfig/cliconfig.py
 prosflasher/__init__.py
 prosflasher/bootloader.py
 prosflasher/ports.py
