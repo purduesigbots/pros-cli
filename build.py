@@ -2,6 +2,9 @@ import sys
 
 from cx_Freeze import Executable, setup
 
+from pip.req import parse_requirements
+install_reqs = [str(r.req) for r in parse_requirements('requirements.txt', session=False)]
+
 if sys.platform == 'win32':
     targetName = 'pros.exe'
 else:
@@ -16,13 +19,7 @@ setup(
     author='Purdue ACM Sigbots',
     author_email='pros_development@cs.purdue.edu',
     description='',
-    install_requires=[
-        'click',
-        'pyserial',
-        'cx_Freeze',
-        'cachetools',
-        'requests'
-    ],
+    install_requires=install_reqs,
     executables=[Executable('proscli/main.py', targetName=targetName)]
 )
 
