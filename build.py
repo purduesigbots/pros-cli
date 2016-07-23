@@ -1,11 +1,25 @@
 import sys
 from cx_Freeze import Executable, setup
+import pkgutil
 from pip.req import parse_requirements
 import requests.certs
 
+import proscli
+import prosconductor
+import prosconductor.providers
+import prosconfig
+import prosflasher
+
 install_reqs = [str(r.req) for r in parse_requirements('requirements.txt', session=False)]
 
-build_exe_options = {'packages': ['ssl'], "include_files": [(requests.certs.where(), 'cacert.pem')]}
+build_exe_options = {'packages': ['ssl', 'prosconductor.providers.githubreleases'], "include_files": [(requests.certs.where(), 'cacert.pem')]}
+
+modules = []
+for pkg in [proscli, prosconductor, prosconductor.providers, prosconfig, prosflasher]:
+    modules.append(pkg.__name__)
+    # for i, m, p in pkgutil.iter_modules(pkg.__path__):
+    #     modules.append('{}.{}'.format(pkg.__name__, m))
+
 
 if sys.platform == 'win32':
     targetName = 'pros.exe'
@@ -15,7 +29,7 @@ else:
 setup(
     name='purdueros-cli',
     version='2.0',
-    packages=['prosflasher', 'proscli'],
+    packages=modules,
     url='https://github.com/purduesigbots/purdueros-cli',
     license='',
     author='Purdue ACM Sigbots',

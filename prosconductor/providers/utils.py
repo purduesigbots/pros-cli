@@ -55,7 +55,8 @@ def get_depots(pros_cfg: CliConfig = None, filters: List[str]=None) -> List[Depo
 
 
 def get_available_templates(pros_cfg: CliConfig = None, template_types: List[TemplateTypes] = None,
-                            filters: List[str]=[]) -> Dict[TemplateTypes, Dict[Identifier, List[TemplateDescriptor]]]:
+                            filters: List[str]=[], offline_only: bool=False) \
+        -> Dict[TemplateTypes, Dict[Identifier, List[TemplateDescriptor]]]:
     if pros_cfg is None:
         pros_cfg = CliConfig()
     if template_types is None:
@@ -70,8 +71,11 @@ def get_available_templates(pros_cfg: CliConfig = None, template_types: List[Tem
             continue  # No intersection between the types declared by the depot and requested types
         templates = dict()
         offline = depot.list_local(template_types)
-        online = depot.list_all(template_types)
-        for key in [k for k in offline if k in online]:
+        if not offline_only:
+            online = depot.list_online(template_types)
+        else:
+            online = {t: set() for t in template_types}
+        for key in [k for k in online.keys() if k in offline.keys()]:
             templates[key] = offline[key] | online[key]
         for template_type, identifiers in templates.items():
             for identifier in identifiers:

@@ -8,6 +8,7 @@ import prosconductor.providers as providers
 from prosconductor.providers import TemplateTypes
 import prosconductor.providers.local as local
 import prosconductor.providers.utils as utils
+import sys
 import tabulate
 from typing import List
 
@@ -107,7 +108,7 @@ def config_depot(cfg, name):
     if name not in [d.name for d in utils.get_depot_configs(cfg.pros_cfg)]:
         click.echo('{} isn\'t a registered depot! Have you added it using `pros conduct add-depot`?')
         click.get_current_context().abort()
-        exit()
+        sys.exit()
     depot = [d for d in utils.get_depot_configs(cfg.pros_cfg) if d.name == name][0]
     depot.registrar_options = utils.get_all_provider_types(cfg.pros_cfg)[depot.registrar](None)\
         .configure_registrar_options(default=depot.registrar_options)
@@ -122,9 +123,10 @@ def config_depot(cfg, name):
 @click.option('--libraries', 'template_types', flag_value=[TemplateTypes.library])
 @click.option('--all', 'template_types', default=True,
               flag_value=[TemplateTypes.library, TemplateTypes.kernel])
+@click.option('--offline-only', is_flag=True, default=False, help='List only only templates available locally')
 @click.argument('filters', metavar='REGEX', nargs=-1)
 @default_cfg
-def list_templates(cfg, template_types, filters):
+def list_templates(cfg, template_types, filters, offline_only):
     """
     List templates with the applied filters
     """
@@ -138,7 +140,8 @@ def list_templates(cfg, template_types, filters):
                            [d.name for d in utils.get_depot_configs(cfg.pros_cfg, filters)]))
     result = utils.get_available_templates(cfg.pros_cfg,
                                            template_types=template_types,
-                                           filters=filters)
+                                           filters=filters,
+                                           offline_only=offline_only)
     table = sum([[(i.version, d.depot.config.name, 'online' if d.online else '', 'offline' if d.offline else '') for d in ds]
                      for i, ds in result[TemplateTypes.kernel].items()], [])
     if TemplateTypes.kernel in template_types:
@@ -146,7 +149,13 @@ def list_templates(cfg, template_types, filters):
             click.echo('Available kernels:')
             click.echo(tabulate.tabulate(table, headers=['Version', 'Depot', 'Online', 'Offline']))
         else:
-            click.echo('KERNELS')
+            table = [{
+                'version': e[0],
+                'depot': e[1],
+                'online': e[2] == 'online',
+                'offline': e[3] == 'offline'
+            }
+                     for e in table]
             click.echo(json.dumps(table))
 
 
@@ -182,13 +191,13 @@ def download(cfg, name, version, depot, no_check):
         if len(listing) == 0:
             click.echo('No templates were found with the name {}'.format(name))
             click.get_current_context().abort()
-            exit()
+            sys.exit()
 
         if not depot == 'auto':
             if depot not in [d.depot.config.name for ds in listing.values() for d in ds]:
                 click.echo('No templates for {} were found on {}'.format(name, depot))
                 click.get_current_context().abort()
-                exit()
+                sys.exit()
             listing = {i: [d for d in ds if d.depot.config.name == depot] for i, ds in listing.items()
                        if depot in [d.depot.config.name for d in ds]}
 
@@ -201,14 +210,14 @@ def download(cfg, name, version, depot, no_check):
             if version not in [i.version for (i, d) in listing.items()]:
                 click.echo('No templates for {} were found with the version {}'.format(name, version))
                 click.get_current_context().abort()
-                exit()
+                sys.exit()
             identifier, descriptors = [(i, d) for (i, d) in listing.items() if i.version == version][0]
 
         # identifier is now selected...
         if len(descriptors) == 0:
             click.echo('No templates for {} were found with the version {}'.format(name, version))
             click.get_current_context().abort()
-            exit()
+            sys.exit()
 
         if len(descriptors) > 1:
             if name == 'kernel' and depot == 'auto' and 'purdueros-mainline' in [desc.depot.config.name for desc in descriptors]:
@@ -230,7 +239,7 @@ def download(cfg, name, version, depot, no_check):
         else:
             click.echo('Could not find a depot to download {} {}'.format(name, version))
             click.get_current_context().abort()
-            exit()
+            sys.exit()
     else:
         identifier = providers.Identifier(name=name, version=version)
         descriptor = utils.TemplateDescriptor(depot=utils.get_depot(utils.get_depot_config(name=depot,
@@ -275,24 +284,25 @@ def new(cfg, kernel, location, depot):
     if not templates or len(templates) == 0:
         click.echo('No templates have been downloaded! Use `pros conduct download` to download the latest kernel.')
         click.get_current_context().abort()
-        exit()
+        sys.exit()
     kernel_version = kernel
     if kernel is 'latest':
         kernel_version = sorted(templates, key=lambda t: t.version)[0].version
         proscli.utils.debug('Resolved version {} to {}'.format(kernel, kernel_version))
-    templates = [t for t in templates if t.version == kernel_version]
+    templates = [t for t in templates if t.version == kernel_version]  # type: List[Identifier]
+    depot_registrar = depot
     if depot is 'auto':
         templates = [t for t in templates if t.version == kernel_version]
         if not templates or len(templates) == 0:
             click.echo('No templates exist for {}'.format(kernel_version))
             click.get_current_context().abort()
-            exit()
+            sys.exit()
         if 'purdueros-mainline' in [t.depot for t in templates]:
             depot_registrar = 'purdueros-mainline'
         else:
             depot_registrar = [t.depot for t in templates][0]
         proscli.utils.debug('Resolved depot {} to {}'.format(depot, depot_registrar))
-    templates = [t for t in templates if t.depot_registrar == depot_registrar]
+    templates = [t for t in templates if t.depot == depot_registrar]
     if not templates or len(templates) == 0:
         click.echo('No templates were found for kernel version {} on {}'.format(kernel_version, depot_registrar))
     template = templates[0]
@@ -314,7 +324,7 @@ def upgrade(cfg, kernel, location, depot):
     if not templates or len(templates) == 0:
         click.echo('No templates have been downloaded! Use `pros conduct download` to download the latest kernel.')
         click.get_current_context().abort()
-        exit()
+        sys.exit()
     kernel_version = kernel
     if kernel is 'latest':
         kernel_version = sorted(templates, key=lambda t: t.version)[0].version
@@ -325,7 +335,7 @@ def upgrade(cfg, kernel, location, depot):
         if not templates or len(templates) == 0:
             click.echo('No templates exist for {}'.format(kernel_version))
             click.get_current_context().abort()
-            exit()
+            sys.exit()
         if 'purdueros-mainline' in [t.depot for t in templates]:
             depot_registrar = 'purdueros-mainline'
         else:

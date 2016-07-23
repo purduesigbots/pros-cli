@@ -69,7 +69,7 @@ class DepotProvider(object):
     def __init__(self, config: DepotConfig):
         self.config = config
 
-    def list_all(self, template_types: List[TemplateTypes] = None) -> Dict[TemplateTypes, Set[Identifier]]:
+    def list_online(self, template_types: List[TemplateTypes] = None) -> Dict[TemplateTypes, Set[Identifier]]:
         pass
 
     def list_latest(self, name: str):

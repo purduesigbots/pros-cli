@@ -54,7 +54,7 @@ class GithubReleasesDepotProvider(DepotProvider):
                                                   prompt_suffix=' ')
         return options
 
-    def list_all(self, template_types: List[TemplateTypes] = None):
+    def list_online(self, template_types: List[TemplateTypes] = None):
         self.verify_configuration()
         if template_types is None:
             template_types = [TemplateTypes.kernel, TemplateTypes.library]
@@ -107,7 +107,8 @@ class GithubReleasesDepotProvider(DepotProvider):
             for asset in [a for a in r.json()['assets'] if a['name'] == '{}-template.zip'.format(identifier.name)]:
                 # Time to download the file
                 proscli.utils.debug('Found {}'.format(asset['url']))
-                dr = requests.get(asset['url'], headers=self.create_headers('application/octet-stream'), stream=True)
+                dr = requests.get(asset['url'], headers=self.create_headers('application/octet-stream'), stream=True,
+                                  verify=get_cert_attr())
                 if dr.status_code == 200 or dr.status_code == 302:
                     with tempfile.NamedTemporaryFile(delete=False) as tf:
                         # todo: no temp file necessary - go straight from download to zipfile extraction

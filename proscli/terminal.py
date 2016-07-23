@@ -1,6 +1,7 @@
 import click
 import proscli.serial_terminal
 import prosflasher.ports
+import sys
 
 
 @click.group()
@@ -23,7 +24,8 @@ def terminal(port):
                                 type=click.Choice([p.device for p in prosflasher.ports.list_com_ports()]))
         else:
             click.echo('No ports were found.')
-            exit()
+            click.get_current_context().abort()
+            sys.exit()
 
     ser = prosflasher.ports.create_serial(port)
     term = proscli.serial_terminal.Terminal(ser)

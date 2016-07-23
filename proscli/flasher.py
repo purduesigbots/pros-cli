@@ -44,7 +44,8 @@ def flash(ctx, save_file_system, y, port, binary, no_poll):
         if len(ports) == 0:
             click.echo('No microcontrollers were found. Please plug in a cortex or manually specify a serial port.\n',
                        err=True)
-            exit(1)
+            click.get_current_context().abort()
+            sys.exit(1)
         port = ports[0].device
         if len(ports) > 1 and port is not None and y is False:
             click.confirm('Download to ' + port, default=True, abort=True, prompt_suffix='?')
@@ -53,7 +54,8 @@ def flash(ctx, save_file_system, y, port, binary, no_poll):
         if len(port) == 0:
             click.echo('No microcontrollers were found. Please plug in a cortex or manually specify a serial port.\n',
                        err=True)
-            exit(1)
+            click.get_current_context().abort()
+            sys.exit(1)
         if y is False:
             click.confirm('Download to ' + ', '.join(port), default=True, abort=True, prompt_suffix='?')
     else:
@@ -132,7 +134,7 @@ def get_sys_info(cfg, yes, port):
         if len(ports) == 0:
             click.echo('No microcontrollers were found. Please plug in a cortex or manually specify a serial port.\n',
                        err=True)
-            exit(1)
+            sys.exit(1)
         port = prosflasher.ports.list_com_ports()[0].device
         if port is not None and yes is False:
             click.confirm('Poll ' + port, default=True, abort=True, prompt_suffix='?')
@@ -141,7 +143,7 @@ def get_sys_info(cfg, yes, port):
         if len(port) == 0:
             click.echo('No microcontrollers were found. Please plug in a cortex or manually specify a serial port.\n',
                        err=True)
-            exit(1)
+            sys.exit(1)
     else:
         port = [port]
 

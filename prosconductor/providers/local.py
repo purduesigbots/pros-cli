@@ -6,8 +6,9 @@ import prosconfig
 from prosconfig.cliconfig import CliConfig
 from prosconductor.providers import Identifier, TemplateTypes, TemplateConfig
 from prosconductor.providers.utils import get_depots
-from typing import Set, List
 import shutil
+import sys
+from typing import Set, List
 
 
 def get_local_templates(pros_cfg: CliConfig = None, filters: List[str]=[],
@@ -48,11 +49,11 @@ def create_project(identifier: Identifier, dest: str, pros_cli: CliConfig = None
     if not os.path.isfile(filename):
         click.echo('Error: template.pros not found for {}-{}'.format(identifier.name, identifier.version))
         click.get_current_context().abort()
-        exit()
+        sys.exit()
     if os.path.isfile(dest) or (os.path.isdir(dest) and len(os.listdir(dest)) > 0):
         click.echo('Error! Destination is a file or a nonempty directory! Delete the file(s) and try again.')
         click.get_current_context().abort()
-        exit()
+        sys.exit()
     config = TemplateConfig(file=filename)
     shutil.copytree(config.directory, dest)
     for root, dirs, files in os.walk(dest):
@@ -79,7 +80,7 @@ def upgrade_project(identifier: Identifier, dest: str, pros_cli: CliConfig = Non
     if not os.path.isfile(filename):
         click.echo('Error: template.pros not found for {}-{}'.format(identifier.name, identifier.version))
         click.get_current_context().abort()
-        exit()
+        sys.exit()
     proj_config = prosconfig.ProjectConfig(dest, raise_on_error=True)
     config = TemplateConfig(file=filename)
 

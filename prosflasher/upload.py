@@ -10,6 +10,7 @@ import prosflasher.bootloader
 import proscli.utils
 from proscli.utils import debug
 from prosflasher import bytes_to_str
+import sys
 
 ACK = 0x79
 
@@ -78,7 +79,8 @@ def upload(port, binary, no_poll: bool = False, ctx=proscli.utils.State()):
                 sys_info = ask_sys_info(port)
                 if sys_info is None:
                     click.echo('Failed to get system info... Try again', err=True)
-                    exit(1)
+                    click.get_current_context().abort()
+                    sys.exit(1)
             click.echo(repr(sys_info))
         else:
             sys_info = SystemInfo()
@@ -144,9 +146,10 @@ def ask_sys_info(port, ctx=proscli.utils.State()):
         time.sleep(0.1)
         response = port.read_all()
         debug('SYS INFO RESPONSE: {}'.format(bytes_to_str(response)), ctx)
-
+        if len(response) > 14:
+            response = response[14:]
         if len(response) == 14 and response[0] == 0xaa and response[1] == 0x55\
-                and response[2] == 0x20 and response[3] == 0xa:  # synchronization matched
+                and response[2] == 0x21 and response[3] == 0xa:  # synchronization matched
             sys_info = SystemInfo()
             sys_info.device = port.name
             sys_info.joystick_firmware = '{}.{}'.format(response[4], response[5])
@@ -245,7 +248,8 @@ def dump_cortex(port, file, verbose=False):
         sys_info = ask_sys_info(port)
         if sys_info is None:
             click.echo('Failed to get system info... Try again', err=True)
-            exit(1)
+            click.get_current_context().abort()
+            sys.exit(1)
         click.echo(repr(sys_info))
         stop_user_code(port)
         if sys_info.connection_type == ConnectionType.serial_vexnet2:
