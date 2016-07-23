@@ -13,7 +13,11 @@ class InvalidIdentifierException(Exception):
         super(InvalidIdentifierException, self).__init__(args, kwargs)
 
 
-Identifier = collections.namedtuple('Identifier', ['name', 'version', 'depot_registrar'])
+class Identifier(collections.namedtuple('Identifier', ['name', 'version', 'depot'])):
+    def __hash__(self):
+        return (self.name + self.version + self.depot).__hash__()
+
+# Identifier = collections.namedtuple('Identifier', ['name', 'version', 'depot_registrar'])
 
 
 class TemplateTypes(enum.Enum):
@@ -56,7 +60,7 @@ class TemplateConfig(Config):
 
     @property
     def identifier(self):
-        return Identifier(self.name, self.version, self.depot)
+        return Identifier(name=self.name, version=self.version, depot=self.depot)
 
 
 class DepotProvider(object):
@@ -65,7 +69,7 @@ class DepotProvider(object):
     def __init__(self, config: DepotConfig):
         self.config = config
 
-    def list_all(self, template_types: List[TemplateTypes] = None) -> Dict[TemplateTypes, List[Identifier]]:
+    def list_all(self, template_types: List[TemplateTypes] = None) -> Dict[TemplateTypes, Set[Identifier]]:
         pass
 
     def list_latest(self, name: str):
@@ -106,7 +110,7 @@ class DepotProvider(object):
         pass
 
     @staticmethod
-    def configure_registar_options():
+    def configure_registrar_options(default: dict=dict()) -> dict:
         pass
 
 

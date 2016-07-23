@@ -1,3 +1,0 @@
-proscli
-prosconfig
-prosflasher

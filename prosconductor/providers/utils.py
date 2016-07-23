@@ -1,11 +1,10 @@
-import click
 from functools import lru_cache
 import importlib.util
 import os
 import re
 from prosconductor.providers import DepotProvider, DepotConfig, TemplateTypes, Identifier, TemplateDescriptor
 from prosconfig.cliconfig import CliConfig
-from typing import Dict, List, Union
+from typing import Dict, List
 
 
 @lru_cache()

@@ -1,5 +1,6 @@
 import click
 from collections import OrderedDict
+import json
 import os.path
 import proscli.utils
 from proscli.utils import default_cfg, default_options, AliasGroup
@@ -9,6 +10,21 @@ import prosconductor.providers.local as local
 import prosconductor.providers.utils as utils
 import tabulate
 from typing import List
+
+
+def first_run(ctx: proscli.utils.State, force: bool=False):
+    if len(utils.get_depot_configs(ctx.pros_cfg)) == 0:
+        click.echo('You don\'t currently have any depots configured.')
+    if len(utils.get_depot_configs(ctx.pros_cfg)) == 0 or force:
+        if click.confirm('Add the official PROS kernel depot, purdueros-mainline?', default=True):
+            click.get_current_context().invoke(add_depot, name='purdueros-mainline',
+                                               registrar='github-releases',
+                                               location='edjubuh/purdueros',
+                                               configure=False)
+            click.echo('Added purdueros-mainline to available depots. '
+                       'Add more depots in the future by running `pros conduct add-depot`\n')
+            if click.confirm('Download the latest kernel?', default=True):
+                click.get_current_context().invoke(download, name='kernel', depot='purdueros-mainline')
 
 
 @click.group(cls=AliasGroup)
@@ -23,9 +39,12 @@ def conduct():
     pass
 
 
-@conduct.command('lsdepot', short_help='List registered depots', aliases=['lsde'])
-# @default_options
-def list_depots():
+# region Depot Management
+@conduct.command('lsdepot', short_help='List registered depots',
+                 aliases=['lsd', 'list-depots', 'lsdpt', 'depots'])
+@default_cfg
+def list_depots(cfg):
+    first_run(cfg)
     depots = utils.get_depot_configs()
     if not bool(depots):
         click.echo('No depots currently registered! Use `pros conduct add-depot` to add a new depot')
@@ -56,10 +75,14 @@ def available_providers() -> List[str]:
               help='Registrar of the new depot')
 @click.option('--location', metavar='LOCATION', prompt=True,
               help='Online location of the new depot')
+@click.option('--configure/--no-configure', default=True)
 @default_cfg
-def add_depot(cfg, name, registrar, location):
-    options = utils.get_all_provider_types(cfg.pros_cfg)[registrar](None)\
-        .configure_registar_options()
+def add_depot(cfg, name, registrar, location, configure):
+    if configure:
+        options = utils.get_all_provider_types(cfg.pros_cfg)[registrar](None)\
+            .configure_registrar_options()
+    else:
+        options = dict()
     providers.DepotConfig(name=name, registrar=registrar, location=location, registrar_options=options,
                                         root_dir=cfg.pros_cfg.directory)
     pass
@@ -77,7 +100,24 @@ def remove_depot(cfg, name):
         depot.delete()
 
 
-@conduct.command('lstemplate', short_help='List all available templates')
+@conduct.command('config-depot', short_help='Configure a depot')
+@click.option('--name', metavar='NAME', prompt=True, help='Name of the depot')
+@default_cfg
+def config_depot(cfg, name):
+    if name not in [d.name for d in utils.get_depot_configs(cfg.pros_cfg)]:
+        click.echo('{} isn\'t a registered depot! Have you added it using `pros conduct add-depot`?')
+        click.get_current_context().abort()
+        exit()
+    depot = [d for d in utils.get_depot_configs(cfg.pros_cfg) if d.name == name][0]
+    depot.registrar_options = utils.get_all_provider_types(cfg.pros_cfg)[depot.registrar](None)\
+        .configure_registrar_options(default=depot.registrar_options)
+    depot.save()
+# endregion
+
+
+# region Template Management
+@conduct.command('lstemplate', short_help='List all available templates',
+                 aliases=['lst', 'templates', 'list-templates', 'lstmpl', 'lstemplates'])
 @click.option('--kernels', 'template_types', flag_value=[TemplateTypes.kernel])
 @click.option('--libraries', 'template_types', flag_value=[TemplateTypes.library])
 @click.option('--all', 'template_types', default=True,
@@ -88,6 +128,7 @@ def list_templates(cfg, template_types, filters):
     """
     List templates with the applied filters
     """
+    first_run(cfg)
     filters = [f for f in filters if f is not None]
     if not filters:
         filters = ['.*']
@@ -98,14 +139,15 @@ def list_templates(cfg, template_types, filters):
     result = utils.get_available_templates(cfg.pros_cfg,
                                            template_types=template_types,
                                            filters=filters)
+    table = sum([[(i.version, d.depot.config.name, 'online' if d.online else '', 'offline' if d.offline else '') for d in ds]
+                     for i, ds in result[TemplateTypes.kernel].items()], [])
     if TemplateTypes.kernel in template_types:
-        click.echo('Available kernels:')
-        click.echo(tabulate.tabulate(
-            # complicated list comprehension
-            sum([[(i.version, d.depot.config.name, 'online' if d.online else '', 'offline' if d.offline else '') for d in ds]
-                 for i, ds in result[TemplateTypes.kernel].items()], []),
-            headers=['Version', 'Depot', 'Online', 'Offline']
-        ))
+        if not cfg.machine_output:
+            click.echo('Available kernels:')
+            click.echo(tabulate.tabulate(table, headers=['Version', 'Depot', 'Online', 'Offline']))
+        else:
+            click.echo('KERNELS')
+            click.echo(json.dumps(table))
 
 
 @conduct.command(short_help='Download a template', aliases=['dl'])
@@ -122,6 +164,7 @@ def download(cfg, name, version, depot, no_check):
 
     If the arguments are `download latest` or `download latest kernel`, the latest kernel will be downloaded
     """
+    first_run(cfg)
     if name.lower() == 'kernel':
         name = 'kernel'
     elif name == 'latest':
@@ -200,15 +243,34 @@ def download(cfg, name, version, depot, no_check):
                                                            descriptor.depot.config.name,
                                                            descriptor.depot.registrar))
     descriptor.depot.download(identifier)
+    if identifier.name == 'kernel':
+        click.echo('''To create a new PROS project with this kernel, run `pros conduct new <folder> {0} {1}`,
+or to upgrade an existing project, run `pros conduct upgrade <folder> {0} {1}'''
+                   .format(identifier.version, identifier.depot))
     # todo: add helpful text for how to create a project or add the new library to a project
 
 
-@conduct.command('new', aliases=['new-proj', 'new-project', 'create', 'create-proj', 'create-project'])
+@conduct.command('create-template', short_help='Creates a template with the specified name, version, and depot')
+@click.argument('name')
+@click.argument('version')
+@click.argument('depot')
+@default_cfg
+def create_template(cfg, name, version, depot):
+    first_run(cfg)
+    template = local.create_template(utils.Identifier(name, version, depot))
+    click.echo('Created template at {}'.format(template.save_file))
+# endregion
+
+
+# region Project Management
+@conduct.command('new', aliases=['new-proj', 'new-project', 'create', 'create-proj', 'create-project'],
+                 short_help='Creates a new PROS project')
 @click.argument('location')
 @click.argument('kernel', default='latest')
 @click.argument('depot', default='auto')
 @default_cfg
 def new(cfg, kernel, location, depot):
+    first_run(cfg)
     templates = local.get_local_templates(pros_cfg=cfg.pros_cfg, template_types=[TemplateTypes.kernel])  # type: List[Identifier]
     if not templates or len(templates) == 0:
         click.echo('No templates have been downloaded! Use `pros conduct download` to download the latest kernel.')
@@ -225,7 +287,7 @@ def new(cfg, kernel, location, depot):
             click.echo('No templates exist for {}'.format(kernel_version))
             click.get_current_context().abort()
             exit()
-        if 'purdueros-mainline' in [t.depot_registrar for t in templates]:
+        if 'purdueros-mainline' in [t.depot for t in templates]:
             depot_registrar = 'purdueros-mainline'
         else:
             depot_registrar = [t.depot for t in templates][0]
@@ -236,26 +298,17 @@ def new(cfg, kernel, location, depot):
     template = templates[0]
     if not os.path.isabs(location):
         location = os.path.abspath(location)
-    click.echo('Creating new project from {} on {} at {}'.format(template.version, template.depot_registrar, location))
+    click.echo('Creating new project from {} on {} at {}'.format(template.version, template.depot, location))
     local.create_project(identifier=template, dest=location, pros_cli=cfg.pros_cfg)
 
 
-@conduct.command('create-template')
-@click.argument('name')
-@click.argument('version')
-@click.argument('depot')
-@default_cfg
-def create_template(cfg, name, version, depot):
-    template = local.create_template(utils.Identifier(name, version, depot))
-    click.echo('Created template at {}'.format(template.save_file))
-
-
-@conduct.command('upgrade', aliases=['update'])
+@conduct.command('upgrade', aliases=['update'], help='Upgrades a PROS project')
 @click.argument('location')
 @click.argument('kernel', default='latest')
 @click.argument('depot', default='auto')
 @default_cfg
-def new(cfg, kernel, location, depot):
+def upgrade(cfg, kernel, location, depot):
+    first_run(cfg)
     templates = local.get_local_templates(pros_cfg=cfg.pros_cfg,
                                           template_types=[TemplateTypes.kernel])  # type: List[Identifier]
     if not templates or len(templates) == 0:
@@ -273,7 +326,7 @@ def new(cfg, kernel, location, depot):
             click.echo('No templates exist for {}'.format(kernel_version))
             click.get_current_context().abort()
             exit()
-        if 'purdueros-mainline' in [t.depot_registrar for t in templates]:
+        if 'purdueros-mainline' in [t.depot for t in templates]:
             depot_registrar = 'purdueros-mainline'
         else:
             depot_registrar = [t.depot for t in templates][0]
@@ -286,3 +339,10 @@ def new(cfg, kernel, location, depot):
         location = os.path.abspath(location)
     click.echo('Creating new project from {} on {} at {}'.format(template.version, template.depot_registrar, location))
     local.upgrade_project(identifier=template, dest=location, pros_cli=cfg.pros_cfg)
+# endregion
+
+
+@conduct.command('first-run', help='Runs the first-run configuration')
+@default_cfg
+def first_run_cmd(cfg):
+    first_run(cfg, force=True)

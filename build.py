@@ -1,9 +1,11 @@
 import sys
-
 from cx_Freeze import Executable, setup
-
 from pip.req import parse_requirements
+import requests.certs
+
 install_reqs = [str(r.req) for r in parse_requirements('requirements.txt', session=False)]
+
+build_exe_options = {'packages': ['ssl'], "include_files": [(requests.certs.where(), 'cacert.pem')]}
 
 if sys.platform == 'win32':
     targetName = 'pros.exe'
@@ -19,6 +21,7 @@ setup(
     author='Purdue ACM Sigbots',
     author_email='pros_development@cs.purdue.edu',
     description='',
+    options={"build_exe": build_exe_options},
     install_requires=install_reqs,
     executables=[Executable('proscli/main.py', targetName=targetName)]
 )

@@ -16,7 +16,8 @@ ACK = 0x79
 
 class ConnectionType(Enum):
     unknown = -1
-    serial_vexnet1 = 0x01
+    serial_vexnet1 = 0x00
+    serial_vexnet1_turbo = 0x01  # no known affecting difference between turbo and non-turbo
     serial_vexnet2 = 0x04
     serial_vexnet2_dl = 0x05
     serial_usb = 0x10
@@ -144,7 +145,8 @@ def ask_sys_info(port, ctx=proscli.utils.State()):
         response = port.read_all()
         debug('SYS INFO RESPONSE: {}'.format(bytes_to_str(response)), ctx)
 
-        if len(response) == 14 and response[0] == 0xaa and response[1] == 0x55:  # synchronization matched
+        if len(response) == 14 and response[0] == 0xaa and response[1] == 0x55\
+                and response[2] == 0x20 and response[3] == 0xa:  # synchronization matched
             sys_info = SystemInfo()
             sys_info.device = port.name
             sys_info.joystick_firmware = '{}.{}'.format(response[4], response[5])

@@ -1,7 +1,5 @@
 import click
 from proscli.state import State
-import prosconfig.cliconfig
-
 
 pass_state = click.make_pass_decorator(State)
 
@@ -129,3 +127,4 @@ class AliasGroup(click.Group):
         if cmd_name in self.cmd_dict:
             return super(AliasGroup, self).get_command(ctx, self.cmd_dict[cmd_name])
         return None
+

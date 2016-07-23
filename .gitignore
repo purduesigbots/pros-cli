@@ -5,3 +5,5 @@ __pycache__/
 build/
 .cache/
 dist/
+
+purdueros_cli.egg-info/

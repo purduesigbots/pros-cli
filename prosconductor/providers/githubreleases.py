@@ -9,8 +9,17 @@ from prosconductor.providers import TemplateTypes, DepotProvider, InvalidIdentif
 import re
 import requests
 import shutil
+import sys
 from typing import List, Dict, Set
 import zipfile
+
+
+@lru_cache()
+def get_cert_attr():
+    if getattr(sys, 'frozen', False):
+        return os.path.join(os.path.dirname(sys.executable), 'cacert.pem')
+    else:
+        return True
 
 
 class GithubReleasesDepotProvider(DepotProvider):
@@ -30,13 +39,19 @@ class GithubReleasesDepotProvider(DepotProvider):
             raise InvalidIdentifierException('{} is an invalid GitHub resository'.format(self.config.location))
 
     @staticmethod
-    def configure_registar_options():
+    def configure_registrar_options(default: dict=dict()) -> dict:
         options = dict()
-        options['include_prerelease'] = click.prompt('Include pre-releases?', default=False, prompt_suffix=' ')
-        options['include_draft'] = click.prompt('Include drafts (requires authentication)?',
-                                                default=False, prompt_suffix=' ')
-        if click.confirm('Do you want to set up OAuth authentication with GitHub?'):
-            options['oauth_token'] = click.prompt('OAuth2 Token:', prompt_suffix=' ')
+        options['include_prerelease'] = click.confirm('Include pre-releases?',
+                                                     default=default.get('include_prerelease', False),
+                                                     prompt_suffix=' ')
+        options['include_draft'] = click.confirm('Include drafts (requires authentication)?',
+                                                default=default.get('include_draft', False),
+                                                prompt_suffix=' ')
+        if click.confirm('Do you want to set up OAuth authentication with GitHub?',
+                         default='oauth_token' in default.keys()):
+            options['oauth_token'] = click.prompt('OAuth2 Token:',
+                                                  default=default.get('oauth_token', None),
+                                                  prompt_suffix=' ')
         return options
 
     def list_all(self, template_types: List[TemplateTypes] = None):
@@ -45,7 +60,8 @@ class GithubReleasesDepotProvider(DepotProvider):
             template_types = [TemplateTypes.kernel, TemplateTypes.library]
         config = self.config
         proscli.utils.debug('Fetching listing for {} at {} using {}'.format(config.name, config.location, self.registrar))
-        r = requests.get('https://api.github.com/repos/{}/releases'.format(config.location), headers=self.create_headers())
+        r = requests.get('https://api.github.com/repos/{}/releases'.format(config.location), headers=self.create_headers(),
+                         verify=get_cert_attr())
         if r.status_code == 200:
             response = dict()  # type: Dict[TemplateTypes, Set[Identifier]]
             json = r.json()
@@ -60,14 +76,14 @@ class GithubReleasesDepotProvider(DepotProvider):
                         if TemplateTypes.kernel not in response:
                             response[TemplateTypes.kernel] = set()
                         response[TemplateTypes.kernel].add(Identifier(name='kernel', version=release['tag_name'],
-                                                                      depot_registrar=self.config.registrar))
+                                                                      depot=self.config.name))
                     elif TemplateTypes.library in template_types:
                         # if the name isn't kernel-template.zip, then it's a library
                         if TemplateTypes.library not in response:
                             response[TemplateTypes.library] = set()
                         response[TemplateTypes.library].add(
                             Identifier(name=asset['name'][:-len('-template.zip')], version=release['tag_name'],
-                                       depot_registrar=self.config.registrar))
+                                       depot=self.config.name))
 
             return response
         else:
@@ -86,7 +102,7 @@ class GithubReleasesDepotProvider(DepotProvider):
         click.echo('Fetching release on {} with tag {}'.format(self.config.location, identifier.version))
         r = requests.get('https://api.github.com/repos/{}/releases/tags/{}'.format(self.config.location,
                                                                                    identifier.version),
-                         headers=self.create_headers())
+                         headers=self.create_headers(), verify=get_cert_attr())
         if r.status_code == 200:
             for asset in [a for a in r.json()['assets'] if a['name'] == '{}-template.zip'.format(identifier.name)]:
                 # Time to download the file
