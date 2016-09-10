@@ -5,27 +5,28 @@ import os.path
 import proscli.utils
 from proscli.utils import default_cfg, default_options, AliasGroup
 import prosconductor.providers as providers
-from prosconductor.providers import TemplateTypes
+from prosconductor.providers import TemplateTypes, Identifier
 import prosconductor.providers.local as local
 import prosconductor.providers.utils as utils
+import prosconfig
 import sys
 import tabulate
 from typing import List
 
 
-def first_run(ctx: proscli.utils.State, force: bool=False):
+def first_run(ctx: proscli.utils.State, force: bool = False, defaults: bool = False):
     if len(utils.get_depot_configs(ctx.pros_cfg)) == 0:
         click.echo('You don\'t currently have any depots configured.')
     if len(utils.get_depot_configs(ctx.pros_cfg)) == 0 or force:
-        if click.confirm('Add the official PROS kernel depot, purdueros-mainline?', default=True):
-            click.get_current_context().invoke(add_depot, name='purdueros-mainline',
+        if click.confirm('Add the official PROS kernel depot, pros-mainline?', default=True) or defaults:
+            click.get_current_context().invoke(add_depot, name='pros-mainline',
                                                registrar='github-releases',
-                                               location='edjubuh/purdueros',
+                                               location='edjubuh/pros',
                                                configure=False)
-            click.echo('Added purdueros-mainline to available depots. '
+            click.echo('Added pros-mainline to available depots. '
                        'Add more depots in the future by running `pros conduct add-depot`\n')
-            if click.confirm('Download the latest kernel?', default=True):
-                click.get_current_context().invoke(download, name='kernel', depot='purdueros-mainline')
+            if click.confirm('Download the latest kernel?', default=True) or defaults:
+                click.get_current_context().invoke(download, name='kernel', depot='pros-mainline')
 
 
 @click.group(cls=AliasGroup)
@@ -57,8 +58,8 @@ def list_depots(cfg):
 
 def validate_name(ctx, param, value):
     if os.path.isdir(os.path.join(ctx.obj.pros_cfg.directory, value)):
-        if value == 'purdueros-mainline':
-            raise click.BadParameter('Cannot override purdueros-mainline!')
+        if value == 'pros-mainline':
+            raise click.BadParameter('Cannot override pros-mainline!')
 
         click.confirm('A depot with the name {} already exists. Do you want to overwrite it?'.format(value),
                       prompt_suffix=' ', abort=True, default=True)
@@ -80,12 +81,12 @@ def available_providers() -> List[str]:
 @default_cfg
 def add_depot(cfg, name, registrar, location, configure):
     if configure:
-        options = utils.get_all_provider_types(cfg.pros_cfg)[registrar](None)\
+        options = utils.get_all_provider_types(cfg.pros_cfg)[registrar](None) \
             .configure_registrar_options()
     else:
         options = dict()
     providers.DepotConfig(name=name, registrar=registrar, location=location, registrar_options=options,
-                                        root_dir=cfg.pros_cfg.directory)
+                          root_dir=cfg.pros_cfg.directory)
     pass
 
 
@@ -93,8 +94,8 @@ def add_depot(cfg, name, registrar, location, configure):
 @click.option('--name', metavar='NAME', prompt=True, help='Name of the depot')
 @default_cfg
 def remove_depot(cfg, name):
-    if name == 'purdueros-mainline':
-        raise click.BadParameter('Cannot delete purdueros-mainline!')
+    if name == 'pros-mainline':
+        raise click.BadParameter('Cannot delete pros-mainline!')
 
     for depot in [d for d in utils.get_depot_configs(cfg.pros_cfg) if d.name == name]:
         click.echo('Removing {} ({})'.format(depot.name, depot.location))
@@ -110,9 +111,11 @@ def config_depot(cfg, name):
         click.get_current_context().abort()
         sys.exit()
     depot = [d for d in utils.get_depot_configs(cfg.pros_cfg) if d.name == name][0]
-    depot.registrar_options = utils.get_all_provider_types(cfg.pros_cfg)[depot.registrar](None)\
+    depot.registrar_options = utils.get_all_provider_types(cfg.pros_cfg)[depot.registrar](None) \
         .configure_registrar_options(default=depot.registrar_options)
     depot.save()
+
+
 # endregion
 
 
@@ -142,19 +145,20 @@ def list_templates(cfg, template_types, filters, offline_only):
                                            template_types=template_types,
                                            filters=filters,
                                            offline_only=offline_only)
-    table = sum([[(i.version, d.depot.config.name, 'online' if d.online else '', 'offline' if d.offline else '') for d in ds]
-                     for i, ds in result[TemplateTypes.kernel].items()], [])
+    table = sum(
+        [[(i.version, d.depot.config.name, 'online' if d.online else '', 'offline' if d.offline else '') for d in ds]
+         for i, ds in result[TemplateTypes.kernel].items()], [])
     if TemplateTypes.kernel in template_types:
         if not cfg.machine_output:
             click.echo('Available kernels:')
             click.echo(tabulate.tabulate(table, headers=['Version', 'Depot', 'Online', 'Offline']))
         else:
             table = [{
-                'version': e[0],
-                'depot': e[1],
-                'online': e[2] == 'online',
-                'offline': e[3] == 'offline'
-            }
+                         'version': e[0],
+                         'depot': e[1],
+                         'online': e[2] == 'online',
+                         'offline': e[3] == 'offline'
+                     }
                      for e in table]
             click.echo(json.dumps(table))
 
@@ -220,8 +224,9 @@ def download(cfg, name, version, depot, no_check):
             sys.exit()
 
         if len(descriptors) > 1:
-            if name == 'kernel' and depot == 'auto' and 'purdueros-mainline' in [desc.depot.config.name for desc in descriptors]:
-                descriptor = [desc for desc in descriptors if desc.depot.config.name == 'purdueros-mainline']
+            if name == 'kernel' and depot == 'auto' and 'pros-mainline' in [desc.depot.config.name for desc in
+                                                                                 descriptors]:
+                descriptor = [desc for desc in descriptors if desc.depot.config.name == 'pros-mainline']
             else:
                 click.echo('Multiple depots for {}-{} were found. Please specify a depot: '.
                            format(identifier.name, identifier.version))
@@ -229,7 +234,8 @@ def download(cfg, name, version, depot, no_check):
                                        key=lambda l: l[1])
                 click.echo(tabulate.tabulate(options_table, headers=['', 'Depot']))
                 result = click.prompt('Which depot?', default=options_table[0][1],
-                                      type=click.Choice([str(i) for (i, n) in options_table] + [n for (i, n) in options_table]))
+                                      type=click.Choice(
+                                          [str(i) for (i, n) in options_table] + [n for (i, n) in options_table]))
                 if result in [str(i) for (i, n) in options_table]:
                     descriptor = [d for d in descriptors if d.depot.config.name == options_table[int(result)][1]][0]
                 else:
@@ -256,7 +262,7 @@ def download(cfg, name, version, depot, no_check):
         click.echo('''To create a new PROS project with this kernel, run `pros conduct new <folder> {0} {1}`,
 or to upgrade an existing project, run `pros conduct upgrade <folder> {0} {1}'''
                    .format(identifier.version, identifier.depot))
-    # todo: add helpful text for how to create a project or add the new library to a project
+        # todo: add helpful text for how to create a project or add the new library to a project
 
 
 @conduct.command('create-template', short_help='Creates a template with the specified name, version, and depot')
@@ -268,6 +274,8 @@ def create_template(cfg, name, version, depot):
     first_run(cfg)
     template = local.create_template(utils.Identifier(name, version, depot))
     click.echo('Created template at {}'.format(template.save_file))
+
+
 # endregion
 
 
@@ -277,28 +285,30 @@ def create_template(cfg, name, version, depot):
 @click.argument('location')
 @click.argument('kernel', default='latest')
 @click.argument('depot', default='auto')
+@click.option('--verify-only', is_flag=True, default=False)
 @default_cfg
-def new(cfg, kernel, location, depot):
+def new(cfg, kernel, location, depot, verify_only):
     first_run(cfg)
-    templates = local.get_local_templates(pros_cfg=cfg.pros_cfg, template_types=[TemplateTypes.kernel])  # type: List[Identifier]
+    templates = local.get_local_templates(pros_cfg=cfg.pros_cfg,
+                                          template_types=[TemplateTypes.kernel])  # type: Set[Identifier]
     if not templates or len(templates) == 0:
         click.echo('No templates have been downloaded! Use `pros conduct download` to download the latest kernel.')
         click.get_current_context().abort()
         sys.exit()
     kernel_version = kernel
-    if kernel is 'latest':
+    if kernel == 'latest':
         kernel_version = sorted(templates, key=lambda t: t.version)[0].version
         proscli.utils.debug('Resolved version {} to {}'.format(kernel, kernel_version))
     templates = [t for t in templates if t.version == kernel_version]  # type: List[Identifier]
     depot_registrar = depot
-    if depot is 'auto':
+    if depot == 'auto':
         templates = [t for t in templates if t.version == kernel_version]
         if not templates or len(templates) == 0:
             click.echo('No templates exist for {}'.format(kernel_version))
             click.get_current_context().abort()
             sys.exit()
-        if 'purdueros-mainline' in [t.depot for t in templates]:
-            depot_registrar = 'purdueros-mainline'
+        if 'pros-mainline' in [t.depot for t in templates]:
+            depot_registrar = 'pros-mainline'
         else:
             depot_registrar = [t.depot for t in templates][0]
         proscli.utils.debug('Resolved depot {} to {}'.format(depot, depot_registrar))
@@ -330,14 +340,15 @@ def upgrade(cfg, kernel, location, depot):
         kernel_version = sorted(templates, key=lambda t: t.version)[0].version
         proscli.utils.debug('Resolved version {} to {}'.format(kernel, kernel_version))
     templates = [t for t in templates if t.version == kernel_version]
+    depot_registrar = depot
     if depot is 'auto':
         templates = [t for t in templates if t.version == kernel_version]
         if not templates or len(templates) == 0:
             click.echo('No templates exist for {}'.format(kernel_version))
             click.get_current_context().abort()
             sys.exit()
-        if 'purdueros-mainline' in [t.depot for t in templates]:
-            depot_registrar = 'purdueros-mainline'
+        if 'pros-mainline' in [t.depot for t in templates]:
+            depot_registrar = 'pros-mainline'
         else:
             depot_registrar = [t.depot for t in templates][0]
         proscli.utils.debug('Resolved depot {} to {}'.format(depot, depot_registrar))
@@ -349,10 +360,36 @@ def upgrade(cfg, kernel, location, depot):
         location = os.path.abspath(location)
     click.echo('Creating new project from {} on {} at {}'.format(template.version, template.depot_registrar, location))
     local.upgrade_project(identifier=template, dest=location, pros_cli=cfg.pros_cfg)
+
+
+@conduct.command('register', aliases=[], help='Manifest project.pros file')
+@click.argument('location')
+@click.argument('kernel', default='latest')
+@default_cfg
+def register(cfg, location, kernel):
+    first_run(cfg)
+    kernel_version = kernel
+    if kernel_version is 'latest':
+        templates = local.get_local_templates(pros_cfg=cfg.pros_cfg,
+                                              template_types=[TemplateTypes.kernel])  # type: List[Identifier]
+        if not templates or len(templates) == 0:
+            click.echo('No templates have been downloaded! Use `pros conduct download` to download the latest kernel or'
+                       ' specify a kernel manually.')
+            click.get_current_context().abort()
+            sys.exit()
+        kernel_version = sorted(templates, key=lambda t: t.version)[0].version
+        proscli.utils.debug('Resolved version {} to {}'.format(kernel, kernel_version))
+
+    cfg = prosconfig.ProjectConfig(location, create=True, raise_on_error=True)
+    cfg.kernel = kernel_version
+    click.echo('Registering {} with kernel {}'.format(location, kernel_version))
+    cfg.save()
 # endregion
 
 
 @conduct.command('first-run', help='Runs the first-run configuration')
+@click.option('--no-force', is_flag=True, default=True)
+@click.option('--use-defaults', is_flag=True, default=False)
 @default_cfg
-def first_run_cmd(cfg):
-    first_run(cfg, force=True)
+def first_run_cmd(cfg, no_force, use_defaults):
+    first_run(cfg, force=not no_force, defaults=use_defaults)

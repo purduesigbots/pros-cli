@@ -27,10 +27,10 @@ else:
     targetName = 'pros'
 
 setup(
-    name='purdueros-cli',
+    name='pros-cli',
     version='2.0',
     packages=modules,
-    url='https://github.com/purduesigbots/purdueros-cli',
+    url='https://github.com/purduesigbots/pros-cli',
     license='',
     author='Purdue ACM Sigbots',
     author_email='pros_development@cs.purdue.edu',
@@ -75,10 +75,10 @@ setup(
 #     }
 #
 #     setup(
-#         name='purdueros-cli',
+#         name='pros-cli',
 #         version='2.0',
 #         packages=['prosflasher', 'proscli'],
-#         url='https://github.com/purduesigbots/purdueros-cli',
+#         url='https://github.com/purduesigbots/pros-cli',
 #         license='',
 #         author='Purdue ACM Sigbots',
 #         author_email='pros_development@cs.purdue.edu',
@@ -95,7 +95,7 @@ setup(
 #     from distutils.core import setup
 #     from esky.bdist_esky import bdist_esky, Executable
 #     setup(
-#         name='purdueros-cli',
+#         name='pros-cli',
 #         version='2.0',
 #         packages=['prosflasher', 'proscli'],
 #         options={

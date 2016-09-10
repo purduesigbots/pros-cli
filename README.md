@@ -1,6 +1,6 @@
-# purdueros-cli
+# pros-cli
 
-Purdueros-cli provides a command line utility to create and upgrade projects using the Purdue Robotics Operating System. Purdueros-cli uses the official kernel repository, but can be modified to utilize any other repository. This project was created using IntelliJ IDEA 15 and is a Maven-based project.
+pros-cli provides a command line utility to create and upgrade projects using the Purdue Robotics Operating System. pros-cli uses the official kernel repository, but can be modified to utilize any other repository. This project was created using IntelliJ IDEA 15 and is a Maven-based project.
 
 ## Contributing
 Feel free to contribute to this repository and add functionality to the command line interface. Create a pull request for code review.
@@ -86,4 +86,4 @@ locally and/or online.
 
 ### Random notes (aka the backlog)
 
-For some reason, the purdueros-cli.jar artifact doesn't get the right manifest when it is built by IntelliJ. The correct manifest is at src/main/java/META-INF/MANIFEST.MF . You can edit the manifest using 7-zip and manually replace the contents there.
+For some reason, the pros-cli.jar artifact doesn't get the right manifest when it is built by IntelliJ. The correct manifest is at src/main/java/META-INF/MANIFEST.MF . You can edit the manifest using 7-zip and manually replace the contents there.

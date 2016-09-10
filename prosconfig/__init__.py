@@ -87,11 +87,14 @@ class ProjectConfig(Config):
             return path
         elif os.path.isdir(path):
             for n in range(10):
-                files = [f for f in os.listdir(path)
-                         if os.path.isfile(os.path.join(path, f)) and f.lower() == 'project.pros']
-                if len(files) == 1:  # found a project.pros file!
-                    return os.path.join(path, files[0])
-                path = os.path.dirname(path)
+                if os.path.isdir(path):
+                    files = [f for f in os.listdir(path)
+                             if os.path.isfile(os.path.join(path, f)) and f.lower() == 'project.pros']
+                    if len(files) == 1:  # found a project.pros file!
+                        return os.path.join(path, files[0])
+                    path = os.path.dirname(path)
+                else:
+                    return None
         return None
 
 

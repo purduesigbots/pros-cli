@@ -29,7 +29,7 @@ class GithubReleasesDepotProvider(DepotProvider):
         super(GithubReleasesDepotProvider, self).__init__(config)
 
     def create_headers(self, accept='application/vnd.github.v3+json'):
-        headers = {'user-agent': 'purdueros-cli', 'Accept': accept}
+        headers = {'user-agent': 'pros-cli', 'Accept': accept}
         if 'oauth_token' in self.config.registrar_options:
             headers['Authorization'] = 'token {}'.format(self.config.registrar_options['oauth_token'])
         return headers

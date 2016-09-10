@@ -5,10 +5,10 @@ from pip.req import parse_requirements
 install_reqs = [str(r.req) for r in parse_requirements('requirements.txt', session=False)]
 
 setup(
-    name='purdueros-cli',
+    name='pros-cli',
     version='2.beta',
     packages=['prosflasher', 'proscli', 'prosconfig'],
-    url='https://github.com/purduesigbots/purdueros-cli',
+    url='https://github.com/purduesigbots/pros-cli',
     license='',
     author='Purdue ACM Sigbots',
     author_email='pros_development@cs.purdue.edu',

@@ -147,7 +147,7 @@ def ask_sys_info(port, ctx=proscli.utils.State()):
         response = port.read_all()
         debug('SYS INFO RESPONSE: {}'.format(bytes_to_str(response)), ctx)
         if len(response) > 14:
-            response = response[14:]
+            response = response[:14]
         if len(response) == 14 and response[0] == 0xaa and response[1] == 0x55\
                 and response[2] == 0x21 and response[3] == 0xa:  # synchronization matched
             sys_info = SystemInfo()

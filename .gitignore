@@ -6,4 +6,4 @@ build/
 .cache/
 dist/
 
-purdueros_cli.egg-info/
+pros_cli.egg-info/

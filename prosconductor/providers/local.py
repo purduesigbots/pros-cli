@@ -1,4 +1,5 @@
 import click
+import distutils.dir_util
 import fnmatch
 import os.path
 from proscli.utils import debug, verbose
@@ -29,13 +30,13 @@ def get_local_templates(pros_cfg: CliConfig = None, filters: List[str]=[],
 def create_template(identifier: Identifier, pros_cli: CliConfig = None) -> TemplateConfig:
     if pros_cli is None or not pros_cli:
         pros_cli = CliConfig()
-    filename = os.path.join(pros_cli.directory, identifier.depot_registrar,
+    filename = os.path.join(pros_cli.directory, identifier.depot,
                             '{}-{}'.format(identifier.name, identifier.version),
                             'template.pros')
     config = TemplateConfig(file=filename)
     config.name = identifier.name
     config.version = identifier.version
-    config.depot = identifier.depot_registrar
+    config.depot = identifier.depot
     config.save()
     return config
 
@@ -43,7 +44,7 @@ def create_template(identifier: Identifier, pros_cli: CliConfig = None) -> Templ
 def create_project(identifier: Identifier, dest: str, pros_cli: CliConfig = None):
     if pros_cli is None or not pros_cli:
         pros_cli = CliConfig()
-    filename = os.path.join(pros_cli.directory, identifier.depot_registrar,
+    filename = os.path.join(pros_cli.directory, identifier.depot,
                             '{}-{}'.format(identifier.name, identifier.version),
                             'template.pros')
     if not os.path.isfile(filename):
@@ -55,7 +56,7 @@ def create_project(identifier: Identifier, dest: str, pros_cli: CliConfig = None
         click.get_current_context().abort()
         sys.exit()
     config = TemplateConfig(file=filename)
-    shutil.copytree(config.directory, dest)
+    distutils.dir_util.copy_tree(config.directory, dest)
     for root, dirs, files in os.walk(dest):
         for d in dirs:
             if any([fnmatch.fnmatch(d, p) for p in config.template_ignore]):

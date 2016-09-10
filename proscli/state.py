@@ -6,5 +6,5 @@ class State(object):
         self.verbosity = 0
         self.debug = False
         self.machine_output = False
-        self.log_key = 'purdueros-logging'
+        self.log_key = 'pros-logging'
         self.pros_cfg = prosconfig.cliconfig.CliConfig(ctx=self)
