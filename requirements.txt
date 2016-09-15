@@ -1,6 +1,5 @@
 click
 pyserial
-cx_Freeze
 cachetools
 requests
 tabulate

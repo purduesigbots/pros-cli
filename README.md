@@ -1,89 +1,38 @@
-# pros-cli
+# PROS CLI
 
-pros-cli provides a command line utility to create and upgrade projects using the Purdue Robotics Operating System. pros-cli uses the official kernel repository, but can be modified to utilize any other repository. This project was created using IntelliJ IDEA 15 and is a Maven-based project.
+PROS is the only open source development environment for the VEX EDR Platform.
 
-## Contributing
-Feel free to contribute to this repository and add functionality to the command line interface. Create a pull request for code review.
+This project provides all of the project management related tasks for PROS. It is currently responsible for:
+ - Downloading kernel templates
+ - Creating, upgrading projects
+ - Flashing binaries to the cortex
 
-## Outlined Functionality
-```
-usage: pros [-h] [--version] {create,upgrade,fetch,config} ...
+This project is built in Python 3.5, and executables are built on a modified version of cx_Freeze.
 
-Create and upgrade PROS projects from an update site.
+## Installing for development
+PROS CLI can be installed directly from source with the following prerequisites:
+ - Python 3.5
+ - PIP (default in Python 3.5)
+ - Setuptools (default in PYthon 3.5)
 
-optional arguments:
-  -h, --help             show this help message and exit
-  --version
+Clone this repository, then run `pip install --executable <dir>`. Pip will install all the dependencies necessary.
 
-command:
-  {create,upgrade,fetch,config}
-```
+## About this project
+This python project contains 4 modules: proscli, prosconductor, prosconfig, and prosflasher
 
-```
-usage: pros create [-h] [--kernel [KERNEL]]
-            [--environments ENVIRONMENTS [ENVIRONMENTS ...]] [-f] [-v]
-            directory
+### proscli
+proscli contains the interaction logic for the actual end user experience using the Click framework and
+describes all of the commands available.
 
-positional arguments:
-  directory              PROS project to create.
+### prosconductor
+prosconductor contains the backend logic for managing projects. It is responsible for downloading projects through a
+provider (GitHub provider is currently the only provider, but can be extended)
 
-optional arguments:
-  -h, --help             show this help message and exit
-  --kernel [KERNEL]      Specify  kernel   version   to   target.  'latest'
-                         defaults to highest  locally available repository.
-                         Use  'pros  fetch   latest'   to  download  latest
-                         repository from update site.
-  --environments ENVIRONMENTS [ENVIRONMENTS ...]
-                         define   environments    to    target.   Available
-                         environments are determined  by  the kernel loader
-                         and can be  found  using  'pros  fetch  KERNEL -e'
-  -f, --force            Don't  prompt  to   overwrite  existing  directory
-  -v, --verbose          Use this flag to  enable verbose output.
-```
 
-```
-usage: pros upgrade [-h] [--kernel [KERNEL]]
-            [--environments ENVIRONMENTS [ENVIRONMENTS ...]] [-f] [-v]
-            directory
+### prosconfig
+prosconfig contains classes which represent configuration files, such as template.pros, project.pros, and cli.pros.
+These files are serialized by jsonpickle.
 
-positional arguments:
-  directory              PROS project directory to upgrade.
-
-optional arguments:
-  -h, --help             show this help message and exit
-  --kernel [KERNEL]      Specify kernel version  to  upgrade  to.
-  --environments ENVIRONMENTS [ENVIRONMENTS ...]
-                         Define   environments    to    target.   Available
-                         environments are determined by  the kernel kernels
-                         and can be found by  using  'pros fetch KERNEL -e'
-  -f, --force            Create/update  files  regardless   if  project  is
-                         considered to be a PROS project.
-  -v, --verbose          Use this flag to  enable verbose output.
-```
-
-```
-usage: pros fetch [-h] [--site [SITE]] [-v] [-e | -d | -c] [kernel]
-
-positional arguments:
-  kernel                 Kernel to fetch. May be  a regular expression. May
-                         be 'latest' to fetch  latest  from  online site or
-                         locally available  (whichever  is  higher).  'all'
-                         specifies all  kernels  if  applicable.
-
-optional arguments:
-  -h, --help             show this help message and exit
-  --site [SITE]          Specify  site  to   do   online  operations  with.
-  -e, --environments     List all environments that  can  be used with this
-                         kernel
-  -d, --download         Downloads kernel(s) from online  site. Will delete
-                         kernel template if  it  exists  locally. 
-  -c, --clean            Deletes kernel template(s)  from local repository.
-  -v, --verbose          Use this flag to  enable verbose output.
-
-Without -e, -d, or  -c,  will  list  if  the  specified kernel is available
-locally and/or online.
-```
-
-### Random notes (aka the backlog)
-
-For some reason, the pros-cli.jar artifact doesn't get the right manifest when it is built by IntelliJ. The correct manifest is at src/main/java/META-INF/MANIFEST.MF . You can edit the manifest using 7-zip and manually replace the contents there.
+### prosflasher
+prosflasher contains the logic necessary to upload binaries to the VEX Cortex Microcontroller. In the future, we'd like
+to reinclude the ability to manipulate the file system.

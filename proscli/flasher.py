@@ -14,7 +14,7 @@ def flasher_cli():
     pass
 
 
-@flasher_cli.command(short_help='Upload binaries to the microcontroller.')
+@flasher_cli.command(short_help='Upload binaries to the microcontroller.', alias=['upload'])
 @click.option('-sfs/-dfs', '--save-file-system/--delete-file-system', is_flag=True, default=False,
               help='Specify whether or not to save the file system when writing to the Cortex. Saving the '
                    'file system takes more time.')
