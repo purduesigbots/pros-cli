@@ -6,15 +6,15 @@ import sys
 import prosflasher.ports
 import prosflasher.upload
 import prosconfig
-from proscli.utils import default_cfg
+from proscli.utils import default_cfg, AliasGroup
 
 
-@click.group()
+@click.group(cls=AliasGroup)
 def flasher_cli():
     pass
 
 
-@flasher_cli.command(short_help='Upload binaries to the microcontroller.', alias=['upload'])
+@flasher_cli.command(short_help='Upload binaries to the microcontroller.', aliases=['upload'])
 @click.option('-sfs/-dfs', '--save-file-system/--delete-file-system', is_flag=True, default=False,
               help='Specify whether or not to save the file system when writing to the Cortex. Saving the '
                    'file system takes more time.')
