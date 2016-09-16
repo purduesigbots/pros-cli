@@ -1,0 +1,9 @@
+.idea
+.pyc
+__pycache__/
+
+build/
+.cache/
+dist/
+
+pros_cli.egg-info/

@@ -1,0 +1,6 @@
+click
+pyserial
+cachetools
+requests
+tabulate
+jsonpickle
