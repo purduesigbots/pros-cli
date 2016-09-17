@@ -1,5 +1,6 @@
 import click
 from functools import lru_cache
+import jsonpickle
 import tempfile
 import os
 import os.path
@@ -62,8 +63,9 @@ class GithubReleasesDepotProvider(DepotProvider):
         proscli.utils.debug('Fetching listing for {} at {} using {}'.format(config.name, config.location, self.registrar))
         r = requests.get('https://api.github.com/repos/{}/releases'.format(config.location), headers=self.create_headers(),
                          verify=get_cert_attr())
+        response = {t: set() for t in template_types}  # type: Dict[TemplateTypes, Set[Identifier]]
         if r.status_code == 200:
-            response = dict()  # type: Dict[TemplateTypes, Set[Identifier]]
+            # response = dict()  # type: Dict[TemplateTypes, Set[Identifier]]
             json = r.json()
             # filter out pre-releases according to registar_options (include_prerelease implies prerelease) and
             # by if the release has a kernel-template.zip or library-template.zip file
@@ -81,15 +83,15 @@ class GithubReleasesDepotProvider(DepotProvider):
                         # if the name isn't kernel-template.zip, then it's a library
                         if TemplateTypes.library not in response:
                             response[TemplateTypes.library] = set()
-                        response[TemplateTypes.library].add(
-                            Identifier(name=asset['name'][:-len('-template.zip')], version=release['tag_name'],
-                                       depot=self.config.name))
-
-            return response
+                        ident = Identifier(name=asset['name'][:-len('-template.zip')], version=release['tag_name'],
+                                       depot=self.config.name)
+                        proscli.utils.debug('Found: {}'.format(ident))
+                        response[TemplateTypes.library].add(ident)
         else:
             click.echo('Unable to get listing for {} at {}'.format(config.name, config.location))
             proscli.utils.debug(r.__dict__)
-            return dict()
+        proscli.utils.debug(jsonpickle.encode(response))
+        return response
 
     def download(self, identifier: Identifier) -> bool:
         self.verify_configuration()

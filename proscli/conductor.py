@@ -21,7 +21,7 @@ def first_run(ctx: proscli.utils.State, force: bool = False, defaults: bool = Fa
         if click.confirm('Add the official PROS kernel depot, pros-mainline?', default=True) or defaults:
             click.get_current_context().invoke(add_depot, name='pros-mainline',
                                                registrar='github-releases',
-                                               location='edjubuh/pros',
+                                               location='purduesigbots/pros',
                                                configure=False)
             click.echo('Added pros-mainline to available depots. '
                        'Add more depots in the future by running `pros conduct add-depot`\n')
@@ -297,7 +297,7 @@ def new(cfg, kernel, location, depot, verify_only):
         sys.exit()
     kernel_version = kernel
     if kernel == 'latest':
-        kernel_version = sorted(templates, key=lambda t: t.version)[0].version
+        kernel_version = sorted(templates, key=lambda t: t.version)[-1].version
         proscli.utils.debug('Resolved version {} to {}'.format(kernel, kernel_version))
     templates = [t for t in templates if t.version == kernel_version]  # type: List[Identifier]
     depot_registrar = depot
@@ -337,7 +337,7 @@ def upgrade(cfg, kernel, location, depot):
         sys.exit()
     kernel_version = kernel
     if kernel is 'latest':
-        kernel_version = sorted(templates, key=lambda t: t.version)[0].version
+        kernel_version = sorted(templates, key=lambda t: t.version)[-1].version
         proscli.utils.debug('Resolved version {} to {}'.format(kernel, kernel_version))
     templates = [t for t in templates if t.version == kernel_version]
     depot_registrar = depot
