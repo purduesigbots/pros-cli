@@ -9,6 +9,7 @@ from prosconductor.providers import TemplateTypes, Identifier
 import prosconductor.providers.local as local
 import prosconductor.providers.utils as utils
 import prosconfig
+import semantic_version as semver
 import sys
 import tabulate
 from typing import List
@@ -208,7 +209,7 @@ def download(cfg, name, version, depot, no_check):
         # listing now filtered for depots, if applicable
 
         if version == 'latest':
-            identifier, descriptors = OrderedDict(sorted(listing.items(), key=lambda kvp: kvp[0].version)).popitem()
+            identifier, descriptors = OrderedDict(sorted(listing.items(), key=lambda kvp: semver.Version(kvp[0].version))).popitem()
             click.echo('Resolved {} {} to {} {}'.format(name, version, identifier.name, identifier.version))
         else:
             if version not in [i.version for (i, d) in listing.items()]:
@@ -297,7 +298,7 @@ def new(cfg, kernel, location, depot, verify_only):
         sys.exit()
     kernel_version = kernel
     if kernel == 'latest':
-        kernel_version = sorted(templates, key=lambda t: t.version)[-1].version
+        kernel_version = sorted(templates, key=lambda t: semver.Version(t.version))[-1].version
         proscli.utils.debug('Resolved version {} to {}'.format(kernel, kernel_version))
     templates = [t for t in templates if t.version == kernel_version]  # type: List[Identifier]
     depot_registrar = depot
@@ -337,7 +338,7 @@ def upgrade(cfg, kernel, location, depot):
         sys.exit()
     kernel_version = kernel
     if kernel is 'latest':
-        kernel_version = sorted(templates, key=lambda t: t.version)[-1].version
+        kernel_version = sorted(templates, key=lambda t: semver.Version(t.version))[-1].version
         proscli.utils.debug('Resolved version {} to {}'.format(kernel, kernel_version))
     templates = [t for t in templates if t.version == kernel_version]
     depot_registrar = depot
@@ -377,7 +378,7 @@ def register(cfg, location, kernel):
                        ' specify a kernel manually.')
             click.get_current_context().abort()
             sys.exit()
-        kernel_version = sorted(templates, key=lambda t: t.version)[0].version
+        kernel_version = sorted(templates, key=lambda t: semver.Version(t.version))[-1].version
         proscli.utils.debug('Resolved version {} to {}'.format(kernel, kernel_version))
 
     cfg = prosconfig.ProjectConfig(location, create=True, raise_on_error=True)
