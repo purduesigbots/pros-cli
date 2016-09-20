@@ -20,7 +20,7 @@ def make(ctx, build_args):
     If on Windows, will invoke make located in on the PROS_TOOLCHAIN.
 
     Also has the added benefit of looking for the config.pros file"""
-    click.echo('Invoking make...')
+    click.echo('Invoking make {}...'.format(' '.join(build_args)))
     # cfg = prosconfig.find_project('.')
     cwd = '.'
     # if cfg is not None:

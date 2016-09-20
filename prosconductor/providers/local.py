@@ -74,7 +74,7 @@ def create_project(identifier: Identifier, dest: str, pros_cli: CliConfig = None
 def upgrade_project(identifier: Identifier, dest: str, pros_cli: CliConfig = None):
     if pros_cli is None or not pros_cli:
         pros_cli = CliConfig()
-    filename = os.path.join(pros_cli.directory, identifier.depot_registrar,
+    filename = os.path.join(pros_cli.directory, identifier.depot,
                             '{}-{}'.format(identifier.name, identifier.version),
                             'template.pros')
 
