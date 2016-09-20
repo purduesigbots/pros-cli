@@ -337,12 +337,12 @@ def upgrade(cfg, kernel, location, depot):
         click.get_current_context().abort()
         sys.exit()
     kernel_version = kernel
-    if kernel is 'latest':
+    if kernel == 'latest':
         kernel_version = sorted(templates, key=lambda t: semver.Version(t.version))[-1].version
         proscli.utils.debug('Resolved version {} to {}'.format(kernel, kernel_version))
     templates = [t for t in templates if t.version == kernel_version]
     depot_registrar = depot
-    if depot is 'auto':
+    if depot == 'auto':
         templates = [t for t in templates if t.version == kernel_version]
         if not templates or len(templates) == 0:
             click.echo('No templates exist for {}'.format(kernel_version))
@@ -353,13 +353,13 @@ def upgrade(cfg, kernel, location, depot):
         else:
             depot_registrar = [t.depot for t in templates][0]
         proscli.utils.debug('Resolved depot {} to {}'.format(depot, depot_registrar))
-    templates = [t for t in templates if t.depot_registrar == depot_registrar]
+    templates = [t for t in templates if t.depot == depot_registrar]
     if not templates or len(templates) == 0:
         click.echo('No templates were found for kernel version {} on {}'.format(kernel_version, depot_registrar))
     template = templates[0]
     if not os.path.isabs(location):
         location = os.path.abspath(location)
-    click.echo('Creating new project from {} on {} at {}'.format(template.version, template.depot_registrar, location))
+    click.echo('Upgrading existing project from {} on {} at {}'.format(template.version, template.depot, location))
     local.upgrade_project(identifier=template, dest=location, pros_cli=cfg.pros_cfg)
 
 
@@ -370,7 +370,7 @@ def upgrade(cfg, kernel, location, depot):
 def register(cfg, location, kernel):
     first_run(cfg)
     kernel_version = kernel
-    if kernel_version is 'latest':
+    if kernel_version == 'latest':
         templates = local.get_local_templates(pros_cfg=cfg.pros_cfg,
                                               template_types=[TemplateTypes.kernel])  # type: List[Identifier]
         if not templates or len(templates) == 0:
