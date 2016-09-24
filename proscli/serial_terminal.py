@@ -193,7 +193,7 @@ class Terminal(object):
                     if self.output_raw:
                         self.console.write_bytes(data)
                     else:
-                        text = data.decode('utf-8')
+                        text = data.decode('utf-8', 'ignore')
                         for transformation in self.transformations:
                             text = transformation(text)
                         self.console.write(text)
