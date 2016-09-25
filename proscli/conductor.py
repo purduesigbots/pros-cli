@@ -19,14 +19,14 @@ def first_run(ctx: proscli.utils.State, force: bool = False, defaults: bool = Fa
     if len(utils.get_depot_configs(ctx.pros_cfg)) == 0:
         click.echo('You don\'t currently have any depots configured.')
     if len(utils.get_depot_configs(ctx.pros_cfg)) == 0 or force:
-        if click.confirm('Add the official PROS kernel depot, pros-mainline?', default=True) or defaults:
+        if defaults or click.confirm('Add the official PROS kernel depot, pros-mainline?', default=True):
             click.get_current_context().invoke(add_depot, name='pros-mainline',
                                                registrar='github-releases',
                                                location='purduesigbots/pros',
                                                configure=False)
             click.echo('Added pros-mainline to available depots. '
                        'Add more depots in the future by running `pros conduct add-depot`\n')
-            if click.confirm('Download the latest kernel?', default=True) or defaults:
+            if defaults or click.confirm('Download the latest kernel?', default=True):
                 click.get_current_context().invoke(download, name='kernel', depot='pros-mainline')
 
 
