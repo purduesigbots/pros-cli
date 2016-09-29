@@ -25,15 +25,14 @@ def make(ctx, build_args):
     cwd = '.'
     # if cfg is not None:
     #     cwd = cfg.path
+    env = os.environ.copy()
+    if os.name == 'nt':
+        env['PATH'] += ';' + os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin')
     cmd = (os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'make.exe') if os.name == 'nt' else 'make')
-    if os.path.exists(cmd):
-        p = subprocess.Popen(executable=cmd, args=build_args, cwd=cwd,
-                             stdout=sys.stdout, stderr=sys.stderr)
-        p.wait()
-        if p.returncode != 0:
-            ctx.exit(1)
-    else:
-        click.echo('Error... make not found.', err=True)
+    p = subprocess.Popen(executable=cmd, args=build_args, cwd=cwd, env=env
+                         stdout=sys.stdout, stderr=sys.stderr)
+    p.wait()
+    if p.returncode != 0:
         ctx.exit(1)
 
 
