@@ -6,7 +6,7 @@ install_reqs = [str(r.req) for r in parse_requirements('requirements.txt', sessi
 
 setup(
     name='pros-cli',
-    version='2.1.4',
+    version='2.1.5',
     packages=['prosflasher', 'proscli', 'prosconfig', 'prosconductor', 'prosconductor.providers'],
     url='https://github.com/purduesigbots/pros-cli',
     license='MPL-2.0',

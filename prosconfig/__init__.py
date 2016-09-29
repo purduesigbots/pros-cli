@@ -4,7 +4,7 @@ import jsonpickle
 import os.path
 import proscli
 import proscli.utils
-from typing import List
+# from typing import List
 
 
 class ConfigNotFoundException(Exception):

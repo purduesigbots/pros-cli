@@ -11,7 +11,7 @@ import re
 import requests
 import shutil
 import sys
-from typing import List, Dict, Set
+# from typing import List, Dict, Set
 import zipfile
 
 

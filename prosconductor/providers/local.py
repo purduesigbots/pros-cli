@@ -9,7 +9,7 @@ from prosconductor.providers import Identifier, TemplateTypes, TemplateConfig
 from prosconductor.providers.utils import get_depots
 import shutil
 import sys
-from typing import Set, List
+# from typing import Set, List
 
 
 def get_local_templates(pros_cfg: CliConfig = None, filters: List[str]=[],

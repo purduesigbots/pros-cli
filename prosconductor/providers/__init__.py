@@ -4,7 +4,7 @@ import enum
 import os.path
 from prosconfig import Config
 import shutil
-from typing import List, Dict, Set, Union
+# from typing import List, Dict, Set, Union
 
 
 class InvalidIdentifierException(Exception):
@@ -30,11 +30,10 @@ TemplateDescriptor = collections.namedtuple('TemplateDescriptor', ['depot', 'off
 
 class DepotConfig(Config):
     def __init__(self,
-                 file: str = None,
-                 name: str = None, registrar: str = None, location: str = None,
-                 registrar_options: dict = None,
-                 types: List[TemplateTypes] = None,
-                 root_dir: str = None):
+                 file=None, name=None, registrar=None, location=None,
+                 registrar_options=None,
+                 types=None,
+                 root_dir=None):
         self.name = name  # type: str
         self.registrar = registrar  # type: str
         self.location = location  # type: str

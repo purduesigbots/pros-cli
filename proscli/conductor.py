@@ -12,10 +12,10 @@ import prosconfig
 import semantic_version as semver
 import sys
 import tabulate
-from typing import List
+# from typing import List
 
 
-def first_run(ctx: proscli.utils.State, force: bool = False, defaults: bool = False):
+def first_run(ctx: proscli.utils.State, force=False, defaults=False):
     if len(utils.get_depot_configs(ctx.pros_cfg)) == 0:
         click.echo('You don\'t currently have any depots configured.')
     if len(utils.get_depot_configs(ctx.pros_cfg)) == 0 or force:

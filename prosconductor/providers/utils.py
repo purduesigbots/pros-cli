@@ -4,7 +4,7 @@ import os
 import re
 from prosconductor.providers import DepotProvider, DepotConfig, TemplateTypes, Identifier, TemplateDescriptor
 from prosconfig.cliconfig import CliConfig
-from typing import Dict, List
+# from typing import Dict, List
 
 
 @lru_cache()
