@@ -67,7 +67,7 @@ def validate_name(ctx, param, value):
     return value
 
 
-def available_providers() -> List[str]:
+def available_providers():
     return utils.get_all_provider_types().keys()
 
 

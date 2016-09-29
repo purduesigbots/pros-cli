@@ -65,13 +65,13 @@ class TemplateConfig(Config):
 class DepotProvider(object):
     registrar = 'default-provider'
 
-    def __init__(self, config: DepotConfig):
+    def __init__(self, config):
         self.config = config
 
-    def list_online(self, template_types: List[TemplateTypes] = None) -> Dict[TemplateTypes, Set[Identifier]]:
+    def list_online(self, template_types=None):
         pass
 
-    def list_latest(self, name: str):
+    def list_latest(self, name):
         """
 
         :param name:
@@ -79,14 +79,14 @@ class DepotProvider(object):
         """
         pass
 
-    def download(self, identifier: Identifier) -> bool:
+    def download(self, identifier) -> bool:
         """
         Downloads the specified template with the given name and version
         :return: True if successful, False if not
         """
         pass
 
-    def list_local(self, template_types: List[TemplateTypes] = None) -> Dict[TemplateTypes, Set[Identifier]]:
+    def list_local(self, template_types=None):
         if template_types is None:
             template_types = [TemplateTypes.kernel, TemplateTypes.library]
 
@@ -109,11 +109,11 @@ class DepotProvider(object):
         pass
 
     @staticmethod
-    def configure_registrar_options(default: dict=dict()) -> dict:
+    def configure_registrar_options(default=dict()):
         pass
 
 
-def get_template_dir(depot: Union[str, DepotConfig, DepotProvider], identifier: Identifier) -> str:
+def get_template_dir(depot, identifier):
     if isinstance(depot, DepotConfig):
         depot = depot.name
     elif isinstance(depot, DepotProvider):

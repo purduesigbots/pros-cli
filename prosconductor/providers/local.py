@@ -12,8 +12,8 @@ import sys
 # from typing import Set, List
 
 
-def get_local_templates(pros_cfg: CliConfig = None, filters: List[str]=[],
-                        template_types: List[TemplateTypes] = None) -> Set[Identifier]:
+def get_local_templates(pros_cfg=None, filters=[],
+                        template_types=None):
     if template_types is None or not template_types:
         template_types = [TemplateTypes.kernel, TemplateTypes.library]
     if filters is None or not filters:
@@ -27,7 +27,7 @@ def get_local_templates(pros_cfg: CliConfig = None, filters: List[str]=[],
     #         [depot.list_local(template_types) for depot in get_depots(pros_cfg, filters)]]]
 
 
-def create_template(identifier: Identifier, pros_cli: CliConfig = None) -> TemplateConfig:
+def create_template(identifier, pros_cli=None):
     if pros_cli is None or not pros_cli:
         pros_cli = CliConfig()
     filename = os.path.join(pros_cli.directory, identifier.depot,
@@ -41,7 +41,7 @@ def create_template(identifier: Identifier, pros_cli: CliConfig = None) -> Templ
     return config
 
 
-def create_project(identifier: Identifier, dest: str, pros_cli: CliConfig = None):
+def create_project(identifier, dest, pros_cli=None):
     if pros_cli is None or not pros_cli:
         pros_cli = CliConfig()
     filename = os.path.join(pros_cli.directory, identifier.depot,
@@ -71,7 +71,7 @@ def create_project(identifier: Identifier, dest: str, pros_cli: CliConfig = None
     proj_config.save()
 
 
-def upgrade_project(identifier: Identifier, dest: str, pros_cli: CliConfig = None):
+def upgrade_project(identifier, dest, pros_cli=None):
     if pros_cli is None or not pros_cli:
         pros_cli = CliConfig()
     filename = os.path.join(pros_cli.directory, identifier.depot,
