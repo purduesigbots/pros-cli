@@ -6,13 +6,13 @@ install_reqs = [str(r.req) for r in parse_requirements('requirements.txt', sessi
 
 setup(
     name='pros-cli',
-    version='2.beta',
+    version='2.1.4',
     packages=['prosflasher', 'proscli', 'prosconfig', 'prosconductor', 'prosconductor.providers'],
     url='https://github.com/purduesigbots/pros-cli',
-    license='',
-    author='Purdue ACM Sigbots',
+    license='MPL-2.0',
+    author='Purdue ACM SIGBots',
     author_email='pros_development@cs.purdue.edu',
-    description='',
+    description='Command Line Interface for managing PROS projects',
     install_requires=install_reqs,
     entry_points="""
         [console_scripts]

@@ -316,6 +316,8 @@ def new(cfg, kernel, location, depot, verify_only):
     templates = [t for t in templates if t.depot == depot_registrar]
     if not templates or len(templates) == 0:
         click.echo('No templates were found for kernel version {} on {}'.format(kernel_version, depot_registrar))
+        click.get_current_context().abort()
+        sys.exit()
     template = templates[0]
     if not os.path.isabs(location):
         location = os.path.abspath(location)
@@ -393,4 +395,4 @@ def register(cfg, location, kernel):
 @click.option('--use-defaults', is_flag=True, default=False)
 @default_cfg
 def first_run_cmd(cfg, no_force, use_defaults):
-    first_run(cfg, force=not no_force, defaults=use_defaults)
+    first_run(cfg, force=no_force, defaults=use_defaults)
