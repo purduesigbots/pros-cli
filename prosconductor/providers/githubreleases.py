@@ -11,7 +11,7 @@ import re
 import requests
 import shutil
 import sys
-from typing import List, Dict, Set
+# from typing import List, Dict, Set
 import zipfile
 
 
@@ -26,7 +26,7 @@ def get_cert_attr():
 class GithubReleasesDepotProvider(DepotProvider):
     registrar = 'github-releases'
 
-    def __init__(self, config: DepotConfig):
+    def __init__(self, config):
         super(GithubReleasesDepotProvider, self).__init__(config)
 
     def create_headers(self, accept='application/vnd.github.v3+json'):
@@ -40,7 +40,7 @@ class GithubReleasesDepotProvider(DepotProvider):
             raise InvalidIdentifierException('{} is an invalid GitHub resository'.format(self.config.location))
 
     @staticmethod
-    def configure_registrar_options(default: dict=dict()) -> dict:
+    def configure_registrar_options(default=dict()):
         options = dict()
         options['include_prerelease'] = click.confirm('Include pre-releases?',
                                                      default=default.get('include_prerelease', False),
@@ -55,7 +55,7 @@ class GithubReleasesDepotProvider(DepotProvider):
                                                   prompt_suffix=' ')
         return options
 
-    def list_online(self, template_types: List[TemplateTypes] = None):
+    def list_online(self, template_types=None):
         self.verify_configuration()
         if template_types is None:
             template_types = [TemplateTypes.kernel, TemplateTypes.library]
@@ -93,7 +93,7 @@ class GithubReleasesDepotProvider(DepotProvider):
         proscli.utils.debug(jsonpickle.encode(response))
         return response
 
-    def download(self, identifier: Identifier) -> bool:
+    def download(self, identifier):
         self.verify_configuration()
         template_dir = get_template_dir(self, identifier)
         if os.path.isdir(template_dir):
