@@ -12,10 +12,10 @@ import prosconfig
 import semantic_version as semver
 import sys
 import tabulate
-from typing import List
+# from typing import List
 
 
-def first_run(ctx: proscli.utils.State, force: bool = False, defaults: bool = False):
+def first_run(ctx: proscli.utils.State, force=False, defaults=False):
     if len(utils.get_depot_configs(ctx.pros_cfg)) == 0:
         click.echo('You don\'t currently have any depots configured.')
     if len(utils.get_depot_configs(ctx.pros_cfg)) == 0 or force:
@@ -67,7 +67,7 @@ def validate_name(ctx, param, value):
     return value
 
 
-def available_providers() -> List[str]:
+def available_providers():
     return utils.get_all_provider_types().keys()
 
 
@@ -316,6 +316,8 @@ def new(cfg, kernel, location, depot, verify_only):
     templates = [t for t in templates if t.depot == depot_registrar]
     if not templates or len(templates) == 0:
         click.echo('No templates were found for kernel version {} on {}'.format(kernel_version, depot_registrar))
+        click.get_current_context().abort()
+        sys.exit()
     template = templates[0]
     if not os.path.isabs(location):
         location = os.path.abspath(location)
@@ -393,4 +395,4 @@ def register(cfg, location, kernel):
 @click.option('--use-defaults', is_flag=True, default=False)
 @default_cfg
 def first_run_cmd(cfg, no_force, use_defaults):
-    first_run(cfg, force=not no_force, defaults=use_defaults)
+    first_run(cfg, force=no_force, defaults=use_defaults)

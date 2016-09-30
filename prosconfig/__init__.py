@@ -4,7 +4,7 @@ import jsonpickle
 import os.path
 import proscli
 import proscli.utils
-from typing import List
+# from typing import List
 
 
 class ConfigNotFoundException(Exception):
@@ -14,7 +14,7 @@ class ConfigNotFoundException(Exception):
 
 
 class Config(object):
-    def __init__(self, file: str, error_on_decode: bool=False, ctx=None):
+    def __init__(self, file, error_on_decode=False, ctx=None):
         proscli.utils.debug('Opening {} ({})'.format(file, self.__class__.__name__), ctx=ctx)
         self.save_file = file   # type: str
         self.__ignored = ['save_file', '_Config__ignored']  # type: list(str)
@@ -82,7 +82,7 @@ class ProjectConfig(Config):
         super(ProjectConfig, self).__init__(file, error_on_decode=raise_on_error)
 
     @staticmethod
-    def find_project(path: str) -> str:
+    def find_project(path):
         if os.path.isfile(path):
             return path
         elif os.path.isdir(path):

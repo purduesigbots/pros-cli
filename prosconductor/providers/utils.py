@@ -1,29 +1,29 @@
 from functools import lru_cache
+import importlib.machinery
 import importlib.util
 import os
 import re
 from prosconductor.providers import DepotProvider, DepotConfig, TemplateTypes, Identifier, TemplateDescriptor
 from prosconfig.cliconfig import CliConfig
-from typing import Dict, List
+# from typing import Dict, List
 
 
 @lru_cache()
-def get_all_provider_types(pros_cfg: CliConfig = None) -> Dict[str, type]:
+def get_all_provider_types(pros_cfg=None):
     if pros_cfg is None:
         pros_cfg = CliConfig()
 
     for provider_file in pros_cfg.providers:
-        spec = importlib.util.spec_from_file_location('module.name', provider_file)
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
+        importlib.machinery.SourceFileLoader('modulename', provider_file).load_module()
+        # spec = importlib.util.spec_from_file_location('module.name', provider_file)
+        # mod = importlib.util.module_from_spec(spec)
+        # spec.loader.exec_module(mod)
 
     return {x.registrar: x for x in DepotProvider.__subclasses__()}
 
 
 @lru_cache()
-def get_depot(depot_cfg: DepotConfig,
-              pros_cfg: CliConfig = None
-              ) -> DepotProvider:
+def get_depot(depot_cfg, pros_cfg=None):
     providers = get_all_provider_types(pros_cfg)
     if depot_cfg.registrar in providers:
         return providers[depot_cfg.registrar](depot_cfg)
@@ -32,14 +32,14 @@ def get_depot(depot_cfg: DepotConfig,
 
 
 @lru_cache()
-def get_depot_config(name: str, pros_cfg: CliConfig = None) -> DepotConfig:
+def get_depot_config(name, pros_cfg=None):
     if pros_cfg is None:
         pros_cfg = CliConfig()
 
     return DepotConfig(os.path.join(pros_cfg.directory, name, 'depot.pros'))
 
 
-def get_depot_configs(pros_cfg: CliConfig = None, filters: List[str]=None) -> List[DepotConfig]:
+def get_depot_configs(pros_cfg=None, filters=None):
     if pros_cfg is None:
         pros_cfg = CliConfig()
     if filters is None or not filters:
@@ -49,14 +49,13 @@ def get_depot_configs(pros_cfg: CliConfig = None, filters: List[str]=None) -> Li
             if depot.name and not all(m is None for m in [re.match(string=depot.name, pattern=f) for f in filters])]
 
 
-def get_depots(pros_cfg: CliConfig = None, filters: List[str]=None) -> List[DepotProvider]:
+def get_depots(pros_cfg=None, filters=None):
     return [get_depot(depot, pros_cfg) for depot in get_depot_configs(pros_cfg, filters)
             if get_depot(depot, pros_cfg) is not None]
 
 
-def get_available_templates(pros_cfg: CliConfig = None, template_types: List[TemplateTypes] = None,
-                            filters: List[str]=[], offline_only: bool=False) \
-        -> Dict[TemplateTypes, Dict[Identifier, List[TemplateDescriptor]]]:
+def get_available_templates(pros_cfg=None, template_types=None,
+                            filters=[], offline_only=False):
     if pros_cfg is None:
         pros_cfg = CliConfig()
     if template_types is None:

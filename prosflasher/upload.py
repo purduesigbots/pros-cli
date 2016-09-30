@@ -62,7 +62,7 @@ Joystick: F/W {} w/ {:1.2f}V
 
 
 # THIS MANAGES THE UPLOAD PROCESS FOR A GIVEN PORT/BINARY PAIR
-def upload(port, binary, no_poll: bool = False, ctx=proscli.utils.State()):
+def upload(port, binary, no_poll=False, ctx=proscli.utils.State()):
     if not os.path.isfile(binary):
         click.echo('Failed to download... file does not exist')
         return False
