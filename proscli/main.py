@@ -12,15 +12,6 @@ def main():
         click.echo('Aborted!')
         pass
 
-import prosconductor.providers.utils
-
-@proscli.flasher_cli.command('help', short_help='Show this message and exit.')
-@click.argument('ignore', nargs=-1, expose_value=False)
-@default_options
-@click.pass_context
-def help_cmd(ctx):
-    click.echo(prosconductor.providers.utils.get_all_available_templates())
-
 
 @click.command('pros',
                cls=click.CommandCollection,
