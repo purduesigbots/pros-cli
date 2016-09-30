@@ -79,7 +79,7 @@ class DepotProvider(object):
         """
         pass
 
-    def download(self, identifier) -> bool:
+    def download(self, identifier):
         """
         Downloads the specified template with the given name and version
         :return: True if successful, False if not
@@ -101,7 +101,7 @@ class DepotProvider(object):
                 result[TemplateTypes.kernel].add(template_config.identifier)
         return result
 
-    def verify_configuration(self) -> bool:
+    def verify_configuration(self):
         """
         Verifies the current configuration (i.e. is the location valid)
         :return: Something falsey if valid, an exception (to be raised or displayed)
