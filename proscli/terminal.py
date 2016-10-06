@@ -34,6 +34,7 @@ def terminal(port):
         pass
     term.join()
     ser.close()
+    sys.exit(0)
     # term = serial.tools.miniterm.Miniterm(ser, echo=click.echo)
     # term.set_rx_encoding('UTF-8')
     # term.set_tx_encoding('UTF-8')
