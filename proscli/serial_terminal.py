@@ -2,10 +2,12 @@ import codecs
 import os
 from proscli.utils import debug
 import serial
+import signal
 import sys
 import threading
 
 # This file is a modification of the miniterm implementation on pyserial
+
 
 class ConsoleBase(object):
     """OS abstraction for console (input/output codec, no echo)"""
@@ -75,9 +77,12 @@ if os.name == 'nt':  # noqa
             self._saved_icp = ctypes.windll.kernel32.GetConsoleCP()
             ctypes.windll.kernel32.SetConsoleOutputCP(65001)
             ctypes.windll.kernel32.SetConsoleCP(65001)
-            self.output = codecs.getwriter('UTF-8')(Out(sys.stdout.fileno()), 'replace')
-            # the change of the code page is not propagated to Python, manually fix it
-            sys.stderr = codecs.getwriter('UTF-8')(Out(sys.stderr.fileno()), 'replace')
+            self.output = codecs.getwriter('UTF-8')(Out(sys.stdout.fileno()),
+                                                    'replace')
+            # the change of the code page is not propagated to Python,
+            # manually fix it
+            sys.stderr = codecs.getwriter('UTF-8')(Out(sys.stderr.fileno()),
+                                                   'replace')
             sys.stdout = self.output
             self.output.encoding = 'UTF-8'  # needed for input
 
@@ -116,7 +121,8 @@ elif os.name == 'posix':
             self.old = termios.tcgetattr(self.fd)
             atexit.register(self.cleanup)
             if sys.version_info < (3, 0):
-                self.enc_stdin = codecs.getreader(sys.stdin.encoding)(sys.stdin)
+                self.enc_stdin = codecs.\
+                                 getreader(sys.stdin.encoding)(sys.stdin)
             else:
                 self.enc_stdin = sys.stdin
 
@@ -128,7 +134,8 @@ elif os.name == 'posix':
             termios.tcsetattr(self.fd, termios.TCSANOW, new)
 
         def getkey(self):
-            ready, _, _ = select.select([self.enc_stdin, self.pipe_r], [], [], None)
+            ready, _, _ = select.select([self.enc_stdin, self.pipe_r], [],
+                                        [], None)
             if self.pipe_r in ready:
                 os.read(self.pipe_r, 1)
                 return
@@ -145,12 +152,14 @@ elif os.name == 'posix':
 
 else:
     raise NotImplementedError(
-        'Sorry no implementation for your platform ({}) available.'.format(sys.platform))
+        'Sorry no implementation for your platform ({})'
+        ' available.'.format(sys.platform))
 
 
 class Terminal(object):
     """This class is loosely based off of the pyserial miniterm"""
-    def __init__(self, serial_instance: serial.Serial, transformations=(), output_raw=False):
+    def __init__(self, serial_instance: serial.Serial, transformations=(),
+                 output_raw=False):
         self.serial = serial_instance
         self.transformations = transformations
         self._reader_alive = None
@@ -158,12 +167,15 @@ class Terminal(object):
         self._transmitter_alive = None
         self.transmitter_thread = None
         self.alive = None
-        self.output_raw=output_raw
+        self.output_raw = output_raw
+        self.no_sigint = True  # SIGINT flag
+        signal.signal(signal.SIGINT, self.catch_sigint)  # SIGINT handler
         self.console = Console()
 
     def _start_rx(self):
         self._reader_alive = True
-        self.receiver_thread = threading.Thread(target=self.reader, name='serial-rx-term')
+        self.receiver_thread = threading.Thread(target=self.reader,
+                                                name='serial-rx-term')
         self.receiver_thread.daemon = True
         self.receiver_thread.start()
 
@@ -175,7 +187,8 @@ class Terminal(object):
 
     def _start_tx(self):
         self._transmitter_alive = True
-        self.transmitter_thread = threading.Thread(target=self.transmitter, name='serial-tx-term')
+        self.transmitter_thread = threading.Thread(target=self.transmitter,
+                                                   name='serial-tx-term')
         self.transmitter_thread.daemon = True
         self.transmitter_thread.start()
 
@@ -186,6 +199,7 @@ class Terminal(object):
         self.transmitter_thread.join()
 
     def reader(self):
+        start_time = time.clock
         try:
             while self.alive and self._reader_alive:
                 data = self.serial.read(self.serial.in_waiting or 1)
@@ -210,7 +224,7 @@ class Terminal(object):
                     c = '\x03'
                 if not self.alive:
                     break
-                if c == '\x03':
+                if c == '\x03' or not self.no_sigint:
                     self.stop()
                     break
                 else:
@@ -219,6 +233,9 @@ class Terminal(object):
         except Exception as e:
             debug(e)
             self.alive = False
+
+    def catch_sigint(self):
+        self.no_sigint = False
 
     def start(self):
         self.alive = True
