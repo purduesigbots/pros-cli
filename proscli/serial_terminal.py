@@ -4,6 +4,7 @@ from proscli.utils import debug
 import serial
 import signal
 import sys
+import time
 import threading
 
 # This file is a modification of the miniterm implementation on pyserial

@@ -1,3 +1,4 @@
+import click
 import serial
 import serial.tools.list_ports
 
@@ -26,7 +27,8 @@ def create_serial(port):
     if isinstance(port, str):
         try:
             port = serial.Serial(port)
-        except serial.SerialException:
+        except serial.SerialException as e:
+            click.echo('WARNING: {}'.format(e))
             port = serial.Serial()
     elif not isinstance(port, serial.Serial):
         port = serial.Serial()

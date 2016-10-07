@@ -4,6 +4,7 @@ import sys
 import os
 # import prosconfig
 import proscli.flasher
+import proscli.terminal
 
 
 @click.group()
@@ -28,7 +29,9 @@ def make(ctx, build_args):
     env = os.environ.copy()
     if os.name == 'nt':
         env['PATH'] += ';' + os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin')
-    cmd = 'make'
+        cmd = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'make.exe')
+    else:
+        cmd = 'make'
     p = subprocess.Popen(executable=cmd, args=build_args, cwd=cwd, env=env,
                          stdout=sys.stdout, stderr=sys.stderr)
     p.wait()
@@ -42,3 +45,12 @@ def make(ctx, build_args):
 def make_flash(ctx, build_args):
     ctx.invoke(make, build_args=build_args)
     ctx.invoke(proscli.flasher.flash)
+
+
+@build_cli.command(name='mut', help='Combines \'make\', \'flash\', and \'terminal\'')
+@click.argument('build-args', nargs=-1)
+@click.pass_context
+def make_flash_terminal(ctx, build_args):
+    ctx.invoke(make, build_args=build_args)
+    ctx.invoke(proscli.flasher.flash)
+    ctx.invoke(proscli.terminal.terminal)
