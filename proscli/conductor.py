@@ -1,11 +1,14 @@
+import fnmatch
+from proscli.utils import verbose
+from prosconductor.providers import TemplateTypes, Identifier, TemplateConfig
 import click
 from collections import OrderedDict
 import json
 import os.path
+import distutils
 import proscli.utils
 from proscli.utils import default_cfg, default_options, AliasGroup
 import prosconductor.providers as providers
-from prosconductor.providers import TemplateTypes, Identifier
 import prosconductor.providers.local as local
 import prosconductor.providers.utils as utils
 import prosconfig
@@ -388,6 +391,97 @@ def register(cfg, location, kernel):
     click.echo('Registering {} with kernel {}'.format(location, kernel_version))
     cfg.save()
 # endregion
+@conduct.command('new-lib', help='Installs a new library')
+@click.argument('location')
+@click.argument('library')
+@click.argument('version', default='latest')
+@click.argument('depot', default='auto')
+@default_cfg
+def newlib(cfg, location, library, version, depot):
+    if(not (version == 'latest') and len(version.split('.')) < 3):
+        depot = version
+        version = 'latest'
+    first_run(cfg)
+    templates = local.get_local_templates(pros_cfg=cfg.pros_cfg,
+                                          template_types=[TemplateTypes.kernel])  # type: List[Identifier]
+    selected = None
+    to_remove = []
+    if not templates or len(templates) == 0:
+        click.echo('No templates have been downloaded! Use `pros conduct download` to download the latest kernel.')
+        click.get_current_context().abort()
+        sys.exit()
+    for template in templates:
+        if(template.name != library):
+            to_remove.append(template)
+    for template in to_remove:
+        templates.remove(template)
+    to_remove = []
+    if version == 'latest':
+        lib_version = sorted(templates, key=lambda t: semver.Version(t.version))[-1].version
+        highest = lib_version.split('.')
+        for template in templates:
+            curr = template.version.split('.')
+            if len(highest) > len(curr):
+                to_remove.append(template)
+            for i in range(len(highest)):
+                if curr[i] < highest[i]:
+                    to_remove.append(template)
+                    break
+
+    else:
+        for template in templates:
+            if(template.version != version):
+                to_remove.append(template)
+    for template in to_remove:
+        templates.remove(template)
+    to_remove = []
+    if depot == 'auto':
+        for template in templates:
+            if(template.depot == 'pros-mainline'):
+                selected = template
+                break
+        if selected == None:
+            selected = tempates[0]
+    else:
+        for template in templates:
+            if template.depot != depot:
+                to_remove.append(template)
+        for template in to_remove:
+            templates.remove(template)
+        to_remove = []
+        if len(templates) > 0:
+            selected = templates[0]
+        else:
+            click.echo('No local libraries match the specified name, version, and depot. Check your arguments and make sure the appropriate libraries are downloaded')
+            click.get_current_context().abort()
+            sys.exit()
+    install_lib(selected, location, cfg.pros_cfg)
+    print('Created library {} v. {} in {} from {}'.format(selected.name, selected.version, location, selected.depot))
+
+def install_lib(identifier, dest, pros_cli):
+    if pros_cli is None or not pros_cli:
+        pros_cli = CliConfig()
+    filename = os.path.join(pros_cli.directory, identifier.depot,
+                            '{}-{}'.format(identifier.name, identifier.version),
+                            'template.pros')
+    if not os.path.isfile(filename):
+        click.echo('Error: template.pros not found for {}-{}'.format(identifier.name, identifier.version))
+        click.get_current_context().abort()
+        sys.exit()
+    proj_config = prosconfig.ProjectConfig(dest)
+    config = TemplateConfig(file=filename)
+    distutils.dir_util.copy_tree(config.directory, dest)
+    for root, dirs, files in os.walk(dest):
+        for d in dirs:
+            if any([fnmatch.fnmatch(d, p) for p in config.template_ignore]):
+                verbose('Removing {}'.format(d))
+                os.rmdir(os.path.join(root, d))
+        for f in files:
+            if any([fnmatch.fnmatch(f, p) for p in config.template_ignore]):
+                verbose('Removing {}'.format(f))
+                os.remove(os.path.join(root, f))
+    proj_config.libraries.append('{}-{}'.format(identifier.name,identifier.version))
+    proj_config.save()
 
 
 @conduct.command('first-run', help='Runs the first-run configuration')
