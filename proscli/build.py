@@ -23,16 +23,17 @@ def make(ctx, build_args):
 
     Also has the added benefit of looking for the config.pros file"""
     click.echo('Invoking make {}...'.format(' '.join(build_args)))
-    cfg = prosconfig.ProjectConfig.find_project('.')
+    cfg = prosconfig.ProjectConfig(prosconfig.ProjectConfig.find_project('.'))
     cwd = '.'
     if cfg is not None:
-        cwd = cfg.path
+        cwd = cfg.directory
     env = os.environ.copy()
     if os.name == 'nt':
         env['PATH'] += ';' + os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin')
         cmd = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'make.exe')
     else:
         cmd = 'make'
+    build_args = ['make'] + list(build_args)['make'].append(build_args)
     p = subprocess.Popen(executable=cmd, args=build_args, cwd=cwd, env=env,
                          stdout=sys.stdout, stderr=sys.stderr)
     p.wait()
