@@ -70,7 +70,7 @@ class Config(object):
 
 class ProjectConfig(Config):
     def __init__(self, path: str='.', create: bool=False, raise_on_error: bool=True):
-        file = ProjectConfig.find_project(path)
+        file = ProjectConfig.find_project(path or '.')
         if file is None and create:
             file = os.path.join(path, 'project.pros')
         elif file is None and raise_on_error:
@@ -83,11 +83,12 @@ class ProjectConfig(Config):
 
     @staticmethod
     def find_project(path):
+        path = os.path.abspath(path)
         if os.path.isfile(path):
             return path
         elif os.path.isdir(path):
             for n in range(10):
-                if os.path.isdir(path):
+                if path is not None and os.path.isdir(path):
                     files = [f for f in os.listdir(path)
                              if os.path.isfile(os.path.join(path, f)) and f.lower() == 'project.pros']
                     if len(files) == 1:  # found a project.pros file!
