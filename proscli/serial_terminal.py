@@ -250,6 +250,7 @@ class Terminal(object):
             self.receiver_thread.join()
 
     def stop(self):
+        print('Stopping terminal!')
         self.alive = False
         self._stop_rx()
         self._stop_tx()

@@ -5,6 +5,7 @@ import os
 # import prosconfig
 import proscli.flasher
 import proscli.terminal
+import prosconfig
 
 
 @click.group()
@@ -22,10 +23,10 @@ def make(ctx, build_args):
 
     Also has the added benefit of looking for the config.pros file"""
     click.echo('Invoking make {}...'.format(' '.join(build_args)))
-    # cfg = prosconfig.find_project('.')
+    cfg = prosconfig.ProjectConfig.find_project('.')
     cwd = '.'
-    # if cfg is not None:
-    #     cwd = cfg.path
+    if cfg is not None:
+        cwd = cfg.path
     env = os.environ.copy()
     if os.name == 'nt':
         env['PATH'] += ';' + os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin')

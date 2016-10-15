@@ -164,8 +164,8 @@ def lsusb(cfg):
         click.echo(prosflasher.ports.create_port_list(cfg.verbosity > 0))
 
 
-@flasher_cli.command(name='dump-cortex', short_help='Dumps user flash contents to a specified file')
-@click.option('-v', '--verbose', is_flag=True)
-@click.argument('file', default=sys.stdout, type=click.File())
-def dump_cortex(file, verbose):
-    pass
+# @flasher_cli.command(name='dump-cortex', short_help='Dumps user flash contents to a specified file')
+# @click.option('-v', '--verbose', is_flag=True)
+# @click.argument('file', default=sys.stdout, type=click.File())
+# def dump_cortex(file, verbose):
+#     pass

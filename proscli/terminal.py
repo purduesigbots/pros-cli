@@ -32,15 +32,13 @@ def terminal(port):
             click.get_current_context().abort()
             sys.exit()
 
+    # signal.signal(signal.SIGINT, signal_handler)
     ser = prosflasher.ports.create_serial(port)
     term = proscli.serial_terminal.Terminal(ser)
     signal.signal(signal.SIGINT, term.stop)
     term.start()
-    try:
-        while(term.alive):
-            pass
-    except KeyboardInterrupt as e:
-        term.stop()
+    while term.alive:
+        time.sleep(0.005)
     term.join()
     ser.close()
     print('Exited successfully')
