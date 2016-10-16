@@ -27,7 +27,7 @@ class GithubReleasesDepotProvider(DepotProvider):
     registrar = 'github-releases'
 
     def __init__(self, config):
-        super(GithubReleasesDepotProvider, self).__init__(config)
+        super().__init__(config)
 
     def create_headers(self, accept='application/vnd.github.v3+json'):
         headers = {'user-agent': 'pros-cli', 'Accept': accept}
