@@ -54,6 +54,7 @@ class TemplateConfig(Config):
         self.version = None  # type: str
         self.depot = None  # type: str
         self.template_ignore = []  # type: List[str]
+        self.remove_paths = [] # type List[str]
         self.upgrade_paths = []  # type: List[str]
         super(TemplateConfig, self).__init__(file)
 
