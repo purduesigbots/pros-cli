@@ -67,6 +67,7 @@ class GithubReleasesDepotProvider(DepotProvider):
         if r.status_code == 200:
             # response = dict()  # type: Dict[TemplateTypes, Set[Identifier]]
             json = r.json()
+            proscli.utils.debug('Result: {}'.format(r.text))
             # filter out pre-releases according to registar_options (include_prerelease implies prerelease) and
             # by if the release has a kernel-template.zip or library-template.zip file
             for release in [rel for rel in json if
@@ -75,12 +76,14 @@ class GithubReleasesDepotProvider(DepotProvider):
                 for asset in [a for a in release['assets'] if
                               re.fullmatch(string=a['name'].lower(), pattern='.*-template.zip')]:
                     if asset['name'].lower() == 'kernel-template.zip' and TemplateTypes.kernel in template_types:
+                        proscli.utils.debug('Found a kernel: {}'.format(release))
                         if TemplateTypes.kernel not in response:
                             response[TemplateTypes.kernel] = set()
                         response[TemplateTypes.kernel].add(Identifier(name='kernel', version=release['tag_name'],
                                                                       depot=self.config.name))
                     elif TemplateTypes.library in template_types:
                         # if the name isn't kernel-template.zip, then it's a library
+                        proscli.utils.debug('Found a library: {}'.format(release))
                         if TemplateTypes.library not in response:
                             response[TemplateTypes.library] = set()
                         ident = Identifier(name=asset['name'][:-len('-template.zip')], version=release['tag_name'],
