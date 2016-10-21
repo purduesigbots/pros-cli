@@ -165,6 +165,23 @@ def list_templates(cfg, template_types, filters, offline_only):
                      }
                      for e in table]
             click.echo(json.dumps(table))
+    table = sum(
+        [[(i.name, i.version, d.depot.config.name, 'online' if d.online else '', 'offline' if d.offline else '') for d in ds]
+         for i, ds in result[TemplateTypes.library].items()], [])
+    if TemplateTypes.library in template_types:
+        if not cfg.machine_output:
+            click.echo('Available libraries:')
+            click.echo(tabulate.tabulate(table, headers=['Library', 'Version', 'Depot', 'Online', 'Offline']))
+        else:
+            table = [{
+                         'library': e[0],
+                         'version': e[1],
+                         'depot': e[2],
+                         'online': e[3] == 'online',
+                         'offline': e[4] == 'offline'
+                     }
+                     for e in table]
+            click.echo(json.dumps(table))
 
 
 @conduct.command(short_help='Download a template', aliases=['dl'])
