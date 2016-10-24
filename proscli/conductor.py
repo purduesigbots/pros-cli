@@ -149,10 +149,10 @@ def list_templates(cfg, template_types, filters, offline_only):
                                            template_types=template_types,
                                            filters=filters,
                                            offline_only=offline_only)
-    table = sum(
-        [[(i.version, d.depot.config.name, 'online' if d.online else '', 'offline' if d.offline else '') for d in ds]
-         for i, ds in result[TemplateTypes.kernel].items()], [])
     if TemplateTypes.kernel in template_types:
+        table = sum(
+            [[(i.version, d.depot.config.name, 'online' if d.online else '', 'offline' if d.offline else '') for d in ds]
+             for i, ds in result[TemplateTypes.kernel].items()], [])
         if not cfg.machine_output:
             click.echo('Available kernels:')
             click.echo(tabulate.tabulate(table, headers=['Version', 'Depot', 'Online', 'Offline']))
@@ -165,10 +165,10 @@ def list_templates(cfg, template_types, filters, offline_only):
                      }
                      for e in table]
             click.echo(json.dumps(table))
-    table = sum(
-        [[(i.name, i.version, d.depot.config.name, 'online' if d.online else '', 'offline' if d.offline else '') for d in ds]
-         for i, ds in result[TemplateTypes.library].items()], [])
     if TemplateTypes.library in template_types:
+        table = sum(
+            [[(i.name, i.version, d.depot.config.name, 'online' if d.online else '', 'offline' if d.offline else '') for d in ds]
+             for i, ds in result[TemplateTypes.library].items()], [])
         if not cfg.machine_output:
             click.echo('Available libraries:')
             click.echo(tabulate.tabulate(table, headers=['Library', 'Version', 'Depot', 'Online', 'Offline']))

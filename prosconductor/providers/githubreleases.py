@@ -9,6 +9,7 @@ from prosconductor.providers import TemplateTypes, DepotProvider, InvalidIdentif
     get_template_dir
 import re
 import requests
+import requests.exceptions
 import shutil
 import sys
 # from typing import List, Dict, Set
@@ -61,8 +62,13 @@ class GithubReleasesDepotProvider(DepotProvider):
             template_types = [TemplateTypes.kernel, TemplateTypes.library]
         config = self.config
         proscli.utils.debug('Fetching listing for {} at {} using {}'.format(config.name, config.location, self.registrar))
-        r = requests.get('https://api.github.com/repos/{}/releases'.format(config.location), headers=self.create_headers(),
-                         verify=get_cert_attr())
+        try:
+            r = requests.get('https://api.github.com/repos/{}/releases'.format(config.location),
+                             headers=self.create_headers(),
+                             verify=get_cert_attr())
+        except requests.exceptions.RequestException as ex:
+            proscli.utils.debug('Error fetching templates {}'.format(ex))
+            return {t: set() for t in template_types}
         response = {t: set() for t in template_types}  # type: Dict[TemplateTypes, Set[Identifier]]
         if r.status_code == 200:
             # response = dict()  # type: Dict[TemplateTypes, Set[Identifier]]
