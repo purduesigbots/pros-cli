@@ -84,7 +84,6 @@ def upgrade_project(identifier, dest, pros_cli=None):
         sys.exit()
     proj_config = prosconfig.ProjectConfig(dest, raise_on_error=True)
     config = TemplateConfig(file=filename)
-
     for root, dirs, files in os.walk(config.directory):
         for d in dirs:
             if any([fnmatch.fnmatch(d, p) for p in config.upgrade_paths]):
@@ -96,3 +95,15 @@ def upgrade_project(identifier, dest, pros_cli=None):
                 verbose('Upgrading {}'.format(f))
                 relpath = os.path.relpath(os.path.join(root, f), config.directory)
                 shutil.copyfile(os.path.join(config.directory, relpath), os.path.join(proj_config.directory, relpath))
+    for root, dirs, files in os.walk(proj_config.directory):
+        for d in dirs:
+            if any([fnmatch.fnmatch(d, p) for p in config.remove_paths]):
+                verbose('Removing {}'.format(d))
+                relpath = os.path.relpath(os.path.join(root, d), proj_config.directory)
+                shutil.rmtree(os.path.join(proj_config.directory, relpath))
+
+        for f in files:
+            if any([fnmatch.fnmatch(f, p) for p in config.remove_paths]):
+                verbose('Removing {}'.format(f))
+                relpath = os.path.relpath(os.path.join(root, f), proj_config.directory)
+                os.remove(os.path.join(proj_config.directory, relpath))
