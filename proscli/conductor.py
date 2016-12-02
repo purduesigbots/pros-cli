@@ -290,10 +290,17 @@ or to upgrade an existing project, run `pros conduct upgrade <folder> {0} {1}'''
 @click.argument('name')
 @click.argument('version')
 @click.argument('depot')
+@click.option('--location')
+@click.option('--ignore')
+@click.option('--upgrade-files')
 @default_cfg
-def create_template(cfg, name, version, depot):
+def create_template(cfg, name, version, depot, location, ignore, upgrade_files):
     first_run(cfg)
-    template = local.create_template(utils.Identifier(name, version, depot))
+    template = local.create_template(utils.Identifier(name, version, depot), location=location)
+    template.template_ignore = ignore.split()
+    template.upgrade_paths = upgrade_files.split()
+    print(template.upgrade_paths)
+    template.save()
     click.echo('Created template at {}'.format(template.save_file))
 
 

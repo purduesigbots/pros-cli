@@ -27,12 +27,13 @@ def get_local_templates(pros_cfg=None, filters=[],
     #         [depot.list_local(template_types) for depot in get_depots(pros_cfg, filters)]]]
 
 
-def create_template(identifier, pros_cli=None):
+def create_template(identifier, location=None, pros_cli=None):
     if pros_cli is None or not pros_cli:
         pros_cli = CliConfig()
-    filename = os.path.join(pros_cli.directory, identifier.depot,
-                            '{}-{}'.format(identifier.name, identifier.version),
-                            'template.pros')
+    if location is None or not location:
+        location = os.path.join(location, identifier.depot,
+                                '{}-{}'.format(identifier.name, identifier.version))
+    filename = os.path.join(location, 'template.pros')
     config = TemplateConfig(file=filename)
     config.name = identifier.name
     config.version = identifier.version
