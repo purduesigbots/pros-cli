@@ -427,7 +427,7 @@ def newlib(cfg, location, library, version, depot):
         version = 'latest'
     first_run(cfg)
     templates = local.get_local_templates(pros_cfg=cfg.pros_cfg,
-                                          template_types=[TemplateTypes.kernel])  # type: List[Identifier]
+                                          template_types=[TemplateTypes.library])  # type: List[Identifier]
     selected = None
     to_remove = []
     if not templates or len(templates) == 0:
@@ -519,7 +519,7 @@ def upgradelib(cfg, location, library, version, depot):
         version = 'latest'
     first_run(cfg)
     templates = local.get_local_templates(pros_cfg=cfg.pros_cfg,
-                                          template_types=[TemplateTypes.kernel])  # type: List[Identifier]
+                                          template_types=[TemplateTypes.library])  # type: List[Identifier]
     selected = None
     to_remove = []
     if not templates or len(templates) == 0:
