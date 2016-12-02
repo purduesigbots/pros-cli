@@ -83,5 +83,3 @@ def get_available_templates(pros_cfg=None, template_types=None,
                                        online=identifier in online[template_type],
                                        offline=identifier in offline[template_type]))
     return result
-
-
