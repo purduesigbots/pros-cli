@@ -434,11 +434,7 @@ def newlib(cfg, location, library, version, depot):
         click.echo('No templates have been downloaded! Use `pros conduct download` to download the latest kernel.')
         click.get_current_context().abort()
         sys.exit()
-    for template in templates:
-        if(template.name != library):
-            to_remove.append(template)
-    for template in to_remove:
-        templates.remove(template)
+    templates = [t for t in templates if t.name == library]
     to_remove = []
     if version == 'latest':
         lib_version = sorted(templates, key=lambda t: semver.Version(t.version))[-1].version
@@ -465,7 +461,7 @@ def newlib(cfg, location, library, version, depot):
                 selected = template
                 break
         if selected == None:
-            selected = tempates[0]
+            selected = templates[0]
     else:
         for template in templates:
             if template.depot != depot:
@@ -557,7 +553,7 @@ def upgradelib(cfg, location, library, version, depot):
                 selected = template
                 break
         if selected == None:
-            selected = tempates[0]
+            selected = templates[0]
     else:
         for template in templates:
             if template.depot != depot:
