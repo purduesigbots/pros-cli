@@ -41,7 +41,7 @@ def create_template(identifier, pros_cli=None):
     return config
 
 
-def create_project(identifier, dest, pros_cli=None):
+def create_project(identifier, dest, pros_cli=None, require_empty=False, overwrite=False):
     if pros_cli is None or not pros_cli:
         pros_cli = CliConfig()
     filename = os.path.join(pros_cli.directory, identifier.depot,
@@ -51,12 +51,17 @@ def create_project(identifier, dest, pros_cli=None):
         click.echo('Error: template.pros not found for {}-{}'.format(identifier.name, identifier.version))
         click.get_current_context().abort()
         sys.exit()
-    if os.path.isfile(dest) or (os.path.isdir(dest) and len(os.listdir(dest)) > 0):
-        click.echo('Error! Destination is a file or a nonempty directory! Delete the file(s) and try again.')
-        click.get_current_context().abort()
-        sys.exit()
+    if require_empty:
+        if os.path.isfile(dest) or (os.path.isdir(dest) and len(os.listdir(dest)) > 0):
+            click.echo('Error! Destination is a file or a nonempty directory! Delete the file(s) and try again.')
+            click.get_current_context().abort()
+            sys.exit()
     config = TemplateConfig(file=filename)
-    distutils.dir_util.copy_tree(config.directory, dest)
+
+    if overwrite:   #update 0 causes all files to be overwritten
+        distutils.dir_util.copy_tree(config.directory, dest, update=0)
+    else:           #update 1 causes only files with old last modified dates to be overwritten
+        distutils.dir_util.copy_tree(config.directory, dest, update=1)
     for root, dirs, files in os.walk(dest):
         for d in dirs:
             if any([fnmatch.fnmatch(d, p) for p in config.template_ignore]):
