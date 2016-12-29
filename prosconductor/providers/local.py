@@ -108,3 +108,29 @@ def upgrade_project(identifier, dest, pros_cli=None):
                 verbose('Removing {}'.format(f))
                 relpath = os.path.relpath(os.path.join(root, f), proj_config.directory)
                 os.remove(os.path.join(proj_config.directory, relpath))
+
+
+def install_lib(identifier, dest, pros_cli):
+    if pros_cli is None or not pros_cli:
+        pros_cli = CliConfig()
+    filename = os.path.join(pros_cli.directory, identifier.depot,
+                            '{}-{}'.format(identifier.name, identifier.version),
+                            'template.pros')
+    if not os.path.isfile(filename):
+        click.echo('Error: template.pros not found for {}-{}'.format(identifier.name, identifier.version))
+        click.get_current_context().abort()
+        sys.exit()
+    proj_config = prosconfig.ProjectConfig(dest)
+    config = TemplateConfig(file=filename)
+    distutils.dir_util.copy_tree(config.directory, dest)
+    for root, dirs, files in os.walk(dest):
+        for d in dirs:
+            if any([fnmatch.fnmatch(d, p) for p in config.template_ignore]):
+                verbose('Removing {}'.format(d))
+                os.rmdir(os.path.join(root, d))
+        for f in files:
+            if any([fnmatch.fnmatch(f, p) for p in config.template_ignore]):
+                verbose('Removing {}'.format(f))
+                os.remove(os.path.join(root, f))
+    proj_config.libraries[identifier.name] = identifier.version
+    proj_config.save()

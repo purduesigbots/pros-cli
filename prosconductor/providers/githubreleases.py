@@ -87,7 +87,7 @@ class GithubReleasesDepotProvider(DepotProvider):
                             response[TemplateTypes.kernel] = set()
                         response[TemplateTypes.kernel].add(Identifier(name='kernel', version=release['tag_name'],
                                                                       depot=self.config.name))
-                    elif TemplateTypes.library in template_types:
+                    elif asset['name'].lower() != 'kernel-template.zip' and TemplateTypes.library in template_types:
                         # if the name isn't kernel-template.zip, then it's a library
                         proscli.utils.debug('Found a library: {}'.format(release))
                         if TemplateTypes.library not in response:

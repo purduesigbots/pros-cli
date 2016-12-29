@@ -1,11 +1,8 @@
-import fnmatch
-from proscli.utils import verbose
 from prosconductor.providers import TemplateTypes, Identifier, TemplateConfig
 import click
 from collections import OrderedDict
 import json
 import os.path
-import distutils
 import proscli.utils
 from proscli.utils import default_cfg, default_options, AliasGroup
 import prosconductor.providers as providers
@@ -125,7 +122,7 @@ def config_depot(cfg, name):
 
 # region Template Management
 @conduct.command('lstemplate', short_help='List all available templates',
-                 aliases=['lst', 'templates', 'list-templates', 'lstmpl', 'lstemplates'])
+                 aliases=['lst', 'templates', 'list-templates', 'lstmpl', 'lstemplates', 'ls-template'])
 @click.option('--kernels', 'template_types', flag_value=[TemplateTypes.kernel])
 @click.option('--libraries', 'template_types', flag_value=[TemplateTypes.library])
 @click.option('--all', 'template_types', default=True,
@@ -135,7 +132,7 @@ def config_depot(cfg, name):
 @default_cfg
 def list_templates(cfg, template_types, filters, offline_only):
     """
-    List templates with the applied filters
+    List templates with the applied filters. The first item is guaranteed to be the latest overall template
     """
     first_run(cfg)
     filters = [f for f in filters if f is not None]
@@ -151,8 +148,10 @@ def list_templates(cfg, template_types, filters, offline_only):
                                            offline_only=offline_only)
     if TemplateTypes.kernel in template_types:
         table = sum(
-            [[(i.version, d.depot.config.name, 'online' if d.online else '', 'offline' if d.offline else '') for d in ds]
+            [[(i.version, d.depot.config.name, 'online' if d.online else '', 'offline' if d.offline else '') for d in
+              ds]
              for i, ds in result[TemplateTypes.kernel].items()], [])
+        table = sorted(table, key=lambda v: semver.Version(v[0]), reverse=True)
         if not cfg.machine_output:
             click.echo('Available kernels:')
             click.echo(tabulate.tabulate(table, headers=['Version', 'Depot', 'Online', 'Offline']))
@@ -167,7 +166,8 @@ def list_templates(cfg, template_types, filters, offline_only):
             click.echo(json.dumps(table))
     if TemplateTypes.library in template_types:
         table = sum(
-            [[(i.name, i.version, d.depot.config.name, 'online' if d.online else '', 'offline' if d.offline else '') for d in ds]
+            [[(i.name, i.version, d.depot.config.name, 'online' if d.online else '', 'offline' if d.offline else '') for
+              d in ds]
              for i, ds in result[TemplateTypes.library].items()], [])
         if not cfg.machine_output:
             click.echo('Available libraries:')
@@ -229,7 +229,8 @@ def download(cfg, name, version, depot, no_check):
         # listing now filtered for depots, if applicable
 
         if version == 'latest':
-            identifier, descriptors = OrderedDict(sorted(listing.items(), key=lambda kvp: semver.Version(kvp[0].version))).popitem()
+            identifier, descriptors = OrderedDict(
+                sorted(listing.items(), key=lambda kvp: semver.Version(kvp[0].version))).popitem()
             click.echo('Resolved {} {} to {} {}'.format(name, version, identifier.name, identifier.version))
         else:
             if version not in [i.version for (i, d) in listing.items()]:
@@ -246,7 +247,7 @@ def download(cfg, name, version, depot, no_check):
 
         if len(descriptors) > 1:
             if name == 'kernel' and depot == 'auto' and 'pros-mainline' in [desc.depot.config.name for desc in
-                                                                                 descriptors]:
+                                                                            descriptors]:
                 descriptor = [desc for desc in descriptors if desc.depot.config.name == 'pros-mainline']
             else:
                 click.echo('Multiple depots for {}-{} were found. Please specify a depot: '.
@@ -414,15 +415,20 @@ def register(cfg, location, kernel):
     cfg.kernel = kernel_version
     click.echo('Registering {} with kernel {}'.format(location, kernel_version))
     cfg.save()
+
+
 # endregion
-@conduct.command('new-lib', help='Installs a new library')
+
+
+@conduct.command('new-lib', aliases=['install-lib', 'add-lib', 'new-library', 'install-library', 'add-library'],
+                 help='Installs a new library')
 @click.argument('location')
 @click.argument('library')
 @click.argument('version', default='latest')
 @click.argument('depot', default='auto')
 @default_cfg
 def newlib(cfg, location, library, version, depot):
-    if(not (version == 'latest') and len(version.split('.')) < 3):
+    if not (version == 'latest') and len(version.split('.')) < 3:
         depot = version
         version = 'latest'
     first_run(cfg)
@@ -450,17 +456,17 @@ def newlib(cfg, location, library, version, depot):
 
     else:
         for template in templates:
-            if(template.version != version):
+            if template.version != version:
                 to_remove.append(template)
     for template in to_remove:
         templates.remove(template)
     to_remove = []
     if depot == 'auto':
         for template in templates:
-            if(template.depot == 'pros-mainline'):
+            if template.depot == 'pros-mainline':
                 selected = template
                 break
-        if selected == None:
+        if selected is None:
             selected = templates[0]
     else:
         for template in templates:
@@ -472,45 +478,22 @@ def newlib(cfg, location, library, version, depot):
         if len(templates) > 0:
             selected = templates[0]
         else:
-            click.echo('No local libraries match the specified name, version, and depot. Check your arguments and make sure the appropriate libraries are downloaded')
+            click.echo(
+                'No local libraries match the specified name, version, and depot. Check your arguments and make sure the appropriate libraries are downloaded')
             click.get_current_context().abort()
             sys.exit()
-    install_lib(selected, location, cfg.pros_cfg)
-    print('Created library {} v. {} in {} from {}'.format(selected.name, selected.version, location, selected.depot))
+    local.install_lib(selected, location, cfg.pros_cfg)
+    print('Installed library {} v. {} in {} from {}'.format(selected.name, selected.version, location, selected.depot))
 
-def install_lib(identifier, dest, pros_cli):
-    if pros_cli is None or not pros_cli:
-        pros_cli = CliConfig()
-    filename = os.path.join(pros_cli.directory, identifier.depot,
-                            '{}-{}'.format(identifier.name, identifier.version),
-                            'template.pros')
-    if not os.path.isfile(filename):
-        click.echo('Error: template.pros not found for {}-{}'.format(identifier.name, identifier.version))
-        click.get_current_context().abort()
-        sys.exit()
-    proj_config = prosconfig.ProjectConfig(dest)
-    config = TemplateConfig(file=filename)
-    distutils.dir_util.copy_tree(config.directory, dest)
-    for root, dirs, files in os.walk(dest):
-        for d in dirs:
-            if any([fnmatch.fnmatch(d, p) for p in config.template_ignore]):
-                verbose('Removing {}'.format(d))
-                os.rmdir(os.path.join(root, d))
-        for f in files:
-            if any([fnmatch.fnmatch(f, p) for p in config.template_ignore]):
-                verbose('Removing {}'.format(f))
-                os.remove(os.path.join(root, f))
-    proj_config.libraries.append('{}-{}'.format(identifier.name,identifier.version))
-    proj_config.save()
 
-@conduct.command('upgrade-lib',aliases = ['upgdate-lib'], help='Installs a new library')
+@conduct.command('upgrade-lib', aliases=['upgdate-lib'], help='Installs a new library')
 @click.argument('location')
 @click.argument('library')
 @click.argument('version', default='latest')
 @click.argument('depot', default='auto')
 @default_cfg
 def upgradelib(cfg, location, library, version, depot):
-    if(not (version == 'latest') and len(version.split('.')) < 3):
+    if not (version == 'latest') and len(version.split('.')) < 3:
         depot = version
         version = 'latest'
     first_run(cfg)
@@ -523,7 +506,7 @@ def upgradelib(cfg, location, library, version, depot):
         click.get_current_context().abort()
         sys.exit()
     for template in templates:
-        if(template.name != library):
+        if template.name != library:
             to_remove.append(template)
     for template in to_remove:
         templates.remove(template)
@@ -542,14 +525,14 @@ def upgradelib(cfg, location, library, version, depot):
 
     else:
         for template in templates:
-            if(template.version != version):
+            if template.version != version:
                 to_remove.append(template)
     for template in to_remove:
         templates.remove(template)
     to_remove = []
     if depot == 'auto':
         for template in templates:
-            if(template.depot == 'pros-mainline'):
+            if template.depot == 'pros-mainline':
                 selected = template
                 break
         if selected == None:
@@ -564,11 +547,42 @@ def upgradelib(cfg, location, library, version, depot):
         if len(templates) > 0:
             selected = templates[0]
         else:
-            click.echo('No local libraries match the specified name, version, and depot. Check your arguments and make sure the appropriate libraries are downloaded')
+            click.echo(
+                'No local libraries match the specified name, version, and depot. Check your arguments and make sure the appropriate libraries are downloaded')
             click.get_current_context().abort()
             sys.exit()
     local.upgrade_project(selected, location, cfg.pros_cfg)
+    proj_config = prosconfig.ProjectConfig(location)
+    proj_config.libraries[selected.name] = selected.version
+    proj_config.save()
     print('Updated library {} v. {} in {} from {}'.format(selected.name, selected.version, location, selected.depot))
+
+
+@conduct.command('info-project', help='Provides information about a project. Especially useful for IDEs')
+@click.argument('location')
+@default_cfg
+def info_project(cfg, location):
+    project = prosconfig.ProjectConfig(path=location)
+    details = dict()
+    details['kernel'] = project.kernel
+    templates = local.get_local_templates(pros_cfg=cfg.pros_cfg, template_types=[TemplateTypes.kernel])
+    details['kernelUpToDate'] = semver.compare(project.kernel,
+                                               sorted(templates, key=lambda t: semver.Version(t.version))[-1].version) \
+                                >= 0
+    templates = local.get_local_templates(pros_cfg=cfg.pros_cfg, template_types=[TemplateTypes.library])
+    details['libraries'] = dict()
+    if project.libraries.__class__ is dict:
+        for (lib, ver) in project.libraries.items():
+            details['libraries'][lib] = dict()
+            details['libraries'][lib]['version'] = ver
+            sortedVersions = sorted([t.version for t in templates if t.name == lib], key=lambda v: semver.Version(v))
+            if len(sortedVersions) > 0:
+                latest = semver.compare(ver, sortedVersions[-1]) >= 0
+            else:
+                latest = True
+            details['libraries'][lib]['latest'] = latest
+    click.echo(json.dumps(details))
+
 
 @conduct.command('first-run', help='Runs the first-run configuration')
 @click.option('--no-force', is_flag=True, default=True)
