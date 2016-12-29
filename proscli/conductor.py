@@ -43,18 +43,27 @@ def conduct():
 
 
 # region Depot Management
-@conduct.command('lsdepot', short_help='List registered depots',
-                 aliases=['lsd', 'list-depots', 'lsdpt', 'depots'])
+@conduct.command('ls-depot', short_help='List registered depots',
+                 aliases=['lsd', 'list-depots', 'lsdpt', 'depots', 'lsdepot'])
 @default_cfg
 def list_depots(cfg):
-    first_run(cfg)
+    if not cfg.machine_output:
+        first_run(cfg)
     depots = utils.get_depot_configs()
-    if not bool(depots):
-        click.echo('No depots currently registered! Use `pros conduct add-depot` to add a new depot')
+    if cfg.machine_output:
+        table = [{
+            'name': d.name,
+            'registrar': d.registrar,
+            'location': d.location
+        } for d in depots]
+        click.echo(json.dumps(table))
     else:
-        click.echo([(d.name, d.registrar, d.location) for d in depots])
-        click.echo(tabulate.tabulate([(d.name, d.registrar, d.location) for d in depots],
-                                     ['Name', 'Registrar', 'Location'], tablefmt='simple'))
+        if not bool(depots):
+            click.echo('No depots currently registered! Use `pros conduct add-depot` to add a new depot')
+        else:
+            click.echo([(d.name, d.registrar, d.location) for d in depots])
+            click.echo(tabulate.tabulate([(d.name, d.registrar, d.location) for d in depots],
+                                         ['Name', 'Registrar', 'Location'], tablefmt='simple'))
 
 
 def validate_name(ctx, param, value):
@@ -79,13 +88,19 @@ def available_providers():
 @click.option('--location', metavar='LOCATION', prompt=True,
               help='Online location of the new depot')
 @click.option('--configure/--no-configure', default=True)
+@click.option('--options', metavar='OPTIONS', default=dict(),
+              help='Provide the registar\'s options through a JSON string.')
 @default_cfg
-def add_depot(cfg, name, registrar, location, configure):
+def add_depot(cfg, name, registrar, location, configure, options):
     if configure:
-        options = utils.get_all_provider_types(cfg.pros_cfg)[registrar](None) \
-            .configure_registrar_options()
-    else:
-        options = dict()
+        config = utils.get_all_provider_types(cfg.pros_cfg)[registrar].config
+        for key, value in config.items():
+            if value['method'] == 'bool':
+                click.confirm(value['prompt'], default=value['default'], prompt_suffix=' ')
+            else: #elif value['method'] = 'str':
+                click.prompt(value['prompt'], default=value['default'], prompt_suffix=' ')
+        # options = utils.get_all_provider_types(cfg.pros_cfg)[registrar](None) \
+        #     .configure_registrar_options()
     providers.DepotConfig(name=name, registrar=registrar, location=location, registrar_options=options,
                           root_dir=cfg.pros_cfg.directory)
     pass
@@ -115,14 +130,12 @@ def config_depot(cfg, name):
     depot.registrar_options = utils.get_all_provider_types(cfg.pros_cfg)[depot.registrar](None) \
         .configure_registrar_options(default=depot.registrar_options)
     depot.save()
-
-
 # endregion
 
 
 # region Template Management
-@conduct.command('lstemplate', short_help='List all available templates',
-                 aliases=['lst', 'templates', 'list-templates', 'lstmpl', 'lstemplates', 'ls-template'])
+@conduct.command('ls-template', short_help='List all available templates',
+                 aliases=['lst', 'templates', 'list-templates', 'lstmpl', 'lstemplates', 'lstemplate'])
 @click.option('--kernels', 'template_types', flag_value=[TemplateTypes.kernel])
 @click.option('--libraries', 'template_types', flag_value=[TemplateTypes.library])
 @click.option('--all', 'template_types', default=True,
@@ -287,22 +300,7 @@ or to upgrade an existing project, run `pros conduct upgrade <folder> {0} {1}'''
         # todo: add helpful text for how to create a project or add the new library to a project
 
 
-@conduct.command('create-template', short_help='Creates a template with the specified name, version, and depot')
-@click.argument('name')
-@click.argument('version')
-@click.argument('depot')
-@click.option('--location')
-@click.option('--ignore')
-@click.option('--upgrade-files')
-@default_cfg
-def create_template(cfg, name, version, depot, location, ignore, upgrade_files):
-    first_run(cfg)
-    template = local.create_template(utils.Identifier(name, version, depot), location=location)
-    template.template_ignore = ignore.split()
-    template.upgrade_paths = upgrade_files.split()
-    print(template.upgrade_paths)
-    template.save()
-    click.echo('Created template at {}'.format(template.save_file))
+
 
 
 # endregion
@@ -486,7 +484,8 @@ def newlib(cfg, location, library, version, depot):
     print('Installed library {} v. {} in {} from {}'.format(selected.name, selected.version, location, selected.depot))
 
 
-@conduct.command('upgrade-lib', aliases=['upgdate-lib'], help='Installs a new library')
+@conduct.command('upgrade-lib', aliases=['update-lib', 'upgrade-library', 'update-library'],
+                 help='Installs a new library')
 @click.argument('location')
 @click.argument('library')
 @click.argument('version', default='latest')
@@ -558,35 +557,11 @@ def upgradelib(cfg, location, library, version, depot):
     print('Updated library {} v. {} in {} from {}'.format(selected.name, selected.version, location, selected.depot))
 
 
-@conduct.command('info-project', help='Provides information about a project. Especially useful for IDEs')
-@click.argument('location')
-@default_cfg
-def info_project(cfg, location):
-    project = prosconfig.ProjectConfig(path=location)
-    details = dict()
-    details['kernel'] = project.kernel
-    templates = local.get_local_templates(pros_cfg=cfg.pros_cfg, template_types=[TemplateTypes.kernel])
-    details['kernelUpToDate'] = semver.compare(project.kernel,
-                                               sorted(templates, key=lambda t: semver.Version(t.version))[-1].version) \
-                                >= 0
-    templates = local.get_local_templates(pros_cfg=cfg.pros_cfg, template_types=[TemplateTypes.library])
-    details['libraries'] = dict()
-    if project.libraries.__class__ is dict:
-        for (lib, ver) in project.libraries.items():
-            details['libraries'][lib] = dict()
-            details['libraries'][lib]['version'] = ver
-            sortedVersions = sorted([t.version for t in templates if t.name == lib], key=lambda v: semver.Version(v))
-            if len(sortedVersions) > 0:
-                latest = semver.compare(ver, sortedVersions[-1]) >= 0
-            else:
-                latest = True
-            details['libraries'][lib]['latest'] = latest
-    click.echo(json.dumps(details))
-
-
 @conduct.command('first-run', help='Runs the first-run configuration')
 @click.option('--no-force', is_flag=True, default=True)
 @click.option('--use-defaults', is_flag=True, default=False)
 @default_cfg
 def first_run_cmd(cfg, no_force, use_defaults):
     first_run(cfg, force=no_force, defaults=use_defaults)
+
+import proscli.conductor_management

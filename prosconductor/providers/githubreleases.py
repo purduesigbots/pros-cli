@@ -26,6 +26,23 @@ def get_cert_attr():
 
 class GithubReleasesDepotProvider(DepotProvider):
     registrar = 'github-releases'
+    config = {
+        'include_prereleases': {
+            'method': 'bool',
+            'prompt': 'Include pre-releases?',
+            'default': False
+        },
+        'include_draft': {
+            'method': 'bool',
+            'prompt': 'Include drafts? (requires authentication)',
+            'default': False
+        },
+        'oauth_token': {
+            'method': 'str',
+            'prompt': 'GitHub OAuth Token',
+            'default': ''
+        }
+    }
 
     def __init__(self, config):
         super(GithubReleasesDepotProvider, self).__init__(config)
@@ -39,22 +56,6 @@ class GithubReleasesDepotProvider(DepotProvider):
     def verify_configuration(self):
         if not re.fullmatch(pattern='[A-z0-9](?:-?[A-z0-9]){0,38}\/[0-9A-z_\.-]{1,93}', string=self.config.location):
             raise InvalidIdentifierException('{} is an invalid GitHub resository'.format(self.config.location))
-
-    @staticmethod
-    def configure_registrar_options(default=dict()):
-        options = dict()
-        options['include_prerelease'] = click.confirm('Include pre-releases?',
-                                                     default=default.get('include_prerelease', False),
-                                                     prompt_suffix=' ')
-        options['include_draft'] = click.confirm('Include drafts (requires authentication)?',
-                                                default=default.get('include_draft', False),
-                                                prompt_suffix=' ')
-        if click.confirm('Do you want to set up OAuth authentication with GitHub?',
-                         default='oauth_token' in default.keys()):
-            options['oauth_token'] = click.prompt('OAuth2 Token:',
-                                                  default=default.get('oauth_token', None),
-                                                  prompt_suffix=' ')
-        return options
 
     def list_online(self, template_types=None):
         self.verify_configuration()

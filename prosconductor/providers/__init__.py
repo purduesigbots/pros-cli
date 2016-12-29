@@ -65,6 +65,7 @@ class TemplateConfig(Config):
 
 class DepotProvider(object):
     registrar = 'default-provider'
+    config = {}
 
     def __init__(self, config):
         self.config = config
@@ -110,10 +111,6 @@ class DepotProvider(object):
         Verifies the current configuration (i.e. is the location valid)
         :return: Something falsey if valid, an exception (to be raised or displayed)
         """
-        pass
-
-    @staticmethod
-    def configure_registrar_options(default=dict()):
         pass
 
 
