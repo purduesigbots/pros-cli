@@ -108,6 +108,8 @@ def upgrade_project(identifier, dest, pros_cli=None):
                 verbose('Removing {}'.format(f))
                 relpath = os.path.relpath(os.path.join(root, f), proj_config.directory)
                 os.remove(os.path.join(proj_config.directory, relpath))
+    proj_config.kernel = config.identifier.version
+    proj_config.save()
 
 
 def install_lib(identifier, dest, pros_cli):

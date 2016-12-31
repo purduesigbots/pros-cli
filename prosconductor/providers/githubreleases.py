@@ -49,7 +49,7 @@ class GithubReleasesDepotProvider(DepotProvider):
 
     def create_headers(self, accept='application/vnd.github.v3+json'):
         headers = {'user-agent': 'pros-cli', 'Accept': accept}
-        if 'oauth_token' in self.config.registrar_options:
+        if 'oauth_token' in self.config.registrar_options and self.config.registrar_options['oauth_token']:
             headers['Authorization'] = 'token {}'.format(self.config.registrar_options['oauth_token'])
         return headers
 
@@ -63,6 +63,7 @@ class GithubReleasesDepotProvider(DepotProvider):
             template_types = [TemplateTypes.kernel, TemplateTypes.library]
         config = self.config
         proscli.utils.debug('Fetching listing for {} at {} using {}'.format(config.name, config.location, self.registrar))
+        proscli.utils.debug('HEADERS {}'.format(self.create_headers()))
         try:
             r = requests.get('https://api.github.com/repos/{}/releases'.format(config.location),
                              headers=self.create_headers(),

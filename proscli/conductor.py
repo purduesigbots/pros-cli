@@ -12,6 +12,8 @@ import prosconfig
 import semantic_version as semver
 import sys
 import tabulate
+
+
 # from typing import List
 
 
@@ -80,6 +82,18 @@ def available_providers():
     return utils.get_all_provider_types().keys()
 
 
+def prompt_config(config, options=dict()):
+    for key, value in config.items():
+        if value['method'] == 'bool':
+            options[key] = click.confirm(value['prompt'],
+                                         default=options.get(key, value['default']),
+                                         prompt_suffix=' ')
+        else:  # elif value['method'] = 'str':
+            options[key] = click.prompt(value['prompt'],
+                                        default=options.get(key, value['default']),
+                                        prompt_suffix=' ')
+    return options
+
 @conduct.command('add-depot', short_help='Add a depot to PROS', aliases=['new-depot', 'add-provider', 'new-provider'])
 @click.option('--name', metavar='NAME', prompt=True, callback=validate_name,
               help='Unique name of the new depot')
@@ -92,13 +106,11 @@ def available_providers():
               help='Provide the registar\'s options through a JSON string.')
 @default_cfg
 def add_depot(cfg, name, registrar, location, configure, options):
+    if isinstance(options, str):
+        options = json.loads(options)
     if configure:
         config = utils.get_all_provider_types(cfg.pros_cfg)[registrar].config
-        for key, value in config.items():
-            if value['method'] == 'bool':
-                click.confirm(value['prompt'], default=value['default'], prompt_suffix=' ')
-            else: #elif value['method'] = 'str':
-                click.prompt(value['prompt'], default=value['default'], prompt_suffix=' ')
+        options = prompt_config(config, options)
         # options = utils.get_all_provider_types(cfg.pros_cfg)[registrar](None) \
         #     .configure_registrar_options()
     providers.DepotConfig(name=name, registrar=registrar, location=location, registrar_options=options,
@@ -127,8 +139,8 @@ def config_depot(cfg, name):
         click.get_current_context().abort()
         sys.exit()
     depot = [d for d in utils.get_depot_configs(cfg.pros_cfg) if d.name == name][0]
-    depot.registrar_options = utils.get_all_provider_types(cfg.pros_cfg)[depot.registrar](None) \
-        .configure_registrar_options(default=depot.registrar_options)
+    config = utils.get_all_provider_types(cfg.pros_cfg)[depot.registrar].config
+    depot.registrar_options = prompt_config(config, depot.registrar_options)
     depot.save()
 # endregion
 
@@ -387,7 +399,7 @@ def upgrade(cfg, kernel, location, depot):
     template = templates[0]
     if not os.path.isabs(location):
         location = os.path.abspath(location)
-    click.echo('Upgrading existing project from {} on {} at {}'.format(template.version, template.depot, location))
+    click.echo('Upgrading existing project to {} on {} at {}'.format(template.version, template.depot, location))
     local.upgrade_project(identifier=template, dest=location, pros_cli=cfg.pros_cfg)
 
 

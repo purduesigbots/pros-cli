@@ -1,18 +1,13 @@
 from proscli.conductor import conduct, first_run
 from prosconductor.providers import TemplateTypes, Identifier, TemplateConfig
 import click
-from collections import OrderedDict
 import json
-import os.path
-import proscli.utils
-from proscli.utils import default_cfg, default_options, AliasGroup
-import prosconductor.providers as providers
+from proscli.utils import default_cfg
 import prosconductor.providers.local as local
 import prosconductor.providers.utils as utils
 import prosconfig
 import semantic_version as semver
-import sys
-import tabulate
+import jsonpickle
 
 # Commands in this module are typically for automation/IDE purposes and probably won't be used by front-end users
 
@@ -22,16 +17,16 @@ import tabulate
 @click.argument('version')
 @click.argument('depot')
 @click.option('--location')
-@click.option('--ignore')
-@click.option('--upgrade-files')
+@click.option('--ignore', '-i', multiple=True)
+@click.option('--upgrade-files', '-u', multiple=True)
 @default_cfg
 def create_template(cfg, name, version, depot, location, ignore, upgrade_files):
     first_run(cfg)
     template = local.create_template(utils.Identifier(name, version, depot), location=location)
-    template.template_ignore = ignore.split()
-    template.upgrade_paths = upgrade_files.split()
-    print(template.upgrade_paths)
+    template.template_ignore = ignore
+    template.upgrade_paths = upgrade_files
     template.save()
+    click.echo(jsonpickle.encode(template))
     click.echo('Created template at {}'.format(template.save_file))
 
 
@@ -79,3 +74,22 @@ def info_depot(cfg, depot):
         click.echo(json.dumps(dict()))
     else:
         click.echo(json.dumps(dpt.registrar_options))
+
+
+@conduct.command('set-depot-key', help='Set a config key/value pair for a depot')
+@click.argument('depot')
+@click.argument('key')
+@click.argument('value')
+@default_cfg
+def set_depot_key(cfg, depot, key, value):
+    dpt = utils.get_depot_config(depot)
+    config = utils.get_all_provider_types(cfg.pros_cfg)[dpt.registrar]
+    click.echo(config)
+    config = config.config
+    click.echo(config)
+    if dpt is None:
+        pass
+    if config.get(key, dict()).get('method', 'str') == 'bool':
+        value = value in ['true', 'True', 'TRUE', '1', 't', 'y', 'yes']
+    dpt.registrar_options[key] = value
+    dpt.save()
