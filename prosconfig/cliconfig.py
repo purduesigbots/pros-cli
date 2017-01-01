@@ -16,9 +16,4 @@ class CliConfig(Config):
             self.providers = [os.path.join(os.path.dirname(sys.executable), 'githubreleases.pyc')]
         else:
             self.providers = []
-        # self.providers = [
-        #     prosconductor.providers.githubreleases.__file__
-        #         if os.path.isfile(prosconductor.providers.githubreleases.__file__) else
-        #         os.path.join(os.path.dirname(sys.executable), 'githubreleases.pyc')
-        # ]  # type: list(str)
         super(CliConfig, self).__init__(file, ctx=ctx)
