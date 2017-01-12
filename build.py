@@ -28,7 +28,7 @@ else:
 
 setup(
     name='pros-cli',
-    version='2.0',
+    version='2.1.6',
     packages=modules,
     url='https://github.com/purduesigbots/pros-cli',
     license='',
@@ -106,4 +106,3 @@ setup(
 #         scripts=[Executable('proscli/main.py')]
 #     )
 # else:
-
