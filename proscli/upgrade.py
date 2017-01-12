@@ -26,7 +26,7 @@ def get_upgrade_command():
             if len(results) == 0 or not hasattr(results[0], 'location'):
                 return False
             else:
-                return ['pip', 'install', '-U', '-d', results[0].location, 'pros-cli']
+                return ['pip', 'install', '-U', '-t', results[0].location, 'pros-cli']
         except Exception:
             return False
 
@@ -40,7 +40,7 @@ def upgrade(cfg):
         sys.exit(1)
         return
     elif not cfg.machine_output:
-        sys.exit(subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
+        sys.exit(subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).returncode
     else:
         for piece in cmd:
             click.echo(piece)
