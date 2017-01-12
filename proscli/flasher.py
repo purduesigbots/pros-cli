@@ -48,7 +48,15 @@ def flash(ctx, save_file_system, y, port, binary, no_poll):
             sys.exit(1)
         port = ports[0].device
         if len(ports) > 1 and port is not None and y is False:
-            click.confirm('Download to ' + port, default=True, abort=True, prompt_suffix='?')
+            port = None
+            for p in ports:
+                if click.confirm('Download to ' + p.device, default=True):
+                    port = p.device
+                    break
+            if port is None:
+                click.echo('No additional ports found.')
+                click.get_current_context().abort()
+                sys.exit(1)
     if port == 'all':
         port = [p.device for p in prosflasher.ports.list_com_ports()]
         if len(port) == 0:
@@ -148,7 +156,7 @@ def get_sys_info(cfg, yes, port):
         port = [port]
 
     for p in port:
-        sys_info = prosflasher.upload.ask_sys_info(prosflasher.ports.create_serial(p))
+        sys_info = prosflasher.upload.ask_sys_info(prosflasher.ports.create_serial(p), cfg)
         click.echo(repr(sys_info))
 
     pass

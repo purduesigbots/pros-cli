@@ -4,6 +4,7 @@ import sys
 import os
 # import prosconfig
 import proscli.flasher
+import proscli.terminal
 
 
 @click.group()
@@ -42,3 +43,11 @@ def make(ctx, build_args):
 def make_flash(ctx, build_args):
     ctx.invoke(make, build_args=build_args)
     ctx.invoke(proscli.flasher.flash)
+
+@build_cli.command(name='mut', help='Combines \'make\', \'flash\', and \'terminal\' commands')
+@click.argument('build-args', nargs=-1)
+@click.pass_context
+def make_flash_term(ctx, build_args):
+    ctx.invoke(make, build_args=build_args)
+    ctx.invoke(proscli.flasher.flash)
+    ctx.invoke(proscli.terminal.terminal)
