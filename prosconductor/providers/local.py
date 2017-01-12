@@ -27,12 +27,13 @@ def get_local_templates(pros_cfg=None, filters=[],
     #         [depot.list_local(template_types) for depot in get_depots(pros_cfg, filters)]]]
 
 
-def create_template(identifier, pros_cli=None):
+def create_template(identifier, location=None, pros_cli=None):
     if pros_cli is None or not pros_cli:
         pros_cli = CliConfig()
-    filename = os.path.join(pros_cli.directory, identifier.depot,
-                            '{}-{}'.format(identifier.name, identifier.version),
-                            'template.pros')
+    if location is None or not location:
+        location = os.path.join(location, identifier.depot,
+                                '{}-{}'.format(identifier.name, identifier.version))
+    filename = os.path.join(location, 'template.pros')
     config = TemplateConfig(file=filename)
     config.name = identifier.name
     config.version = identifier.version
@@ -84,7 +85,6 @@ def upgrade_project(identifier, dest, pros_cli=None):
         sys.exit()
     proj_config = prosconfig.ProjectConfig(dest, raise_on_error=True)
     config = TemplateConfig(file=filename)
-
     for root, dirs, files in os.walk(config.directory):
         for d in dirs:
             if any([fnmatch.fnmatch(d, p) for p in config.upgrade_paths]):
@@ -96,3 +96,15 @@ def upgrade_project(identifier, dest, pros_cli=None):
                 verbose('Upgrading {}'.format(f))
                 relpath = os.path.relpath(os.path.join(root, f), config.directory)
                 shutil.copyfile(os.path.join(config.directory, relpath), os.path.join(proj_config.directory, relpath))
+    for root, dirs, files in os.walk(proj_config.directory):
+        for d in dirs:
+            if any([fnmatch.fnmatch(d, p) for p in config.remove_paths]):
+                verbose('Removing {}'.format(d))
+                relpath = os.path.relpath(os.path.join(root, d), proj_config.directory)
+                shutil.rmtree(os.path.join(proj_config.directory, relpath))
+
+        for f in files:
+            if any([fnmatch.fnmatch(f, p) for p in config.remove_paths]):
+                verbose('Removing {}'.format(f))
+                relpath = os.path.relpath(os.path.join(root, f), proj_config.directory)
+                os.remove(os.path.join(proj_config.directory, relpath))

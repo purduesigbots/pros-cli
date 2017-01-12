@@ -97,5 +97,3 @@ class ProjectConfig(Config):
                 else:
                     return None
         return None
-
-
