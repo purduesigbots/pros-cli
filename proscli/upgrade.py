@@ -23,6 +23,13 @@ def get_upgrade_command():
         try:
             from pip._vendor import pkg_resources
             results = [p for p in pkg_resources.working_set if p.project_name == 'pros-cli']
+            if os.path.exists(os.path.join(results[0].location, '.git')):
+                if subprocess.run('where git').returncode == 0:
+                    return ['git', 'pull']
+                elif subprocess.run('where bash').returncode == 0:
+                    return ['bash', '-c', 'git pull']
+                else:
+                    return False
             if len(results) == 0 or not hasattr(results[0], 'location'):
                 return False
             else:
