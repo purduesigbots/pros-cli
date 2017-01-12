@@ -24,12 +24,14 @@ def get_upgrade_command():
             from pip._vendor import pkg_resources
             results = [p for p in pkg_resources.working_set if p.project_name == 'pros-cli']
             if os.path.exists(os.path.join(results[0].location, '.git')):
-                if subprocess.run('where git').returncode == 0:
-                    return ['git', 'pull']
-                elif subprocess.run('where bash').returncode == 0:
-                    return ['bash', '-c', 'git pull']
-                else:
-                    return False
+                click.echo('Development environment detected.')
+                with open(os.devnull) as devnull:
+                    if subprocess.run('where git', stdout=devnull).returncode == 0:
+                        click.echo('Using git.exe')
+                        return ['git', '-C', results[0].location, 'pull']
+                    else:
+                        click.echo('No suitable Git executable found.')
+                        return False
             if len(results) == 0 or not hasattr(results[0], 'location'):
                 return False
             else:
@@ -47,7 +49,24 @@ def upgrade(cfg):
         sys.exit(1)
         return
     elif not cfg.machine_output:
-        sys.exit(subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).returncode
+        try:
+            for line in execute(cmd):
+                click.echo(line)
+        except subprocess.CalledProcessError:
+            click.echo('An error occurred. Aborting...')
+            sys.exit(1)
+        sys.exit()
     else:
         for piece in cmd:
             click.echo(piece)
+
+
+def execute(cmd):
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+    for stdout_line in iter(p.stdout.readline, ""):
+        yield stdout_line
+
+    p.stdout.close()
+    r = p.wait()
+    if r:
+        raise subprocess.CalledProcessError(r, cmd)
