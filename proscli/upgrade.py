@@ -35,7 +35,7 @@ def get_upgrade_command():
             if len(results) == 0 or not hasattr(results[0], 'location'):
                 return False
             else:
-                return ['pip', 'install', '-U', '-t', results[0].location, 'pros-cli']
+                return ['pip3', 'install', '-U', '-t', results[0].location, 'pros-cli']
         except Exception:
             return False
 
