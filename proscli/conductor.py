@@ -423,7 +423,9 @@ def register(cfg, location, kernel):
 
     cfg = prosconfig.ProjectConfig(location, create=True, raise_on_error=True)
     cfg.kernel = kernel_version
-    click.echo('Registering {} with kernel {}'.format(location, kernel_version))
+    if not location:
+        click.echo('Location not specified, registering current directory.')
+    click.echo('Registering {} with kernel {}'.format(location or os.path.abspath('.'), kernel_version))
     cfg.save()
 
 
