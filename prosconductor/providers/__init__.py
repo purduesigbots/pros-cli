@@ -65,6 +65,7 @@ class TemplateConfig(Config):
 
 class DepotProvider(object):
     registrar = 'default-provider'
+    location_desc = 'A URL or identifier for a specific depot'
     config = {}
 
     def __init__(self, config):

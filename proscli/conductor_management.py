@@ -60,7 +60,7 @@ def info_project(cfg, location):
 @default_cfg
 def ls_registrars(cfg):
     table = {
-        key: value.config for key, value in utils.get_all_provider_types().items()
+        key: {'location_desc': value.location_desc, 'config': value.config} for key, value in utils.get_all_provider_types().items()
         }
     click.echo(json.dumps(table))
 
