@@ -12,13 +12,18 @@ import prosflasher
 
 install_reqs = [str(r.req) for r in parse_requirements('requirements.txt', session=False)]
 
-build_exe_options = {'packages': ['ssl', 'prosconductor.providers.githubreleases'], "include_files": [(requests.certs.where(), 'cacert.pem')]}
+build_exe_options = {
+    'packages': ['ssl', 'prosconductor.providers.githubreleases', 'requests'],
+    "include_files": [(requests.certs.where(), 'cacert.pem')],
+    'excludes': ['pip', 'distutils'], # optimization excludes
+    'constants': ['CLI_VERSION=\'{}\''.format(open('version').read().strip())]
+    # 'zip_include_packages': [],
+    # 'zip_exclude_packages': []
+}
 
 modules = []
 for pkg in [proscli, prosconductor, prosconductor.providers, prosconfig, prosflasher]:
     modules.append(pkg.__name__)
-    # for i, m, p in pkgutil.iter_modules(pkg.__path__):
-    #     modules.append('{}.{}'.format(pkg.__name__, m))
 
 
 if sys.platform == 'win32':
@@ -28,81 +33,23 @@ else:
 
 setup(
     name='pros-cli',
-    version='2.1.6',
+    version=open('version').read().strip(),
     packages=modules,
     url='https://github.com/purduesigbots/pros-cli',
-    license='',
+    license='MPL-2.0',
     author='Purdue ACM Sigbots',
     author_email='pros_development@cs.purdue.edu',
-    description='',
+    description='Command Line Interface for managing PROS projects',
     options={"build_exe": build_exe_options},
     install_requires=install_reqs,
     executables=[Executable('proscli/main.py', targetName=targetName)]
 )
 
-# from esky import bdist_esky
-# from setuptools import setup
-# from esky.bdist_esky import Executable
-# targetName = None
-#
-# if sys.platform == "win32":
-#     targetName = "pros.exe"
-#
-# setup(
-#     name='pros',
-#     version='2.0.0',
-#     install_requires=[
-#         'click',
-#         'pyserial',
-#         'cx_Freeze',
-#         'esky'
-#     ],
-#     options={'bdist_esky': {
-#         'freezer_module': 'cxfreeze',
-#         "freezer_options": dict(compress=True)
-#     }},
-#     scripts=[Executable('proscli/main.py', targetName=targetName)]
-# )
-
-
-# if sys.argv[1] == 'build':
-#     from cx_Freeze import setup, Executable
-#
-#     build_exe_options = {
-#         "packages": [
-#             "os"
-#         ]
-#     }
-#
-#     setup(
-#         name='pros-cli',
-#         version='2.0',
-#         packages=['prosflasher', 'proscli'],
-#         url='https://github.com/purduesigbots/pros-cli',
-#         license='',
-#         author='Purdue ACM Sigbots',
-#         author_email='pros_development@cs.purdue.edu',
-#         description='',
-#         install_requires=[
-#             'click',
-#             'pyserial',
-#             'cx_Freeze'
-#         ],
-#         options={"build_exe": build_exe_options},
-#         executables=[Executable("proscli/main.py", targetName=targetName)]
-#     )
-# elif sys.argv[1] == 'bdist_esky':
-#     from distutils.core import setup
-#     from esky.bdist_esky import bdist_esky, Executable
-#     setup(
-#         name='pros-cli',
-#         version='2.0',
-#         packages=['prosflasher', 'proscli'],
-#         options={
-#             "bdist_esky": {
-#                 "freezer_module": "cxfreeze",
-#                 "compress": "ZIP"
-#             }},
-#         scripts=[Executable('proscli/main.py')]
-#     )
-# else:
+if sys.argv[1] == 'build_exe':
+    import py_compile
+    import distutils.util
+    build_dir='./build/exe.{}-{}.{}'.format(distutils.util.get_platform(),sys.version_info[0],sys.version_info[1])
+    py_compile.compile('./prosconductor/providers/githubreleases.py', cfile='{}/githubreleases.pyc'.format(build_dir))
+    import shutil
+    import platform
+    shutil.make_archive('pros_cli-{}-win-{}'.format(open('version').read().strip(), platform.architecture()[0]), 'zip', build_dir, '.')

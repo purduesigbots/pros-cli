@@ -1,12 +1,12 @@
-# from distutils.core import setup
 from setuptools import setup
+
 # setup.py for non-frozen builds
 from pip.req import parse_requirements
 install_reqs = [str(r.req) for r in parse_requirements('requirements.txt', session=False)]
 
 setup(
     name='pros-cli',
-    version='2.1.6',
+    version=open('version').read().strip(),
     packages=['prosflasher', 'proscli', 'prosconfig', 'prosconductor', 'prosconductor.providers'],
     url='https://github.com/purduesigbots/pros-cli',
     license='MPL-2.0',

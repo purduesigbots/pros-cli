@@ -48,7 +48,7 @@ def make(ctx, build_args):
 def make_flash(ctx, build_args):
     ctx.invoke(make, build_args=build_args)
     ctx.invoke(proscli.flasher.flash)
-
+    
 
 @build_cli.command(name='mut', help='Combines \'make\', \'flash\', and \'terminal\'')
 @click.argument('build-args', nargs=-1)

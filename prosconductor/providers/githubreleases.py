@@ -26,13 +26,31 @@ def get_cert_attr():
 
 class GithubReleasesDepotProvider(DepotProvider):
     registrar = 'github-releases'
+    location_desc = 'eyo smwd'
+    config = {
+        'include_prereleases': {
+            'method': 'bool',
+            'prompt': 'Include pre-releases?',
+            'default': False
+        },
+        'include_draft': {
+            'method': 'bool',
+            'prompt': 'Include drafts? (requires authentication)',
+            'default': False
+        },
+        'oauth_token': {
+            'method': 'str',
+            'prompt': 'GitHub OAuth Token',
+            'default': ''
+        }
+    }
 
     def __init__(self, config):
         super().__init__(config)
 
     def create_headers(self, accept='application/vnd.github.v3+json'):
         headers = {'user-agent': 'pros-cli', 'Accept': accept}
-        if 'oauth_token' in self.config.registrar_options:
+        if 'oauth_token' in self.config.registrar_options and self.config.registrar_options['oauth_token']:
             headers['Authorization'] = 'token {}'.format(self.config.registrar_options['oauth_token'])
         return headers
 
@@ -40,28 +58,13 @@ class GithubReleasesDepotProvider(DepotProvider):
         if not re.fullmatch(pattern='[A-z0-9](?:-?[A-z0-9]){0,38}\/[0-9A-z_\.-]{1,93}', string=self.config.location):
             raise InvalidIdentifierException('{} is an invalid GitHub resository'.format(self.config.location))
 
-    @staticmethod
-    def configure_registrar_options(default=dict()):
-        options = dict()
-        options['include_prerelease'] = click.confirm('Include pre-releases?',
-                                                     default=default.get('include_prerelease', False),
-                                                     prompt_suffix=' ')
-        options['include_draft'] = click.confirm('Include drafts (requires authentication)?',
-                                                default=default.get('include_draft', False),
-                                                prompt_suffix=' ')
-        if click.confirm('Do you want to set up OAuth authentication with GitHub?',
-                         default='oauth_token' in default.keys()):
-            options['oauth_token'] = click.prompt('OAuth2 Token:',
-                                                  default=default.get('oauth_token', None),
-                                                  prompt_suffix=' ')
-        return options
-
     def list_online(self, template_types=None):
         self.verify_configuration()
         if template_types is None:
             template_types = [TemplateTypes.kernel, TemplateTypes.library]
         config = self.config
         proscli.utils.debug('Fetching listing for {} at {} using {}'.format(config.name, config.location, self.registrar))
+        proscli.utils.debug('HEADERS {}'.format(self.create_headers()))
         try:
             r = requests.get('https://api.github.com/repos/{}/releases'.format(config.location),
                              headers=self.create_headers(),
@@ -87,7 +90,7 @@ class GithubReleasesDepotProvider(DepotProvider):
                             response[TemplateTypes.kernel] = set()
                         response[TemplateTypes.kernel].add(Identifier(name='kernel', version=release['tag_name'],
                                                                       depot=self.config.name))
-                    elif TemplateTypes.library in template_types:
+                    elif asset['name'].lower() != 'kernel-template.zip' and TemplateTypes.library in template_types:
                         # if the name isn't kernel-template.zip, then it's a library
                         proscli.utils.debug('Found a library: {}'.format(release))
                         if TemplateTypes.library not in response:
