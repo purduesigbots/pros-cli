@@ -15,6 +15,7 @@ stage('Build') {
       }
       stage('Clone') {
         checkout scm
+        sh 'git describe --tags > version'
         build_ver = readFile 'version'
         println "Building CLI at version ${build_ver}"
       }
@@ -42,6 +43,8 @@ stage('Build') {
       }
       stage('Clone') {
         checkout scm
+        bat 'git describe --tags > version'
+        build_ver = readFile 'verison'
       }
       stage('Build') {
         venv.run 'pip3 install --upgrade -r requirements.txt'
