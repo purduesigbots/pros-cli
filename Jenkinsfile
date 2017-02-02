@@ -44,7 +44,9 @@ stage('Build') {
       stage('Clone') {
         checkout scm
         bat 'git describe --tags > version'
-        build_ver = readFile 'verison'
+        build_ver = readFile 'version'
+		bat 'git describe --tags > inst_version'
+		inst_ver = readFile 'inst_version'
       }
       stage('Build') {
         venv.run 'pip3 install --upgrade -r requirements.txt'
@@ -60,12 +62,12 @@ stage('Build') {
         bat 'if exist .\\exe.win del /s /q .\\exe.win'
         bat 'if exist .\\exe.win rmdir /s /q .\\exe.win'
         bat 'mkdir .\\exe.win'
-        for(file in unarchive(mapping: ['pros_cli-*-win-32bit.zip': '.'])) {
+        for(file in unarchive(mapping: ['**pros_cli-*-win-32bit.zip': '.'])) {
           file.unzip(file.getParent().child('exe.win'))
         }
         def advinst = "\"${tool 'Advanced Installer'}\\AdvancedInstaller.com\""
         bat """
-            ${advinst} /edit pros-windows.aip /SetVersion ${build_ver}
+            ${advinst} /edit pros-windows.aip /SetVersion ${inst_ver}
             ${advinst} /edit pros-windows.aip /ResetSync APPDIR\\cli -clearcontent
             ${advinst} /edit pros-windows.aip /NewSync APPDIR\\cli exe.win -existingfiles delete
             ${advinst} /build pros-windows.aip

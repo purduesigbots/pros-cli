@@ -1,5 +1,5 @@
 import click
-import distutils.dir_util
+# import distutils.dir_util
 import fnmatch
 import os.path
 from proscli.utils import debug, verbose
@@ -10,6 +10,63 @@ from prosconductor.providers.utils import get_depots
 import shutil
 import sys
 # from typing import Set, List
+
+def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
+             ignore_dangling_symlinks=False):
+    """Modified shutil.copytree, but with exist_ok=True
+    """
+    names = os.listdir(src)
+    if ignore is not None:
+        ignored_names = ignore(src, names)
+    else:
+        ignored_names = set()
+
+    os.makedirs(dst, exist_ok=True)
+    errors = []
+    for name in names:
+        if name in ignored_names:
+            continue
+        srcname = os.path.join(src, name)
+        dstname = os.path.join(dst, name)
+        try:
+            if os.path.islink(srcname):
+                linkto = os.readlink(srcname)
+                if symlinks:
+                    # We can't just leave it to `copy_function` because legacy
+                    # code with a custom `copy_function` may rely on copytree
+                    # doing the right thing.
+                    os.symlink(linkto, dstname)
+                    shutil.copystat(srcname, dstname, follow_symlinks=not symlinks)
+                else:
+                    # ignore dangling symlink if the flag is on
+                    if not os.path.exists(linkto) and ignore_dangling_symlinks:
+                        continue
+                    # otherwise let the copy occurs. copy2 will raise an error
+                    if os.path.isdir(srcname):
+                        copytree(srcname, dstname, symlinks, ignore,
+                                 copy_function)
+                    else:
+                        copy_function(srcname, dstname)
+            elif os.path.isdir(srcname):
+                copytree(srcname, dstname, symlinks, ignore, copy_function)
+            else:
+                # Will raise a SpecialFileError for unsupported file types
+                copy_function(srcname, dstname)
+        # catch the Error from the recursive copytree so that we can
+        # continue with other files
+        except shutil.Error as err:
+            errors.extend(err.args[0])
+        except OSError as why:
+            errors.append((srcname, dstname, str(why)))
+    try:
+        shutil.copystat(src, dst)
+    except OSError as why:
+        # Copying file access times may fail on Windows
+        if getattr(why, 'winerror', None) is None:
+            errors.append((src, dst, str(why)))
+    if errors:
+        raise Error(errors)
+    return dst
 
 
 def get_local_templates(pros_cfg=None, filters=[],
@@ -57,7 +114,7 @@ def create_project(identifier, dest, pros_cli=None):
         click.get_current_context().abort()
         sys.exit()
     config = TemplateConfig(file=filename)
-    distutils.dir_util.copy_tree(config.directory, dest)
+    copytree(config.directory, dest)
     for root, dirs, files in os.walk(dest):
         for d in dirs:
             if any([fnmatch.fnmatch(d, p) for p in config.template_ignore]):
@@ -124,7 +181,7 @@ def install_lib(identifier, dest, pros_cli):
         sys.exit()
     proj_config = prosconfig.ProjectConfig(dest)
     config = TemplateConfig(file=filename)
-    distutils.dir_util.copy_tree(config.directory, dest)
+    copytree(config.directory, dest)
     for root, dirs, files in os.walk(dest):
         for d in dirs:
             if any([fnmatch.fnmatch(d, p) for p in config.template_ignore]):

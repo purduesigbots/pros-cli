@@ -46,8 +46,8 @@ def compute_address_commandable(address):
 def prepare_bootloader(port):
     click.echo('Preparing bootloader...', nl=False)
     prosflasher.upload.configure_port(port, serial.PARITY_EVEN)
-    port.write([0x7f])
     port.flush()
+    port.write([0x7f])
     response = port.read(1)
     debug_response(0x07f, response)
     if response is None or len(response) != 1 or response[0] != ACK:
