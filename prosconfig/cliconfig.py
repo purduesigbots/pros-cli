@@ -10,10 +10,12 @@ class CliConfig(Config):
         if not file:
             file = os.path.join(click.get_app_dir('PROS'), 'cli.pros')
         self.default_libraries = []  # type: list(str)
-        if os.path.isfile(prosconductor.providers.githubreleases.__file__):
-            self.providers = [prosconductor.providers.githubreleases.__file__]
-        elif hasattr(sys, 'frozen'):
-            self.providers = [os.path.join(os.path.dirname(sys.executable), 'githubreleases.pyc')]
-        else:
-            self.providers = []
+        self.providers = []
+        self.applyDefaultProviders()
         super(CliConfig, self).__init__(file, ctx=ctx)
+
+    def applyDefaultProviders(self):
+        if os.path.isfile(prosconductor.providers.githubreleases.__file__):
+            self.providers.append(prosconductor.providers.githubreleases.__file__)
+        elif hasattr(sys, 'frozen'):
+            self.providers.append(os.path.join(os.path.dirname(sys.executable), 'githubreleases.pyc'))
