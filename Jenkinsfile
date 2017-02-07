@@ -30,8 +30,8 @@ stage('Build') {
     node('win&&x64') {
       def venv = new edu.purdue.pros.venv()
       stage('Clean') {
-        bat "${tool name: 'Default', type: 'git'}\\git.exe init"
-        bat "${tool name: 'Default', type: 'git'}\\git.exe clean -d -x -f"
+        bat "${tool name: 'Default', type: 'git'} init"
+        bat "${tool name: 'Default', type: 'git'} clean -d -x -f"
       }
       stage('Dependenices') {
         tool 'MSBuild'
