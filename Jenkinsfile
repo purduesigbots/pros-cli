@@ -30,8 +30,8 @@ stage('Build') {
     node('win&&x64') {
       def venv = new edu.purdue.pros.venv()
       stage('Clean') {
-        bat "${tool name: 'Default', type: 'git'} init"
-        bat "${tool name: 'Default', type: 'git'} clean -d -x -f"
+        bat "${tool name: 'Default', type: 'git'}\\git.exe init"
+        bat "${tool name: 'Default', type: 'git'}\\git.exe clean -d -x -f"
       }
       stage('Dependenices') {
         tool 'MSBuild'
@@ -45,8 +45,8 @@ stage('Build') {
         checkout scm
         bat 'git describe --tags > version'
         build_ver = readFile 'version'
-		bat 'git describe --tags > inst_version'
-		inst_ver = readFile 'inst_version'
+        bat 'git describe --tags > inst_version'
+        inst_ver = readFile 'inst_version'
       }
       stage('Build') {
         venv.run 'pip3 install --upgrade -r requirements.txt'
