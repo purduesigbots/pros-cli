@@ -17,6 +17,7 @@ stage('Build') {
         checkout scm
         sh 'git describe --tags > version'
         build_ver = readFile 'version'
+        build_ver = build_ver.replaceAll("\\s","")
         println "Building CLI at version ${build_ver}"
       }
       stage('Build') {
@@ -45,8 +46,10 @@ stage('Build') {
         checkout scm
         bat 'git describe --tags > version'
         build_ver = readFile 'version'
+        build_ver = build_ver.replaceAll("\\s","")
         bat 'git describe --tags --abbrev=0 > inst_version'
         inst_ver = readFile 'inst_version'
+        inst_ver = inst_ver.replaceAll("\\s","")
       }
       stage('Build') {
         venv.run 'pip3 install --upgrade -r requirements.txt'
@@ -73,7 +76,7 @@ stage('Build') {
             ${advinst} /build pros-windows.aip
             """
         bat """
-            ${advinst} /edit pros-updates.aip /NewUpdate output\\pros-win.exe -name "PROS${inst_ver}" -display_name "PROS ${build_ver}" -url "${BUILD_URL}artifact/output/windows_updates.txt"
+            ${advinst} /edit pros-updates.aip /NewUpdate output\\pros-win.exe -name "PROS${inst_ver}" -display_name "PROS ${build_ver}" -url "${env.BUILD_URL}artifact/output/pros-win.exe"
             ${advinst} /build pros-updates.aip
             """
         archiveArtifacts artifacts: 'output/*', fingerprint: true
