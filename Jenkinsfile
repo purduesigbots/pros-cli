@@ -73,7 +73,8 @@ stage('Build') {
             ${advinst} /build pros-windows.aip
             """
         bat """
-            ${advinst} /edit pros-updates.aip /NewUpdate ${file.getRemote()} -name "PROS${inst_ver}" -display_name "PROS ${build_ver}" -url "${BUILD_URL}artifact/output/windows_updates.txt"
+            ${advinst} /edit pros-updates.aip /NewUpdate output\\pros-win.exe -name "PROS${inst_ver}" -display_name "PROS ${build_ver}" -url "${BUILD_URL}artifact/output/windows_updates.txt"
+            ${advinst} /build pros-updates.aip
             """
         archiveArtifacts artifacts: 'output/*', fingerprint: true
       }
