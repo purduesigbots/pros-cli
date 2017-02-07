@@ -14,8 +14,9 @@ def get_all_provider_types(pros_cfg=None):
         pros_cfg = CliConfig()
 
     for provider_file in pros_cfg.providers:
-        spec = importlib.util.spec_from_file_location('prosconductor.providers.{}'.format(os.path.basename(provider_file).split('.')[0]), provider_file)
-        spec.loader.load_module()
+        if os.path.isfile(provider_file):
+            spec = importlib.util.spec_from_file_location('prosconductor.providers.{}'.format(os.path.basename(provider_file).split('.')[0]), provider_file)
+            spec.loader.load_module()
 
     return {x.registrar: x for x in DepotProvider.__subclasses__()}
 

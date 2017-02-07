@@ -45,7 +45,7 @@ stage('Build') {
         checkout scm
         bat 'git describe --tags > version'
         build_ver = readFile 'version'
-        bat 'git describe --tags > inst_version'
+        bat 'git describe --tags --abbrev=0 > inst_version'
         inst_ver = readFile 'inst_version'
       }
       stage('Build') {
@@ -71,6 +71,9 @@ stage('Build') {
             ${advinst} /edit pros-windows.aip /ResetSync APPDIR\\cli -clearcontent
             ${advinst} /edit pros-windows.aip /NewSync APPDIR\\cli exe.win -existingfiles delete
             ${advinst} /build pros-windows.aip
+            """
+        bat """
+            ${advinst} /edit pros-updates.aip /NewUpdate ${file.getRemote()} -name "PROS${inst_ver}" -display_name "PROS ${build_ver}" -url "${BUILD_URL}artifact/output/windows_updates.txt"
             """
         archiveArtifacts artifacts: 'output/*', fingerprint: true
       }
