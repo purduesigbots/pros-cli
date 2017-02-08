@@ -17,6 +17,7 @@ stage('Build') {
         checkout scm
         sh 'git describe --tags > version'
         build_ver = readFile 'version'
+        build_ver = build_ver.replaceAll("\\s","")
         println "Building CLI at version ${build_ver}"
       }
       stage('Build') {
@@ -44,7 +45,11 @@ stage('Build') {
       stage('Clone') {
         checkout scm
         bat 'git describe --tags > version'
-        build_ver = readFile 'verison'
+        build_ver = readFile 'version'
+        build_ver = build_ver.replaceAll("\\s","")
+        bat 'git describe --tags --abbrev=0 > inst_version'
+        inst_ver = readFile 'inst_version'
+        inst_ver = inst_ver.replaceAll("\\s","")
       }
       stage('Build') {
         venv.run 'pip3 install --upgrade -r requirements.txt'
@@ -60,15 +65,19 @@ stage('Build') {
         bat 'if exist .\\exe.win del /s /q .\\exe.win'
         bat 'if exist .\\exe.win rmdir /s /q .\\exe.win'
         bat 'mkdir .\\exe.win'
-        for(file in unarchive(mapping: ['pros_cli-*-win-32bit.zip': '.'])) {
+        for(file in unarchive(mapping: ['**pros_cli-*-win-32bit.zip': '.'])) {
           file.unzip(file.getParent().child('exe.win'))
         }
         def advinst = "\"${tool 'Advanced Installer'}\\AdvancedInstaller.com\""
         bat """
-            ${advinst} /edit pros-windows.aip /SetVersion ${build_ver}
+            ${advinst} /edit pros-windows.aip /SetVersion ${inst_ver}
             ${advinst} /edit pros-windows.aip /ResetSync APPDIR\\cli -clearcontent
             ${advinst} /edit pros-windows.aip /NewSync APPDIR\\cli exe.win -existingfiles delete
             ${advinst} /build pros-windows.aip
+            """
+        bat """
+            ${advinst} /edit pros-updates.aip /NewUpdate output\\pros-win.exe -name "PROS${inst_ver}" -display_name "PROS ${build_ver}" -url "${env.BUILD_URL}artifact/output/pros-win.exe"
+            ${advinst} /build pros-updates.aip
             """
         archiveArtifacts artifacts: 'output/*', fingerprint: true
       }
