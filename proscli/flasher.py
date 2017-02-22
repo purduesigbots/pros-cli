@@ -24,13 +24,16 @@ def flasher_cli():
               help='Specifies a binary file, project directory, or project config file.')
 @click.option('-p', '--port', default='auto', metavar='PORT', help='Specifies the serial port.')
 @click.option('--no-poll', is_flag=True, default=False)
+@click.option('-r', '--retry', default=2,
+              help='Specify the number of times the flasher should retry the flash when it detects a failure'
+                   ' (default two times).')
 @default_cfg
 # @click.option('-m', '--strategy', default='cortex', metavar='STRATEGY',
 #               help='Specify the microcontroller upload strategy. Not currently used.')
-def flash(ctx, save_file_system, y, port, binary, no_poll):
+def flash(ctx, save_file_system, y, port, binary, no_poll, retry):
     """Upload binaries to the microcontroller. A serial port and binary file need to be specified.
 
-    By default, the port is automatically selected (if you want to be pendantic, 'auto').
+    By default, the port is automatically selected (if you want to be pedantic, 'auto').
     Otherwise, a system COM port descriptor needs to be used. In Windows/NT, this takes the form of COM1.
     In *nx systems, this takes the form of /dev/tty1 or /dev/acm1 or similar.
     \b
@@ -87,7 +90,7 @@ def flash(ctx, save_file_system, y, port, binary, no_poll):
 
     click.echo('Flashing ' + binary + ' to ' + ', '.join(port))
     for p in port:
-        prosflasher.upload.upload(p, binary, no_poll, ctx)
+        prosflasher.upload.upload(p, binary, no_poll, ctx, retry)
 
 
 def find_binary(path):
