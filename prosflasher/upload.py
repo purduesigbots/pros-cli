@@ -106,13 +106,12 @@ def upload(port, binary, no_poll=False, ctx=proscli.utils.State(), retry=2):
             return False
 
         reset_cortex(port)
-
+        click.echo("Download complete!")
     except serial.serialutil.SerialException as e:
         click.echo('Failed to download code! ' + str(e))
     finally:
         port.close()
-    click.echo("Download complete!")
-    pass
+
 
 
 def stop_user_code(port, ctx=proscli.utils.State()):
