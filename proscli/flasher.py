@@ -90,7 +90,9 @@ def flash(ctx, save_file_system, y, port, binary, no_poll, retry):
 
     click.echo('Flashing ' + binary + ' to ' + ', '.join(port))
     for p in port:
-        prosflasher.upload.upload(p, binary, no_poll, ctx, retry)
+        tries = 1
+        while not prosflasher.upload.upload(p, binary, no_poll, ctx) and tries <= retry:
+            tries += 1
 
 
 def find_binary(path):
