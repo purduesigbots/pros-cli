@@ -27,7 +27,6 @@ def create_serial(port):
     # port_str = ''
     if isinstance(port, str):
         try:
-            click.echo('got port string as expected')
             # port_str = port
             port = serial.Serial(port)
         except serial.SerialException as e:
@@ -50,7 +49,6 @@ def create_serial(port):
     port.dsrdtr = False
     # port.write_timeout = 5.0
     # port.inter_byte_timeout = 0.005  # todo make sure this is seconds
-    click.echo(port)
     return port
 
 
