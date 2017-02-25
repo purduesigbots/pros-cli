@@ -20,21 +20,26 @@ def create_serial(port):
     """
     Creates and/or configures a serial port to communicate with the Cortex Microcontroller
     :param port: A serial.Serial object, a device string identifier will create a corresponding serial port.
-        Anything elsse will create a default serial port with no device assigned.
+        Anything else will create a default serial port with no device assigned.
     :return: Returns a correctly configured instance of a serial.Serial object, potentially with a correctly configured
         device iff a correct port value was passed in
     """
+    # port_str = ''
     if isinstance(port, str):
         try:
+            click.echo('got port string as expected')
+            # port_str = port
             port = serial.Serial(port)
         except serial.SerialException as e:
             click.echo('WARNING: {}'.format(e))
             port = serial.Serial()
     elif not isinstance(port, serial.Serial):
+        click.echo('port was not string, send help')
         port = serial.Serial()
 
     assert isinstance(port, serial.Serial)
 
+    # port.port = port_str if port_str != '' else None
     port.baudrate = BAUD_RATE
     port.bytesize = serial.EIGHTBITS
     port.parity = serial.PARITY_EVEN
@@ -45,13 +50,13 @@ def create_serial(port):
     port.dsrdtr = False
     # port.write_timeout = 5.0
     # port.inter_byte_timeout = 0.005  # todo make sure this is seconds
-
+    click.echo(port)
     return port
 
 
 def create_port_list(verbose=False):
     """
-    Returns a formatted string of all COM ports we believe are valid Cortex ports, delimted by \n
+    Returns a formatted string of all COM ports we believe are valid Cortex ports, delimited by \n
     :param verbose: If True, then the hwid will be added to the end of each device
     :return: A formatted string for printing describing the COM ports
     """

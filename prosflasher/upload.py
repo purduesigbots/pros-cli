@@ -62,7 +62,7 @@ Joystick: F/W {} w/ {:1.2f}V
 
 
 # THIS MANAGES THE UPLOAD PROCESS FOR A GIVEN PORT/BINARY PAIR
-def upload(port, binary, no_poll=False, ctx=proscli.utils.State()):
+def upload(port, y, binary, no_poll=False, ctx=proscli.utils.State()):
     if not os.path.isfile(binary):
         click.echo('Failed to download... file does not exist')
         return False
@@ -71,6 +71,7 @@ def upload(port, binary, no_poll=False, ctx=proscli.utils.State()):
         click.echo('Failed to download: port not found')
         return
     try:
+        click.echo(port)
         stop_user_code(port, ctx)
         if not no_poll:
             sys_info = ask_sys_info(port, ctx)
@@ -79,13 +80,12 @@ def upload(port, binary, no_poll=False, ctx=proscli.utils.State()):
                 sys_info = ask_sys_info(port)
                 if sys_info is None:
                     click.echo('Failed to get system info... Try again', err=True)
-                    click.get_current_context().abort()
-                    sys.exit(1)
+                    return False
             click.echo(repr(sys_info))
         else:
             sys_info = SystemInfo()
             sys_info.connection_type = ConnectionType.serial_usb  # assume this
-        if sys_info.connection_type == ConnectionType.unknown:
+        if sys_info.connection_type == ConnectionType.unknown and not y:
             click.confirm('Unable to determine system type. It may be necessary to press the '
                           'programming button on the programming kit. Continue?', abort=True, default=True)
         if sys_info.connection_type == ConnectionType.serial_vexnet2:
@@ -107,8 +107,11 @@ def upload(port, binary, no_poll=False, ctx=proscli.utils.State()):
 
         reset_cortex(port)
         click.echo("Download complete!")
+        return True
     except serial.serialutil.SerialException as e:
         click.echo('Failed to download code! ' + str(e))
+        click.echo('Try unplugging and plugging the USB cable back in, as well as power-cycling the microcontroller.')
+        return -1000 # stop retries in this case, because there's a problem with the port
     finally:
         port.close()
 
@@ -118,6 +121,7 @@ def stop_user_code(port, ctx=proscli.utils.State()):
     click.echo('Stopping user code... ', nl=False)
     stopbits = [0x0f, 0x0f, 0x21, 0xde, 0x08, 0x00, 0x00, 0x00, 0x08, 0xf1, 0x04]
     debug(bytes_to_str(stopbits), ctx)
+    click.echo(port)
     if not port.is_open:
         port.open()
     port.flush()
@@ -180,7 +184,7 @@ def send_to_download_channel(port, ctx=proscli.utils.State()):
         port.read(port.in_waiting)
         port.write(download_ch_bits)
         port.flush()
-        time.sleep(0.25)
+        time.sleep(2)
         response = port.read_all()
         debug('DB CH RESPONSE: {}'.format(bytes_to_str(response)), ctx)
         response = response[-1:]
@@ -222,9 +226,9 @@ def reset_cortex(port, ctx=proscli.utils.State()):
 def configure_port(port, parity):
     port.reset_input_buffer()
     port.reset_output_buffer()
-    if port.is_open:
-        port.close()
-    port.open()
+    # if port.is_open:
+    #     port.close()
+    # port.open()
     port.parity = parity
     port.BAUDRATES = prosflasher.ports.BAUD_RATE
 

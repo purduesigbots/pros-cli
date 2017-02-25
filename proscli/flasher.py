@@ -91,7 +91,10 @@ def flash(ctx, save_file_system, y, port, binary, no_poll, retry):
     click.echo('Flashing ' + binary + ' to ' + ', '.join(port))
     for p in port:
         tries = 1
-        while not prosflasher.upload.upload(p, binary, no_poll, ctx) and tries <= retry:
+        while tries <= retry:
+            code = prosflasher.upload.upload(p, y, binary, no_poll, ctx)
+            if code or code == -1000:
+                break
             tries += 1
 
 
