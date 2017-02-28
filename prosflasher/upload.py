@@ -124,6 +124,7 @@ def stop_user_code(port, ctx=proscli.utils.State()):
         port.open()
     port.flush()
     port.read(port.in_waiting)
+    time.sleep(0.1)
     for stopbit in stopbits:
         port.write([stopbit])
     port.flush()
@@ -200,6 +201,7 @@ def expose_bootloader(port, ctx=proscli.utils.State()):
     port.flush()
     debug('EXPOSE BL BITS: {}  PORT CFG: {}'.format(bytes_to_str(bootloader_bits), repr(port)), ctx)
     port.read(port.in_waiting)
+    time.sleep(0.1)
     for _ in itertools.repeat(None, 5):
         port.write(bootloader_bits)
         port.flush()
@@ -215,6 +217,7 @@ def reset_cortex(port, ctx=proscli.utils.State()):
     debug('RESET CORTEX. PORT CFG: {}'.format(repr(port)), ctx)
     port.flush()
     port.read(port.in_waiting)
+    time.sleep(0.1)
     port.write([20])
     port.flush()
     click.echo('complete')
