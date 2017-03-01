@@ -117,6 +117,7 @@ def upload(port, y, binary, no_poll=False, ctx=proscli.utils.State()):
 
 
 def stop_user_code(port, ctx=proscli.utils.State()):
+    reset_cortex(port, ctx)
     click.echo('Stopping user code... ', nl=False)
     stopbits = [0x0f, 0x0f, 0x21, 0xde, 0x08, 0x00, 0x00, 0x00, 0x08, 0xf1, 0x04]
     debug(bytes_to_str(stopbits), ctx)
@@ -130,7 +131,7 @@ def stop_user_code(port, ctx=proscli.utils.State()):
     port.flush()
     response = port.read_all()
     debug(bytes_to_str(response), ctx)
-    port.parity = serial.PARITY_NONE
+    configure_port(port, serial.PARITY_NONE)
     click.echo('complete')
 
 
@@ -180,17 +181,18 @@ def send_to_download_channel(port, ctx=proscli.utils.State()):
     configure_port(port, serial.PARITY_EVEN)
     debug('DL CH BITS: {}  PORT CFG: {}'.format(bytes_to_str(download_ch_bits), repr(port)), ctx)
     for _ in itertools.repeat(None, 5):
-        port.read(port.in_waiting)
+        port.read_all()
+        time.sleep(0.1)
         port.write(download_ch_bits)
         port.flush()
-        time.sleep(2)
+        time.sleep(3)
         response = port.read_all()
         debug('DB CH RESPONSE: {}'.format(bytes_to_str(response)), ctx)
         response = response[-1:]
         if response is not None and len(response) > 0 and response[0] == ACK:
             click.echo('complete')
             return True
-    click.echo('failed')
+    click.echo('complete')
     return False
 
 

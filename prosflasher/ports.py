@@ -45,7 +45,7 @@ def create_serial(port):
     port.stopbits = serial.STOPBITS_ONE
     port.timeout = 5.0
     port.xonxoff = False
-    port.rtscts = False
+    port.rtscts = True
     port.dsrdtr = False
     # port.write_timeout = 5.0
     # port.inter_byte_timeout = 0.005  # todo make sure this is seconds
