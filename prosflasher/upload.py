@@ -190,7 +190,8 @@ def send_to_download_channel(port, ctx=proscli.utils.State()):
         response = port.read_all()
         debug('DB CH RESPONSE: {}'.format(bytes_to_str(response)), ctx)
         response = response[-1:]
-        if ask_sys_info(port, ctx, silent=True).connection_type == ConnectionType.serial_vexnet2_dl or (response is not None and len(response) > 0 and response[0] == ACK):
+        sys_info = ask_sys_info(port, ctx, silent=True)
+        if (sys_info is not None and sys_info.connection_type == ConnectionType.serial_vexnet2_dl) or (response is not None and len(response) > 0 and response[0] == ACK):
             click.echo('complete')
             return True
     click.echo('failed')
@@ -287,3 +288,14 @@ def openshut(port):
         port.close()
         time.sleep(0.1)
     port.open()
+
+def pulse_rts(port):
+    # @jpearman
+    port.rts = True
+    time.sleep(0.005)
+    port.rts = False
+    time.sleep(0.015)
+    port.rts = True
+    time.sleep(0.030)
+    port.rts = False
+    time.sleep(0.025)

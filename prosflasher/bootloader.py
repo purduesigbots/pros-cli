@@ -44,7 +44,7 @@ def compute_address_commandable(address):
 
 
 def prepare_bootloader(port):
-    click.echo('Preparing bootloader...', nl=False)
+    click.echo('Preparing bootloader... ', nl=False)
     prosflasher.upload.configure_port(port, serial.PARITY_EVEN)
     port.flush()
     port.write([0x7f])
