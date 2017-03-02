@@ -23,8 +23,8 @@ import jsonpickle
 def create_template(cfg, name, version, depot, location, ignore, upgrade_files):
     first_run(cfg)
     template = local.create_template(utils.Identifier(name, version, depot), location=location)
-    template.template_ignore = ignore
-    template.upgrade_paths = upgrade_files
+    template.template_ignore = list(ignore)
+    template.upgrade_paths = list(upgrade_files)
     template.save()
     click.echo(jsonpickle.encode(template))
     click.echo('Created template at {}'.format(template.save_file))

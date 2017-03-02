@@ -144,27 +144,27 @@ def upgrade_project(identifier, dest, pros_cli=None):
     config = TemplateConfig(file=filename)
     for root, dirs, files in os.walk(config.directory):
         for d in dirs:
+            f = os.path.relpath(os.path.join(root, d), config.directory)
             if any([fnmatch.fnmatch(d, p) for p in config.upgrade_paths]):
                 verbose('Upgrading {}'.format(d))
-                relpath = os.path.relpath(os.path.join(root, d), config.directory)
-                shutil.copytree(os.path.join(config.directory, relpath), os.path.join(proj_config.directory, relpath))
+                shutil.copytree(os.path.join(config.directory, f), os.path.join(proj_config.directory, f))
         for f in files:
+            f = os.path.relpath(os.path.join(root, f), config.directory)
             if any([fnmatch.fnmatch(f, p) for p in config.upgrade_paths]):
                 verbose('Upgrading {}'.format(f))
-                relpath = os.path.relpath(os.path.join(root, f), config.directory)
-                shutil.copyfile(os.path.join(config.directory, relpath), os.path.join(proj_config.directory, relpath))
+                shutil.copyfile(os.path.join(config.directory, f), os.path.join(proj_config.directory, f))
     for root, dirs, files in os.walk(proj_config.directory):
         for d in dirs:
+            d = os.path.relpath(os.path.join(root, d), proj_config.directory)
             if any([fnmatch.fnmatch(d, p) for p in config.remove_paths]):
                 verbose('Removing {}'.format(d))
-                relpath = os.path.relpath(os.path.join(root, d), proj_config.directory)
-                shutil.rmtree(os.path.join(proj_config.directory, relpath))
+                shutil.rmtree(os.path.join(proj_config.directory, d))
 
         for f in files:
+            f = os.path.relpath(os.path.join(root, f), proj_config.directory)
             if any([fnmatch.fnmatch(f, p) for p in config.remove_paths]):
                 verbose('Removing {}'.format(f))
-                relpath = os.path.relpath(os.path.join(root, f), proj_config.directory)
-                os.remove(os.path.join(proj_config.directory, relpath))
+                os.remove(os.path.join(proj_config.directory, f))
     proj_config.kernel = config.identifier.version
     proj_config.save()
 
