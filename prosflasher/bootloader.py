@@ -95,7 +95,7 @@ def read_memory(port, start_address, size=0x100):
 
 
 def erase_flash(port):
-    click.echo('Erasing user flash...', nl=False)
+    click.echo('Erasing user flash... ', nl=False)
     prosflasher.upload.configure_port(port, serial.PARITY_EVEN)
     response = send_bootloader_command(port, 0x43, 1)
     if response is None or response[0] != 0x79:
@@ -162,7 +162,7 @@ def upload_binary(port, file):
 
 
 def send_go_command(port, address):
-    click.echo('Executing binary...', nl=False)
+    click.echo('Executing binary... ', nl=False)
     address = compute_address_commandable(address)
     debug('Executing binary at {}'.format(adr_to_str(address)))
 

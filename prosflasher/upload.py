@@ -134,8 +134,9 @@ def stop_user_code(port, ctx=proscli.utils.State()):
     click.echo('complete')
 
 
-def ask_sys_info(port, ctx=proscli.utils.State()):
-    click.echo('Asking for system information... ', nl=False)
+def ask_sys_info(port, ctx=proscli.utils.State(), silent=False):
+    if not silent:
+        click.echo('Asking for system information... ', nl=False)
     sys_info_bits = [0xc9, 0x36, 0xb8, 0x47, 0x21]
     if not port.is_open:
         port.open()
@@ -168,14 +169,15 @@ def ask_sys_info(port, ctx=proscli.utils.State()):
                 sys_info.connection_type = ConnectionType.unknown
             sys_info.previous_polls = response[13]
             sys_info.byte_representation = response
-            click.echo('complete')
+            if not silent:
+                click.echo('complete')
             return sys_info
         time.sleep(0.15)
     return None
 
 
 def send_to_download_channel(port, ctx=proscli.utils.State()):
-    click.echo('Sending to download channel... ', nl=False)
+    click.echo('Sending to download channel (this may take a while)... ', nl=False)
     download_ch_bits = [0xc9, 0x36, 0xb8, 0x47, 0x35]
     configure_port(port, serial.PARITY_EVEN)
     debug('DL CH BITS: {}  PORT CFG: {}'.format(bytes_to_str(download_ch_bits), repr(port)), ctx)
@@ -188,7 +190,7 @@ def send_to_download_channel(port, ctx=proscli.utils.State()):
         response = port.read_all()
         debug('DB CH RESPONSE: {}'.format(bytes_to_str(response)), ctx)
         response = response[-1:]
-        if response is not None and len(response) > 0 and response[0] == ACK:
+        if ask_sys_info(port, ctx, silent=True).connection_type == ConnectionType.serial_vexnet2_dl or (response is not None and len(response) > 0 and response[0] == ACK):
             click.echo('complete')
             return True
     click.echo('failed')
@@ -196,7 +198,7 @@ def send_to_download_channel(port, ctx=proscli.utils.State()):
 
 
 def expose_bootloader(port, ctx=proscli.utils.State()):
-    click.echo('Exposing bootloader...', nl=False)
+    click.echo('Exposing bootloader... ', nl=False)
     bootloader_bits = [0xc9, 0x36, 0xb8, 0x47, 0x25]
     configure_port(port, serial.PARITY_NONE)
     port.flush()
@@ -213,7 +215,7 @@ def expose_bootloader(port, ctx=proscli.utils.State()):
 
 
 def reset_cortex(port, ctx=proscli.utils.State()):
-    click.echo('Resetting cortex...', nl=False)
+    click.echo('Resetting cortex... ', nl=False)
     configure_port(port, serial.PARITY_NONE)
     debug('RESET CORTEX. PORT CFG: {}'.format(repr(port)), ctx)
     port.flush()
