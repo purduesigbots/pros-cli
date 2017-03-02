@@ -109,15 +109,17 @@ def upload(port, y, binary, no_poll=False, ctx=proscli.utils.State()):
         return True
     except serial.serialutil.SerialException as e:
         click.echo('Failed to download code! ' + str(e))
-        click.echo('Try unplugging and plugging the USB cable back in, as well as power-cycling the microcontroller.')
-        return -1000 # stop retries in this case, because there's a problem with the port
+        click.echo('Try unplugging and plugging the USB cable back in,'
+                   ' as well as power-cycling the microcontroller.')
+        return -1000  # stop retries in this case, because there's a problem with the port
     finally:
         port.close()
 
 
-
 def stop_user_code(port, ctx=proscli.utils.State()):
-    reset_cortex(port, ctx)
+    # Noticed no appreciable difference between having this here and not during testing
+    # reset_cortex(port, ctx)
+    # leaving it in in case we find out later it's necessary
     click.echo('Stopping user code... ', nl=False)
     stopbits = [0x0f, 0x0f, 0x21, 0xde, 0x08, 0x00, 0x00, 0x00, 0x08, 0xf1, 0x04]
     debug(bytes_to_str(stopbits), ctx)
@@ -282,5 +284,3 @@ def dump_cortex(port, file, verbose=False):
         port.close()
     click.echo("Download complete!")
     pass
-
-
