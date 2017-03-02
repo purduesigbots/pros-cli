@@ -117,10 +117,6 @@ def upload(port, y, binary, no_poll=False, ctx=proscli.utils.State()):
 
 
 def stop_user_code(port, ctx=proscli.utils.State()):
-    # Noticed no appreciable difference between having this here and not during testing
-    reset_cortex(port, ctx)
-    openshut(port)
-    # leaving it in in case we find out later it's necessary
     click.echo('Stopping user code... ', nl=False)
     stopbits = [0x0f, 0x0f, 0x21, 0xde, 0x08, 0x00, 0x00, 0x00, 0x08, 0xf1, 0x04]
     debug(bytes_to_str(stopbits), ctx)
