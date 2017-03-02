@@ -118,7 +118,7 @@ def upload(port, y, binary, no_poll=False, ctx=proscli.utils.State()):
 
 def stop_user_code(port, ctx=proscli.utils.State()):
     # Noticed no appreciable difference between having this here and not during testing
-    # reset_cortex(port, ctx)
+    reset_cortex(port, ctx)
     # leaving it in in case we find out later it's necessary
     click.echo('Stopping user code... ', nl=False)
     stopbits = [0x0f, 0x0f, 0x21, 0xde, 0x08, 0x00, 0x00, 0x00, 0x08, 0xf1, 0x04]
@@ -145,7 +145,7 @@ def ask_sys_info(port, ctx=proscli.utils.State()):
     configure_port(port, serial.PARITY_NONE)
     debug('SYS INFO BITS: {}  PORT CFG: {}'.format(bytes_to_str(sys_info_bits), repr(port)), ctx)
     for _ in itertools.repeat(None, 10):
-        port.read(port.in_waiting)
+        port.read_all()
         port.write(sys_info_bits)
         port.flush()
         time.sleep(0.1)
