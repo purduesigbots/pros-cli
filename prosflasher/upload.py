@@ -119,6 +119,7 @@ def upload(port, y, binary, no_poll=False, ctx=proscli.utils.State()):
 def stop_user_code(port, ctx=proscli.utils.State()):
     # Noticed no appreciable difference between having this here and not during testing
     reset_cortex(port, ctx)
+    openshut(port)
     # leaving it in in case we find out later it's necessary
     click.echo('Stopping user code... ', nl=False)
     stopbits = [0x0f, 0x0f, 0x21, 0xde, 0x08, 0x00, 0x00, 0x00, 0x08, 0xf1, 0x04]
@@ -194,12 +195,12 @@ def send_to_download_channel(port, ctx=proscli.utils.State()):
         if response is not None and len(response) > 0 and response[0] == ACK:
             click.echo('complete')
             return True
-    click.echo('complete')
+    click.echo('failed')
     return False
 
 
 def expose_bootloader(port, ctx=proscli.utils.State()):
-    click.echo('Exposing bootloader... ', nl=False)
+    click.echo('Exposing bootloader...', nl=False)
     bootloader_bits = [0xc9, 0x36, 0xb8, 0x47, 0x25]
     configure_port(port, serial.PARITY_NONE)
     port.flush()
@@ -231,9 +232,7 @@ def reset_cortex(port, ctx=proscli.utils.State()):
 def configure_port(port, parity):
     port.reset_input_buffer()
     port.reset_output_buffer()
-    # if port.is_open:
-    #     port.close()
-    # port.open()
+    openshut(port)
     port.parity = parity
     port.BAUDRATES = prosflasher.ports.BAUD_RATE
 
@@ -284,3 +283,9 @@ def dump_cortex(port, file, verbose=False):
         port.close()
     click.echo("Download complete!")
     pass
+
+def openshut(port):
+    if port.is_open:
+        port.close()
+        time.sleep(0.1)
+    port.open()

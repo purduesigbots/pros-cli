@@ -96,6 +96,7 @@ def flash(ctx, save_file_system, y, port, binary, no_poll, retry):
             if code or code == -1000:
                 break
             tries += 1
+            click.echo('Retrying...')
 
 
 def find_binary(path):
