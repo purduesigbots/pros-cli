@@ -164,7 +164,8 @@ def ask_sys_info(port, ctx=proscli.utils.State(), silent=False):
             if response[10] > 5:  # anything smaller than 5 is probably garbage from ADC
                 sys_info.backup_battery = response[10] * 0.059
             try:
-                sys_info.connection_type = ConnectionType(response[11])
+                # Mask FCS bits out of response[11]
+                sys_info.connection_type = ConnectionType(response[11] & 0b00110011)
             except ValueError:
                 sys_info.connection_type = ConnectionType.unknown
             sys_info.previous_polls = response[13]
