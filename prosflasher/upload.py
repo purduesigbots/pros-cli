@@ -165,7 +165,7 @@ def ask_sys_info(port, ctx=proscli.utils.State(), silent=False):
                 sys_info.backup_battery = response[10] * 0.059
             try:
                 # Mask FCS bits out of response[11]
-                sys_info.connection_type = ConnectionType(response[11] & 0b00110011)
+                sys_info.connection_type = ConnectionType(response[11] & 0b00110111)
             except ValueError:
                 sys_info.connection_type = ConnectionType.unknown
             sys_info.previous_polls = response[13]
