@@ -230,11 +230,11 @@ def reset_cortex(port, ctx=proscli.utils.State()):
 
 
 def configure_port(port, parity):
-    port.reset_input_buffer()
-    port.reset_output_buffer()
-    openshut(port)
-    port.parity = parity
-    port.BAUDRATES = prosflasher.ports.BAUD_RATE
+    if os.name == 'nt':
+        port.reset_input_buffer()
+        port.reset_output_buffer()
+        port.parity = parity
+    port.flush()
 
 
 def verify_file(file):
@@ -284,19 +284,3 @@ def dump_cortex(port, file, verbose=False):
     click.echo("Download complete!")
     pass
 
-def openshut(port):
-    if port.is_open:
-        port.close()
-        time.sleep(0.1)
-    port.open()
-
-def pulse_rts(port):
-    # @jpearman
-    port.rts = True
-    time.sleep(0.005)
-    port.rts = False
-    time.sleep(0.015)
-    port.rts = True
-    time.sleep(0.030)
-    port.rts = False
-    time.sleep(0.025)
