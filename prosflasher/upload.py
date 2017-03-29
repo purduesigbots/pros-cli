@@ -207,7 +207,7 @@ def expose_bootloader(port, ctx=proscli.utils.State()):
     debug('EXPOSE BL BITS: {}  PORT CFG: {}'.format(bytes_to_str(bootloader_bits), repr(port)), ctx)
     port.read_all()
     time.sleep(0.1)
-    for _ in itertools.repeat(None, 5):
+    for _ in itertools.repeat(None, 6):
         port.write(bootloader_bits)
         port.flush()
     configure_port(port, serial.PARITY_NONE)
