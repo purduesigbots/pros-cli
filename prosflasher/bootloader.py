@@ -199,7 +199,7 @@ def send_go_command(port, address, retry=3):
     response = port.read(1)
     debug_response(adr_to_str(c_addr), response)
     if response is None or len(response) < 1 or response[0] != ACK:
-        click.echo('failed to start binary. May need to restart Cortex')
+        click.echo('binary might not have started properly. May need to restart Cortex')
     else:
         click.echo('complete')
     return True
