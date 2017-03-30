@@ -16,7 +16,7 @@ def list_com_ports():
     return [x for x in serial.tools.list_ports.comports() if x.vid is not None and (x.vid in USB_VID or 'vex' in x.product.lower())]
 
 
-def create_serial(port):
+def create_serial(port, parity):
     """
     Creates and/or configures a serial port to communicate with the Cortex Microcontroller
     :param port: A serial.Serial object, a device string identifier will create a corresponding serial port.
@@ -28,27 +28,20 @@ def create_serial(port):
     if isinstance(port, str):
         try:
             # port_str = port
-            port = serial.Serial(port)
+            port = serial.Serial(port, baudrate=BAUD_RATE, bytesize=serial.EIGHTBITS, parity=parity, stopbits=serial.STOPBITS_ONE)
         except serial.SerialException as e:
             click.echo('WARNING: {}'.format(e))
-            port = serial.Serial()
+            port = serial.Serial(baudrate=BAUD_RATE, bytesize=serial.EIGHTBITS, parity=parity, stopbits=serial.STOPBITS_ONE)
     elif not isinstance(port, serial.Serial):
         click.echo('port was not string, send help')
-        port = serial.Serial()
+        port = serial.Serial(baudrate=BAUD_RATE, bytesize=serial.EIGHTBITS, parity=parity, stopbits=serial.STOPBITS_ONE)
 
     assert isinstance(port, serial.Serial)
 
     # port.port = port_str if port_str != '' else None
-    port.baudrate = BAUD_RATE
-    port.bytesize = serial.EIGHTBITS
-    port.parity = serial.PARITY_EVEN
-    port.stopbits = serial.STOPBITS_ONE
-    port.timeout = 5.0
-    port.xonxoff = False
-    port.rtscts = True
-    port.dsrdtr = False
+    port.timeout = 0.5
     # port.write_timeout = 5.0
-    # port.inter_byte_timeout = 0.005  # todo make sure this is seconds
+    port.inter_byte_timeout = 0.1  # todo make sure this is seconds
     return port
 
 
