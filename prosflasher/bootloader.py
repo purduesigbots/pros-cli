@@ -184,7 +184,7 @@ def upload_binary(port, file):
 
 
 def send_go_command(port, address, retry=3):
-    click.echo('Executing binary... ', nl=False)
+    click.echo('Executing user code... ', nl=False)
     c_addr = compute_address_commandable(address)
     debug('Executing binary at {}'.format(adr_to_str(c_addr)))
 
@@ -199,7 +199,7 @@ def send_go_command(port, address, retry=3):
     response = port.read(1)
     debug_response(adr_to_str(c_addr), response)
     if response is None or len(response) < 1 or response[0] != ACK:
-        click.echo('binary might not have started properly. May need to restart Cortex')
+        click.echo('user code might not have started properly. May need to restart Cortex')
     else:
         click.echo('complete')
     return True
