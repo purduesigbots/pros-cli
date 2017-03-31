@@ -7,6 +7,7 @@ import prosflasher.ports
 import prosflasher.upload
 import prosconfig
 from proscli.utils import default_cfg, AliasGroup
+from proscli.utils import get_version
 
 
 @click.group(cls=AliasGroup)
@@ -24,13 +25,16 @@ def flasher_cli():
               help='Specifies a binary file, project directory, or project config file.')
 @click.option('-p', '--port', default='auto', metavar='PORT', help='Specifies the serial port.')
 @click.option('--no-poll', is_flag=True, default=False)
+@click.option('-r', '--retry', default=2,
+              help='Specify the number of times the flasher should retry the flash when it detects a failure'
+                   ' (default two times).')
 @default_cfg
 # @click.option('-m', '--strategy', default='cortex', metavar='STRATEGY',
 #               help='Specify the microcontroller upload strategy. Not currently used.')
-def flash(ctx, save_file_system, y, port, binary, no_poll):
+def flash(ctx, save_file_system, y, port, binary, no_poll, retry):
     """Upload binaries to the microcontroller. A serial port and binary file need to be specified.
 
-    By default, the port is automatically selected (if you want to be pendantic, 'auto').
+    By default, the port is automatically selected (if you want to be pedantic, 'auto').
     Otherwise, a system COM port descriptor needs to be used. In Windows/NT, this takes the form of COM1.
     In *nx systems, this takes the form of /dev/tty1 or /dev/acm1 or similar.
     \b
@@ -39,6 +43,7 @@ def flash(ctx, save_file_system, y, port, binary, no_poll):
     By default, the CLI will look around for a proper binary to upload to the microcontroller. If one was not found, or
     if you want to change the default binary, you can specify it.
     """
+    click.echo(' ====:: PROS Flasher v{} ::===='.format(get_version()))
     if port == 'auto':
         ports = prosflasher.ports.list_com_ports()
         if len(ports) == 0:
@@ -87,7 +92,13 @@ def flash(ctx, save_file_system, y, port, binary, no_poll):
 
     click.echo('Flashing ' + binary + ' to ' + ', '.join(port))
     for p in port:
-        prosflasher.upload.upload(p, binary, no_poll, ctx)
+        tries = 1
+        while tries <= retry:
+            code = prosflasher.upload.upload(p, y, binary, no_poll, ctx)
+            if code or code == -1000:
+                break
+            click.echo('Retrying...')
+            tries += 1
 
 
 def find_binary(path):

@@ -9,7 +9,9 @@ stage('Build') {
       }
       stage('Dependencies') {
         tool 'python3'
-        sh 'sudo apt-get install -y python3-pip'
+		if(isUnix()) {
+	        sh 'sudo apt-get install -y python3-pip'
+		}
         venv.create_virtualenv()
         venv.run 'pip3 install wheel twine'
       }

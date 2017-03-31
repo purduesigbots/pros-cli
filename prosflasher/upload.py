@@ -62,15 +62,16 @@ Joystick: F/W {} w/ {:1.2f}V
 
 
 # THIS MANAGES THE UPLOAD PROCESS FOR A GIVEN PORT/BINARY PAIR
-def upload(port, binary, no_poll=False, ctx=proscli.utils.State()):
+def upload(port, y, binary, no_poll=False, ctx=proscli.utils.State()):
     if not os.path.isfile(binary):
         click.echo('Failed to download... file does not exist')
         return False
-    port = prosflasher.ports.create_serial(port)
+    port = prosflasher.ports.create_serial(port, serial.PARITY_EVEN)
     if not port:
         click.echo('Failed to download: port not found')
         return
     try:
+        # reset_cortex(port, ctx)
         stop_user_code(port, ctx)
         if not no_poll:
             sys_info = ask_sys_info(port, ctx)
@@ -79,13 +80,12 @@ def upload(port, binary, no_poll=False, ctx=proscli.utils.State()):
                 sys_info = ask_sys_info(port)
                 if sys_info is None:
                     click.echo('Failed to get system info... Try again', err=True)
-                    click.get_current_context().abort()
-                    sys.exit(1)
+                    return False
             click.echo(repr(sys_info))
         else:
             sys_info = SystemInfo()
             sys_info.connection_type = ConnectionType.serial_usb  # assume this
-        if sys_info.connection_type == ConnectionType.unknown:
+        if sys_info.connection_type == ConnectionType.unknown and not y:
             click.confirm('Unable to determine system type. It may be necessary to press the '
                           'programming button on the programming kit. Continue?', abort=True, default=True)
         if sys_info.connection_type == ConnectionType.serial_vexnet2:
@@ -94,6 +94,7 @@ def upload(port, binary, no_poll=False, ctx=proscli.utils.State()):
                 return False
         if not expose_bootloader(port):
             return False
+        port.read_all()
         if sys_info.connection_type == ConnectionType.serial_usb:
             time.sleep(0.25)
         if not prosflasher.bootloader.prepare_bootloader(port):
@@ -106,13 +107,15 @@ def upload(port, binary, no_poll=False, ctx=proscli.utils.State()):
             return False
 
         reset_cortex(port)
-
+        click.echo("Download complete!")
+        return True
     except serial.serialutil.SerialException as e:
         click.echo('Failed to download code! ' + str(e))
+        click.echo('Try unplugging and plugging the USB cable back in,'
+                   ' as well as power-cycling the microcontroller.')
+        return -1000  # stop retries in this case, because there's a problem with the port
     finally:
         port.close()
-    click.echo("Download complete!")
-    pass
 
 
 def stop_user_code(port, ctx=proscli.utils.State()):
@@ -122,25 +125,25 @@ def stop_user_code(port, ctx=proscli.utils.State()):
     if not port.is_open:
         port.open()
     port.flush()
-    port.read(port.in_waiting)
+    port.read_all()
+    time.sleep(0.1)
     for stopbit in stopbits:
         port.write([stopbit])
     port.flush()
     response = port.read_all()
     debug(bytes_to_str(response), ctx)
-    port.parity = serial.PARITY_NONE
     click.echo('complete')
 
 
-def ask_sys_info(port, ctx=proscli.utils.State()):
-    click.echo('Asking for system information... ', nl=False)
+def ask_sys_info(port, ctx=proscli.utils.State(), silent=False):
+    if not silent:
+        click.echo('Asking for system information... ', nl=False)
     sys_info_bits = [0xc9, 0x36, 0xb8, 0x47, 0x21]
     if not port.is_open:
         port.open()
-    configure_port(port, serial.PARITY_NONE)
     debug('SYS INFO BITS: {}  PORT CFG: {}'.format(bytes_to_str(sys_info_bits), repr(port)), ctx)
     for _ in itertools.repeat(None, 10):
-        port.read(port.in_waiting)
+        port.read_all()
         port.write(sys_info_bits)
         port.flush()
         time.sleep(0.1)
@@ -161,31 +164,34 @@ def ask_sys_info(port, ctx=proscli.utils.State()):
             if response[10] > 5:  # anything smaller than 5 is probably garbage from ADC
                 sys_info.backup_battery = response[10] * 0.059
             try:
-                sys_info.connection_type = ConnectionType(response[11])
+                # Mask FCS bits out of response[11]
+                sys_info.connection_type = ConnectionType(response[11] & 0b00110111)
             except ValueError:
                 sys_info.connection_type = ConnectionType.unknown
             sys_info.previous_polls = response[13]
             sys_info.byte_representation = response
-            click.echo('complete')
+            if not silent:
+                click.echo('complete')
             return sys_info
         time.sleep(0.15)
     return None
 
 
 def send_to_download_channel(port, ctx=proscli.utils.State()):
-    click.echo('Sending to download channel... ', nl=False)
+    click.echo('Sending to download channel (this may take a while)... ', nl=False)
     download_ch_bits = [0xc9, 0x36, 0xb8, 0x47, 0x35]
-    configure_port(port, serial.PARITY_EVEN)
     debug('DL CH BITS: {}  PORT CFG: {}'.format(bytes_to_str(download_ch_bits), repr(port)), ctx)
     for _ in itertools.repeat(None, 5):
-        port.read(port.in_waiting)
+        port.read_all()
+        time.sleep(0.1)
         port.write(download_ch_bits)
         port.flush()
-        time.sleep(0.25)
+        time.sleep(3)
         response = port.read_all()
         debug('DB CH RESPONSE: {}'.format(bytes_to_str(response)), ctx)
         response = response[-1:]
-        if response is not None and len(response) > 0 and response[0] == ACK:
+        sys_info = ask_sys_info(port, ctx, silent=True)
+        if (sys_info is not None and sys_info.connection_type == ConnectionType.serial_vexnet2_dl) or (response is not None and len(response) > 0 and response[0] == ACK):
             click.echo('complete')
             return True
     click.echo('failed')
@@ -195,39 +201,30 @@ def send_to_download_channel(port, ctx=proscli.utils.State()):
 def expose_bootloader(port, ctx=proscli.utils.State()):
     click.echo('Exposing bootloader... ', nl=False)
     bootloader_bits = [0xc9, 0x36, 0xb8, 0x47, 0x25]
-    configure_port(port, serial.PARITY_NONE)
     port.flush()
     debug('EXPOSE BL BITS: {}  PORT CFG: {}'.format(bytes_to_str(bootloader_bits), repr(port)), ctx)
-    port.read(port.in_waiting)
+    port.read_all()
+    time.sleep(0.1)
     for _ in itertools.repeat(None, 5):
         port.write(bootloader_bits)
-        port.flush()
-    configure_port(port, serial.PARITY_NONE)
+        time.sleep(0.1)
     time.sleep(0.3)  # time delay to allow shift to download mode
     click.echo('complete')
     return True
 
 
 def reset_cortex(port, ctx=proscli.utils.State()):
-    click.echo('Resetting cortex...', nl=False)
-    configure_port(port, serial.PARITY_NONE)
+    click.echo('Resetting cortex... ', nl=False)
     debug('RESET CORTEX. PORT CFG: {}'.format(repr(port)), ctx)
+    port.parity = serial.PARITY_NONE
     port.flush()
-    port.read(port.in_waiting)
-    port.write([20])
+    port.read_all()
+    time.sleep(0.1)
+    port.write([0xc9, 0x36, 0xb8, 0x47, 0x20])
     port.flush()
+    port.write([0x14])
     click.echo('complete')
     time.sleep(0.01)
-
-
-def configure_port(port, parity):
-    port.reset_input_buffer()
-    port.reset_output_buffer()
-    if port.is_open:
-        port.close()
-    port.open()
-    port.parity = parity
-    port.BAUDRATES = prosflasher.ports.BAUD_RATE
 
 
 def verify_file(file):
@@ -276,5 +273,4 @@ def dump_cortex(port, file, verbose=False):
         port.close()
     click.echo("Download complete!")
     pass
-
 

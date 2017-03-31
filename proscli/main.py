@@ -1,10 +1,7 @@
 import click
 #from pkg_resources import get_distribution
 import proscli
-from proscli.utils import default_options
-import os.path
-import sys
-
+from proscli.utils import default_options, get_version
 
 def main():
     # the program name should always be pros. don't care if it's not...
@@ -12,22 +9,6 @@ def main():
         cli.main(prog_name='pros')
     except KeyboardInterrupt:
         click.echo('Aborted!')
-
-
-def get_version():
-    try:
-        if os.path.isfile(os.path.join(__file__, '../../version')):
-            return open(os.path.join(__file__, '../../version')).read().strip()
-    except Exception:
-        pass
-    try:
-        if getattr(sys, 'frozen', False):
-            import BUILD_CONSTANTS
-            return BUILD_CONSTANTS.CLI_VERSION
-    except Exception:
-        pass
-    return None # Let click figure it out
-
 
 @click.command('pros',
                cls=click.CommandCollection,
