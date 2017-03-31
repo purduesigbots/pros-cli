@@ -19,9 +19,8 @@ def debug_response(command, response, fmt='STM BL RESPONSE TO 0x{}: {}'):
 
 def send_bootloader_command(port, command, response_size=1):
     port.write([command, 0xff - command])
-    port.flush()
+    time.sleep(0.01)
     response = port.read(response_size)
-    debug_response(command, response)
     return response
 
 
@@ -45,21 +44,31 @@ def compute_address_commandable(address):
 
 def prepare_bootloader(port):
     click.echo('Preparing bootloader... ', nl=False)
-    prosflasher.upload.configure_port(port, serial.PARITY_EVEN)
-    port.flush()
-    port.write([0x7f])
-    response = port.read(1)
-    debug_response(0x07f, response)
-    if response is None or len(response) != 1 or response[0] != ACK:
-        click.echo('failed')
-        return False
-    click.echo('complete')
-    if click.get_current_context().obj.verbosity > 1:
-        click.echo('Extra commands:')
-        send_bootloader_command(port, 0x00, 15)
-        send_bootloader_command(port, 0x01, 5)
-        send_bootloader_command(port, 0x02, 5)
-    return True
+    # for _ in range(0, 3):
+    #     response = send_bootloader_command(port, 0x00, 15)
+    #     if response is not None and len(response) == 15 and response[0] == ACK and response[-1] == ACK:
+    #         click.echo('complete')
+    #         return True
+    time.sleep(0.01)
+    port.rts = 0
+    time.sleep(0.01)
+    for _ in range(0,3):
+        port.write([0x7f])
+        response = port.read(1)
+        debug_response(0x7f, response)
+        if not (response is None or len(response) != 1 or response[0] != ACK):
+            time.sleep(0.01)
+            response = send_bootloader_command(port, 0x00, 15)
+            debug_response(0x00, response)
+            if response is None or len(response) != 15 or response[0] != ACK or response[-1] != ACK:
+                click.echo('failed (couldn\'t verify commands)')
+                return False
+            # send_bootloader_command(port, 0x01, 5)
+            # send_bootloader_command(port, 0x02, 5)
+            click.echo('complete')
+            return True
+    click.echo('failed')
+    return False
 
 
 def read_memory(port, start_address, size=0x100):
@@ -98,36 +107,42 @@ def erase_flash(port):
     click.echo('Erasing user flash... ', nl=False)
     port.flush()
     response = send_bootloader_command(port, 0x43, 1)
-    if response is None or response[0] != 0x79:
+    if response is None or len(response) < 1 or response[0] != 0x79:
         click.echo('failed')
         return False
+    time.sleep(0.01)
     response = send_bootloader_command(port, 0xff, 1)
-    if response is None or response[0] != 0x79:
-        click.echo('failed')
+    debug_response(0xff, response)
+    if response is None or len(response) < 1 or response[0] != 0x79:
+        click.echo('failed (address unacceptable)')
         return False
     click.echo('complete')
     return True
 
 
-def write_flash(port, start_address, data):
+def write_flash(port, start_address, data, retry=2):
     data = bytearray(data)
     if len(data) > 256:
         click.echo('Tried writing too much data at once! ({} bytes)'.format(len(data)))
         return False
     port.read_all()
-    start_address = compute_address_commandable(start_address)
-    debug('Writing {} bytes to {}'.format(len(data), adr_to_str(start_address)))
+    c_addr = compute_address_commandable(start_address)
+    debug('Writing {} bytes to {}'.format(len(data), adr_to_str(c_addr)))
     response = send_bootloader_command(port, 0x31)
-    if response is None or response[0] != ACK:
+    if response is None or len(response) < 1 or response[0] != ACK:
         click.echo('failed (write command not accepted)')
         return False
-    port.write(start_address)
+    port.write(c_addr)
     port.flush()
     response = port.read(1)
-    debug_response(adr_to_str(start_address), response)
-    if response is None or response[0] != ACK:
-        click.echo('failed (address not accepted)')
-        return False
+    debug_response(adr_to_str(c_addr), response)
+    if response is None or len(response) < 1 or response[0] != ACK:
+        if retry > 0:
+            debug('RETRYING PACKET')
+            write_flash(port, start_address, data, retry=retry - 1)
+        else:
+            click.echo('failed (address not accepted)')
+            return False
     checksum = len(data) - 1
     for x in data:
         checksum ^= x
@@ -136,16 +151,23 @@ def write_flash(port, start_address, data):
     port.write(data)
     time.sleep(0.005)
     response = port.read(1)
-    if response is None or response[0] != ACK:
-        port.write(data)
-        time.sleep(20)
-        response = port.read(1)
-        if response is None or response[0] != ACK:
+    debug('STM BL RESPONSE TO WRITE: {}'.format(response))
+    if response is None or len(response) < 1 or response[0] != ACK:
+        if retry > 0:
+            debug('RETRYING PACKET')
+            write_flash(port, start_address, data, retry=retry - 1)
+        else:
             click.echo('failed (could not complete upload)')
             return False
     port.flush()
     port.reset_input_buffer()
     return True
+
+
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
 
 
 def upload_binary(port, file):
@@ -161,16 +183,23 @@ def upload_binary(port, file):
     return True
 
 
-def send_go_command(port, address):
-    click.echo('Executing binary... ', nl=False)
-    address = compute_address_commandable(address)
-    debug('Executing binary at {}'.format(adr_to_str(address)))
+def send_go_command(port, address, retry=3):
+    click.echo('Executing user code... ', nl=False)
+    c_addr = compute_address_commandable(address)
+    debug('Executing binary at {}'.format(adr_to_str(c_addr)))
 
     response = send_bootloader_command(port, 0x21, 1)
-    if response is None or response[0] != ACK:
+    debug_response(0x21, response)
+    if response is None or len(response) < 1 or response[0] != ACK:
         click.echo('failed (execute command not accepted)')
         return False
-    port.write(address)
-    port.flush()
-    click.echo('complete')
+    time.sleep(0.01)
+    port.write(c_addr)
+    time.sleep(0.01)
+    response = port.read(1)
+    debug_response(adr_to_str(c_addr), response)
+    if response is None or len(response) < 1 or response[0] != ACK:
+        click.echo('user code might not have started properly. May need to restart Cortex')
+    else:
+        click.echo('complete')
     return True

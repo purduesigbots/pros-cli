@@ -1,6 +1,7 @@
 import click
 import proscli.serial_terminal
 import prosflasher.ports
+import serial
 import signal
 import sys
 import time
@@ -28,7 +29,7 @@ def terminal(port):
             click.echo('No ports were found.')
             click.get_current_context().abort()
             sys.exit()
-    ser = prosflasher.ports.create_serial(port)
+    ser = prosflasher.ports.create_serial(port, serial.PARITY_NONE)
     term = proscli.serial_terminal.Terminal(ser)
     signal.signal(signal.SIGINT, term.stop)
     term.start()
