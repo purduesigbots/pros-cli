@@ -15,7 +15,7 @@ PROS CLI can be installed directly from source with the following prerequisites:
  - PIP (default in Python 3.5)
  - Setuptools (default in PYthon 3.5)
 
-Clone this repository, then run `pip install --executable <dir>`. Pip will install all the dependencies necessary.
+Clone this repository, then run `pip install -e <dir>`. Pip will install all the dependencies necessary.
 
 ## About this project
 This python project contains 4 modules: proscli, prosconductor, prosconfig, and prosflasher
