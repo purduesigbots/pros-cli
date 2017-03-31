@@ -146,9 +146,10 @@ def write_flash(port, start_address, data, retry=2):
     checksum = len(data) - 1
     for x in data:
         checksum ^= x
-    data.insert(0, len(data) - 1)
-    data.append(checksum)
-    port.write(data)
+    send_data = data
+    send_data.insert(0, len(send_data) - 1)
+    send_data.append(checksum)
+    port.write(send_data)
     time.sleep(0.005)
     response = port.read(1)
     debug('STM BL RESPONSE TO WRITE: {}'.format(response))
