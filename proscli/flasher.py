@@ -7,6 +7,7 @@ import prosflasher.ports
 import prosflasher.upload
 import prosconfig
 from proscli.utils import default_cfg, AliasGroup
+from proscli.utils import get_version
 
 
 @click.group(cls=AliasGroup)
@@ -42,6 +43,7 @@ def flash(ctx, save_file_system, y, port, binary, no_poll, retry):
     By default, the CLI will look around for a proper binary to upload to the microcontroller. If one was not found, or
     if you want to change the default binary, you can specify it.
     """
+    click.echo(' ====:: PROS Flasher v{} ::===='.format(get_version()))
     if port == 'auto':
         ports = prosflasher.ports.list_com_ports()
         if len(ports) == 0:
