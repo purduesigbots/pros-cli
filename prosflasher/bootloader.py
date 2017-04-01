@@ -130,15 +130,19 @@ def write_flash(port, start_address, data, retry=2):
     debug('Writing {} bytes to {}'.format(len(data), adr_to_str(c_addr)))
     response = send_bootloader_command(port, 0x31)
     if response is None or len(response) < 1 or response[0] != ACK:
-        click.echo('failed (write command not accepted)')
-        return False
+        if retry > 0:
+            debug('RETRYING PACKET AT COMMAND')
+            write_flash(port, start_address, data, retry=retry-1)
+        else:
+            click.echo('failed (write command not accepted)')
+            return False
     port.write(c_addr)
     port.flush()
     response = port.read(1)
     debug_response(adr_to_str(c_addr), response)
     if response is None or len(response) < 1 or response[0] != ACK:
         if retry > 0:
-            debug('RETRYING PACKET')
+            debug('RETRYING PACKET AT ADDRESS')
             write_flash(port, start_address, data, retry=retry - 1)
         else:
             click.echo('failed (address not accepted)')
@@ -146,7 +150,7 @@ def write_flash(port, start_address, data, retry=2):
     checksum = len(data) - 1
     for x in data:
         checksum ^= x
-    send_data = data
+    send_data = data[:]
     send_data.insert(0, len(send_data) - 1)
     send_data.append(checksum)
     port.write(send_data)
@@ -155,7 +159,7 @@ def write_flash(port, start_address, data, retry=2):
     debug('STM BL RESPONSE TO WRITE: {}'.format(response))
     if response is None or len(response) < 1 or response[0] != ACK:
         if retry > 0:
-            debug('RETRYING PACKET')
+            debug('RETRYING PACKET AT WRITE')
             write_flash(port, start_address, data, retry=retry - 1)
         else:
             click.echo('failed (could not complete upload)')
