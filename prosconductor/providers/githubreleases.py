@@ -26,7 +26,7 @@ def get_cert_attr():
 
 class GithubReleasesDepotProvider(DepotProvider):
     registrar = 'github-releases'
-    location_desc = 'eyo smwd'
+    location_desc = 'username/repository'
     config = {
         'include_prereleases': {
             'method': 'bool',

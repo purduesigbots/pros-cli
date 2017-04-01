@@ -16,7 +16,7 @@ def get_upgrade_command():
     if getattr(sys, 'frozen', False):
         cmd = os.path.abspath(os.path.join(sys.executable, '..', '..', 'updater.exe'))
         if os.path.exists(cmd):
-            return [cmd, '/silentall', '-nofreqcheck']
+            return [cmd, '-reducedgui']
         else:
             return False
     else:
