@@ -60,6 +60,13 @@ Joystick: F/W {} w/ {:1.2f}V
                         self.joystick_firmware, self.joystick_battery,
                         self.cortex_firmware, self.cortex_battery, self.backup_battery)
 
+    @property
+    def is_wireless(self):
+        return self.connection_type == ConnectionType.serial_vexnet2 or \
+               self.connection_type == ConnectionType.serial_vexnet2_dl or \
+               self.connection_type == ConnectionType.serial_vexnet1 or \
+               self.connection_type == ConnectionType.serial_vexnet1_turbo
+
 
 # THIS MANAGES THE UPLOAD PROCESS FOR A GIVEN PORT/BINARY PAIR
 def upload(port, y, binary, no_poll=False, ctx=proscli.utils.State()):
@@ -79,19 +86,23 @@ def upload(port, y, binary, no_poll=False, ctx=proscli.utils.State()):
                 time.sleep(1.5)
                 sys_info = ask_sys_info(port)
                 if sys_info is None:
-                    click.echo('Failed to get system info... Try again', err=True)
-                    return False
+                    sys_info = SystemInfo()
+                    sys_info.connection_type = ConnectionType.unknown
+                    click.echo('Failed to get system info... Prompting to continue...', err=True)
             click.echo(repr(sys_info))
         else:
             sys_info = SystemInfo()
             sys_info.connection_type = ConnectionType.serial_usb  # assume this
         if sys_info.connection_type == ConnectionType.unknown and not y:
             click.confirm('Unable to determine system type. It may be necessary to press the '
-                          'programming button on the programming kit. Continue?', abort=True, default=True)
+                          'programming button on the programming kit. Continuing is usually safe.'
+                          ' Continue?', abort=True, default=True)
         if sys_info.connection_type == ConnectionType.serial_vexnet2:
             # need to send to download channel
             if not send_to_download_channel(port):
                 return False
+        if sys_info.is_wireless:  # increase read timeout for wireless connections
+            port.timeout = 1.0
         if not expose_bootloader(port):
             return False
         port.read_all()
@@ -102,6 +113,10 @@ def upload(port, y, binary, no_poll=False, ctx=proscli.utils.State()):
         if not prosflasher.bootloader.erase_flash(port):
             return False
         if not prosflasher.bootloader.upload_binary(port, binary):
+            if sys_info.is_wireless:
+                click.echo('Binary failed to upload. You may now need to upload via a USB connection because too many '
+                           'packets were dropped. Move the joystick closer to the microcontroller for a more reliable '
+                           'connection.')
             return False
         if not prosflasher.bootloader.send_go_command(port, 0x08000000):
             return False
@@ -273,4 +288,3 @@ def dump_cortex(port, file, verbose=False):
         port.close()
     click.echo("Download complete!")
     pass
-

@@ -2,6 +2,7 @@ import click
 import os
 import os.path
 import ntpath
+import serial
 import sys
 import prosflasher.ports
 import prosflasher.upload
@@ -166,7 +167,7 @@ def get_sys_info(cfg, yes, port):
         port = [port]
 
     for p in port:
-        sys_info = prosflasher.upload.ask_sys_info(prosflasher.ports.create_serial(p), cfg)
+        sys_info = prosflasher.upload.ask_sys_info(prosflasher.ports.create_serial(p, serial.PARITY_EVEN), cfg)
         click.echo(repr(sys_info))
 
     pass

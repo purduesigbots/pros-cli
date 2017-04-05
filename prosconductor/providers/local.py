@@ -123,7 +123,6 @@ def create_project(identifier, dest, pros_cli=None):
                 os.rmdir(os.path.join(root, d))
         for f in files:
             f = os.path.relpath(os.path.join(root, f), dest)
-            debug(f)
             if any([fnmatch.fnmatch(f, p) for p in config.template_ignore]):
                 verbose('Removing {}'.format(f))
                 os.remove(os.path.join(root, f))
