@@ -112,7 +112,7 @@ def upload(port, y, binary, no_poll=False, ctx=proscli.utils.State()):
             return False
         if not prosflasher.bootloader.erase_flash(port):
             return False
-        if not prosflasher.bootloader.upload_binary(port, binary):
+        if not prosflasher.bootloader.upload_binary(port, binary, is_wireless=sys_info.is_wireless):
             if sys_info.is_wireless:
                 click.echo('Binary failed to upload. You may now need to upload via a USB connection because too many '
                            'packets were dropped. Move the joystick closer to the microcontroller for a more reliable '

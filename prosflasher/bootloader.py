@@ -121,7 +121,7 @@ def erase_flash(port):
     return True
 
 
-def write_flash(port, start_address, data, retry=2):
+def write_flash(port, start_address, data, retry=2, is_wireless=False):
     data = bytearray(data)
     if len(data) > 256:
         click.echo('Tried writing too much data at once! ({} bytes)'.format(len(data)))
@@ -139,6 +139,7 @@ def write_flash(port, start_address, data, retry=2):
             return False
     port.write(c_addr)
     port.flush()
+    time.sleep(0.005 if is_wireless else 0.002)
     response = port.read(1)
     debug_response(adr_to_str(c_addr), response)
     if response is None or len(response) < 1 or response[0] != ACK:
@@ -155,6 +156,8 @@ def write_flash(port, start_address, data, retry=2):
     send_data.insert(0, len(send_data) - 1)
     send_data.append(checksum)
     port.write(send_data)
+    port.flush()
+    time.sleep(0.007 if is_wireless else 0.002)
     response = port.read(1)
     debug('STM BL RESPONSE TO WRITE: {}'.format(response))
     if response is None or len(response) < 1 or response[0] != ACK:
@@ -175,14 +178,14 @@ def chunks(l, n):
         yield l[i:i + n]
 
 
-def upload_binary(port, file):
+def upload_binary(port, file, is_wireless=False):
     address = 0x08000000
     with open(file, 'rb') as f:
         data = bytes(f.read())
         data_segments = [data[x:x + MAX_WRITE_SIZE] for x in range(0, len(data), MAX_WRITE_SIZE)]
         with click.progressbar(data_segments, label='Uploading binary to Cortex...') as segments:
             for segment in segments:
-                if not write_flash(port, address, segment):
+                if not write_flash(port, address, segment, is_wireless=is_wireless):
                     return False
                 address += 0x100
     return True

@@ -41,7 +41,7 @@ def create_serial(port, parity):
     # port.port = port_str if port_str != '' else None
     port.timeout = 0.5
     # port.write_timeout = 5.0
-    port.inter_byte_timeout = 0.25
+    port.inter_byte_timeout = 0.2
     return port
 
 
