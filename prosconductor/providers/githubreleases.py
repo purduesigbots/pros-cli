@@ -26,7 +26,7 @@ def get_cert_attr():
 
 class GithubReleasesDepotProvider(DepotProvider):
     registrar = 'github-releases'
-    location_desc = 'eyo smwd'
+    location_desc = 'username/repository'
     config = {
         'include_prereleases': {
             'method': 'bool',
@@ -80,7 +80,7 @@ class GithubReleasesDepotProvider(DepotProvider):
             # filter out pre-releases according to registar_options (include_prerelease implies prerelease) and
             # by if the release has a kernel-template.zip or library-template.zip file
             for release in [rel for rel in json if
-                            (not rel['prerelease'] or config.registrar_options.get('include_prerelease', False)) and
+                            (not rel['prerelease'] or config.registrar_options.get('include_prereleases', False)) and
                             (not rel['draft'] or config.registrar_options.get('include_draft', False))]:
                 for asset in [a for a in release['assets'] if
                               re.fullmatch(string=a['name'].lower(), pattern='.*-template.zip')]:

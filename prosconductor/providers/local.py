@@ -117,12 +117,12 @@ def create_project(identifier, dest, pros_cli=None):
     copytree(config.directory, dest)
     for root, dirs, files in os.walk(dest):
         for d in dirs:
-            d = os.path.relpath(os.path.join(root, d), config.directory)
+            d = os.path.relpath(os.path.join(root, d), dest)
             if any([fnmatch.fnmatch(d, p) for p in config.template_ignore]):
                 verbose('Removing {}'.format(d))
                 os.rmdir(os.path.join(root, d))
         for f in files:
-            f = os.path.relpath(os.path.join(root, f), config.directory)
+            f = os.path.relpath(os.path.join(root, f), dest)
             if any([fnmatch.fnmatch(f, p) for p in config.template_ignore]):
                 verbose('Removing {}'.format(f))
                 os.remove(os.path.join(root, f))
