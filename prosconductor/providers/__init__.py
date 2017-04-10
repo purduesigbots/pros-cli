@@ -54,6 +54,7 @@ class TemplateConfig(Config):
         self.version = None  # type: str
         self.depot = None  # type: str
         self.template_ignore = []  # type: List[str]
+        self.remove_paths = [] # type List[str]
         self.upgrade_paths = []  # type: List[str]
         super(TemplateConfig, self).__init__(file)
 
@@ -64,6 +65,8 @@ class TemplateConfig(Config):
 
 class DepotProvider(object):
     registrar = 'default-provider'
+    location_desc = 'A URL or identifier for a specific depot'
+    config = {}
 
     def __init__(self, config):
         self.config = config
@@ -96,9 +99,12 @@ class DepotProvider(object):
 
         for item in [os.path.join(self.config.directory, x) for x in os.listdir(self.config.directory)
                      if os.path.isdir(os.path.join(self.config.directory, x))]:
-            if TemplateTypes.kernel in template_types and 'template.pros' in os.listdir(item):
+            if TemplateTypes.kernel in template_types and 'template.pros' in os.listdir(item) and os.path.basename(item).startswith('kernel'):
                 template_config = TemplateConfig(os.path.join(item, 'template.pros'))
                 result[TemplateTypes.kernel].add(template_config.identifier)
+            elif TemplateTypes.library in template_types and 'template.pros' in os.listdir(item) and not os.path.basename(item).startswith('kernel'):
+                template_config = TemplateConfig(os.path.join(item, 'template.pros'))
+                result[TemplateTypes.library].add(template_config.identifier)
         return result
 
     def verify_configuration(self):
@@ -106,10 +112,6 @@ class DepotProvider(object):
         Verifies the current configuration (i.e. is the location valid)
         :return: Something falsey if valid, an exception (to be raised or displayed)
         """
-        pass
-
-    @staticmethod
-    def configure_registrar_options(default=dict()):
         pass
 
 
