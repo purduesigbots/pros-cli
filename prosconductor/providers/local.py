@@ -11,7 +11,7 @@ import shutil
 import sys
 # from typing import Set, List
 
-def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
+def copytree(src, dst, symlinks=False, ignore=None, overwrite=False, copy_function=shutil.copy2,
              ignore_dangling_symlinks=False):
     """Modified shutil.copytree, but with exist_ok=True
     """
@@ -43,15 +43,30 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=shutil.copy2,
                         continue
                     # otherwise let the copy occurs. copy2 will raise an error
                     if os.path.isdir(srcname):
-                        copytree(srcname, dstname, symlinks, ignore,
-                                 copy_function)
+                        copytree(srcname, dstname, symlinks, ignore, overwrite=overwrite,
+                                 copy_function=copy_function)
                     else:
-                        copy_function(srcname, dstname)
+                        if os.path.exists(dstname):
+                            if overwrite:
+                                click.echo('Overwriting {}'.format(dstname))
+                                copy_function(srcname, dstname)
+                            else:
+                                click.echo('Skipping {} because it already exists'.format(dstname))
+                        else:
+                            copy_function(srcname, dstname)
             elif os.path.isdir(srcname):
-                copytree(srcname, dstname, symlinks, ignore, copy_function)
+                copytree(srcname, dstname, symlinks, ignore, overwrite=overwrite,
+                         copy_function=copy_function)
             else:
                 # Will raise a SpecialFileError for unsupported file types
-                copy_function(srcname, dstname)
+                if os.path.exists(dstname):
+                    if overwrite:
+                        click.echo('Overwriting {}'.format(dstname))
+                        copy_function(srcname, dstname)
+                    else:
+                        click.echo('Skipping {} because it already exists'.format(dstname))
+                else:
+                    copy_function(srcname, dstname)
         # catch the Error from the recursive copytree so that we can
         # continue with other files
         except shutil.Error as err:
@@ -99,7 +114,7 @@ def create_template(identifier, location=None, pros_cli=None):
     return config
 
 
-def create_project(identifier, dest, pros_cli=None, require_empty=False):
+def create_project(identifier, dest, pros_cli=None, require_empty=False, overwrite=False):
     if pros_cli is None or not pros_cli:
         pros_cli = CliConfig()
     filename = os.path.join(pros_cli.directory, identifier.depot,
@@ -115,7 +130,7 @@ def create_project(identifier, dest, pros_cli=None, require_empty=False):
             click.get_current_context().abort()
             sys.exit()
     config = TemplateConfig(file=filename)
-    copytree(config.directory, dest)
+    copytree(config.directory, dest, overwrite=overwrite)
     for root, dirs, files in os.walk(dest):
         for d in dirs:
             d = os.path.relpath(os.path.join(root, d), dest)
@@ -172,7 +187,7 @@ def upgrade_project(identifier, dest, pros_cli=None):
     proj_config.save()
 
 
-def install_lib(identifier, dest, pros_cli):
+def install_lib(identifier, dest, pros_cli, overwrite=False):
     if pros_cli is None or not pros_cli:
         pros_cli = CliConfig()
     filename = os.path.join(pros_cli.directory, identifier.depot,
@@ -184,7 +199,7 @@ def install_lib(identifier, dest, pros_cli):
         sys.exit()
     proj_config = prosconfig.ProjectConfig(dest)
     config = TemplateConfig(file=filename)
-    copytree(config.directory, dest)
+    copytree(config.directory, dest, overwrite=overwrite)
     for root, dirs, files in os.walk(dest):
         for d in dirs:
             if any([fnmatch.fnmatch(d, p) for p in config.template_ignore]):
