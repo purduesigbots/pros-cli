@@ -326,9 +326,11 @@ or to upgrade an existing project, run `pros conduct upgrade <folder> {0} {1}'''
 @click.argument('location')
 @click.argument('kernel', default='latest')
 @click.argument('depot', default='auto')
-@click.option('--verify-only', is_flag=True, default=False)
+@click.option('--force', 'mode', flag_value='force')
+@click.option('--safe', 'mode', flag_value='safe')
+@click.option('--default', 'mode', flag_value='default', default=True)
 @default_cfg
-def new(cfg, kernel, location, depot, verify_only):
+def new(cfg, kernel, location, depot, mode):
     first_run(cfg)
     templates = local.get_local_templates(pros_cfg=cfg.pros_cfg,
                                           template_types=[TemplateTypes.kernel])  # type: Set[Identifier]
@@ -362,7 +364,8 @@ def new(cfg, kernel, location, depot, verify_only):
     if not os.path.isabs(location):
         location = os.path.abspath(location)
     click.echo('Creating new project from {} on {} at {}'.format(template.version, template.depot, location))
-    local.create_project(identifier=template, dest=location, pros_cli=cfg.pros_cfg)
+    local.create_project(identifier=template, dest=location, pros_cli=cfg.pros_cfg,
+                         require_empty=(mode == 'safe'), overwrite=(mode == 'force'))
 
 
 @conduct.command('upgrade', aliases=['update'], help='Upgrades a PROS project')
