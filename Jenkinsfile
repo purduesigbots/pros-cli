@@ -17,7 +17,7 @@ stage('Build') {
       }
       stage('Clone') {
         checkout scm
-        sh 'git describe --tags > version'
+        sh 'python3 version.py > version'
         build_ver = readFile 'version'
         build_ver = build_ver.replaceAll("\\s","")
         println "Building CLI at version ${build_ver}"
@@ -46,10 +46,10 @@ stage('Build') {
       }
       stage('Clone') {
         checkout scm
-        bat 'git describe --tags > version'
+        sh 'python version.py > version'
         build_ver = readFile 'version'
         build_ver = build_ver.replaceAll("\\s","")
-        bat 'git describe --tags --abbrev=0 > inst_version'
+        bat 'for /f "tokens=1 delims=b " %%a in ("python version.py") do @echo %%a > inst_version'
         inst_ver = readFile 'inst_version'
         inst_ver = inst_ver.replaceAll("\\s","")
       }

@@ -9,16 +9,17 @@ pass_state = click.make_pass_decorator(State)
 
 def get_version():
     try:
-        if os.path.isfile(os.path.join(__file__, '../../version')):
-            return open(os.path.join(__file__, '../../version')).read().strip()
+        return subprocess.check_output(['git', 'describe', '--dirty'], stderr=subprocess.DEVNULL).decode().strip().replace('-','b', 1).replace('-','.')
     except Exception:
-        pass
-    try:
-        if getattr(sys, 'frozen', False):
-            import BUILD_CONSTANTS
-            return BUILD_CONSTANTS.CLI_VERSION
-    except Exception:
-        pass
+        try:
+            return open('../../version').read().strip()
+        except Exception:
+            try:
+                if getattr(sys, 'frozen', False):
+                    import BUILD_CONSTANTS
+                    return BUILD_CONSTANTS.CLI_VERSION
+            except Exception:
+                pass
     return None # Let click figure it out
 
 def verbosity_option(f):
