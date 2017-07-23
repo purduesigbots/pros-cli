@@ -13,7 +13,7 @@ import prosflasher
 install_reqs = [str(r.req) for r in parse_requirements('requirements.txt', session=False)]
 
 build_exe_options = {
-    'packages': ['ssl', 'prosconductor.providers.githubreleases', 'requests'],
+    'packages': ['ssl', 'prosconductor.providers.githubreleases', 'requests', 'idna'],
     "include_files": [(requests.certs.where(), 'cacert.pem')],
     'excludes': ['pip', 'distutils'], # optimization excludes
     'constants': ['CLI_VERSION=\'{}\''.format(open('version').read().strip())]
@@ -52,4 +52,4 @@ if sys.argv[1] == 'build_exe':
     py_compile.compile('./prosconductor/providers/githubreleases.py', cfile='{}/githubreleases.pyc'.format(build_dir))
     import shutil
     import platform
-    shutil.make_archive('pros_cli-{}-win-{}'.format(open('version').read().strip(), platform.architecture()[0]), 'zip', build_dir, '.')
+    shutil.make_archive('pros_cli-{}-{}-{}'.format(open('version').read().strip(), platform.system()[0:3].lower(), platform.architecture()[0]), 'zip', build_dir, '.')
