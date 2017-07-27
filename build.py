@@ -33,7 +33,7 @@ else:
 
 setup(
     name='pros-cli',
-    version=open('version').read().strip(),
+    version=open('pip_version').read().strip(),
     packages=modules,
     url='https://github.com/purduesigbots/pros-cli',
     license='MPL-2.0',

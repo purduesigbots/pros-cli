@@ -1,7 +1,6 @@
-import os
-
 import click
 import sys
+import os.path
 
 from proscli.state import State
 
@@ -9,17 +8,14 @@ pass_state = click.make_pass_decorator(State)
 
 def get_version():
     try:
-        return subprocess.check_output(['git', 'describe', '--dirty'], stderr=subprocess.DEVNULL).decode().strip().replace('-','b', 1).replace('-','.')
+        return open(os.path.join(os.path.dirname(__file__), '..', 'version')).read().strip()
     except Exception:
         try:
-            return open('../../version').read().strip()
+            if getattr(sys, 'frozen', False):
+                import BUILD_CONSTANTS
+                return BUILD_CONSTANTS.CLI_VERSION
         except Exception:
-            try:
-                if getattr(sys, 'frozen', False):
-                    import BUILD_CONSTANTS
-                    return BUILD_CONSTANTS.CLI_VERSION
-            except Exception:
-                pass
+            pass
     return None # Let click figure it out
 
 def verbosity_option(f):
