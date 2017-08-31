@@ -65,7 +65,6 @@ def list_depots(cfg):
         if not bool(depots):
             click.echo('No depots currently registered! Use `pros conduct add-depot` to add a new depot')
         else:
-            click.echo([(d.name, d.registrar, d.location) for d in depots])
             click.echo(tabulate.tabulate([(d.name, d.registrar, d.location) for d in depots],
                                          ['Name', 'Registrar', 'Location'], tablefmt='simple'))
 
@@ -211,7 +210,7 @@ def list_templates(cfg, template_types, filters, offline_only):
             click.echo(json.dumps(table))
 
 
-@conduct.command(short_help='Download a template', aliases=['dl'])
+@conduct.command(short_help='Download a template', aliases=['dl', 'd'])
 @click.argument('name', default='kernel')
 @click.argument('version', default='latest')
 @click.argument('depot', default='auto')
