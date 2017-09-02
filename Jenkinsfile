@@ -23,6 +23,14 @@ stage('Build') {
         bat 'powershell -file .\\scripts\\build.ps1'
         archiveArtifacts allowEmptyArchive: true, artifacts: 'out/*', onlyIfSuccessful: true
       }
+    },
+    "windows86": {
+      node("win86") {
+        checkout scm
+        bat 'powershell -file .\\scripts\\install_build_dependencies.ps1'
+        bat 'powershell -file .\\scripts\\build.ps1'
+        archiveArtifacts allowEmptyArchive: true, artifacts: 'out/*', onlyIfSuccessful: true
+      }
     }
   )
 }
