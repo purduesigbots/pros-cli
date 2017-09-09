@@ -16,7 +16,8 @@ build_exe_options = {
     'packages': ['ssl', 'prosconductor.providers.githubreleases', 'requests', 'idna'],
     "include_files": [(requests.certs.where(), 'cacert.pem')],
     'excludes': ['pip', 'distutils'], # optimization excludes
-    'constants': ['CLI_VERSION=\'{}\''.format(open('version').read().strip())]
+    'constants': ['CLI_VERSION=\'{}\''.format(open('version').read().strip())],
+    'include_msvcr': True
     # 'zip_include_packages': [],
     # 'zip_exclude_packages': []
 }
