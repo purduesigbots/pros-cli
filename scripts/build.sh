@@ -3,7 +3,7 @@
 python=python
 echo Testing python executable version
 python -c "import sys; exit(0 if sys.version_info > (3,5) else 1)"
-if [ $? -eq 1 ]
+if [ $? -ne 0 ]
 then
     python=python3
 fi
