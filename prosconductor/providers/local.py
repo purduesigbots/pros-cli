@@ -209,5 +209,7 @@ def install_lib(identifier, dest, pros_cli, overwrite=False):
             if any([fnmatch.fnmatch(f, p) for p in config.template_ignore]):
                 verbose('Removing {}'.format(f))
                 os.remove(os.path.join(root, f))
+    if type(proj_config.libraries) is list:
+        proj_config.libraries = dict()
     proj_config.libraries[identifier.name] = identifier.version
     proj_config.save()

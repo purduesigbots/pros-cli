@@ -1,7 +1,7 @@
 import click
-#from pkg_resources import get_distribution
 import proscli
 from proscli.utils import default_options, get_version
+
 
 def main():
     # the program name should always be pros. don't care if it's not...
@@ -9,6 +9,7 @@ def main():
         cli.main(prog_name='pros')
     except KeyboardInterrupt:
         click.echo('Aborted!')
+
 
 @click.command('pros',
                cls=click.CommandCollection,
