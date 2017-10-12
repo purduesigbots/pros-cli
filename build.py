@@ -23,8 +23,8 @@ build_exe_options = {
 }
 
 build_mac_options = {
-    'bundle_name': 'pros',
-    'include_frameworks': ['Python']
+    'bundle_name': 'PROS CLI',
+    'iconfile': 'pros.icns'
 }
 
 modules = []
