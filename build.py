@@ -22,6 +22,11 @@ build_exe_options = {
     # 'zip_exclude_packages': []
 }
 
+build_mac_options = {
+    'bundle_name': 'pros',
+    'include_frameworks': ['Python']
+}
+
 modules = []
 for pkg in [proscli, prosconductor, prosconductor.providers, prosconfig, prosflasher]:
     modules.append(pkg.__name__)
@@ -41,7 +46,7 @@ setup(
     author='Purdue ACM Sigbots',
     author_email='pros_development@cs.purdue.edu',
     description='Command Line Interface for managing PROS projects',
-    options={"build_exe": build_exe_options},
+    options={"build_exe": build_exe_options, 'bdist_mac': build_mac_options},
     install_requires=install_reqs,
     executables=[Executable('proscli/main.py', targetName=targetName)]
 )
