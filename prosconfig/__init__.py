@@ -77,7 +77,7 @@ class ProjectConfig(Config):
             raise ConfigNotFoundException('A project config was not found for {}'.format(path))
 
         self.kernel = None  # type: str
-        self.libraries = []  # type: List[str]
+        self.libraries = {}  # type: List[str]
         self.output = 'bin/output.bin'  # type: str
         super(ProjectConfig, self).__init__(file, error_on_decode=raise_on_error)
 

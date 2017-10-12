@@ -12,17 +12,16 @@ import jsonpickle
 # Commands in this module are typically for automation/IDE purposes and probably won't be used by front-end users
 
 
-@conduct.command('create-template', short_help='Creates a template with the specified name, version, and depot')
+@conduct.command('create-template', short_help='Creates a template with the specified name and version')
 @click.argument('name')
 @click.argument('version')
-@click.argument('depot')
-@click.option('--location')
+@click.argument('location')
 @click.option('--ignore', '-i', multiple=True)
 @click.option('--upgrade-files', '-u', multiple=True)
 @default_cfg
-def create_template(cfg, name, version, depot, location, ignore, upgrade_files):
+def create_template(cfg, name, version, location, ignore, upgrade_files):
     first_run(cfg)
-    template = local.create_template(utils.Identifier(name, version, depot), location=location)
+    template = local.create_template(utils.Identifier(name, version, None), location=location)
     template.template_ignore = list(ignore)
     template.upgrade_paths = list(upgrade_files)
     template.save()

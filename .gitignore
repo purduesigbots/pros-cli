@@ -7,3 +7,6 @@ build/
 dist/
 
 pros_cli.egg-info/
+
+out/
+*.zip

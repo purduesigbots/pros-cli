@@ -65,7 +65,6 @@ def list_depots(cfg):
         if not bool(depots):
             click.echo('No depots currently registered! Use `pros conduct add-depot` to add a new depot')
         else:
-            click.echo([(d.name, d.registrar, d.location) for d in depots])
             click.echo(tabulate.tabulate([(d.name, d.registrar, d.location) for d in depots],
                                          ['Name', 'Registrar', 'Location'], tablefmt='simple'))
 
@@ -211,7 +210,7 @@ def list_templates(cfg, template_types, filters, offline_only):
             click.echo(json.dumps(table))
 
 
-@conduct.command(short_help='Download a template', aliases=['dl'])
+@conduct.command(short_help='Download a template', aliases=['dl', 'd'])
 @click.argument('name', default='kernel')
 @click.argument('version', default='latest')
 @click.argument('depot', default='auto')
@@ -437,14 +436,15 @@ def register(cfg, location, kernel):
 # endregion
 
 
-@conduct.command('new-lib', aliases=['install-lib', 'add-lib', 'new-library', 'install-library', 'add-library'],
+@conduct.command('add-lib', aliases=['install-lib', 'new-lib', 'new-library', 'install-library', 'add-library'],
                  help='Installs a new library')
 @click.argument('location')
 @click.argument('library')
 @click.argument('version', default='latest')
 @click.argument('depot', default='auto')
+@click.option('--force', is_flag=True, default=False)
 @default_cfg
-def newlib(cfg, location, library, version, depot):
+def newlib(cfg, location, library, version, depot, force):
     if not (version == 'latest') and len(version.split('.')) < 3:
         depot = version
         version = 'latest'
@@ -499,7 +499,7 @@ def newlib(cfg, location, library, version, depot):
                 'No local libraries match the specified name, version, and depot. Check your arguments and make sure the appropriate libraries are downloaded')
             click.get_current_context().abort()
             sys.exit()
-    local.install_lib(selected, location, cfg.pros_cfg)
+    local.install_lib(selected, location, cfg.pros_cfg, overwrite=force)
     print('Installed library {} v. {} in {} from {}'.format(selected.name, selected.version, location, selected.depot))
 
 
@@ -571,6 +571,8 @@ def upgradelib(cfg, location, library, version, depot):
             sys.exit()
     local.upgrade_project(selected, location, cfg.pros_cfg)
     proj_config = prosconfig.ProjectConfig(location)
+    if type(proj_config.libraries) is list:
+        proj_config.libraries = dict()
     proj_config.libraries[selected.name] = selected.version
     proj_config.save()
     print('Updated library {} v. {} in {} from {}'.format(selected.name, selected.version, location, selected.depot))
