@@ -6,7 +6,7 @@ import os
 import os.path
 import proscli.utils
 from prosconductor.providers import TemplateTypes, DepotProvider, InvalidIdentifierException, DepotConfig, Identifier, \
-    get_template_dir
+    get_template_dir, TemplateConfig
 import re
 import requests
 import requests.exceptions
@@ -141,8 +141,14 @@ class GithubReleasesDepotProvider(DepotProvider):
                                     zf.extract(file, path=template_dir)
                                     progress_bar.update(1)
                         os.remove(tf.name)
+                    template_config = TemplateConfig(os.path.join(template_dir, 'template.pros'))
+                    if template_config.identifier.version != identifier.version:
+                        click.echo('WARNING: Version fetched does not have the same version downloaded {0} != {1}.'
+                                   .format(template_config.identifier.version, identifier.version))
+                        os.rename(template_dir, get_template_dir(self, template_config.identifier))
+                        template_dir = get_template_dir(self, template_config.identifier)
                     click.echo('Template downloaded to {}'.format(template_dir))
-                    return True
+                    return template_config.identifier
                 else:
                     click.echo('Unable to download {} from {} (Status code: {})'.format(asset['name'],
                                                                                         self.config.location,
