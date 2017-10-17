@@ -38,7 +38,7 @@ else:
     targetName = 'pros'
 
 setup(
-    name='pros-cli',
+    name='pros-cli-v5',
     version=open('pip_version').read().strip(),
     packages=modules,
     url='https://github.com/purduesigbots/pros-cli',

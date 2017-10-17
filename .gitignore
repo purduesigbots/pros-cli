@@ -6,7 +6,7 @@ build/
 .cache/
 dist/
 
-pros_cli.egg-info/
+*.egg-info/
 
 out/
 *.zip

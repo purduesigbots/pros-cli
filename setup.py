@@ -5,7 +5,7 @@ from pip.req import parse_requirements
 install_reqs = [str(r.req) for r in parse_requirements('requirements.txt', session=False)]
 
 setup(
-    name='pros-cli',
+    name='pros-cli-v5',
     version=open('pip_version').read().strip(),
     packages=['prosflasher', 'proscli', 'prosconfig', 'prosconductor', 'prosconductor.providers'],
     url='https://github.com/purduesigbots/pros-cli',
@@ -16,6 +16,6 @@ setup(
     install_requires=install_reqs,
     entry_points="""
         [console_scripts]
-        pros=proscli.main:main
+        prosv5=proscli.main:main
         """
 )
