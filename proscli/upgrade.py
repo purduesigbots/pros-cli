@@ -14,9 +14,12 @@ def upgrade_cli():
 
 def get_upgrade_command():
     if getattr(sys, 'frozen', False):
-        cmd = os.path.abspath(os.path.join(sys.executable, '..', '..', 'updater.exe'))
-        if os.path.exists(cmd):
-            return [cmd, '-reducedgui']
+        if sys.platform == 'win32':
+            cmd = os.path.abspath(os.path.join(sys.executable, '..', '..', 'updater.exe'))
+            if os.path.exists(cmd):
+                return [cmd, '/reducedgui', '/checknow']
+            else:
+                return False
         else:
             return False
     else:
