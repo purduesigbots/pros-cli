@@ -1,6 +1,7 @@
 import click
 from pros.common.state import State
 
+
 def isdebug(state=None):
     if state is None:
         ctx = click.get_current_context(silent=True)

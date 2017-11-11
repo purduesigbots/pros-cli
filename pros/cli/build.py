@@ -17,9 +17,7 @@ def build_cli():
 @click.pass_context
 def make(ctx, build_args):
     """
-    Invokes make
-
-    Has the added benefit of looking for project.pros file
+    Invokes make and looks for project.pros file
     """
     env = os.environ.copy()
     # Add PROS toolchain to the beginning of PATH to ensure PROS binaries are preferred
