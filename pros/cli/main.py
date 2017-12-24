@@ -1,5 +1,6 @@
 import click
 import pros.cli.build
+import pros.cli.terminal
 
 
 def main():
@@ -11,7 +12,8 @@ def main():
 
 @click.command('pros',
                cls=click.CommandCollection,
-               sources=[pros.cli.build.build_cli])
+               sources=[pros.cli.build.build_cli,
+                        pros.cli.terminal.terminal_cli])
 def cli():
     pass
 
