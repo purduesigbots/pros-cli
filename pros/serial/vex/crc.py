@@ -16,7 +16,7 @@ class CRC:
                     crc_accumulator = (crc_accumulator << 1)
             self._table.append(crc_accumulator)
 
-    def compute(self, data: Iterable[int], accumulator: int=0):
+    def compute(self, data: Iterable[int], accumulator: int = 0):
         for d in data:
             i = ((accumulator >> (self._size - 8)) ^ d) & 0xff
             accumulator = ((accumulator << 8) ^ self._table[i]) & ((1 << self._size) - 1)

@@ -1,11 +1,13 @@
-from .vex_device import VexDevice
-from typing import *
-from enum import Flag
-from .. import bytes_to_str
 import time
+from enum import Flag
+from typing import *
+
+from .vex_device import VEXDevice
+from .. import bytes_to_str
+from pros.common.utils import retries
 
 
-class CortexDevice(VexDevice):
+class CortexDevice(VEXDevice):
     class SystemStatus(Flag):
         DL_MODE = (1 << 0)
         TETH_VN2 = (1 << 2)
@@ -15,7 +17,8 @@ class CortexDevice(VexDevice):
         FCS_AUTON = (1 << 6)
         FCS_DISABLE = (1 << 7)
 
-    def query_system(self, retries: int=10) -> Dict[str, Any]:
+    @retries
+    def query_system(self) -> Dict[str, Any]:
         rx = self._txrx_simple_struct(0x21, "<8B2x")
         return {
             'joystick_firmware': rx[0:2],
@@ -26,12 +29,13 @@ class CortexDevice(VexDevice):
             'status': self.SystemStatus(rx[7])
         }
 
-    def send_to_download_channel(self, retries: int=10):
-        self._txrx_ack_packet(0x35, retries=retries, timeout=1.0)
+    @retries
+    def send_to_download_channel(self):
+        self._txrx_ack_packet(0x35, timeout=1.0)
 
-    def expose_bootloader(self, retries: int=10):
-        self._txrx_ack_packet(0x25, retries=retries, timeout=1.0)
-
+    @retries
+    def expose_bootloader(self):
+        self._txrx_ack_packet(0x25, timeout=1.0)
 
     def _rx_ack(self, timeout: float = 0.01):
         # Optimized to read as quickly as possible w/o delay
@@ -41,7 +45,7 @@ class CortexDevice(VexDevice):
                 return
         raise IOError("Device never ACK'd")
 
-    def _txrx_ack_packet(self, command: int, retries: int=10, timeout=0.1):
+    def _txrx_ack_packet(self, command: int, retries: int = 10, timeout=0.1):
         """
                 Goes through a send/receive cycle with a VEX device.
                 Transmits the command with the optional additional payload, then reads and parses the outer layer
