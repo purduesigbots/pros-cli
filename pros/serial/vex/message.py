@@ -27,10 +27,12 @@ class Message(bytes):
     def __getitem__(self, item):
         if isinstance(item, str) and item in self.bookmarks.keys():
             return self.bookmarks[item]
+        if isinstance(item, int):
+            return super().__getitem__(item)
         return type(self)(self.rx, self.tx, internal_rx=self.internal_rx[item], bookmarks=self.bookmarks)
 
     def __setitem__(self, key, value):
         self.bookmarks[key] = value
 
     def __str__(self):
-        return 'TX:{}\nRX:{}'.format(bytes_to_str(self.tx), bytes_to_str(self.rx))
+        return 'TX:{}\tRX:{}'.format(bytes_to_str(self.tx), bytes_to_str(self.rx))

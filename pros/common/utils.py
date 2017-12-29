@@ -1,4 +1,6 @@
+import logging
 from functools import wraps
+from typing import *
 
 import click
 
@@ -36,3 +38,9 @@ def retries(func, retry: int = 3):
                 raise e
 
     return retries_wrapper
+
+
+def logger(obj: Union[str, object]) -> logging.Logger:
+    if isinstance(obj, str):
+        return logging.getLogger(obj)
+    return logging.getLogger(obj.__module__)

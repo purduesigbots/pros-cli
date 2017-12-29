@@ -4,9 +4,10 @@ from typing import *
 
 from serial import Serial
 
-from pros.common.utils import retries
+from pros.common import *
 from . import comm_error
 from .message import Message
+from .. import bytes_to_str
 
 
 def decode_bytes_to_str(data: Union[bytes, bytearray], encoding: str = 'utf-8') -> str:
@@ -21,11 +22,10 @@ class VEXDevice(object):
     ACK_BYTE = 0x76
     NACK_BYTE = 0xFF
 
-    def __init__(self, port: Serial, debug_print: Callable[[str], None]=debug):
+    def __init__(self, port: Union[Serial, Port]):
         self.port = port
         if not self.port.is_open:
             self.port.open()
-        self.debug_print = debug_print
 
     @retries
     def query_system(self) -> bytearray:
@@ -33,6 +33,7 @@ class VEXDevice(object):
         Verify that a VEX device is connected. Returned payload varies by product
         :return: Payload response
         """
+        logger(__name__).debug('Sending simple 0x21 command')
         return self._txrx_simple_packet(0x21, 0x0A)
 
     def _txrx_simple_struct(self, command: int, unpack_fmt: str, timeout: float = 0.1) -> Tuple:
@@ -48,14 +49,12 @@ class VEXDevice(object):
         :param rx_len: Expected length of the received message
         :return: They payload of the message, or raises and exception if there was an issue
         """
-        rx = self._txrx_packet(command, timeout=timeout)
-        if rx != command:
-            raise comm_error.VEXCommError('Received command does not match sent command.',
-                                          _rx=rx['raw'], _tx=self._form_simple_packet(command))
-        if len(rx['payload']) != rx_len:
-            raise comm_error.VEXCommError("Received data doesn't match expected length",
-                                          _rx=rx['raw'], _tx=self._form_simple_packet(command))
-        return rx['payload']
+        msg = self._txrx_packet(command, timeout=timeout)
+        if msg != command:
+            raise comm_error.VEXCommError('Received command does not match sent command.', msg)
+        if len(msg['payload']) != rx_len:
+            raise comm_error.VEXCommError("Received data doesn't match expected length", msg)
+        return msg['payload']
 
     def _rx_packet(self, timeout: float = 0.01) -> Dict[str, Union[Union[int, bytes, bytearray], Any]]:
         # Optimized to read as quickly as possible w/o delay
@@ -69,6 +68,7 @@ class VEXDevice(object):
                 response_header_stack.pop(0)
                 rx.append(b)
             else:
+                logger(__name__).debug("Tossing rx ({}) because {} didn't match".format(bytes_to_str(rx), b))
                 response_header_stack = bytearray(response_header)
                 rx = bytearray()
         if not rx == bytearray(response_header):
@@ -78,6 +78,7 @@ class VEXDevice(object):
         rx.extend(self.port.read(1))
         payload_length = rx[-1]
         if command == 0x56 and (payload_length & 0x80) == 0x80:
+            logger(__name__).debug('Found an extended message payload')
             rx.extend(self.port.read(1))
             payload_length = ((payload_length & 0x7f) << 8) + rx[-1]
         payload = self.port.read(payload_length)
@@ -88,16 +89,13 @@ class VEXDevice(object):
             'raw': rx
         }
 
-    def _tx_data(self, tx_data: Union[Iterable, bytes, bytearray]) -> None:
-        self.port.read_all()
-        self.port.write(tx_data)
-        self.port.flush()
-
     def _tx_packet(self, command: int, tx_data: Union[Iterable, bytes, bytearray, None] = None):
         tx = self._form_simple_packet(command)
         if tx_data is not None:
             tx = bytes([*tx, *tx_data])
-        self._tx_data(tx)
+        self.port.read_all()
+        self.port.write(tx)
+        self.port.flush()
         return tx
 
     def _txrx_packet(self, command: int, tx_data: Union[Iterable, bytes, bytearray, None] = None,
@@ -113,9 +111,9 @@ class VEXDevice(object):
         """
         tx = self._tx_packet(command, tx_data)
         rx = self._rx_packet(timeout=timeout)
-        msg = Message(tx, rx['raw'])
-        debug(msg)
-        msg['payload'] = rx['payload']
+        msg = Message(rx['raw'], tx)
+        logger(__name__).debug(msg)
+        msg['payload'] = Message(rx['raw'], tx, internal_rx=rx['payload'])
         msg['command'] = rx['command']
         return msg
 
