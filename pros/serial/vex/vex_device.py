@@ -8,10 +8,7 @@ from pros.common import *
 from . import comm_error
 from .message import Message
 from .. import bytes_to_str
-
-
-def decode_bytes_to_str(data: Union[bytes, bytearray], encoding: str = 'utf-8') -> str:
-    return data.split(b'\0', 1)[0].decode(encoding=encoding)
+from ..ports import Port
 
 
 def debug(msg):
@@ -24,8 +21,8 @@ class VEXDevice(object):
 
     def __init__(self, port: Union[Serial, Port]):
         self.port = port
-        if not self.port.is_open:
-            self.port.open()
+        # if not self.port.is_open:
+        #     self.port.open()
 
     @retries
     def query_system(self) -> bytearray:

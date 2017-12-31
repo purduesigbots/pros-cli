@@ -3,6 +3,7 @@ import typing
 from configparser import ConfigParser
 from datetime import datetime, timedelta
 from io import BytesIO, StringIO
+import typing
 from typing import *
 
 import click
@@ -11,7 +12,8 @@ from pros.common import *
 from .comm_error import VEXCommError
 from .crc import CRC
 from .message import Message
-from .vex_device import VEXDevice, decode_bytes_to_str
+from .vex_device import VEXDevice
+from pros.serial import decode_bytes_to_str
 from .. import bytes_to_str
 
 int_str = Union[int, str]
@@ -22,10 +24,8 @@ class V5Device(VEXDevice):
     VEX_CRC16 = CRC(16, 0x1021)  # CRC-16-CCIT
     VEX_CRC32 = CRC(32, 0x04C11DB7)  # CRC-32 (the one used everywhere but has no name)
 
-    def write_program(self, file: typing.IO[bytes], remote_base: str, ini: ConfigParser = None, slot: int = 0,
+    def write_program(self, file: typing.BinaryIO, remote_base: str, ini: ConfigParser = None, slot: int = 0,
                       file_len: int = -1, run_after: bool = False, **kwargs):
-        self.write_file(file, '{}.bin'.format(remote_base), file_len=file_len, run_after=run_after,
-                        type='bin', **kwargs)
         if not isinstance(ini, ConfigParser):
             ini = ConfigParser()
         project_ini = ConfigParser()
@@ -38,9 +38,11 @@ class V5Device(VEXDevice):
             'date': datetime.now().isoformat()
         }
         project_ini.update(ini)
+        self.write_file(file, '{}.bin'.format(remote_base), file_len=file_len, run_after=run_after,
+                        type='bin', **kwargs)
         with StringIO() as ini_str:
             project_ini.write(ini_str)
-            logger(__name__).debug('Created ini: {}'.format(ini_str.getvalue()))
+            logger(__name__).info('Created ini: {}'.format(ini_str.getvalue()))
             with BytesIO(ini_str.getvalue().encode(encoding='ascii')) as ini_bin:
                 self.write_file(ini_bin, '{}.ini'.format(remote_base), type='ini', **kwargs)
 
@@ -56,7 +58,7 @@ class V5Device(VEXDevice):
             file.write(self.ft_read(metadata['addr'] + i, packet_size))
         self.ft_complete()
 
-    def write_file(self, file: typing.IO[bytes], remote_file: str, file_len: int = -1, run_after: bool = False,
+    def write_file(self, file: typing.BinaryIO, remote_file: str, file_len: int = -1, run_after: bool = False,
                    **kwargs):
         if file_len < 0:
             file_len = file.seek(0, 2)
@@ -64,7 +66,9 @@ class V5Device(VEXDevice):
         crc32 = self.VEX_CRC32.compute(file.read(file_len))
         file.seek(-file_len, 2)
         addr = kwargs.get('addr', 0x03800000)
+        logger(__name__).info('Transferring {} ({} bytes) to the V5 from {}'.format(remote_file, file_len, file))
         ft_meta = self.ft_initialize(remote_file, function='upload', length=file_len, crc=crc32, **kwargs)
+        assert ft_meta['file_size'] >= file_len
         transfer_size = min(ft_meta['file_size'], file_len)
         with click.progressbar(length=transfer_size, label='Uploading {}'.format(remote_file)) as progress:
             for i in range(0, transfer_size, ft_meta['max_packet_size']):
@@ -74,7 +78,7 @@ class V5Device(VEXDevice):
                 logger(__name__).debug('Writing {} bytes at 0x{:02X}'.format(packet_size, addr + i))
                 self.ft_write(addr + i, file.read(packet_size))
                 progress.update(packet_size)
-                logger(__name__).debug('Completed {} of {} bytes'.format(i + packet_size, transfer_size))
+                logger(__name__).info('Completed {} of {} bytes'.format(i + packet_size, transfer_size))
         logger(__name__).debug('Data transfer complete, sending ft complete')
         self.ft_complete(run_program=run_after)
 
