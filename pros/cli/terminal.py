@@ -41,12 +41,11 @@ def terminal(port: str, backend: str, **kwargs):
 
     if backend == 'share':
         ser = ports.SerialSharePort(port)
-    elif backend == 'solo':
+    else:
         ser = ports.SerialPort(port)
     term = Terminal(ser)
     signal.signal(signal.SIGINT, term.stop)
     term.start()
     term.join()
     logger(__name__).info('CLI Main Thread Dying')
-    os._exit(0)  # _exit(0) so that any remaing
-
+    os._exit(0)  # _exit(0) so that SerialShareBridge may continue running

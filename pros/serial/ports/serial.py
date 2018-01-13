@@ -7,7 +7,7 @@ from pros.serial import bytes_to_str
 from .port import Port
 
 
-def create_serial_port(port_name: str, timeout: Optional[float] = 0.5) -> serial.Serial:
+def create_serial_port(port_name: str, timeout: Optional[float] = 1.0) -> serial.Serial:
     port = serial.Serial(port_name, baudrate=115200, bytesize=serial.EIGHTBITS,
                          parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE)
     port.timeout = timeout
@@ -16,7 +16,7 @@ def create_serial_port(port_name: str, timeout: Optional[float] = 0.5) -> serial
 
 
 class SerialPort(Port):
-    def __init__(self, port_name: str, timeout: Optional[float] = 0.5):
+    def __init__(self, port_name: str, timeout: Optional[float] = 1.0):
         self.port = create_serial_port(port_name=port_name, timeout=timeout)
         self.port_name = port_name
         if not self.port.is_open:
@@ -37,3 +37,8 @@ class SerialPort(Port):
 
     def flush(self):
         return self.port.flush()
+
+    def destroy(self):
+        self.port.cancel_read()
+        self.port.cancel_write()
+        self.port.close()
