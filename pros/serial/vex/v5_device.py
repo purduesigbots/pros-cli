@@ -159,7 +159,10 @@ class V5Device(VEXDevice):
         logger(__name__).debug('Sending ext 0x13 command')
         if isinstance(payload, str):
             payload = payload.encode(encoding='ascii')
-        padded_payload = bytes([*payload, *([0] * (len(payload) % 4))])
+        if len(payload) % 4 != 0:
+            padded_payload = bytes([*payload, *([0] * (4 - (len(payload) % 4)))])
+        else:
+            padded_payload = payload
         tx_fmt = "<I{}s".format(len(padded_payload))
         tx_payload = struct.pack(tx_fmt, addr, padded_payload)
         ret = self._txrx_ext_packet(0x13, tx_payload, 0)
