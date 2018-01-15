@@ -5,3 +5,6 @@ requests
 tabulate
 jsonpickle
 semantic_version
+colorama
+pyzmq
+cobs
