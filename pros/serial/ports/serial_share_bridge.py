@@ -62,13 +62,15 @@ class SerialShareBridge(object):
 
     def kill(self, do_join: bool = False):
         logger(__name__).info('Killing serial share server due to watchdog')
-        self.dying.clear()
+        self.dying.set()
         self.port.destroy()
         if not self.zmq_ctx.closed:
             self.zmq_ctx.destroy(linger=0)
         if do_join:
-            self.from_device_thread.join()
-            self.to_device_thread.join()
+            if threading.current_thread() != self.from_device_thread and self.from_device_thread.is_alive():
+                self.from_device_thread.join()
+            if threading.current_thread() != self.to_device_thread and self.to_device_thread.is_alive():
+                self.to_device_thread.join()
 
     def _start(self, initialization_barrier: multiprocessing.Barrier):
         try:
@@ -98,11 +100,9 @@ class SerialShareBridge(object):
             while not self.dying.wait(10000):
                 pass
 
-            self.from_device_thread.join()
-            self.to_device_thread.join()
-            self.zmq_ctx.destroy()
             logger(__name__).info('Main serial share bridge thread is dying. Everything else should be dead: {}'.format(
                 threading.active_count() - 1))
+            self.kill(do_join=True)
         except Exception as e:
             initialization_barrier.abort()
             logger(__name__).exception(e)
@@ -116,20 +116,21 @@ class SerialShareBridge(object):
             from_ser_sock.bind(addr)
             logger(__name__).info('Bound from device broadcaster as a publisher to {}'.format(addr))
             initialization_barrier.wait()
+            buffer = bytearray()
             while not self.dying.is_set():
-                buffer = bytearray()
                 try:
                     # read one byte as a blocking call so that we aren't just polling which sucks up a lot of CPU,
                     # then read everything available
                     buffer.extend(self.port.read(1))
                     buffer.extend(self.port.read(-1))
-                    while b'\0' in buffer and self.dying:
+                    while b'\0' in buffer and not self.dying.is_set():
                         msg, buffer = buffer.split(b'\0', 1)
                         msg = cobs.decode(msg)
                         from_ser_sock.send_multipart((msg[:4], msg[4:]))
                         rxd += 1
                     time.sleep(0)
                 except Exception as e:
+                    # TODO: when getting a COBS decode error, rebroadcast the bytes on sout
                     logger(__name__).error('Unexpected error handling {}'.format(bytes_to_str(msg[:-1])))
                     logger(__name__).exception(e)
                     errors += 1
@@ -141,7 +142,10 @@ class SerialShareBridge(object):
         logger(__name__).warning('From Device Broadcaster is dying now.')
         logger(__name__).info('Current from device broadcasting error rate: {} errors. {} successful. {}%'
                               .format(errors, rxd, errors / (errors + rxd)))
-        self.dying.set()
+        try:
+            self.kill(do_join=False)
+        except:
+            sys.exit(0)
 
     def _to_device_loop(self, initialization_barrier: multiprocessing.Barrier):
         try:
@@ -169,4 +173,7 @@ class SerialShareBridge(object):
             initialization_barrier.abort()
             logger(__name__).exception(e)
         logger(__name__).warning('To Device Broadcaster is dying now.')
-        self.dying.set()
+        try:
+            self.kill(do_join=False)
+        except:
+            sys.exit(0)

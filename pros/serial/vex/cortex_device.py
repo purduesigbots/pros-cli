@@ -6,6 +6,12 @@ from .vex_device import VEXDevice
 from .. import bytes_to_str
 from pros.common.utils import retries
 
+import serial.tools.list_ports as list_ports
+
+
+def list_cortex_ports():
+    return [p for p in list_ports.comports() if p.vid is not None and p.vid in [0x4D8, 0x67B]]
+
 
 class CortexDevice(VEXDevice):
     class SystemStatus(Flag):
@@ -62,6 +68,6 @@ class CortexDevice(VEXDevice):
             return None, retries
         except BaseException as e:
             if retries > 0:
-                return self._txrx_packet(command, tx_data=tx_data, retries=retries - 1)
+                return self._txrx_packet(command, retries=retries - 1)
             else:
                 raise e

@@ -1,7 +1,6 @@
 import click
 import os
 import os.path
-import pros.common
 import pros.conductor
 import subprocess
 import sys
@@ -32,7 +31,6 @@ def make(ctx, build_args):
     cwd = os.getcwd()
     if pros.conductor.ProjectConfig.find_project(os.getcwd()):
         cwd = os.path.dirname(pros.conductor.ProjectConfig.find_project(os.getcwd()))
-    pros.common.debug('Invoking {} in {}'.format(make_cmd, cwd))
     process = subprocess.Popen(executable=make_cmd, args=[make_cmd, *build_args], cwd=cwd, env=env,
                                stdout=sys.stdout, stderr=sys.stderr)
     process.wait()

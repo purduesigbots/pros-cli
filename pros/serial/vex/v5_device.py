@@ -3,20 +3,30 @@ import typing
 from configparser import ConfigParser
 from datetime import datetime, timedelta
 from io import BytesIO, StringIO
-import typing
 from typing import *
 
 import click
+import serial.tools.list_ports as list_ports
 
 from pros.common import *
+from pros.serial import decode_bytes_to_str
 from .comm_error import VEXCommError
 from .crc import CRC
 from .message import Message
 from .vex_device import VEXDevice
-from pros.serial import decode_bytes_to_str
 from .. import bytes_to_str
 
 int_str = Union[int, str]
+
+
+def find_v5_port(p_type: str):
+    location = ''
+    if p_type.lower() == 'user':
+        location = '2'
+    elif p_type.lower() == 'system':
+        location = '0'
+    return [p for p in list_ports.comports() if
+            p.vid is not None and p.vid in [0x2888, 0x0501] and p.location.endswith(location)]
 
 
 class V5Device(VEXDevice):
@@ -25,7 +35,10 @@ class V5Device(VEXDevice):
     VEX_CRC32 = CRC(32, 0x04C11DB7)  # CRC-32 (the one used everywhere but has no name)
 
     def write_program(self, file: typing.BinaryIO, remote_base: str, ini: ConfigParser = None, slot: int = 0,
-                      file_len: int = -1, run_after: bool = False, **kwargs):
+                      file_len: int = -1, run_after: bool = False, target: str = 'flash', **kwargs):
+        if target == 'ddr':
+            self.write_program(file, '{}.bin'.format(remote_base), file_len=file_len, type='bin', run_after=run_after,
+                               target='ddr', **kwargs)
         if not isinstance(ini, ConfigParser):
             ini = ConfigParser()
         project_ini = ConfigParser()
@@ -38,13 +51,14 @@ class V5Device(VEXDevice):
             'date': datetime.now().isoformat()
         }
         project_ini.update(ini)
-        self.write_file(file, '{}.bin'.format(remote_base), file_len=file_len, run_after=run_after,
-                        type='bin', **kwargs)
+        self.write_file(file, '{}.bin'.format(remote_base), file_len=file_len, type='bin', **kwargs)
         with StringIO() as ini_str:
             project_ini.write(ini_str)
-            logger(__name__).info('Created ini: {}'.format(ini_str.getvalue()))
+            logger(__name__).debug('Created ini: {}'.format(ini_str.getvalue()))
             with BytesIO(ini_str.getvalue().encode(encoding='ascii')) as ini_bin:
                 self.write_file(ini_bin, '{}.ini'.format(remote_base), type='ini', **kwargs)
+        if run_after:
+            self.execute_program_file('{}.bin'.format(remote_base))
 
     def read_file(self, file: typing.IO[bytes], remote_file: str, vid: int_str = 'user', target: int_str = 'flash'):
         if isinstance(vid, str):
@@ -66,7 +80,7 @@ class V5Device(VEXDevice):
         crc32 = self.VEX_CRC32.compute(file.read(file_len))
         file.seek(-file_len, 2)
         addr = kwargs.get('addr', 0x03800000)
-        logger(__name__).info('Transferring {} ({} bytes) to the V5 from {}'.format(remote_file, file_len, file))
+        logger(__name__).debug('Transferring {} ({} bytes) to the V5 from {}'.format(remote_file, file_len, file))
         ft_meta = self.ft_initialize(remote_file, function='upload', length=file_len, crc=crc32, **kwargs)
         assert ft_meta['file_size'] >= file_len
         transfer_size = min(ft_meta['file_size'], file_len)
@@ -78,7 +92,7 @@ class V5Device(VEXDevice):
                 logger(__name__).debug('Writing {} bytes at 0x{:02X}'.format(packet_size, addr + i))
                 self.ft_write(addr + i, file.read(packet_size))
                 progress.update(packet_size)
-                logger(__name__).info('Completed {} of {} bytes'.format(i + packet_size, transfer_size))
+                logger(__name__).debug('Completed {} of {} bytes'.format(i + packet_size, transfer_size))
         logger(__name__).debug('Data transfer complete, sending ft complete')
         self.ft_complete(run_program=run_after)
 
@@ -126,7 +140,7 @@ class V5Device(VEXDevice):
                                  options['name'].encode(encoding='ascii'))
         rx = self._txrx_ext_struct(0x11, tx_payload, "<H2I")
         rx = dict(zip(['max_packet_size', 'file_size', 'crc'], rx))
-        logger(__name__).debug('response: {}'. format(rx))
+        logger(__name__).debug('response: {}'.format(rx))
         logger(__name__).debug('Completed ext 0x11 command')
         return rx
 
@@ -145,7 +159,10 @@ class V5Device(VEXDevice):
         logger(__name__).debug('Sending ext 0x13 command')
         if isinstance(payload, str):
             payload = payload.encode(encoding='ascii')
-        padded_payload = bytes([*payload, *([0] * (len(payload) % 4))])
+        if len(payload) % 4 != 0:
+            padded_payload = bytes([*payload, *([0] * (4 - (len(payload) % 4)))])
+        else:
+            padded_payload = payload
         tx_fmt = "<I{}s".format(len(padded_payload))
         tx_payload = struct.pack(tx_fmt, addr, padded_payload)
         ret = self._txrx_ext_packet(0x13, tx_payload, 0)
