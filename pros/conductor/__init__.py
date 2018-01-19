@@ -1,1 +1,2 @@
-from .project_config import ProjectConfig
+from .templates import Template
+from .project import Project

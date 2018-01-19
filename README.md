@@ -30,7 +30,7 @@ provider (GitHub provider is currently the only provider, but can be extended)
 
 
 ### prosconfig
-prosconfig contains classes which represent configuration files, such as template.pros, project.pros, and cli.pros.
+prosconfig contains classes which represent configuration files, such as Template.pros, project.pros, and cli.pros.
 These files are serialized by jsonpickle.
 
 ### prosflasher

@@ -1,0 +1,8 @@
+{
+	"linters": {
+		"spelling": {
+			"type": "spelling",
+			"include": "(.*)"
+		}
+	}
+}

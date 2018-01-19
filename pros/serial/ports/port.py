@@ -1,4 +1,16 @@
+from functools import lru_cache
 from typing import *
+
+import serial.tools.list_ports as list_ports
+
+from pros.common import logger
+
+
+@lru_cache()
+def list_all_comports():
+    ports = list_ports.comports()
+    logger(__name__).debug('Connected: {}'.format(';'.join([str(p.__dict__) for p in ports])))
+    return ports
 
 
 class Port(object):

@@ -1,0 +1,2 @@
+class Depot:
+    pass

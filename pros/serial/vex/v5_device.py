@@ -6,7 +6,6 @@ from io import BytesIO, StringIO
 from typing import *
 
 import click
-import serial.tools.list_ports as list_ports
 
 from pros.common import *
 from pros.serial import decode_bytes_to_str
@@ -15,18 +14,20 @@ from .crc import CRC
 from .message import Message
 from .vex_device import VEXDevice
 from .. import bytes_to_str
+from ..ports.port import list_all_comports
 
 int_str = Union[int, str]
 
 
-def find_v5_port(p_type: str):
-    location = ''
+def find_v5_ports(p_type: str):
+    locations = []
     if p_type.lower() == 'user':
-        location = '2'
+        locations = ['2']
     elif p_type.lower() == 'system':
-        location = '0'
-    return [p for p in list_ports.comports() if
-            p.vid is not None and p.vid in [0x2888, 0x0501] and p.location.endswith(location)]
+        locations = ['0', '1']
+    ports = list_all_comports()
+    return [p for p in ports if
+            p.vid is not None and p.vid in [0x2888, 0x0501] and any([p.location.endswith(l) for l in locations])]
 
 
 class V5Device(VEXDevice):
@@ -37,16 +38,20 @@ class V5Device(VEXDevice):
     def write_program(self, file: typing.BinaryIO, remote_base: str, ini: ConfigParser = None, slot: int = 0,
                       file_len: int = -1, run_after: bool = False, target: str = 'flash', **kwargs):
         if target == 'ddr':
-            self.write_program(file, '{}.bin'.format(remote_base), file_len=file_len, type='bin', run_after=run_after,
+            self.write_program(file, '{}.bin'.format(remote_base), file_len=file_len, type='bin',
                                target='ddr', **kwargs)
+            return
         if not isinstance(ini, ConfigParser):
             ini = ConfigParser()
+        if len(remote_base) > 20:
+            logger(__name__).info('Truncating remote name to {} for length.'.format(remote_base[:20]))
+            remote_base = remote_base[:20]
         project_ini = ConfigParser()
         project_ini['program'] = {
-            'version': '0.0.0',
+            'version': kwargs.get('version', '0.0.0') or '0.0.0',
             'name': remote_base,
             'slot': slot,
-            'icon': 'USER999x.bmp',
+            'icon': kwargs.get('icon', 'USER999x.bmp') or 'USER999x.bmp',
             'description': 'Created with PROS',
             'date': datetime.now().isoformat()
         }
@@ -54,7 +59,7 @@ class V5Device(VEXDevice):
         self.write_file(file, '{}.bin'.format(remote_base), file_len=file_len, type='bin', **kwargs)
         with StringIO() as ini_str:
             project_ini.write(ini_str)
-            logger(__name__).debug('Created ini: {}'.format(ini_str.getvalue()))
+            logger(__name__).info('Created ini: {}'.format(ini_str.getvalue()))
             with BytesIO(ini_str.getvalue().encode(encoding='ascii')) as ini_bin:
                 self.write_file(ini_bin, '{}.ini'.format(remote_base), type='ini', **kwargs)
         if run_after:
@@ -80,19 +85,24 @@ class V5Device(VEXDevice):
         crc32 = self.VEX_CRC32.compute(file.read(file_len))
         file.seek(-file_len, 2)
         addr = kwargs.get('addr', 0x03800000)
-        logger(__name__).debug('Transferring {} ({} bytes) to the V5 from {}'.format(remote_file, file_len, file))
+        logger(__name__).info('Transferring {} ({} bytes) to the V5 from {}'.format(remote_file, file_len, file))
         ft_meta = self.ft_initialize(remote_file, function='upload', length=file_len, crc=crc32, **kwargs)
         assert ft_meta['file_size'] >= file_len
-        transfer_size = min(ft_meta['file_size'], file_len)
-        with click.progressbar(length=transfer_size, label='Uploading {}'.format(remote_file)) as progress:
-            for i in range(0, transfer_size, ft_meta['max_packet_size']):
+        if len(remote_file) > 24:
+            logger(__name__).info('Truncating {} to {} due to length'.format(remote_file, remote_file[:24]))
+            remote_file = remote_file[:24]
+        display_name = remote_file
+        if hasattr(file, 'name'):
+            display_name = '{} ({})'.format(remote_file, file.name)
+        with click.progressbar(length=file_len, label='Uploading {}'.format(display_name)) as progress:
+            for i in range(0, file_len, ft_meta['max_packet_size']):
                 packet_size = ft_meta['max_packet_size']
-                if i + ft_meta['max_packet_size'] > transfer_size:
-                    packet_size = transfer_size - i
+                if i + ft_meta['max_packet_size'] > file_len:
+                    packet_size = file_len - i
                 logger(__name__).debug('Writing {} bytes at 0x{:02X}'.format(packet_size, addr + i))
                 self.ft_write(addr + i, file.read(packet_size))
                 progress.update(packet_size)
-                logger(__name__).debug('Completed {} of {} bytes'.format(i + packet_size, transfer_size))
+                logger(__name__).debug('Completed {} of {} bytes'.format(i + packet_size, file_len))
         logger(__name__).debug('Data transfer complete, sending ft complete')
         self.ft_complete(run_program=run_after)
 
@@ -120,7 +130,7 @@ class V5Device(VEXDevice):
             'version': 0x01_00_00_00,
             'name': file_name
         }
-        options.update(**kwargs)
+        options.update({k: v for k, v in kwargs.items() if k in options})
 
         if isinstance(options['function'], str):
             options['function'] = {'upload': 1, 'download': 2}[options['function'].lower()]
@@ -172,13 +182,13 @@ class V5Device(VEXDevice):
     @retries
     def ft_read(self, addr: int, n_bytes: int) -> bytearray:
         logger(__name__).debug('Sending ext 0x14 command')
-        req_n_bytes = n_bytes + (n_bytes % 4)
+        req_n_bytes = n_bytes + ((4 - (n_bytes % 4)) if n_bytes % 4 != 0 else 0)
         tx_payload = struct.pack("<IH", addr, req_n_bytes)
-        rx_fmt = "<I{}s{}s".format(n_bytes, n_bytes % 4)
+        rx_fmt = "<I{}s{}s".format(n_bytes, ((4 - (n_bytes % 4)) if n_bytes % 4 != 0 else 0))
         ret = self._txrx_ext_struct(0x14, tx_payload, rx_fmt, check_ack=False,
                                     check_length=False)[1]
         logger(__name__).debug('Completed ext 0x14 command')
-        return ret
+        return ret[:-1]
 
     @retries
     def ft_set_link(self, link_name: str, vid: int_str = 'user', options: int = 0):
@@ -222,6 +232,7 @@ class V5Device(VEXDevice):
             vid = self.vid_map[vid.lower()]
         options = 0
         options |= (0 if run else 0x80)
+        logger(__name__).debug('VID: {}\tOptions: {}\tFile name: {}'.format(vid, options, file_name))
         tx_payload = struct.pack("<2B24s", vid, options, file_name.encode(encoding='ascii'))
         ret = self._txrx_ext_packet(0x18, tx_payload, 0)
         logger(__name__).debug('Completed ext 0x18 command')

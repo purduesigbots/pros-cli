@@ -1,17 +1,23 @@
-import click
 import os.path
-import pros.conductor.providers.github_releases as githubreleases
 import sys
-from .config import Config
+from typing import *
+
+import click
+
+import pros.conductor.providers.github_releases as githubreleases
+from pros.config.config import Config
+from pros.conductor import Template
 
 
 class CliConfig(Config):
-    def __init__(self, file=None, state=None):
+    def __init__(self, file=None):
         if not file:
             file = os.path.join(click.get_app_dir('PROS'), 'cli.pros')
-        self.default_libraries = []
-        self.providers = []
-        super(CliConfig, self).__init__(file, state=state)
+        self.default_libraries = []  # type: List[str]
+        self.providers = []  # type: List[str]
+        self.templates = []  # type: List[Template]
+
+        super(CliConfig, self).__init__(file)
 
     def reset_providers(self):
         if os.path.isfile(githubreleases.__file__):

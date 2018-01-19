@@ -6,11 +6,11 @@ from .vex_device import VEXDevice
 from .. import bytes_to_str
 from pros.common.utils import retries
 
-import serial.tools.list_ports as list_ports
+from ..ports.port import list_all_comports
 
 
-def list_cortex_ports():
-    return [p for p in list_ports.comports() if p.vid is not None and p.vid in [0x4D8, 0x67B]]
+def find_cortex_ports():
+    return [p for p in list_all_comports() if p.vid is not None and p.vid in [0x4D8, 0x67B]]
 
 
 class CortexDevice(VEXDevice):

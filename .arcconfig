@@ -1,0 +1,6 @@
+{
+	"phabricator.uri": "https://phabricator.purduesigbots.com/",
+	"repoistory.callsign": "rRESTRICTEDCLI",
+	"lint.engine": "ArcanistConfigurationDrivenLintEngine",
+	"default-reviewers": "berman5 brookea"
+}

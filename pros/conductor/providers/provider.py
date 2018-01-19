@@ -18,7 +18,7 @@ class DepotProvider(object):
 
     def download(self, identifier):
         """
-        Downloads the specified template with the given name and version
+        Downloads the specified Template with the given name and version
         :return: True if successful, False if not
         """
         pass
