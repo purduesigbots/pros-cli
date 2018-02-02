@@ -14,7 +14,7 @@ from .crc import CRC
 from .message import Message
 from .vex_device import VEXDevice
 from .. import bytes_to_str
-from ..ports.port import list_all_comports
+from pros.serial.ports import list_all_comports
 
 int_str = Union[int, str]
 

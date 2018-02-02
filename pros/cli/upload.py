@@ -1,10 +1,10 @@
+import serial.tools.list_ports as list_ports
+
 import pros.conductor as c
-from pros.serial.ports import SerialPort
+from pros.serial.ports import DirectPort
 from pros.serial.vex import *
 from .click_classes import *
 from .common import *
-
-import serial.tools.list_ports as list_ports
 
 
 @click.group(cls=PROSGroup)
@@ -92,7 +92,7 @@ def upload(path: str, port: str, **kwargs):
 
     # Do the actual uploading!
     try:
-        ser = SerialPort(port)
+        ser = DirectPort(port)
         device = None
         if kwargs['target'] == 'v5':
             device = V5Device(ser)
@@ -106,7 +106,7 @@ def upload(path: str, port: str, **kwargs):
         exit(1)
 
 
-def _print_ports(ports, header: Optional[str]=None):
+def _print_ports(ports, header: Optional[str] = None):
     if header and not ismachineoutput():
         if len(ports) > 0:
             print('{}:'.format(header))

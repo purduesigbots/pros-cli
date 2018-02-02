@@ -1,8 +1,8 @@
-from .packet_port import PacketPort
+from .base_port import BasePort
 from .serial_share_bridge import *
 
 
-class SerialSharePort(PacketPort):
+class SerialSharePort(BasePort):
     def __init__(self, port_name: str, topic: bytes = b'sout', addr: str = '127.0.0.1',
                  to_device_port: int = None, from_device_port: int = None):
         self.port_name = port_name

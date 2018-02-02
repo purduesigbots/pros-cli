@@ -6,7 +6,7 @@ from .vex_device import VEXDevice
 from .. import bytes_to_str
 from pros.common.utils import retries
 
-from ..ports.port import list_all_comports
+from pros.serial.ports import list_all_comports
 
 
 def find_cortex_ports():

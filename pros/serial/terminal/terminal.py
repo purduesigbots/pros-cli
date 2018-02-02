@@ -3,13 +3,12 @@ import os
 import signal
 import sys
 import threading
-import time
 
 import colorama
 
 from pros.common.utils import logger
 from pros.serial import decode_bytes_to_str
-from pros.serial.ports import PacketPort, Port
+from pros.serial.ports import BasePort
 
 
 # This file is a modification of the miniterm implementation on pyserial
@@ -85,14 +84,15 @@ if os.name == 'nt':  # noqa
             self._saved_icp = ctypes.windll.kernel32.GetConsoleCP()
             ctypes.windll.kernel32.SetConsoleOutputCP(65001)
             ctypes.windll.kernel32.SetConsoleCP(65001)
-            self.output = codecs.getwriter('UTF-8')(Out(sys.stdout.fileno()),
-                                                    'replace')
+            self.output = sys.stdout
+            # self.output = codecs.getwriter('UTF-8')(Out(sys.stdout.fileno()),
+            #                                         'replace')
             # the change of the code page is not propagated to Python,
             # manually fix it
-            sys.stderr = codecs.getwriter('UTF-8')(Out(sys.stderr.fileno()),
-                                                   'replace')
+            # sys.stderr = codecs.getwriter('UTF-8')(Out(sys.stderr.fileno()),
+            #                                        'replace')
             sys.stdout = self.output
-            self.output.encoding = 'UTF-8'  # needed for input
+            # self.output.encoding = 'UTF-8'  # needed for input
 
         def __del__(self):
             ctypes.windll.kernel32.SetConsoleOutputCP(self._saved_ocp)
@@ -168,7 +168,7 @@ else:
 class Terminal(object):
     """This class is loosely based off of the pyserial miniterm"""
 
-    def __init__(self, port_instance: Port, transformations=(),
+    def __init__(self, port_instance: BasePort, transformations=(),
                  output_raw=False):
         self.serial = port_instance
         self.transformations = transformations
@@ -181,6 +181,7 @@ class Terminal(object):
         self.no_sigint = True  # SIGINT flag
         signal.signal(signal.SIGINT, self.catch_sigint)  # SIGINT handler
         self.console = Console()
+        self.console.output = colorama.AnsiToWin32(self.console.output).stream
 
     def _start_rx(self):
         self._reader_alive = True
@@ -206,33 +207,28 @@ class Terminal(object):
 
     def reader(self):
         try:
-            self.serial.write('pRb')
+            self.serial.write(b'pRb')
         except Exception as e:
             logger(__name__).exception(e)
         try:
             while not self.alive.is_set() and self._reader_alive:
-                data = bytearray()
-                if isinstance(self.serial, PacketPort):
-                    data = self.serial.read_packet()
+                data = self.serial.read()
+                if not data:
+                    continue
+                if data[0] == b'sout':
+                    text = decode_bytes_to_str(data[1])
+                elif data[0] == b'serr':
+                    text = '{}{}{}'.format(colorama.Fore.RED, decode_bytes_to_str(data[1]), colorama.Style.RESET_ALL)
+                elif data[0] == b'kdbg':
+                    text = '{}\n\nKERNEL DEBUG:\t{}{}\n'.format(colorama.Back.GREEN + colorama.Style.BRIGHT,
+                                                                decode_bytes_to_str(data[1]),
+                                                                colorama.Style.RESET_ALL)
+                elif data[0] != b'':
+                    text = '{}{}'.format(decode_bytes_to_str(data[0]),
+                                         decode_bytes_to_str(data[1]))
                 else:
-                    data.extend(self.serial.read(1))
-                    data.extend(self.serial.read_all())
-                if data:
-                    if isinstance(self.serial, PacketPort):
-                        if data[0] == b'sout':
-                            text = decode_bytes_to_str(data[1])
-                        elif data[0] == b'kdbg':
-                            text = '{}\n\nKERNEL DEBUG:\t{}{}\n'.format(colorama.Back.GREEN + colorama.Style.BRIGHT,
-                                                                        decode_bytes_to_str(data[1]),
-                                                                        colorama.Style.RESET_ALL)
-                        else:
-                            text = '{}:{}'.format(decode_bytes_to_str(data[0]),
-                                                  decode_bytes_to_str(data[1]))
-                    else:
-                        text = decode_bytes_to_str(data)
-                    for transformation in self.transformations:
-                        text = transformation(text)
-                    self.console.write(text)
+                    text = "{}".format(decode_bytes_to_str(data[1]))
+                self.console.write(text)
         except UnicodeError as e:
             logger(__name__).exception(e)
         except Exception as e:
@@ -271,14 +267,14 @@ class Terminal(object):
         self.no_sigint = False
 
     def start(self):
-        colorama.deinit()
-        colorama.init(autoreset=True)
+        # colorama.deinit()
+        # colorama.init(autoreset=True)
         self.alive.clear()
         self._start_rx()
         self._start_tx()
 
     def stop(self):
-        logger(__name__).info('Stopping terminal')
+        logger(__name__).warning('Stopping terminal')
         self.alive.set()
         logger(__name__).info('Destroying port')
         self.serial.destroy()
@@ -298,4 +294,3 @@ class Terminal(object):
                 self.transmitter_thread.join()
         except:
             self.stop()
-        self.stop()

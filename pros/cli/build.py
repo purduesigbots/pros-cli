@@ -24,7 +24,7 @@ def make(ctx, build_args):
         env['PATH'] = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin') + os.pathsep + env['PATH']
 
     # call make.exe if on Windows
-    if os.name == 'nt':
+    if os.name == 'nt' and os.environ.get('PROS_TOOLCHAIN'):
         make_cmd = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'make.exe')
     else:
         make_cmd = 'make'

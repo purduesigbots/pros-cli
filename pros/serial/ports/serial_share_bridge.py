@@ -9,7 +9,7 @@ from cobs import cobs
 
 import pros
 from pros.common.utils import *
-from .serial import SerialPort
+from .direct_port import DirectPort
 from .. import bytes_to_str
 
 
@@ -88,7 +88,7 @@ class SerialShareBridge(object):
 
             self.zmq_ctx = zmq.Context()
             # timeout is none, so blocks indefinitely. Helps reduce CPU usage when there's nothing being recv
-            self.port = SerialPort(self._serial_port_name, timeout=None)
+            self.port = DirectPort(self._serial_port_name, timeout=None)
             self.from_device_thread = threading.Thread(target=self._from_device_loop, name='From Device Reader',
                                                        daemon=False, args=(initialization_barrier,))
             self.to_device_thread = threading.Thread(target=self._to_device_loop, name='To Device Reader',
