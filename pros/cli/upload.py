@@ -47,7 +47,7 @@ def upload(path: str, port: str, **kwargs):
             return -1
         project = c.Project(project_path)
         path = project.output
-        if project.target == 'v5' and 'name' not in kwargs:
+        if project.target == 'v5' and not kwargs['name']:
             kwargs['name'] = project.name
 
         # apply upload_options as a template
@@ -73,7 +73,7 @@ def upload(path: str, port: str, **kwargs):
     if kwargs['target'] == 'v5':
         if kwargs['name'] is None:
             kwargs['name'] = os.path.splitext(os.path.basename(path))[0]
-        args.append(kwargs.pop('name'))
+        args.append(kwargs.pop('name').replace('@', '_'))
         kwargs['slot'] -= 1
     elif kwargs['target'] == 'cortex':
         pass

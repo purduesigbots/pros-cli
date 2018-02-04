@@ -12,6 +12,8 @@ class PROSFormatted(click.BaseCommand):
         """Extra format methods for multi methods that adds all the commands
                 after the options.
                 """
+        if not hasattr(self, 'list_commands'):
+            return
         rows = []
         for subcommand in self.list_commands(ctx):
             cmd = self.get_command(ctx, subcommand)
@@ -47,6 +49,8 @@ class PROSFormatted(click.BaseCommand):
         for group, options in opts.items():
             with formatter.section(group):
                 formatter.write_dl(options)
+
+        self.format_commands(ctx, formatter)
 
 
 class PROSCommand(PROSFormatted, click.Command):
