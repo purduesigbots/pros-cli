@@ -95,7 +95,7 @@ class Project(Config):
         if force_user:
             new_user_files = template.user_files
         else:
-            new_user_files = filter(new_user_filter, template.user_files)
+            new_user_files = filter(new_user_filter, template.real_user_files)
         transaction.extend_add(new_user_files, template.location)
 
         if any([file in transaction.effective_state for file in template.system_files]) and not force_system:
