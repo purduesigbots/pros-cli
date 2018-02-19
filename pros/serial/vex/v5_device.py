@@ -9,25 +9,54 @@ import click
 
 from pros.common import *
 from pros.serial import decode_bytes_to_str
+from pros.serial.ports import list_all_comports
 from .comm_error import VEXCommError
 from .crc import CRC
 from .message import Message
 from .vex_device import VEXDevice
 from .. import bytes_to_str
-from pros.serial.ports import list_all_comports
 
 int_str = Union[int, str]
 
 
 def find_v5_ports(p_type: str):
-    locations = []
-    if p_type.lower() == 'user':
-        locations = ['2']
-    elif p_type.lower() == 'system':
-        locations = ['0', '1']
-    ports = list_all_comports()
-    return [p for p in ports if
-            p.vid is not None and p.vid in [0x2888, 0x0501] and any([p.location.endswith(l) for l in locations])]
+    def filter_vex_ports(p):
+        return p.vid is not None and p.vid in [0x2888, 0x0501] or \
+               p.name is not None and ('VEX' in p.name or 'V5' in p.name)
+
+    def filter_v5_ports(p, locations, names):
+        return (p.location is not None and any([p.location.endswith(l) for l in locations])) or \
+               (p.name is not None and any([n in p.name for n in names]))
+
+    ports = [p for p in list_all_comports() if filter_vex_ports(p)]
+
+    # Initially try filtering based off of location or the name of the device.
+    # Doesn't work on macOS or Jonathan's Dell, so we have a fallback (below)
+    user_ports = [p for p in ports if filter_v5_ports(p, ['2'], ['User'])]
+    system_ports = [p for p in ports if filter_v5_ports(p, ['0'], ['System', 'Communications'])]
+    joystick_ports = [p for p in ports if filter_v5_ports(p, ['1'], ['Controller'])]
+
+    if len(user_ports) == len(system_ports) and len(user_ports) > 0:
+        if p_type.lower() == 'user':
+            return user_ports
+        elif p_type.lower() == 'system':
+            return system_ports
+        else:
+            raise ValueError(f'Invalid port type specified: {p_type}')
+
+    # None of the typical filters worked, so if there are only two ports, then the lower one is always*
+    # the USER? port (*always = I haven't found a guarantee)
+    if len(ports) == 2:
+        ports = sorted(ports, key=lambda p: p.device)
+        if p_type.lower() == 'user':
+            return [ports[1]]
+        elif p_type.lower() == 'system':
+            return [ports[0]]
+        else:
+            raise ValueError(f'Invalid port type specified: {p_type}')
+    if len(joystick_ports) > 0:
+        return joystick_ports
+    return []
 
 
 class V5Device(VEXDevice):
@@ -38,8 +67,8 @@ class V5Device(VEXDevice):
     def write_program(self, file: typing.BinaryIO, remote_base: str, ini: ConfigParser = None, slot: int = 0,
                       file_len: int = -1, run_after: bool = False, target: str = 'flash', **kwargs):
         if target == 'ddr':
-            self.write_program(file, '{}.bin'.format(remote_base), file_len=file_len, type='bin',
-                               target='ddr', **kwargs)
+            self.write_file(file, '{}.bin'.format(remote_base), file_len=file_len, type='bin',
+                            target='ddr', run_after=run_after, **kwargs)
             return
         if not isinstance(ini, ConfigParser):
             ini = ConfigParser()

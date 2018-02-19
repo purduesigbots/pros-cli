@@ -3,7 +3,7 @@ import os
 
 import jsonpickle
 
-import pros.common
+from pros.common.utils import *
 
 
 class ConfigNotFoundException(Exception):
@@ -18,7 +18,7 @@ class Config(object):
     """
 
     def __init__(self, file, error_on_decode=False):
-        pros.common.logger(__name__).debug('Opening {} ({})'.format(file, self.__class__.__name__))
+        logger(__name__).debug('Opening {} ({})'.format(file, self.__class__.__name__))
         self.save_file = file
         # __ignored property has any fields which shouldn't be included the pickled config file
         self.__ignored = self.__dict__.get('_Config__ignored', [])
@@ -33,19 +33,20 @@ class Config(object):
                         if isinstance(result, dict):
                             if 'py/state' in result:
                                 class_name = '{}.{}'.format(self.__class__.__module__, self.__class__.__qualname__)
-                                pros.common.logger(__name__).debug(
+                                logger(__name__).debug(
                                     'Coercing {} to {}'.format(result['py/object'], class_name))
                                 self.__dict__.update(result['py/state'])
                             else:
                                 self.__dict__.update(result)
                         elif isinstance(result, object):
                             self.__dict__.update(result.__dict__)
-                    except (json.decoder.JSONDecodeError, AttributeError) as e:
+                    except (json.decoder.JSONDecodeError, AttributeError, UnicodeDecodeError) as e:
                         if error_on_decode:
-                            pros.common.logger(__name__).exception(e)
+                            logger(__name__).error(f'Error parsing {file}')
+                            logger(__name__).exception(e)
                             raise e
                         else:
-                            pros.common.logger(__name__).debug(e)
+                            logger(__name__).debug(e)
                             pass
             # obvious
             elif os.path.isdir(file):
@@ -56,10 +57,10 @@ class Config(object):
                     self.save()
                 except Exception as e:
                     if error_on_decode:
-                        pros.common.logger(__name__).exception(e)
+                        logger(__name__).exception(e)
                         raise e
                     else:
-                        pros.common.logger(__name__).debug('Failed to save {} ({})'.format(file, e))
+                        logger(__name__).debug('Failed to save {} ({})'.format(file, e))
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -71,6 +72,10 @@ class Config(object):
     def __setstate__(self, state):
         self.__dict__.update(state)
 
+    def __str__(self):
+        jsonpickle.set_encoder_options('json', sort_keys=True)
+        return jsonpickle.encode(self)
+
     def delete(self):
         if os.path.isfile(self.save_file):
             os.remove(self.save_file)
@@ -78,8 +83,8 @@ class Config(object):
     def save(self, file: str = None) -> None:
         if file is None:
             file = self.save_file
-        if pros.common.isdebug(__name__):
-            pros.common.logger(__name__).debug('Pretty formatting {} file'.format(self.__class__.__name__))
+        if isdebug(__name__):
+            logger(__name__).debug('Pretty formatting {} file'.format(self.__class__.__name__))
             jsonpickle.set_encoder_options('json', sort_keys=True, indent=4)
         else:
             jsonpickle.set_encoder_options('json')
@@ -87,7 +92,7 @@ class Config(object):
             os.makedirs(os.path.dirname(file), exist_ok=True)
         with open(file, 'w') as f:
             f.write(jsonpickle.encode(self))
-            pros.common.logger(__name__).debug('Saved {}'.format(file))
+            logger(__name__).debug('Saved {}'.format(file))
 
     def migrate(self, migration):
         for (old, new) in migration.iteritems():

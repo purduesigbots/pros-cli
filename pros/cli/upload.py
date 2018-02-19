@@ -58,8 +58,8 @@ def upload(path: str, port: str, **kwargs):
         kwargs['target'] = project.target  # enforce target because uploading to the wrong uC is VERY bad
         if 'program-version' in kwargs:
             kwargs['version'] = kwargs['program-version']
-    if 'name' not in kwargs:
-        kwargs['name'] = os.path.basename(path)
+        if 'name' not in kwargs:
+            kwargs['name'] = project.name
     if 'target' not in kwargs:
         raise click.UsageError('Target not specified. specify a project (using the file argument) or target manually')
 

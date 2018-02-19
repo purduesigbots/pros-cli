@@ -113,6 +113,46 @@ def default_options(f):
     return decorator
 
 
+def template_query(arg_name='query', required: bool = False):
+    """
+    provides a wrapper for conductor commands which require an optional query
+
+    Ignore unknown options is required in context_settings for the command:
+    context_settings={'ignore_unknown_options': True}
+    """
+
+    def callback(ctx: click.Context, param: click.Parameter, value: Tuple[str, ...]):
+        import pros.conductor as c
+        value = list(value)
+        spec = None
+        if len(value) > 0 and not value[0].startswith('--'):
+            spec = value.pop(0)
+        if not spec and required:
+            raise ValueError(f'A {arg_name} is required to perform this command')
+        return c.BaseTemplate.create_query(spec,
+                                           **{value[i][2:]: value[i + 1] for i in range(0, int(len(value) / 2) * 2, 2)})
+
+    def wrapper(f):
+        return click.argument(arg_name, nargs=-1, required=required, callback=callback)(f)
+
+    return wrapper
+
+
+def project_option(arg_name='project', required: bool = True, default='.'):
+    def callback(ctx: click.Context, param: click.Parameter, value: str):
+        import pros.conductor as c
+        project_path = c.Project.find_project(value)
+        if project_path is None:
+            raise ValueError(f'{os.path.abspath(value)} is not inside a PROS project')
+        return c.Project(project_path)
+
+    def wrapper(f):
+        return click.option(f'--{arg_name}', callback=callback, required=required,
+                            default=default, type=click.Path(exists=True))(f)
+
+    return wrapper
+
+
 def resolve_v5_port(port: str, type: str) -> Optional[str]:
     if not port:
         ports = find_v5_ports(type)
