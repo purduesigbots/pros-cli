@@ -1,17 +1,20 @@
-import click
 import os
 import os.path
-import pros.conductor
 import subprocess
 import sys
 
+import click
 
-@click.group()
+import pros.conductor
+from .click_classes import PROSGroup
+
+
+@click.group(cls=PROSGroup)
 def build_cli():
     pass
 
 
-@build_cli.command()
+@build_cli.command(aliases=['build'])
 @click.argument('build-args', nargs=-1)
 @click.pass_context
 def make(ctx, build_args):
@@ -34,4 +37,23 @@ def make(ctx, build_args):
     process = subprocess.Popen(executable=make_cmd, args=[make_cmd, *build_args], cwd=cwd, env=env,
                                stdout=sys.stdout, stderr=sys.stderr)
     process.wait()
-    ctx.exit(process.returncode)
+    if process.returncode != 0:
+        ctx.exit(process.returncode)
+
+
+@build_cli.command('make-upload', aliases=['mu'], hidden=True)
+@click.pass_context
+def make_upload(ctx):
+    from .upload import upload
+    ctx.forward(make)
+    ctx.forward(upload)
+
+
+@build_cli.command('make-upload-terminal', aliases=['mut'], hidden=True)
+@click.pass_context
+def make_upload_terminal(ctx):
+    from .upload import upload
+    from .terminal import terminal
+    ctx.forward(make)
+    ctx.forward(upload)
+    ctx.forward(terminal)

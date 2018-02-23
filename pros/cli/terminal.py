@@ -10,10 +10,11 @@ import pros.serial.vex.cortex_device as cortex_device
 import pros.serial.vex.v5_device as v5_device
 from pros.common.utils import logger
 from pros.serial.terminal import Terminal
+from .click_classes import PROSGroup
 from .common import default_options
 
 
-@click.group()
+@click.group(cls=PROSGroup)
 def terminal_cli():
     pass
 
