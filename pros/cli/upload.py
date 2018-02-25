@@ -12,7 +12,7 @@ def upload_cli():
     pass
 
 
-@upload_cli.command()
+@upload_cli.command(aliases=['u'])
 @click.option('--target', type=click.Choice(['v5', 'cortex']), default=None, required=False,
               help='Specify the target microcontroller. Overridden when a PROS project is specified.')
 @click.argument('path', type=click.Path(exists=True), default=None, required=False)
@@ -138,3 +138,11 @@ def ls_usb(target):
 
     if isdebug():
         _print_ports(list_ports.comports())
+
+
+@upload_cli.command('upload-terminal', aliases=['ut'], hidden=True)
+@click.pass_context
+def make_upload_terminal(ctx):
+    from .terminal import terminal
+    ctx.forward(upload)
+    ctx.forward(terminal)
