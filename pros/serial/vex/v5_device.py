@@ -1,3 +1,4 @@
+import re
 import struct
 import typing
 from configparser import ConfigParser
@@ -47,7 +48,11 @@ def find_v5_ports(p_type: str):
     # None of the typical filters worked, so if there are only two ports, then the lower one is always*
     # the USER? port (*always = I haven't found a guarantee)
     if len(ports) == 2:
-        ports = sorted(ports, key=lambda p: p.device)
+        # natural sort based on: https://stackoverflow.com/a/16090640
+        def natural_key(chunk: str):
+            return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', chunk)]
+
+        ports = sorted(ports, key=lambda p: natural_key(p.device))
         if p_type.lower() == 'user':
             return [ports[1]]
         elif p_type.lower() == 'system':
