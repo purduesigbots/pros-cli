@@ -60,7 +60,10 @@ class VEXDevice(object):
         response_header_stack = list(response_header)
         rx = bytearray()
         while (len(rx) > 0 or time.time() - start_time < timeout) and len(response_header_stack) > 0:
-            b = self.port.read(1)[1][0]
+            b = self.port.read(1)[1]
+            if len(b) == 0:
+                continue
+            b = b[0]
             if b == response_header_stack[0]:
                 response_header_stack.pop(0)
                 rx.append(b)

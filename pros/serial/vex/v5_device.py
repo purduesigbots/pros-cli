@@ -194,7 +194,7 @@ class V5Device(VEXDevice):
         options = 0
         options |= (1 if run_program else 0)
         tx_payload = struct.pack("<B", options)
-        ret = self._txrx_ext_packet(0x12, tx_payload, 0)
+        ret = self._txrx_ext_packet(0x12, tx_payload, 0, timeout=5.0)
         logger(__name__).debug('Completed ext 0x12 command')
         return ret
 
