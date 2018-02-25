@@ -19,7 +19,7 @@ class VEXDevice(object):
     ACK_BYTE = 0x76
     NACK_BYTE = 0xFF
 
-    def __init__(self, port: Union[Serial, BasePort]):
+    def __init__(self, port: BasePort):
         self.port = port
         # if not self.port.is_open:
         #     self.port.open()

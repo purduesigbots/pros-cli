@@ -36,7 +36,7 @@ class DirectPort(BasePort):
                 msg, self.temp_buffer = self.temp_buffer.split(b'\0', 1)
                 msg = cobs.decode(msg)
                 self.buffer.append((msg[:4], msg[4:]))
-        return self.buffer.pop(0) if len(self.buffer) > 0 else None
+        return self.buffer.pop(0) if len(self.buffer) > 0 else b'', b''
 
     def _raw_read(self, n_bytes: int = 0):
         assert isinstance(self.buffer, bytearray)

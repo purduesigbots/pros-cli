@@ -12,7 +12,7 @@ def v5_utils_cli():
     pass
 
 
-@v5_utils_cli.group(cls=PROSGroup)
+@v5_utils_cli.group(cls=PROSGroup, help='Utilities for managing the VEX V5')
 @default_options
 def v5():
     pass
@@ -125,3 +125,73 @@ def rm_file(file_name: str, port: str, vid: int, erase_all: bool):
     device.erase_file(file_name, vid=vid, erase_all=erase_all)
 
 
+@v5.command('rm-all')
+@click.argument('port', required=False, default=None)
+@click.option('--vid', type=int, default=1, hidden=True, cls=PROSOption)
+@default_options
+def rm_all(port: str, vid: int):
+    """
+    Remove all user programs from the V5
+    """
+    port = resolve_v5_port(port, 'system')
+    if not port:
+        return -1
+
+    ser = DirectPort(port)
+    device = V5Device(ser)
+    c = device.get_dir_count(vid=vid)
+    files = []
+    for i in range(0, c):
+        files.append(device.get_file_metadata_by_idx(i)['filename'])
+    for file in files:
+        device.erase_file(file, vid=vid)
+
+
+@v5.command(short_help='Run a V5 Program')
+@click.argument('file', required=False, default=None)
+@click.argument('port', required=False, default=None)
+@default_options
+def run(file: str, port: str):
+    """
+    Run a V5 program
+
+    If FILE is unspecified or is a directory, then attempts to find the correct filename based on the PROS project
+    """
+    import pros.conductor as c
+    import re
+    if not file or os.path.isdir(file):
+        path = c.Project.find_project(file)
+        if path:
+            file = f'{c.Project(path).name}.bin'
+    elif not re.match(r'[\w\.]{1,24}', file):
+        logger(__name__).error('file must be a valid V5 filename')
+        return 1
+    port = resolve_v5_port(port, 'system')
+    ser = DirectPort(port)
+    device = V5Device(ser)
+    device.execute_program_file(file, run=True)
+
+
+@v5.command(short_help='Stop a V5 Program')
+@click.argument('file', required=False, default=None)
+@click.argument('port', required=False, default=None)
+@default_options
+def stop(file: str, port: str):
+    """
+    Stops a V5 program
+
+    If FILE is unspecified or is a directory, then attempts to find the correct filename based on the PROS project
+    """
+    import pros.conductor as c
+    import re
+    if not file or os.path.isdir(file):
+        path = c.Project.find_project(file)
+        if path:
+            file = f'{c.Project(path).name}.bin'
+    elif not re.match(r'[\w\.]{1,24}', file):
+        logger(__name__).error('file must be a valid V5 filename')
+        return 1
+    port = resolve_v5_port(port, 'system')
+    ser = DirectPort(port)
+    device = V5Device(ser)
+    device.execute_program_file(file, run=False)
