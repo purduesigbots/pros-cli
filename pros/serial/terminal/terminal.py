@@ -169,7 +169,7 @@ class Terminal(object):
     """This class is loosely based off of the pyserial miniterm"""
 
     def __init__(self, port_instance: BasePort, transformations=(),
-                 output_raw=False):
+                 output_raw: bool=False, request_banner: bool=True):
         self.serial = port_instance
         self.transformations = transformations
         self._reader_alive = None
@@ -178,6 +178,7 @@ class Terminal(object):
         self.transmitter_thread = None  # type: threading.Thread
         self.alive = threading.Event()  # type: threading.Event
         self.output_raw = output_raw
+        self.request_banner = request_banner
         self.no_sigint = True  # SIGINT flag
         signal.signal(signal.SIGINT, self.catch_sigint)  # SIGINT handler
         self.console = Console()
@@ -206,10 +207,11 @@ class Terminal(object):
         self.transmitter_thread.join()
 
     def reader(self):
-        try:
-            self.serial.write(b'pRb')
-        except Exception as e:
-            logger(__name__).exception(e)
+        if self.request_banner:
+            try:
+                self.serial.write(b'pRb')
+            except Exception as e:
+                logger(__name__).exception(e)
         try:
             while not self.alive.is_set() and self._reader_alive:
                 data = self.serial.read()

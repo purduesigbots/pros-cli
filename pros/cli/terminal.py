@@ -30,6 +30,7 @@ def terminal_cli():
 @click.option('--ports', nargs=2, type=int, default=(None, None),
               help='Specify 2 ports for the "share" backend. The default option deterministically selects ports '
                    'based on the serial port name')
+@click.option('--banner/--no-banner', 'request_banner', default=True)
 def terminal(port: str, backend: str, **kwargs):
     """
     Open a terminal to a serial port
@@ -38,6 +39,8 @@ def terminal(port: str, backend: str, **kwargs):
     so that multiple PROS processes (such as another terminal or flash command) may communicate with the device. In the
     simpler solo mode, only one PROS process may communicate with the device. The default mode is "share", but "solo"
     may be preferred when "share" doesn't perform adequately.
+
+    Note: share backend is not yet implemented.
     """
     if port == 'default':
         project_path = c.Project.find_project(os.getcwd())
@@ -68,7 +71,7 @@ def terminal(port: str, backend: str, **kwargs):
         ser = ports.DirectPort(port)
         if not kwargs['raw']:
             ser.config('cobs', True)
-    term = Terminal(ser)
+    term = Terminal(ser, request_banner=kwargs.pop('request_banner', True))
 
     signal.signal(signal.SIGINT, term.stop)
     term.start()

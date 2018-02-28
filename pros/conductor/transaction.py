@@ -34,7 +34,8 @@ class Transaction(object):
     def rm(self, path: str):
         path = os.path.normpath(path)
         self._rm_files.add(path)
-        self.effective_state.remove(path)
+        if path in self.effective_state:
+            self.effective_state.remove(path)
         if path in self._add_files:
             self._add_files.remove(path)
             self._add_srcs.pop(path)

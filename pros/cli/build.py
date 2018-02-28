@@ -56,4 +56,4 @@ def make_upload_terminal(ctx):
     from .terminal import terminal
     ctx.forward(make)
     ctx.forward(upload)
-    ctx.forward(terminal)
+    ctx.forward(terminal, request_banner=False)

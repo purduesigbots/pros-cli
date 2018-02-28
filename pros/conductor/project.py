@@ -69,10 +69,10 @@ class Project(Config):
         installed_user_files = set()
         for lib_name, lib in self.templates.items():
             if lib_name == template.name or lib.name == template.name:
-                transaction.extend_rm(template.system_files)
+                transaction.extend_rm(lib.system_files)
                 installed_user_files = installed_user_files.union(template.user_files)
                 if force_user:
-                    transaction.extend_rm(template.user_files)
+                    transaction.extend_rm(lib.user_files)
 
         # remove newly deprecated user files
         deprecated_user_files = installed_user_files - set(template.user_files)
