@@ -5,6 +5,8 @@ from cobs import cobs
 
 from .base_port import BasePort
 
+from pros.common import logger
+import binascii
 
 def create_serial_port(port_name: str, timeout: Optional[float] = 1.0) -> serial.Serial:
     port = serial.Serial(port_name, baudrate=115200, bytesize=serial.EIGHTBITS,
@@ -34,11 +36,14 @@ class DirectPort(BasePort):
                 self.temp_buffer.extend(self.serial.read(-1))
             if b'\0' in self.temp_buffer:
                 msg, self.temp_buffer = self.temp_buffer.split(b'\0', 1)
-                msg = cobs.decode(msg)
+                try:
+                    msg = cobs.decode(msg)
+                except cobs.DecodeError:
+                    logger(__name__).warning(f'Could not decode bytes: {msg.hex()}')
                 self.buffer.append((msg[:4], msg[4:]))
         return self.buffer.pop(0) if len(self.buffer) > 0 else (b'', b'')
 
-    def _raw_read(self, n_bytes: int = 0):
+    def _raw_read(self, n_bytes: int = 0) -> Tuple[bytes, bytes]:
         assert isinstance(self.buffer, bytearray)
         if n_bytes == 0:
             self.buffer.extend(self.serial.read_all())
@@ -52,7 +57,7 @@ class DirectPort(BasePort):
             self.buffer = self.buffer[n_bytes:]
             return (b'', msg) if len(msg) > 0 else (b'', b'')
 
-    def read(self, n_bytes: int = 0):
+    def read(self, n_bytes: int = 0) -> Tuple[bytes, bytes]:
         return self.decoder(n_bytes)
 
     def write(self, data: Union[str, bytes]):

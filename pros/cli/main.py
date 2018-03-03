@@ -8,6 +8,7 @@ import pros.cli.conductor_utils
 import pros.cli.terminal
 import pros.cli.upload
 import pros.cli.v5_utils
+import pros.cli.jinx
 from pros.common.utils import get_version, isdebug, logger
 from .click_classes import *
 from .common import default_options
@@ -64,7 +65,8 @@ def version(ctx: click.Context, param, value):
                         pros.cli.terminal.terminal_cli,
                         pros.cli.upload.upload_cli,
                         pros.cli.v5_utils.v5_utils_cli,
-                        pros.cli.conductor.conductor_cli])
+                        pros.cli.conductor.conductor_cli,
+                        pros.cli.jinx.jinx_cli])
 @default_options
 @click.option('--version', help='Displays version and exits', is_flag=True, expose_value=False, is_eager=True,
               callback=version)
