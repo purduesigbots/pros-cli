@@ -1,3 +1,4 @@
+websockets
 click
 pyserial
 cachetools
