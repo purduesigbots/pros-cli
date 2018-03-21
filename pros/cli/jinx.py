@@ -39,45 +39,82 @@ def create_packet(msg: bytes) -> Dict[str, Any]:
             }
             timestamps and values are kept as rolling lists in case value history needs to be accessed at any time
     """
+    BASE_HEX = 16
+    
+    #Value message protocol constants
+    #All lengths in bytes
+    T_STAMP_IDX = 2                         #Start index in bytes within the given msg
+    T_STAMP_LEN = 8                         #Length of timestamp
+    VAL_ID_LEN = 2                          #Length of Value ID
+    VAL_SIZE_LEN = 1                        #Length of field "Value Size". This field indicates how much data should be read
+    OFFSET_LEN = 2                          #Length of timestamp offset. Only one timestamp is sent in a bundle
+    
+    #Schema message protocol constants
+    #The schema is a dictionary using the byte representation of characters as keys
+    #See PDN 3.003 Schema Message Protocol for most up-to-date information
+    SCHEMA_NAME = b'n'                      #Human readable name of field
+    SCHEMA_SFS = b's'                       #Struct format string
+    SCHEMA_ELEMENTS = b'e'                  #List of human-readable element names corresponding to what is unpacked in the SFS
+    SCHEMA_MUTABLE = b'm'                   #True if the value can be edited on the Brain
+    
+    #Packet constants
+    #Strings representing parsable javascript identifiers
+    PACKET_TSTAMP = "timestamp"             #Time data was generated on brain
+    PACKET_VALS = "values"                  #dictionary of all elements, or else single element
+    
     click.echo('building packet')
     packet = dict()
     # packet['type'] = int(msg.hex()[0:2], 16)
-    timestamp = int(convert(msg.hex()[2:10]), 16)
-    i = 10
-    while i < len(msg.hex()):
-        click.echo(f'{i} / {len(msg.hex())}: looping {msg.hex()}')
-        msg_id = int(convert(msg.hex()[i + 4:i + 8]), 16)
-        vsize = int(msg.hex()[i:i + 2], 16)
+    timestamp = int(convert(msg.hex()[T_STAMP_IDX:T_STAMP_IDX + T_STAMP_LEN]), BASE_HEX)
+    byte_idx = T_STAMP_IDX + T_STAMP_LEN
+    
+    while byte_idx < len(msg.hex()):
+        click.echo(f'{byte_idx} / {len(msg.hex())}: looping {msg.hex()}')
+        msg_id = int(convert(msg.hex()[byte_idx + 4:byte_idx + 8]), BASE_HEX)
+        vsize = int(msg.hex()[byte_idx:byte_idx + 2], BASE_HEX)
+        
         if msg_id in schemas.keys():
-            packet[schemas[msg_id][b'n']] = dict()
-            i += 2
+            schema = schemas[msg_id]
+            name = schema[SCHEMA_NAME]
+            elements = schema[SCHEMA_ELEMENTS]
+            struct_fs = schema[SCHEMA_SFS]   #Struct format string
+            mutable = schema[SCHEMA_MUTABLE]
+            
+            packet[name] = dict()           #Will contain field timestamp and a dictionary of values
+            byte_idx += VAL_ID_LEN
             click.echo('+2')
-            packet[schemas[msg_id][b'n']]['timestamp'] = timestamp + int(msg.hex()[i:i + 2], 16)
-            i += 6
+            
+            packet[name][PACKET_TSTAMP] = timestamp + int(msg.hex()[byte_idx:byte_idx + OFFSET_LEN], BASE_HEX)
+            byte_idx += 6                   #TODO: Figure out what is being skipped here
             click.echo('+6')
-            packet[schemas[msg_id][b'n']]['value'] = dict()
-            x = bytearray.fromhex(msg.hex()[i:i + vsize * 2])
-            y = struct.unpack(schemas[msg_id][b's'], x)
-            if 'values' not in packet[schemas[msg_id][b'n']].keys():
-                packet[schemas[msg_id][b'n']]['values'] = list()
-            # roll list over
-            packet[schemas[msg_id][b'n']]['values'] = packet[schemas[msg_id][b'n']]['values'][:DATA_HISTORY_MAX_COUNT]
-            if len(y) > 1:
-                v = dict()
-                for j in range(len(y)):
-                    k = schemas[msg_id][b'e'][j]
-                    k = str(k, 'ascii') if isinstance(k, bytes) else k
-                    v[k] = str(y[j], 'ascii') if isinstance(y[j], bytes) else y[j]
+
+            packet[name][PACKET_VALS] = dict()
+            x = bytearray.fromhex(msg.hex()[byte_idx:byte_idx + vsize * 2]) #TODO: Figure out why size is multiplied by 2
+            vals = struct.unpack(struct_fs, x)
+            
+            if PACKET_VALS not in packet[name].keys():
+                packet[name][PACKET_VALS] = list()
+            
+            # roll list over        #TODO: What is a rollover? This list is getting the end chopped off
+            packet[name][PACKET_VALS] = packet[name][PACKET_VALS][:DATA_HISTORY_MAX_COUNT]
+            if len(vals) > 1:
+                packet_val = dict()
+                for val_idx in range(len(vals)):
+                    element = elements[j]
+                    element = str(element, 'ascii') if isinstance(element, bytes) else element
+                    packet_val[element] = str(vals[val_idx], 'ascii') if isinstance(vals[val_idx], bytes) else vals[val_idx]
             else:
-                v = str(y[j], 'ascii') if isinstance(y[j], bytes) else y[j]
-            packet[schemas[msg_id][b'n']]['values'].append(v)
-            i += vsize * 2
+                packet_val = str(vals[val_idx], 'ascii') if isinstance(vals[val_idx], bytes) else vals[val_idx]
+            
+            packet[name][PACKET_VALS].append(packet_val)
+            byte_idx += vsize * 2
             click.echo(f'+{vsize * 2}')
         else:
             # 8 + vsize*2 = 2 + 2 + 4 + 2*size = len(size) + len(offset) + 2 * size [in bits]
-            unknowns.append(msg[i:i + 8 + vsize * 2])
-            i += 8 + vsize * 2
+            unknowns.append(msg[byte_idx:byte_idx + 8 + vsize * 2])
+            byte_idx += 8 + vsize * 2
             click.echo(f'+14+{vsize}*2 ({8+vsize*2})')
+
     click.echo(packet)
     return packet
 
