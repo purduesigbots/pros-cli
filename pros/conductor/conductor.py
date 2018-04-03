@@ -119,6 +119,7 @@ class Conductor(Config):
         upgrade_ok = kwargs.get('upgrade_ok', True)
         install_ok = kwargs.get('install_ok', True)
         download_ok = kwargs.get('download_ok', True)
+        force = kwargs.get('force_apply', False)
 
         kwargs['target'] = project.target
         template = self.resolve_template(identifier=identifier, allow_online=download_ok, **kwargs)
@@ -133,7 +134,7 @@ class Conductor(Config):
         # template_is_upgradeable (weaker "is this name installed" and newer version)
         # NOT template_is_installed (stronger "is this exact template installed")
         template_installed = project.template_is_upgradeable(template)
-        if (template_installed and upgrade_ok) or (not template_installed and install_ok):
+        if force or (template_installed and upgrade_ok) or (not template_installed and install_ok):
             project.apply_template(template, force_system=kwargs.pop('force_system', False),
                                    force_user=kwargs.pop('force_user', False))
         else:

@@ -66,6 +66,8 @@ def fetch(query: c.BaseTemplate):
               help='Replace all user files in a template')
 @click.option('--force', 'force_system', default=False, is_flag=True,
               help="Force all system files to be inserted into the project")
+@click.option('--force-apply', 'force_apply', default=False, is_flag=True,
+              help="Force apply the template, disregarding if the template is already installed.")
 @project_option()
 @template_query(required=True)
 @default_options
@@ -85,6 +87,8 @@ def apply(project: c.Project, query: c.BaseTemplate, **kwargs):
               help='Replace all user files in a template')
 @click.option('--force-system', '-f', 'force_system', default=False, is_flag=True,
               help="Force all system files to be inserted into the project")
+@click.option('--force-apply', 'force_apply', default=False, is_flag=True,
+              help="Force apply the template, disregarding if the template is already installed.")
 @project_option()
 @template_query(required=True)
 @default_options
@@ -105,6 +109,8 @@ def install(ctx: click.Context, **kwargs):
               help='Replace all user files in a template')
 @click.option('--force-system', '-f', 'force_system', default=False, is_flag=True,
               help="Force all system files to be inserted into the project")
+@click.option('--force-apply', 'force_apply', default=False, is_flag=True,
+              help="Force apply the template, disregarding if the template is already installed.")
 @project_option()
 @template_query(required=False)
 @default_options

@@ -69,35 +69,36 @@ class V5Device(VEXDevice):
     VEX_CRC16 = CRC(16, 0x1021)  # CRC-16-CCIT
     VEX_CRC32 = CRC(32, 0x04C11DB7)  # CRC-32 (the one used everywhere but has no name)
 
-    def write_program(self, file: typing.BinaryIO, remote_base: str, ini: ConfigParser = None, slot: int = 0,
+    def write_program(self, file: typing.BinaryIO, remote_name: str, ini: ConfigParser = None, slot: int = 0,
                       file_len: int = -1, run_after: bool = False, target: str = 'flash', **kwargs):
         if target == 'ddr':
-            self.write_file(file, '{}.bin'.format(remote_base), file_len=file_len, type='bin',
+            self.write_file(file, f'slot_{slot + 1}.bin', file_len=file_len, type='bin',
                             target='ddr', run_after=run_after, **kwargs)
             return
         if not isinstance(ini, ConfigParser):
             ini = ConfigParser()
-        if len(remote_base) > 20:
-            logger(__name__).info('Truncating remote name to {} for length.'.format(remote_base[:20]))
-            remote_base = remote_base[:20]
+        if len(remote_name) > 20:
+            logger(__name__).info('Truncating remote name to {} for length.'.format(remote_name[:20]))
+            remote_name = remote_name[:20]
         project_ini = ConfigParser()
         project_ini['program'] = {
             'version': kwargs.get('version', '0.0.0') or '0.0.0',
-            'name': remote_base,
+            'name': remote_name,
             'slot': slot,
             'icon': kwargs.get('icon', 'USER999x.bmp') or 'USER999x.bmp',
             'description': 'Created with PROS',
             'date': datetime.now().isoformat()
         }
         project_ini.update(ini)
-        self.write_file(file, '{}.bin'.format(remote_base), file_len=file_len, type='bin', **kwargs)
+        remote_base = f'slot_{slot + 1}'
+        self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', **kwargs)
         with StringIO() as ini_str:
             project_ini.write(ini_str)
-            logger(__name__).info('Created ini: {}'.format(ini_str.getvalue()))
+            logger(__name__).info(f'Created ini: {ini_str.getvalue()}')
             with BytesIO(ini_str.getvalue().encode(encoding='ascii')) as ini_bin:
-                self.write_file(ini_bin, '{}.ini'.format(remote_base), type='ini', **kwargs)
+                self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
         if run_after:
-            self.execute_program_file('{}.bin'.format(remote_base))
+            self.execute_program_file(f'{remote_base}.bin')
 
     def read_file(self, file: typing.IO[bytes], remote_file: str, vid: int_str = 'user', target: int_str = 'flash'):
         if isinstance(vid, str):

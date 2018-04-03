@@ -2,10 +2,11 @@ import os
 import os.path
 import subprocess
 import sys
+from typing import *
 
 import click
 
-import pros.conductor
+import pros.conductor as c
 from .click_classes import PROSGroup
 
 
@@ -32,8 +33,8 @@ def make(ctx, build_args):
     else:
         make_cmd = 'make'
     cwd = os.getcwd()
-    if pros.conductor.Project.find_project(os.getcwd()):
-        cwd = os.path.dirname(pros.conductor.Project.find_project(os.getcwd()))
+    if c.Project.find_project(os.getcwd()):
+        cwd = os.path.dirname(c.Project.find_project(os.getcwd()))
     process = subprocess.Popen(executable=make_cmd, args=[make_cmd, *build_args], cwd=cwd, env=env,
                                stdout=sys.stdout, stderr=sys.stderr)
     process.wait()

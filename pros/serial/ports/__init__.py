@@ -3,8 +3,8 @@ from functools import lru_cache
 from serial.tools import list_ports as list_ports
 
 from pros.common import logger
+from .base_port import BasePort, PortConnectionException, PortException
 from .direct_port import DirectPort
-from .base_port import BasePort
 
 
 @lru_cache()

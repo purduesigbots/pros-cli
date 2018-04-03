@@ -5,7 +5,7 @@ class BasePort(object):
     def write(self, data: bytes):
         raise NotImplementedError()
 
-    def read(self, n_bytes: int=0) -> Tuple[bytes, bytes]:
+    def read(self, n_bytes: int = 0) -> Tuple[bytes, bytes]:
         raise NotImplementedError()
 
     def read_all(self):
@@ -26,3 +26,11 @@ class BasePort(object):
     def flush(self):
         self.flush_output()
         self.flush_input()
+
+
+class PortException(IOError):
+    pass
+
+
+class PortConnectionException(PortException):
+    pass

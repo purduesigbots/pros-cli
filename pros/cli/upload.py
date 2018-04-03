@@ -81,7 +81,7 @@ def upload(path: str, port: str, **kwargs):
     # print what was decided
     click.echo('Uploading {} to {} device on {}'.format(path, kwargs['target'], port), nl=False)
     if kwargs['target'] == 'v5':
-        click.echo(' as {}'.format(args[0]), nl=False)
+        click.echo(f' as {args[0]} to slot {kwargs["slot"] + 1}', nl=False)
     click.echo()
 
     logger(__name__).debug('Arguments: {}'.format(str(kwargs)))
