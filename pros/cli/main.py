@@ -6,13 +6,13 @@ import pros.cli.build
 import pros.cli.conductor
 import pros.cli.conductor_utils
 import pros.cli.terminal
+import pros.cli.test
 import pros.cli.upload
 import pros.cli.v5_utils
-import pros.cli.test
 import pros.common.ui as ui
+from pros.cli.click_classes import *
+from pros.cli.common import default_options
 from pros.common.utils import get_version, logger
-from .click_classes import *
-from .common import default_options
 
 
 def main():

@@ -1,6 +1,6 @@
 echo =============== INSTALLING PYTHON3 ===============
 
-sudo apt-get install -y python3 python3-dev python3-pip libssl-dev
+sudo apt-get install -y python3.6 python3.6-dev libssl-dev
 
 if [ $? -ne 0 ]
 then
@@ -8,10 +8,22 @@ then
 	exit 1
 fi
 
+curl https://bootstrap.pypa.io/get-pip.py | sudo python3.6
+
+if [ $? -ne 0 ]
+then
+    python3.6 -m pip
+    if [ $? -ne 0 ]
+    then
+        echo get-pip install failed to install, maybe need root privileges?
+        exit 1
+    fi
+fi
+
 echo =============== DONE INSTALLING PYTHON3 ===============
 
 echo =============== INSTALLING pip-vex ===============
-sudo pip3 install vex
+python3.6 -m pip install --user vex
 
 if [ $? -ne 0 ]
 then

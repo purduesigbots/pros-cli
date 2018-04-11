@@ -2,20 +2,20 @@
 
 python=python
 echo Testing python executable version
-python -c "import sys; exit(0 if sys.version_info > (3,5) else 1)"
+$python -c "import sys; exit(0 if sys.version_info > (3,6) else 1)"
 if [ $? -ne 0 ]
 then
     python=python3
 fi
 
 echo Installing wheel and cx_Freeze
-pip3 install wheel cx_Freeze
+$python -m pip install wheel cx_Freeze
 
 echo Updating version
 $python version.py
 
 echo Installing pros-cli requirements
-pip3 install --upgrade -r requirements.txt
+$python -m pip install --upgrade -r requirements.txt
 
 echo Building Wheel
 $python setup.py bdist_wheel
