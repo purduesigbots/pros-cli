@@ -1,6 +1,7 @@
 import os.path
 
 import pros.common as p
+import pros.common.ui as ui
 import pros.conductor as c
 from pros.cli.common import *
 from pros.conductor.templates import ExternalTemplate
@@ -127,7 +128,7 @@ def upgrade(ctx: click.Context, project: c.Project, query: c.BaseTemplate, **kwa
             q = c.BaseTemplate.create_query(name=template)
             ctx.invoke(apply, upgrade_ok=True, project=project, query=q, **kwargs)
     else:
-        ctx.invoke(apply, upgrade_ok=True, **kwargs)
+        ctx.invoke(apply, project=project, query=query, upgrade_ok=True, **kwargs)
 
 
 @conductor.command('new-project', aliases=['new', 'create-project'])
@@ -157,7 +158,7 @@ def new_project(ctx: click.Context, path: str, platform: str, version: str,
     try:
         project = c.Conductor().new_project(path, target=platform, version=version,
                                             force_user=force_user, force_system=force_system, **kwargs)
-        click.echo('New PROS Project was created:')
+        ui.echo('New PROS Project was created:', output_machine=False)
         ctx.invoke(info_project, project=project)
     except Exception as e:
         pros.common.logger(__name__).exception(e)
@@ -177,7 +178,8 @@ def new_project(ctx: click.Context, path: str, platform: str, version: str,
 @template_query(required=False)
 @click.pass_context
 @default_options
-def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_online: bool, force_refresh: bool, limit: int):
+def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_online: bool, force_refresh: bool,
+                    limit: int):
     """
     Query local and remote templates based on a spec
 
@@ -187,40 +189,70 @@ def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_onlin
         limit = 15
     templates = c.Conductor().resolve_templates(query, allow_offline=allow_offline, allow_online=allow_online,
                                                 force_refresh=force_refresh)[:limit]
-    if ismachineoutput(ctx):
-        import jsonpickle
-        if isdebug(__name__):
-            jsonpickle.set_encoder_options('json', sort_keys=True)
-        click.echo(jsonpickle.encode(templates, unpicklable=False))
-    else:
-        import tabulate
-        templates = [
-            (t.name, t.version, t.metadata.get('origin', 'Unknown'), 'yes' if isinstance(t, c.LocalTemplate) else 'no')
-            for t in templates]
-        click.echo(tabulate.tabulate(templates, headers=('Name', 'Version', 'Origin', 'Local')))
+
+    render_templates = {}
+    for template in templates:
+        key = (template.identifier, template.origin)
+        if key in render_templates:
+            if isinstance(template, c.LocalTemplate):
+                render_templates[key]['local'] = True
+        else:
+            render_templates[key] = {
+                'name': template.name,
+                'version': template.version,
+                'location': template.origin,
+                'local': isinstance(template, c.LocalTemplate)
+            }
+    import semantic_version as semver
+    render_templates = sorted(render_templates.values(), key=lambda k: k['local'])  # tertiary key
+    render_templates = sorted(render_templates, key=lambda k: semver.Version(k['version']),
+                              reverse=True)  # secondary key
+    render_templates = sorted(render_templates, key=lambda k: k['name'])  # primary key
+    ui.finalize('template-query', render_templates)
 
 
 @conductor.command('info-project')
+@click.option('--ls-upgrades/--no-ls-upgrades', 'ls_upgrades', default=False)
 @project_option()
 @default_options
-def info_project(project: c.Project):
+def info_project(project: c.Project, ls_upgrades):
     """
     Display information about a PROS project
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor to learn more
     """
-    if ismachineoutput():
-        import jsonpickle
-        if isdebug(__name__):
-            jsonpickle.set_encoder_options('json', sort_keys=True)
-        click.echo(jsonpickle.encode(project, unpicklable=False))
-    else:
-        import tabulate
-        click.echo(f'PROS Project for {project.target} at: {os.path.abspath(project.location)}' +
-                   f' ({project.name})' if project.name else '')
-        templates = [(t.name, t.version, t.metadata.get('origin', 'Unknown')) for t in project.templates.values()]
-        if any(templates):
-            click.echo('Installed Templates:')
-            click.echo(tabulate.tabulate(templates, headers=('Name', 'Version', 'Origin')))
-        else:
-            click.echo('No templates are part of this project.')
+
+    class ProjectReport(object):
+        def __init__(self, project: c.Project):
+            self.project = {
+                "target": project.target,
+                "location": os.path.abspath(project.location),
+                "name": project.name,
+                "templates": [{"name": t.name, "version": t.version, "origin": t.origin} for t in
+                              project.templates.values()]
+            }
+
+        def __str__(self):
+            import tabulate
+            s = f'PROS Project for {self.project["target"]} at: {self.project["location"]}' \
+                f' ({self.project["name"]})' if self.project["name"] else ''
+            s += '\n'
+            rows = [t.values() for t in self.project["templates"]]
+            headers = [h.capitalize() for h in self.project["templates"][0].keys()]
+            s += tabulate.tabulate(rows, headers=headers)
+            return s
+
+        def __getstate__(self):
+            return self.__dict__
+
+    report = ProjectReport(project)
+    _conductor = c.Conductor()
+    if ls_upgrades:
+        for template in report.project['templates']:
+            import semantic_version as semver
+            templates = _conductor.resolve_templates(c.BaseTemplate.create_query(name=template["name"],
+                                                                                 version=f'>{template["version"]}',
+                                                                                 target=project.target))
+            template["upgrades"] = sorted({t.version for t in templates}, key=lambda v: semver.Version(v), reverse=True)
+
+    ui.finalize('project-report', report)

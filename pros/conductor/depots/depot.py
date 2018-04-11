@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 import click
 
+import pros.common.ui as ui
 from pros.common import logger
 from pros.conductor import BaseTemplate, Template
 
@@ -31,9 +32,10 @@ class Depot(object):
         logger(__name__).info(f'Last check of {self.name} was {self.last_remote_update} '
                               f'({datetime.now() - self.last_remote_update} vs {auto_check_freq}).')
         if force_check or datetime.now() - self.last_remote_update > auto_check_freq:
-            click.echo(f'Updating {self.name}... ', nl=False)
-            self.update_remote_templates(**kwargs)
-            click.secho('Done', color='green')
+            with ui.Notification():
+                ui.echo(f'Updating {self.name}... ', nl=False)
+                self.update_remote_templates(**kwargs)
+                ui.echo('Done', color='green')
         for t in self.remote_templates:
             t.metadata['origin'] = self.name
         return self.remote_templates

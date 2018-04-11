@@ -6,8 +6,6 @@ from datetime import datetime, timedelta
 from io import BytesIO, StringIO
 from typing import *
 
-import click
-
 from pros.common import *
 from pros.serial import decode_bytes_to_str
 from pros.serial.ports import list_all_comports
@@ -129,7 +127,7 @@ class V5Device(VEXDevice):
         display_name = remote_file
         if hasattr(file, 'name'):
             display_name = '{} ({})'.format(remote_file, file.name)
-        with click.progressbar(length=file_len, label='Uploading {}'.format(display_name)) as progress:
+        with ui.progressbar(length=file_len, label='Uploading {}'.format(display_name)) as progress:
             for i in range(0, file_len, ft_meta['max_packet_size']):
                 packet_size = ft_meta['max_packet_size']
                 if i + ft_meta['max_packet_size'] > file_len:

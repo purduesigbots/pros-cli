@@ -56,6 +56,10 @@ class BaseTemplate(object):
     def identifier(self):
         return f'{self.name}@{self.version}'
 
+    @property
+    def origin(self):
+        return self.metadata.get('origin', 'Unknown')
+
     @classmethod
     def create_query(cls, name: str = None, **kwargs) -> 'BaseTemplate':
         if not isinstance(name, str):

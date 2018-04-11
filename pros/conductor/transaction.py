@@ -2,8 +2,7 @@ import os
 import shutil
 from typing import *
 
-import click
-
+import pros.common.ui as ui
 from pros.common import logger
 
 
@@ -41,7 +40,7 @@ class Transaction(object):
             self._add_srcs.pop(path)
 
     def commit(self, label: str = 'Committing transaction'):
-        with click.progressbar(length=len(self._rm_files) + len(self._add_files), label=label) as pb:
+        with ui.progressbar(length=len(self._rm_files) + len(self._add_files), label=label) as pb:
             for file in self._rm_files:
                 os.remove(os.path.join(self.location, file))
                 logger(__name__).info(f'Removing {file}')

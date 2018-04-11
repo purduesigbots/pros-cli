@@ -1,5 +1,6 @@
 import serial.tools.list_ports as list_ports
 
+import pros.common.ui as ui
 import pros.conductor as c
 from pros.serial.ports import DirectPort
 from pros.serial.vex import *
@@ -79,10 +80,10 @@ def upload(path: str, port: str, **kwargs):
         pass
 
     # print what was decided
-    click.echo('Uploading {} to {} device on {}'.format(path, kwargs['target'], port), nl=False)
+    ui.echo('Uploading {} to {} device on {}'.format(path, kwargs['target'], port), nl=False)
     if kwargs['target'] == 'v5':
-        click.echo(f' as {args[0]} to slot {kwargs["slot"] + 1}', nl=False)
-    click.echo()
+        ui.echo(f' as {args[0]} to slot {kwargs["slot"] + 1}', nl=False)
+    ui.echo('')
 
     logger(__name__).debug('Arguments: {}'.format(str(kwargs)))
     if not os.path.isfile(path) and path is not '-':
@@ -101,43 +102,47 @@ def upload(path: str, port: str, **kwargs):
         with click.open_file(path, mode='rb') as pf:
             device.write_program(pf, *args, **kwargs)
     except Exception as e:
-        logger(__name__).debug(e, exc_info=True)
-        click.echo(e, err=True)
+        logger(__name__).exception(e, exc_info=True)
         exit(1)
 
-
-def _print_ports(ports, header: Optional[str] = None):
-    if header and not ismachineoutput():
-        if len(ports) > 0:
-            print('{}:'.format(header))
-        else:
-            print('There are no connected {}'.format(header))
-            return
-    if ismachineoutput():
-        print([{'device': p.device, 'desc': p.description} for p in ports])
-    else:
-        if isdebug():
-            print('\n'.join([str(p.__dict__) for p in ports]))
-        else:
-            print('\n'.join(['{} - {}'.format(p.device, p.description) for p in ports]))
+    ui.finalize('upload', f'Finished uploading {path} to {kwargs["target"]} on {port}')
 
 
 @upload_cli.command('lsusb', aliases=['ls-usb', 'ls-devices', 'lsdev', 'list-usb', 'list-devices'])
 @click.option('--target', type=click.Choice(['v5', 'cortex']), default=None, required=False)
 @default_options
 def ls_usb(target):
+    class PortReport(object):
+        def __init__(self, header: str, ports: List[Any], machine_header: Optional[str]=None):
+            self.header = header
+            self.ports = [{'device': p.device, 'desc': p.description} for p in ports]
+            self.machine_header = machine_header or header
+
+        def __getstate__(self):
+            return {
+                'device_type': self.machine_header,
+                'devices': self.ports
+            }
+
+        def __str__(self):
+            if len(self.ports) == 0:
+                return f'There are no connected {self.header}'
+            else:
+                port_str = "\n".join([f"{p['device']} - {p['desc']}" for p in self.ports])
+                return f'{self.header}:\n{port_str}'
+
+    result = []
     if target == 'v5' or target is None:
         ports = find_v5_ports('system')
-        _print_ports(ports, 'VEX EDR V5 System Ports')
+        result.append(PortReport('VEX EDR V5 System Ports', ports, 'v5/system'))
 
         ports = find_v5_ports('User')
-        _print_ports(ports, 'VEX EDR V5 User Ports')
+        result.append(PortReport('VEX EDR V5 User ports', ports, 'v5/user'))
     if target == 'cortex' or target is None:
         ports = find_cortex_ports()
-        _print_ports(ports, 'VEX EDR Cortex Microcontroller Ports')
+        result.append(PortReport('VEX EDR Cortex Microcontroller Ports', ports, 'cortex'))
 
-    if isdebug():
-        _print_ports(list_ports.comports())
+    ui.finalize('lsusb', result)
 
 
 @upload_cli.command('upload-terminal', aliases=['ut'], hidden=True)
