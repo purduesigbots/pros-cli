@@ -3,7 +3,7 @@ from enum import Flag
 from typing import *
 
 from .vex_device import VEXDevice
-from .. import bytes_to_str
+from pros.serial import bytes_to_str
 from pros.common.utils import retries
 
 from pros.serial.ports import list_all_comports

@@ -4,7 +4,7 @@ from .common import *
 from pros.common import *
 
 from pros.serial.ports import DirectPort
-from pros.serial.vex import find_v5_ports, V5Device
+from pros.serial.devices.vex import V5Device
 
 
 @click.group()

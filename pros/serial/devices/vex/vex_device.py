@@ -2,27 +2,20 @@ import struct
 import time
 from typing import *
 
-from serial import Serial
-
 from pros.common import *
+from pros.serial import bytes_to_str
 from . import comm_error
 from .message import Message
-from .. import bytes_to_str
-from ..ports import BasePort
+from ..generic_device import GenericDevice
 
 
 def debug(msg):
     print(msg)
 
 
-class VEXDevice(object):
+class VEXDevice(GenericDevice):
     ACK_BYTE = 0x76
     NACK_BYTE = 0xFF
-
-    def __init__(self, port: BasePort):
-        self.port = port
-        # if not self.port.is_open:
-        #     self.port.open()
 
     @retries
     def query_system(self) -> bytearray:
@@ -60,7 +53,7 @@ class VEXDevice(object):
         response_header_stack = list(response_header)
         rx = bytearray()
         while (len(rx) > 0 or time.time() - start_time < timeout) and len(response_header_stack) > 0:
-            b = self.port.read(1)[1]
+            b = self.port.read(1)
             if len(b) == 0:
                 continue
             b = b[0]
@@ -74,15 +67,15 @@ class VEXDevice(object):
         if not rx == bytearray(response_header):
             raise IOError(f"Couldn't find the response header in the device response. "
                           f"Got {rx.hex()} but was expecting {response_header.hex()}")
-        rx.extend(self.port.read(1)[1])
+        rx.extend(self.port.read(1))
         command = rx[-1]
-        rx.extend(self.port.read(1)[1])
+        rx.extend(self.port.read(1))
         payload_length = rx[-1]
         if command == 0x56 and (payload_length & 0x80) == 0x80:
             logger(__name__).debug('Found an extended message payload')
-            rx.extend(self.port.read(1)[1])
+            rx.extend(self.port.read(1))
             payload_length = ((payload_length & 0x7f) << 8) + rx[-1]
-        payload = self.port.read(payload_length)[1]
+        payload = self.port.read(payload_length)
         rx.extend(payload)
         return {
             'command': command,

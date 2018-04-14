@@ -1,7 +1,7 @@
 import click.core
 
 from pros.common.utils import *
-from pros.serial.vex import find_cortex_ports, find_v5_ports
+from pros.serial.devices.vex import find_cortex_ports, find_v5_ports
 from .click_classes import *
 
 
