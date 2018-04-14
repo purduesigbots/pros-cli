@@ -8,7 +8,8 @@ import colorama
 
 from pros.common.utils import logger
 from pros.serial import decode_bytes_to_str
-from pros.serial.ports import BasePort, PortConnectionException
+from pros.serial.ports import PortConnectionException
+from pros.serial.devices import StreamDevice
 
 
 # This file is a modification of the miniterm implementation on pyserial
@@ -168,9 +169,11 @@ else:
 class Terminal(object):
     """This class is loosely based off of the pyserial miniterm"""
 
-    def __init__(self, port_instance: BasePort, transformations=(),
+    def __init__(self, port_instance: StreamDevice, transformations=(),
                  output_raw: bool = False, request_banner: bool = True):
-        self.serial = port_instance
+        self.device = port_instance
+        self.device.subscribe(b'sout')
+        self.device.subscribe(b'serr')
         self.transformations = transformations
         self._reader_alive = None
         self.receiver_thread = None  # type: threading.Thread
@@ -210,12 +213,12 @@ class Terminal(object):
     def reader(self):
         if self.request_banner:
             try:
-                self.serial.write(b'pRb')
+                self.device.write(b'pRb')
             except Exception as e:
                 logger(__name__).exception(e)
         try:
             while not self.alive.is_set() and self._reader_alive:
-                data = self.serial.read()
+                data = self.device.read()
                 if not data:
                     continue
                 if data[0] == b'sout':
@@ -227,16 +230,16 @@ class Terminal(object):
                                                                 decode_bytes_to_str(data[1]),
                                                                 colorama.Style.RESET_ALL)
                 elif data[0] != b'':
-                    text = '{}{}'.format(decode_bytes_to_str(data[0]),
-                                         decode_bytes_to_str(data[1]))
+                    text = '{}{}'.format(decode_bytes_to_str(data[0]), decode_bytes_to_str(data[1]))
                 else:
                     text = "{}".format(decode_bytes_to_str(data[1]))
                 self.console.write(text)
         except UnicodeError as e:
             logger(__name__).exception(e)
         except PortConnectionException:
-            logger(__name__).warning(f'Connection to {self.serial} broken')
-            self.stop()
+            logger(__name__).warning(f'Connection to {self.device.name} broken')
+            if not self.alive.is_set():
+                self.stop()
         except Exception as e:
             if not self.alive.is_set():
                 logger(__name__).exception(e)
@@ -255,42 +258,36 @@ class Terminal(object):
                 if self.alive.is_set():
                     break
                 if c == '\x03' or not self.no_sigint:
-                    self.alive.set()
                     self.stop()
                     break
                 else:
-                    self.serial.write(c.encode(encoding='utf-8'))
+                    self.device.write(c.encode(encoding='utf-8'))
                     self.console.write(c)
         except Exception as e:
             if not self.alive.is_set():
                 logger(__name__).exception(e)
             else:
                 logger(__name__).debug(e)
-            self.alive.set()
+            self.stop()
         logger(__name__).info('Terminal transmitter dying')
 
     def catch_sigint(self):
         self.no_sigint = False
 
     def start(self):
-        # colorama.deinit()
-        # colorama.init(autoreset=True)
         self.alive.clear()
         self._start_rx()
         self._start_tx()
 
     def stop(self):
-        logger(__name__).warning('Stopping terminal')
-        self.alive.set()
-        logger(__name__).info('Destroying port')
-        self.serial.destroy()
-        if threading.current_thread() != self.receiver_thread and self.receiver_thread.is_alive():
-            logger(__name__).info('Stopping rx')
-            self._stop_rx()
-        if threading.current_thread() != self.transmitter_thread and self.receiver_thread.is_alive():
-            logger(__name__).info('Stopping tx')
-            self._stop_tx()
-        logger(__name__).info('All done!')
+        if not self.alive.is_set():
+            logger(__name__).warning('Stopping terminal')
+            self.alive.set()
+            self.device.destroy()
+            if threading.current_thread() != self.transmitter_thread and self.transmitter_thread.is_alive():
+                self.console.cleanup()
+                self.console.cancel()
+            logger(__name__).info('All done!')
 
     def join(self):
         try:

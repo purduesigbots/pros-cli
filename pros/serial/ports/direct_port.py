@@ -1,7 +1,6 @@
 from typing import *
 
 import serial
-from cobs import cobs
 
 from pros.common import logger
 from .base_port import BasePort, PortConnectionException
@@ -18,49 +17,27 @@ def create_serial_port(port_name: str, timeout: Optional[float] = 1.0) -> serial
 
 
 class DirectPort(BasePort):
+
     def __init__(self, port_name: str, **kwargs):
         self.serial: serial.Serial = create_serial_port(port_name=port_name, timeout=kwargs.pop('timeout', 1.0))
-        self._config: Dict[str, Any] = {}
-        self.buffer: Union[bytearray, List[Tuple[bytes, bytes]]] = None
-        self.temp_buffer: bytearray = None
-        self.decoder: Callable[int, Union[bytes, Tuple[bytes, bytes]]] = None
-        for (key, value) in kwargs.items():
-            self.config(key, value)
-        if 'cobs' not in self._config:
-            self.config('cobs', False)
+        self.buffer: bytearray = bytearray()
 
-    def _cobs_read(self, n_bytes: int = -1) -> Tuple[bytes, bytes]:
-        assert isinstance(self.buffer, list)
-        if len(self.buffer) == 0:
-            if b'\0' not in self.temp_buffer:
-                self.temp_buffer.extend(self.serial.read(1))
-                self.temp_buffer.extend(self.serial.read(-1))
-            if b'\0' in self.temp_buffer:
-                msg, self.temp_buffer = self.temp_buffer.split(b'\0', 1)
-                try:
-                    msg = cobs.decode(msg)
-                except cobs.DecodeError:
-                    logger(__name__).warning(f'Could not decode bytes: {msg.hex()}')
-                self.buffer.append((msg[:4], msg[4:]))
-        return self.buffer.pop(0) if len(self.buffer) > 0 else (b'', b'')
-
-    def _raw_read(self, n_bytes: int = 0) -> Tuple[bytes, bytes]:
-        assert isinstance(self.buffer, bytearray)
-        if n_bytes == 0:
-            self.buffer.extend(self.serial.read_all())
-            msg = bytes(self.buffer)
-            self.buffer = bytearray()
-            return b'', msg
-        else:
-            if len(self.buffer) < n_bytes:
-                self.buffer.extend(self.serial.read(n_bytes - len(self.buffer)))
-            msg = bytes(self.buffer[:n_bytes])
-            self.buffer = self.buffer[n_bytes:]
-            return (b'', msg) if len(msg) > 0 else (b'', b'')
-
-    def read(self, n_bytes: int = 0) -> Tuple[bytes, bytes]:
+    def read(self, n_bytes: int = 0):
         try:
-            return self.decoder(n_bytes)
+            if n_bytes <= 0:
+                self.buffer.extend(self.serial.read_all())
+                msg = bytes(self.buffer)
+                self.buffer = bytearray()
+                return msg
+            else:
+                if len(self.buffer) < n_bytes:
+                    self.buffer.extend(self.serial.read(n_bytes - len(self.buffer)))
+                if len(self.buffer) < n_bytes:
+                    msg = bytes(self.buffer)
+                    self.buffer = bytearray()
+                else:
+                    msg, self.buffer = bytes(self.buffer[:n_bytes]), self.buffer[n_bytes:]
+                return msg
         except serial.SerialException as e:
             logger(__name__).debug(e)
             raise PortConnectionException(e)
@@ -70,28 +47,19 @@ class DirectPort(BasePort):
             data = data.encode(encoding='ascii')
         self.serial.write(data)
 
-    def config(self, command: str, argument: Any):
-        if command == 'cobs':
-            new_cobs = bool(argument)
-            if new_cobs != self._config.get('cobs', None):
-                if new_cobs:  # moving to cobs encoding
-                    self.temp_buffer = bytearray()
-                    self.buffer = []
-                    self.decoder = self._cobs_read
-                else:  # moving to raw encoding
-                    self.buffer = bytearray()
-                    self.decoder = self._raw_read
-            self._config['cobs'] = new_cobs
-
     def flush_input(self):
-        if self._config['cobs']:
-            self.temp_buffer = bytearray()
-            self.buffer = []
-        else:
-            self.buffer = bytearray()
+        self.serial.flushInput()
 
     def flush_output(self):
-        self.serial.flush()
+        self.serial.flushOutput()
+
+    def destroy(self):
+        logger(__name__).debug(f'Destroying {self.__class__.__name__} to {self.serial.name}')
+        self.serial.close()
+
+    @property
+    def name(self) -> str:
+        return self.serial.portstr
 
     def __str__(self):
         return str(self.serial.port)

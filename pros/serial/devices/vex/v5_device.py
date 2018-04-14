@@ -13,7 +13,7 @@ from .comm_error import VEXCommError
 from .crc import CRC
 from .message import Message
 from .vex_device import VEXDevice
-from .. import bytes_to_str
+from pros.serial import bytes_to_str
 
 int_str = Union[int, str]
 

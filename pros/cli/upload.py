@@ -1,9 +1,7 @@
-import serial.tools.list_ports as list_ports
-
 import pros.common.ui as ui
 import pros.conductor as c
 from pros.serial.ports import DirectPort
-from pros.serial.vex import *
+from pros.serial.devices.vex import *
 from .click_classes import *
 from .common import *
 

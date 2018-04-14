@@ -1,6 +1,6 @@
 from typing import *
 
-from .. import bytes_to_str
+from pros.serial import bytes_to_str
 
 
 class Message(bytes):
