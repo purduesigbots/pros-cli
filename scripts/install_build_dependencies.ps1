@@ -1,16 +1,15 @@
 try {
-   if(get-command pip3) { echo "found pip3" }
+   if(get-command python36) { Write-Information "found python36" }
    else {
-    echo "Couldn't find pip3. Make sure it's installed and available from PATH"
+    Write-Error "Couldn't find python36. Make sure it's installed and available from PATH"
     exit 1
    }
 } catch {
-    echo "Couldn't find pip3. Make sure it's installed and available from PATH"
+    Write-Error "Couldn't find python36. Make sure it's installed and available from PATH"
     exit 1
 }
 
-pip3 install vex
+python36 -m pip install --upgrade vex
 
-echo "Done installing build dependencies"
-echo "You should now be able to build the cli using 'vex -mr foo ./scripts/build.bat'"
-
+Write-Information "Done installing build dependencies"
+Write-Information "You should now be able to build the cli using 'python36 -m vex -mr foo ./scripts/build.bat'"

@@ -3,7 +3,8 @@ from typing import *
 import serial
 from cobs import cobs
 
-from .base_port import BasePort
+from pros.common import logger
+from .base_port import BasePort, PortConnectionException
 
 from pros.common import logger
 import binascii
@@ -58,7 +59,11 @@ class DirectPort(BasePort):
             return (b'', msg) if len(msg) > 0 else (b'', b'')
 
     def read(self, n_bytes: int = 0) -> Tuple[bytes, bytes]:
-        return self.decoder(n_bytes)
+        try:
+            return self.decoder(n_bytes)
+        except serial.SerialException as e:
+            logger(__name__).debug(e)
+            raise PortConnectionException(e)
 
     def write(self, data: Union[str, bytes]):
         if isinstance(data, str):
@@ -87,3 +92,6 @@ class DirectPort(BasePort):
 
     def flush_output(self):
         self.serial.flush()
+
+    def __str__(self):
+        return str(self.serial.port)

@@ -39,6 +39,7 @@ def debug_option(f):
             stdout_handler = ctx.obj['click_handler']  # type: logging.Handler
             stdout_handler.setLevel(logging.DEBUG)
             logger(__name__).info('Debugging messages enabled')
+        logger('pros').debug(f'CLI Version: {get_version()}')
         return value
 
     return click.option('--debug', help='Enable debugging output', is_flag=True, is_eager=True, expose_value=False,
@@ -95,7 +96,8 @@ def machine_output_option(f):
 
     def callback(ctx, param, value):
         ctx.ensure_object(dict)
-        ctx.obj[param.name] = value
+        if value:
+            ctx.obj[param.name] = value
         return value
 
     decorator = click.option('--machine-output', expose_value=False, is_flag=True, default=False, is_eager=True,
@@ -129,8 +131,10 @@ def template_query(arg_name='query', required: bool = False):
             spec = value.pop(0)
         if not spec and required:
             raise ValueError(f'A {arg_name} is required to perform this command')
-        return c.BaseTemplate.create_query(spec,
+        query = c.BaseTemplate.create_query(spec,
                                            **{value[i][2:]: value[i + 1] for i in range(0, int(len(value) / 2) * 2, 2)})
+        logger(__name__).debug(query)
+        return query
 
     def wrapper(f):
         return click.argument(arg_name, nargs=-1, required=required, callback=callback)(f)
@@ -143,7 +147,7 @@ def project_option(arg_name='project', required: bool = True, default='.'):
         import pros.conductor as c
         project_path = c.Project.find_project(value)
         if project_path is None:
-            raise ValueError(f'{os.path.abspath(value)} is not inside a PROS project')
+            raise ValueError(f'{os.path.abspath(value or ".")} is not inside a PROS project')
         return c.Project(project_path)
 
     def wrapper(f):
@@ -153,7 +157,7 @@ def project_option(arg_name='project', required: bool = True, default='.'):
     return wrapper
 
 
-def resolve_v5_port(port: str, type: str) -> Optional[str]:
+def resolve_v5_port(port: Optional[str], type: str) -> Optional[str]:
     if not port:
         ports = find_v5_ports(type)
         if len(ports) == 0:
@@ -171,7 +175,7 @@ def resolve_v5_port(port: str, type: str) -> Optional[str]:
     return port
 
 
-def resolve_cortex_port(port: str) -> Optional[str]:
+def resolve_cortex_port(port: Optional[str]) -> Optional[str]:
     if not port:
         ports = find_cortex_ports()
         if len(ports) == 0:

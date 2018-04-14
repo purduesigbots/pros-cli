@@ -89,11 +89,11 @@ class Project(Config):
             src/opcontrol.c and src/opcontrol.cpp are friends because they have the same stem
             src/opcontrol.c and include/opcontrol.h are not because they are in different directories
             """
-            return not any([os.path.normpath(file) in transaction.effective_state for file in template.user_files if
+            return not any([(os.path.normpath(file) in transaction.effective_state) for file in template.user_files if
                             os.path.splitext(file)[0] == os.path.splitext(new_file)[0]])
 
         if force_user:
-            new_user_files = template.user_files
+            new_user_files = template.real_user_files
         else:
             new_user_files = filter(new_user_filter, template.real_user_files)
         transaction.extend_add(new_user_files, template.location)

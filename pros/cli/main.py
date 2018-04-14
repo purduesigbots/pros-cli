@@ -5,41 +5,30 @@ import click
 import pros.cli.build
 import pros.cli.conductor
 import pros.cli.conductor_utils
+import pros.cli.jinx
 import pros.cli.terminal
+import pros.cli.test
 import pros.cli.upload
 import pros.cli.v5_utils
-import pros.cli.jinx
-from pros.common.utils import get_version, isdebug, logger
-from .click_classes import *
-from .common import default_options
-
-
-class ClickLogFormatter(logging.Formatter):
-    """
-    A subclass of the logging.Formatter so that we can print full exception traces ONLY if we're in debug mode
-    """
-
-    def formatException(self, ei):
-        if not isdebug():
-            return '\n'.join(super().formatException(ei).split('\n')[-3:])
-        else:
-            return super().formatException(ei)
+import pros.common.ui as ui
+from pros.cli.click_classes import *
+from pros.cli.common import default_options
+from pros.common.utils import get_version, logger
 
 
 def main():
     try:
+        ctx_obj = {}
         pros_logger = logging.getLogger(pros.__name__)
         pros_logger.propagate = False
-        click_handler = logging.StreamHandler()
+        click_handler = ui.PROSLogHandler(ctx_obj=ctx_obj)
+        # click_handler = logging.StreamHandler()
         click_handler.setLevel(logging.WARNING)
-
-        formatter = ClickLogFormatter('%(levelname)s - %(name)s:%(funcName)s - %(message)s')
+        ctx_obj['click_handler'] = click_handler
+        formatter = ui.PROSLogFormatter('%(levelname)s - %(name)s:%(funcName)s - %(message)s', ctx_obj)
         click_handler.setFormatter(formatter)
         pros_logger.addHandler(click_handler)
         pros_logger.setLevel(logging.WARNING)
-        ctx_obj = {
-            'click_handler': click_handler
-        }
 
         cli.main(prog_name='pros', obj=ctx_obj)
     except KeyboardInterrupt:
@@ -66,7 +55,8 @@ def version(ctx: click.Context, param, value):
                         pros.cli.upload.upload_cli,
                         pros.cli.v5_utils.v5_utils_cli,
                         pros.cli.conductor.conductor_cli,
-                        pros.cli.jinx.jinx_cli])
+                        pros.cli.jinx.jinx_cli,
+                        pros.cli.test.test_cli])
 @default_options
 @click.option('--version', help='Displays version and exits', is_flag=True, expose_value=False, is_eager=True,
               callback=version)

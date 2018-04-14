@@ -8,7 +8,7 @@ import colorama
 
 from pros.common.utils import logger
 from pros.serial import decode_bytes_to_str
-from pros.serial.ports import BasePort
+from pros.serial.ports import BasePort, PortConnectionException
 
 
 # This file is a modification of the miniterm implementation on pyserial
@@ -169,7 +169,7 @@ class Terminal(object):
     """This class is loosely based off of the pyserial miniterm"""
 
     def __init__(self, port_instance: BasePort, transformations=(),
-                 output_raw: bool=False, request_banner: bool=True):
+                 output_raw: bool = False, request_banner: bool = True):
         self.serial = port_instance
         self.transformations = transformations
         self._reader_alive = None
@@ -203,6 +203,7 @@ class Terminal(object):
         self.transmitter_thread.start()
 
     def _stop_tx(self):
+        self.console.cancel()
         self._transmitter_alive = False
         self.transmitter_thread.join()
 
@@ -233,12 +234,15 @@ class Terminal(object):
                 self.console.write(text)
         except UnicodeError as e:
             logger(__name__).exception(e)
+        except PortConnectionException:
+            logger(__name__).warning(f'Connection to {self.serial} broken')
+            self.stop()
         except Exception as e:
             if not self.alive.is_set():
                 logger(__name__).exception(e)
             else:
                 logger(__name__).debug(e)
-            self.alive.set()
+            self.stop()
         logger(__name__).info('Terminal receiver dying')
 
     def transmitter(self):

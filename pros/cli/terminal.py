@@ -6,12 +6,10 @@ import click
 
 import pros.conductor as c
 import pros.serial.ports as ports
-import pros.serial.vex.cortex_device as cortex_device
-import pros.serial.vex.v5_device as v5_device
 from pros.common.utils import logger
 from pros.serial.terminal import Terminal
 from .click_classes import PROSGroup
-from .common import default_options
+from .common import default_options, resolve_v5_port, resolve_cortex_port
 
 
 @click.group(cls=PROSGroup)
@@ -51,19 +49,13 @@ def terminal(port: str, backend: str, **kwargs):
         port = project.target
 
     if port == 'v5':
-        _ports = [p.device for p in v5_device.find_v5_ports('user')]
-        if len(_ports) > 1:
-            port = click.prompt('Multiple V5 ports were found. Please pick one.',
-                                type=click.Choice(_ports), default=_ports[0], show_default=True)
-        else:
-            port = _ports[0]
+        port = None
+        port = resolve_v5_port(port, 'user')
     elif port == 'cortex':
-        _ports = [p.device for p in cortex_device.find_cortex_ports()]
-        if len(_ports) > 1:
-            port = click.prompt('Multiple Cortex ports were found. Please pick one.',
-                                type=click.Choice(_ports), default=_ports[0], show_default=True)
-        else:
-            port = _ports[0]
+        port = None
+        port = resolve_cortex_port(port)
+    if not port:
+        return -1
 
     if backend == 'share':
         ser = ports.SerialSharePort(port)

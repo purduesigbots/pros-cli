@@ -16,6 +16,10 @@ class BaseTemplate(object):
         self.metadata.update({k: v for k, v in kwargs.items() if k not in self.__dict__})
         if 'depot' in self.metadata and 'origin' not in self.metadata:
             self.metadata['origin'] = self.metadata.pop('depot')
+        if 'd' in self.metadata and 'depot' not in self.metadata:
+            self.metadata['depot'] = self.metadata.pop('d')
+        if 'l' in self.metadata and 'location' not in self.metadata:
+            self.metadata['location'] = self.metadata.pop('l')
         if self.name == 'pros':
             self.name = 'kernel'
 
@@ -51,6 +55,10 @@ class BaseTemplate(object):
     @property
     def identifier(self):
         return f'{self.name}@{self.version}'
+
+    @property
+    def origin(self):
+        return self.metadata.get('origin', 'Unknown')
 
     @classmethod
     def create_query(cls, name: str = None, **kwargs) -> 'BaseTemplate':

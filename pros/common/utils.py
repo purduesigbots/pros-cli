@@ -1,7 +1,7 @@
 import logging
 import os
 import sys
-from functools import wraps
+from functools import wraps, lru_cache
 from typing import *
 
 import click
@@ -9,9 +9,10 @@ import click
 import pros
 
 
+@lru_cache(1)
 def get_version():
     try:
-        ver = open(os.path.join(os.path.dirname(__file__), '..', 'version')).read().strip()
+        ver = open(os.path.join(os.path.dirname(__file__), '..', '..', 'version')).read().strip()
         if ver is not None:
             return ver
     except:

@@ -72,7 +72,8 @@ class VEXDevice(object):
                 response_header_stack = bytearray(response_header)
                 rx = bytearray()
         if not rx == bytearray(response_header):
-            raise IOError("Couldn't find the response header in the device response")
+            raise IOError(f"Couldn't find the response header in the device response. "
+                          f"Got {rx.hex()} but was expecting {response_header.hex()}")
         rx.extend(self.port.read(1)[1])
         command = rx[-1]
         rx.extend(self.port.read(1)[1])

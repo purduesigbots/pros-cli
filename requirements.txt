@@ -9,4 +9,5 @@ semantic_version
 colorama
 pyzmq
 cobs
+scan-build
 msgpack
