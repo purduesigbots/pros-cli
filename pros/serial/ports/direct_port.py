@@ -20,7 +20,7 @@ class DirectPort(BasePort):
         self.serial: serial.Serial = create_serial_port(port_name=port_name, timeout=kwargs.pop('timeout', 1.0))
         self.buffer: bytearray = bytearray()
 
-    def read(self, n_bytes: int = 0):
+    def read(self, n_bytes: int = 0) -> bytes:
         try:
             if n_bytes <= 0:
                 self.buffer.extend(self.serial.read_all())
@@ -45,11 +45,8 @@ class DirectPort(BasePort):
             data = data.encode(encoding='ascii')
         self.serial.write(data)
 
-    def flush_input(self):
-        self.serial.flushInput()
-
-    def flush_output(self):
-        self.serial.flushOutput()
+    def flush(self):
+        self.serial.flush()
 
     def destroy(self):
         logger(__name__).debug(f'Destroying {self.__class__.__name__} to {self.serial.name}')
