@@ -46,7 +46,8 @@ class VEXDevice(GenericDevice):
             raise comm_error.VEXCommError("Received data doesn't match expected length", msg)
         return msg['payload']
 
-    def _rx_packet(self, timeout: float = 0.01) -> Dict[str, Union[Union[int, bytes, bytearray], Any]]:
+    def _rx_packet(self, timeout: float = 0.01) -> Dict[
+        str, Union[Union[int, bytes, bytearray], Any]]:
         # Optimized to read as quickly as possible w/o delay
         start_time = time.time()
         response_header = bytes([0xAA, 0x55])
@@ -66,7 +67,7 @@ class VEXDevice(GenericDevice):
                 rx = bytearray()
         if not rx == bytearray(response_header):
             raise IOError(f"Couldn't find the response header in the device response. "
-                          f"Got {rx.hex()} but was expecting {response_header.hex()}")
+                          f"Got {rx.hex()} but was expecting {response_header.hex()}. ")
         rx.extend(self.port.read(1))
         command = rx[-1]
         rx.extend(self.port.read(1))

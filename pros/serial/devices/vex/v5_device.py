@@ -417,7 +417,7 @@ class V5Device(VEXDevice):
 
     def _txrx_ext_packet(self, command: int, tx_data: Union[Iterable, bytes, bytearray],
                          rx_length: int, check_length: bool = True,
-                         check_ack: bool = True, timeout: float = 0.1) -> Message:
+                         check_ack: bool = True, timeout: float = 0.2) -> Message:
         """
         Transmits and receives an extended command to the V5.
         :param command: Extended command code
