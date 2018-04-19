@@ -1,7 +1,9 @@
 import subprocess
+import os
 
 try:
-    v = subprocess.check_output(['git', 'describe', '--dirty', '--abbrev'], stderr=subprocess.DEVNULL).decode().strip()
+    with open(os.devnull, 'w') as devnull:
+        v = subprocess.check_output(['git', 'describe', '--dirty', '--abbrev'], stderr=devnull).decode().strip()
     if '-' in v:
         bv = v[:v.index('-')]
         bv = bv[:bv.rindex('.') + 1] + str(int(bv[bv.rindex('.') + 1:]) + 1)

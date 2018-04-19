@@ -5,7 +5,7 @@ echo Testing python executable version
 $python -c "import sys; exit(0 if sys.version_info > (3,6) else 1)"
 if [ $? -ne 0 ]
 then
-    python=python3
+    python=python3.6
 fi
 
 echo Installing wheel and cx_Freeze

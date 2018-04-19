@@ -7,7 +7,6 @@ try:  # for pip >= 10 -- https://stackoverflow.com/a/49867265/3175586
     from pip._internal.req import parse_requirements
 except ImportError:  # for pip <= 9.0.3
     from pip.req import parse_requirements
-
 import pros
 
 install_reqs = [str(r.req) for r in parse_requirements('requirements.txt', session=False)]
@@ -32,9 +31,9 @@ for pkg in [pros]:
     modules.append(pkg.__name__)
 
 if sys.platform == 'win32':
-    targetName = 'prosv5.exe'
+    extension = '.exe'
 else:
-    targetName = 'prosv5'
+    extension = ''
 
 setup(
     name='pros-cli-v5',
@@ -47,7 +46,9 @@ setup(
     description='Command Line Interface for managing PROS projects',
     options={"build_exe": build_exe_options, 'bdist_mac': build_mac_options},
     install_requires=install_reqs,
-    executables=[Executable('pros/cli/main.py', targetName=targetName)]
+    executables=[Executable('pros/cli/main.py', targetName=f'prosv5{extension}'),
+                 Executable('pros/cli/compile_commands/intercept-cc.py', targetName=f'intercept-cc{extension}'),
+                 Executable('pros/cli/compile_commands/intercept-cc.py', targetName=f'intercept-c++{extension}')]
 )
 
 if sys.argv[1] == 'build_exe':

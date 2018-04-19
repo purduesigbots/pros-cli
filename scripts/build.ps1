@@ -8,6 +8,9 @@ if ( -not $? ) {
 }
 
 Set-Location $root
+Write-Information "Upgrading pip"
+& $python -m pip install --upgrade pip
+
 Write-Information "Installing wheel and cx_Freeze"
 & $python -m pip install wheel cx_Freeze
 
@@ -23,10 +26,15 @@ Write-Information "Building wheel"
 Write-Information "Bulding binary"
 & $python build.py build_exe
 
+Write-Information "Adding vcruntime140.dll to zip"
+7z a $(Get-ChildItem -Name ".\pros_cli*.zip") C:\Windows\System32\vcruntime140.dll
+
 Write-Information "Moving artifacts to ./out"
-Remove-Item -Recurse -Force -Path .\out
+
+Remove-Item -Recurse -Force -Path .\out | Out-Null
 New-Item ./out -ItemType directory | Out-Null
-Remove-Item .\out\* -Recurse
+Remove-Item .\out\* -Recurse | Out-Null
+
 Copy-Item dist\pros_cli*.whl .\out
 Copy-Item .\pros_cli*.zip .\out
 
