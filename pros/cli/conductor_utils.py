@@ -12,6 +12,7 @@ from pros.common.utils import logger
 from pros.conductor.templates import ExternalTemplate
 from .common import default_options, template_query
 from .conductor import conductor
+import pros.common.ui as ui
 
 
 @conductor.command('create-template', context_settings={'allow_extra_args': True, 'ignore_unknown_options': True})
@@ -122,13 +123,19 @@ def create_template(ctx, path: str, destination: str, do_zip: bool, **kwargs):
 
                 for file in kwargs['user_files']:
                     source_path = os.path.join(path, file)
+                    dest_path: str = file
+                    if os.path.dirname(dest_path) == 'bin':
+                        dest_path = dest_path.replace('bin', 'firmware', 1)
                     if os.path.exists(source_path):
-                        print(f'U: {file}')
-                        z.write(f'{path}/{file}', arcname=file)
+                        ui.echo(f'U: {file}')
+                        z.write(f'{path}/{file}', arcname=dest_path)
                 for file in kwargs['system_files']:
                     source_path = os.path.join(path, file)
+                    dest_path = file
+                    if os.path.dirname(dest_path) == 'bin':
+                        dest_path = dest_path.replace('bin', 'firmware', 1)
                     if os.path.exists(source_path):
-                        print(f'S: {file}')
+                        ui.echo(f'S: {file}')
                         z.write(f'{path}/{file}', arcname=file)
     else:
         if os.path.isdir(destination):
