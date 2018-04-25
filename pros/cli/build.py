@@ -148,11 +148,16 @@ def build_compile_commands(build_args):
     else:
         old_entries = []
 
+    extra_flags = ['-target', 'armv7ar-none-none-eabi']
+
+    if sys.platform == 'win32':
+        extra_flags.extend(["-fno-ms-extensions", "-fno-ms-compatibility", "-fno-delayed-template-parsing"])
+
     def new_entry_map(entry):
         if entry.compiler == 'c':
-            entry.flags = cc_sysroot_includes + entry.flags
+            entry.flags = extra_flags + cc_sysroot_includes + entry.flags
         elif entry.compiler == 'c++':
-            entry.flags = cxx_sysroot_includes + entry.flags
+            entry.flags = extra_flags + cxx_sysroot_includes + entry.flags
         return entry
 
     new_entries = map(new_entry_map, new_entries)
