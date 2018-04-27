@@ -41,17 +41,29 @@ def fetch(query: c.BaseTemplate):
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor to learn more
     """
-    if query.metadata.get('origin', None) == 'local':
-        # all of the depot/non-specific options are placed in the query metadata due to the non-determinism of where
-        # the option actually belongs to
+
+    template_file = None
+    if os.path.exists(query.identifier):
+        template_file = query.identifier
+    elif os.path.exists(query.name) and query.version is None:
+        template_file = query.name
+    elif query.metadata.get('origin', None) == 'local':
         if 'location' not in query.metadata:
             logger(__name__).error('--location option is required for the local depot. Specify --location <file>')
             return -1
-        template = ExternalTemplate(query.metadata['location'])
+        template_file = query.metadata['location']
+
+    if template_file and (os.path.splitext(template_file)[1] in ['.zip'] or
+                          os.path.exists(os.path.join(template_file, 'template.pros'))):
+        template = ExternalTemplate(template_file)
+        query.metadata['location'] = template_file
         depot = c.LocalDepot()
     else:
         template = c.Conductor().resolve_template(query, allow_offline=False)
         logger(__name__).debug(template)
+        if template is None:
+            logger(__name__).error(f'There are no templates matching {query}!')
+            return -1
         depot = c.Conductor().get_depot(template.metadata['origin'])
     # query.metadata contain all of the extra args that also go to the depot. There's no way for us to determine
     # whether the arguments are for the template or for the depot, so they share them
