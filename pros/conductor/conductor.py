@@ -23,7 +23,8 @@ class Conductor(Config):
         self.depots: Dict[str, Depot] = {}
         super(Conductor, self).__init__(file)
         if 'pros-mainline' not in self.depots:
-            self.depots['pros-mainline'] = HttpDepot('pros-mainline', 'http://cs.purdue.edu/~berman5/pros-mainline.json')
+            self.depots['pros-mainline'] = HttpDepot('pros-mainline',
+                                                     'http://purduesigbots.github.io/pros-mainline/pros-mainline.json')
             self.save()
 
     def get_depot(self, name: str) -> Optional[Depot]:
