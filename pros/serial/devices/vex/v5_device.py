@@ -25,7 +25,8 @@ def find_v5_ports(p_type: str):
 
     def filter_v5_ports(p, locations, names):
         return (p.location is not None and any([p.location.endswith(l) for l in locations])) or \
-               (p.name is not None and any([n in p.name for n in names]))
+               (p.name is not None and any([n in p.name for n in names])) or \
+               (p.description is not None and any([n in p.description for n in names]))
 
     ports = [p for p in list_all_comports() if filter_vex_ports(p)]
 
@@ -33,7 +34,15 @@ def find_v5_ports(p_type: str):
     # Doesn't work on macOS or Jonathan's Dell, so we have a fallback (below)
     user_ports = [p for p in ports if filter_v5_ports(p, ['2'], ['User'])]
     system_ports = [p for p in ports if filter_v5_ports(p, ['0'], ['System', 'Communications'])]
-    joystick_ports = [p for p in ports if filter_v5_ports(p, ['1'], ['Controller'])]
+    joystick_ports = []  # joystick comms are very slow/unusable
+    # joystick_ports = [p for p in ports if filter_v5_ports(p, ['1'], ['Controller'])]
+
+    # TODO: test this code path (hard)
+    if len(user_ports) != len(system_ports):
+        if len(user_ports) > len(system_ports):
+            user_ports = set(user_ports) - set(system_ports)
+        else:
+            system_ports = set(system_ports) - set(user_ports)
 
     if len(user_ports) == len(system_ports) and len(user_ports) > 0:
         if p_type.lower() == 'user':

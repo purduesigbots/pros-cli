@@ -7,6 +7,7 @@ from typing import *
 import click
 
 import pros
+import pros.cli.main
 
 
 @lru_cache(1)
@@ -30,7 +31,7 @@ def get_version():
     except ImportError:
         pass
     else:
-        module = sys._getframe(1).f_globals.get('__name__')
+        module = pros.cli.main.__name__
         for dist in pkg_resources.working_set:
             scripts = dist.get_entry_map().get('console_scripts') or {}
             for script_name, entry_point in iter(scripts.items()):

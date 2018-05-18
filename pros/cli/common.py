@@ -39,7 +39,8 @@ def debug_option(f):
             stdout_handler = ctx.obj['click_handler']  # type: logging.Handler
             stdout_handler.setLevel(logging.DEBUG)
             logger(__name__).info('Debugging messages enabled')
-        logger('pros').debug(f'CLI Version: {get_version()}')
+        if logger('pros').isEnabledFor(logging.DEBUG):
+            logger('pros').debug(f'CLI Version: {get_version()}')
         return value
 
     return click.option('--debug', help='Enable debugging output', is_flag=True, is_eager=True, expose_value=False,

@@ -38,13 +38,13 @@ class LocalDepot(Depot):
         else:
             raise ValueError(f"The specified location was not a file or directory ({location}).")
         if location_dir != destination:
-            with click.progressbar(length=len([os.path.join(dp, f) for dp, dn, fn in os.walk('.') for f in fn]),
-                                   label='Copying to local cache') as pb:
-                def update(_, b):
-                    pb.update(len(b))
-                    return []
+            n_files = len([os.path.join(dp, f) for dp, dn, fn in os.walk(location_dir) for f in fn])
+            with click.progressbar(length=n_files, label='Copying to local cache') as pb:
+                def my_copy(*args):
+                    pb.update(1)
+                    shutil.copy2(*args)
 
-                shutil.copytree(location_dir, destination, ignore=update)
+                shutil.copytree(location_dir, destination, copy_function=my_copy)
         return ExternalTemplate(file=template_file)
 
     def __init__(self):

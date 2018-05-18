@@ -7,6 +7,7 @@ from typing import *
 
 import click
 
+import pros.common.ui as ui
 import pros.conductor as c
 from pros.common.utils import logger
 from pros.conductor.templates import ExternalTemplate
@@ -105,8 +106,13 @@ def create_template(ctx, path: str, destination: str, do_zip: bool, **kwargs):
     matching_system_files = matching_system_files - exclude_files
     matching_user_files = matching_user_files - exclude_files
 
-    kwargs['system_files'] = list(matching_system_files)
-    kwargs['user_files'] = list(matching_user_files)
+    def filename_remap(file_path: str) -> str:
+        if os.path.dirname(file_path) == 'bin':
+            return file_path.replace('bin', 'firmware', 1)
+        return file_path
+
+    kwargs['system_files'] = list(map(filename_remap, matching_system_files))
+    kwargs['user_files'] = list(map(filename_remap, matching_user_files))
 
     if do_zip:
         if not os.path.isdir(destination) and os.path.splitext(destination)[-1] != '.zip':
@@ -120,16 +126,18 @@ def create_template(ctx, path: str, destination: str, do_zip: bool, **kwargs):
             with zipfile.ZipFile(destination, mode='w') as z:
                 z.write(template.save_file, arcname='template.pros')
 
-                for file in kwargs['user_files']:
+                for file in matching_user_files:
                     source_path = os.path.join(path, file)
+                    dest_file = filename_remap(file)
                     if os.path.exists(source_path):
-                        print(f'U: {file}')
-                        z.write(f'{path}/{file}', arcname=file)
-                for file in kwargs['system_files']:
+                        ui.echo(f'U: {file}' + (f' -> {dest_file}' if file != dest_file else ''))
+                        z.write(f'{path}/{file}', arcname=dest_file)
+                for file in matching_system_files:
                     source_path = os.path.join(path, file)
+                    dest_file = filename_remap(file)
                     if os.path.exists(source_path):
-                        print(f'S: {file}')
-                        z.write(f'{path}/{file}', arcname=file)
+                        ui.echo(f'S: {file}' + (f' -> {dest_file}' if file != dest_file else ''))
+                        z.write(f'{path}/{file}', arcname=dest_file)
     else:
         if os.path.isdir(destination):
             destination = os.path.join(destination, 'template.pros')
