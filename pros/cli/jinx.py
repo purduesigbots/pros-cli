@@ -1,5 +1,8 @@
 import asyncio
 import json
+import queue
+from typing import *
+import time
 
 import click
 import websockets
@@ -20,11 +23,6 @@ def jinx_cli():
     pass
 
 
-async def producer_handler(websocket: websockets.WebSocketClientProtocol, path, jioknx_app: JinxApplication):
-    while True:
-        await websocket.send(json.dumps(jinx_app.queue.get()))
-
-
 @jinx_cli.command(short_help='Run JINX, the graphical debugger for PROS')
 @default_options
 def jinx():
@@ -36,8 +34,30 @@ def jinx():
     port = DirectPort(resolve_v5_port(None, 'user'))
     device = V5UserDevice(port)
     jinx_app = JinxApplication(device)
+    jinx_app.start()
+
+    clients: Set[websockets.WebSocketClientProtocol] = set()
+
+    async def client_handler(websocket: websockets.WebSocketClientProtocol, path):
+        clients.add(websocket)
+        while True:
+            await asyncio.sleep(0.005)
+
+    async def jinx_producer():
+        while not jinx_app.alive.is_set():
+            try:
+                data = json.dumps(jinx_app.queue.get(timeout=0.005))
+            except queue.Empty:
+                continue
+
+            print(data)
+            for client in clients:
+                try:
+                    await client.send(data)
+                except:
+                    clients.remove(client)
+            await asyncio.sleep(0)
+
     loop = asyncio.get_event_loop()
-    start_server = websockets.serve(producer_handler, 'localhost', 9001, jinx_app=jinx_app)
-    loop.run_until_complete(start_server)
-    loop.run_forever()
-    click.echo('after server')
+    loop.run_until_complete(asyncio.wait([websockets.serve(client_handler, 'localhost', 9001), jinx_producer()]))
+    loop.close()
