@@ -83,11 +83,7 @@ class Config(object):
     def save(self, file: str = None) -> None:
         if file is None:
             file = self.save_file
-        if isdebug(__name__):
-            logger(__name__).debug('Pretty formatting {} file'.format(self.__class__.__name__))
-            jsonpickle.set_encoder_options('json', sort_keys=True, indent=4)
-        else:
-            jsonpickle.set_encoder_options('json')
+        jsonpickle.set_encoder_options('json', sort_keys=True, indent=4)
         if os.path.dirname(file):
             os.makedirs(os.path.dirname(file), exist_ok=True)
         with open(file, 'w') as f:

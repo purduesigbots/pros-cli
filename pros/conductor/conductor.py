@@ -11,6 +11,9 @@ from pros.config import Config
 from .project import Project
 from .templates import LocalTemplate, BaseTemplate, Template, ExternalTemplate
 
+MAINLINE_NAME = 'pros-mainline'
+MAINLINE_URL = 'https://purduesigbots.github.io/pros-mainline/pros-mainline.json'
+
 
 class Conductor(Config):
     """
@@ -22,9 +25,13 @@ class Conductor(Config):
         self.local_templates: Set[LocalTemplate] = set()
         self.depots: Dict[str, Depot] = {}
         super(Conductor, self).__init__(file)
-        if 'pros-mainline' not in self.depots:
-            self.depots['pros-mainline'] = HttpDepot('pros-mainline',
-                                                     'http://purduesigbots.github.io/pros-mainline/pros-mainline.json')
+        needs_saving = False
+        if MAINLINE_NAME not in self.depots or \
+                not isinstance(self.depots[MAINLINE_NAME], HttpDepot) or \
+                self.depots[MAINLINE_NAME].location != MAINLINE_URL:
+            self.depots[MAINLINE_NAME] = HttpDepot(MAINLINE_NAME, MAINLINE_URL)
+            needs_saving = True
+        if needs_saving:
             self.save()
 
     def get_depot(self, name: str) -> Optional[Depot]:

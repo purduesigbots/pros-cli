@@ -137,7 +137,8 @@ def upgrade(ctx: click.Context, project: c.Project, query: c.BaseTemplate, **kwa
     if not query.name:
         for template in project.templates.keys():
             click.secho(f'Upgrading {template}', color='yellow')
-            q = c.BaseTemplate.create_query(name=template)
+            q = c.BaseTemplate.create_query(name=template, target=project.target,
+                                            supported_kernels=project.templates['kernel'].version)
             ctx.invoke(apply, upgrade_ok=True, project=project, query=q, **kwargs)
     else:
         ctx.invoke(apply, project=project, query=query, upgrade_ok=True, **kwargs)
@@ -213,6 +214,7 @@ def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_onlin
                 'name': template.name,
                 'version': template.version,
                 'location': template.origin,
+                'target': template.target,
                 'local': isinstance(template, c.LocalTemplate)
             }
     import semantic_version as semver
