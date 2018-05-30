@@ -146,7 +146,7 @@ def upgrade(ctx: click.Context, project: c.Project, query: c.BaseTemplate, **kwa
 
 @conductor.command('new-project', aliases=['new', 'create-project'])
 @click.argument('path', type=click.Path())
-@click.argument('platform', default='v5', type=click.Choice(['v5', 'cortex']))
+@click.argument('target', default=c.Conductor().default_target, type=click.Choice(['v5', 'cortex']))
 @click.argument('version', default='latest')
 @click.option('--force-user', 'force_user', default=False, is_flag=True,
               help='Replace all user files in a template')
@@ -154,10 +154,13 @@ def upgrade(ctx: click.Context, project: c.Project, query: c.BaseTemplate, **kwa
               help="Force all system files to be inserted into the project")
 @click.option('--force-refresh', is_flag=True, default=False, show_default=True,
               help='Force update all remote depots, ignoring automatic update checks')
+@click.option('--no-default-libs', 'no_default_libs', default=False, is_flag=True,
+              help='Do not install any default libraries after creating the project.')
 @click.pass_context
 @default_options
-def new_project(ctx: click.Context, path: str, platform: str, version: str,
-                force_user: bool = False, force_system: bool = False, **kwargs):
+def new_project(ctx: click.Context, path: str, target: str, version: str,
+                force_user: bool = False, force_system: bool = False,
+                no_default_libs: bool = False, **kwargs):
     """
     Create a new PROS project
 
@@ -169,8 +172,12 @@ def new_project(ctx: click.Context, path: str, platform: str, version: str,
         pros.common.logger(__name__).error('A project already exists in this location! Delete it first')
         return -1
     try:
-        project = c.Conductor().new_project(path, target=platform, version=version,
-                                            force_user=force_user, force_system=force_system, **kwargs)
+        _conductor = c.Conductor()
+        if target is None:
+            target = _conductor.default_target
+        project = _conductor.new_project(path, target=target, version=version,
+                                         force_user=force_user, force_system=force_system,
+                                         no_default_libs=no_default_libs, **kwargs)
         ui.echo('New PROS Project was created:', output_machine=False)
         ctx.invoke(info_project, project=project)
     except Exception as e:

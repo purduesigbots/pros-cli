@@ -10,7 +10,6 @@ class CliConfig(Config):
     def __init__(self, file=None):
         if not file:
             file = os.path.join(click.get_app_dir('PROS'), 'cli.pros')
-        self.default_target: str = 'v5'  # Default platform/target: either v5 or cortex
         # right now, CliConfig is pretty barebones. JINX and terminal may eventually use these to control
         # default port selection
 

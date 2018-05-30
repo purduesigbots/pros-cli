@@ -19,17 +19,35 @@ class Conductor(Config):
     """
     Provides entrances for all conductor-related tasks (fetching, applying, creating new projects)
     """
+
     def __init__(self, file=None):
         if not file:
             file = os.path.join(click.get_app_dir('PROS'), 'conductor.pros')
         self.local_templates: Set[LocalTemplate] = set()
         self.depots: Dict[str, Depot] = {}
+        self.default_target: str = 'v5'
+        self.default_libraries: Dict[str, List[str]] = None
         super(Conductor, self).__init__(file)
         needs_saving = False
         if MAINLINE_NAME not in self.depots or \
                 not isinstance(self.depots[MAINLINE_NAME], HttpDepot) or \
                 self.depots[MAINLINE_NAME].location != MAINLINE_URL:
             self.depots[MAINLINE_NAME] = HttpDepot(MAINLINE_NAME, MAINLINE_URL)
+            needs_saving = True
+        if self.default_target is None:
+            self.default_target = 'v5'
+            needs_saving = True
+        if self.default_libraries is None:
+            self.default_libraries = {
+                'v5': ['okapilib'],
+                'cortex': []
+            }
+            needs_saving = True
+        if 'v5' not in self.default_libraries:
+            self.default_libraries['v5'] = []
+            needs_saving = True
+        if 'cortex' not in self.default_libraries:
+            self.default_libraries['cortex'] = []
             needs_saving = True
         if needs_saving:
             self.save()
@@ -130,6 +148,8 @@ class Conductor(Config):
         force = kwargs.get('force_apply', False)
 
         kwargs['target'] = project.target
+        if 'kernel' in project.templates:
+            kwargs['supported_kernels'] = project.templates['kernel'].version
         template = self.resolve_template(identifier=identifier, allow_online=download_ok, **kwargs)
         if template is None:
             raise ValueError(f'Could not find a template satisfying {identifier} for {project.target}')
@@ -153,7 +173,7 @@ class Conductor(Config):
                                      f'Upgrading is {"" if upgrade_ok else "not "}allowed, and '
                                      f'installing is {"" if install_ok else "not "}allowed')
 
-    def new_project(self, path: str, **kwargs) -> Project:
+    def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
         proj = Project(path=path, create=True)
         if 'target' in kwargs:
             proj.target = kwargs['target']
@@ -164,4 +184,11 @@ class Conductor(Config):
         if 'version' in kwargs:
             self.apply_template(proj, identifier='kernel', **kwargs)
         proj.save()
+
+        if not no_default_libs:
+            for library in self.default_libraries[proj.target]:
+                try:
+                    self.apply_template(proj, library, **kwargs)
+                except Exception as e:
+                    logger(__name__).exception(e)
         return proj
