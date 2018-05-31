@@ -7,13 +7,14 @@ from io import BytesIO, StringIO
 from typing import *
 
 from pros.common import *
+from pros.serial import bytes_to_str
 from pros.serial import decode_bytes_to_str
 from pros.serial.ports import list_all_comports
 from .comm_error import VEXCommError
 from .crc import CRC
 from .message import Message
 from .vex_device import VEXDevice
-from pros.serial import bytes_to_str
+from ..system_device import SystemDevice
 
 int_str = Union[int, str]
 
@@ -71,12 +72,12 @@ def find_v5_ports(p_type: str):
     return []
 
 
-class V5Device(VEXDevice):
+class V5Device(VEXDevice, SystemDevice):
     vid_map = {'user': 1, 'system': 15}  # type: Dict[str, int]
     VEX_CRC16 = CRC(16, 0x1021)  # CRC-16-CCIT
     VEX_CRC32 = CRC(32, 0x04C11DB7)  # CRC-32 (the one used everywhere but has no name)
 
-    def write_program(self, file: typing.BinaryIO, remote_name: str, ini: ConfigParser = None, slot: int = 0,
+    def write_program(self, file: typing.BinaryIO, remote_name: str = None, ini: ConfigParser = None, slot: int = 0,
                       file_len: int = -1, run_after: bool = False, target: str = 'flash', **kwargs):
         if target == 'ddr':
             self.write_file(file, f'slot_{slot + 1}.bin', file_len=file_len, type='bin',
@@ -84,6 +85,8 @@ class V5Device(VEXDevice):
             return
         if not isinstance(ini, ConfigParser):
             ini = ConfigParser()
+        if not remote_name:
+            remote_name = file.name
         if len(remote_name) > 20:
             logger(__name__).info('Truncating remote name to {} for length.'.format(remote_name[:20]))
             remote_name = remote_name[:20]

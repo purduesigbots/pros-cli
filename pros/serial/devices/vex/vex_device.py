@@ -40,7 +40,7 @@ class VEXDevice(GenericDevice):
         :return: They payload of the message, or raises and exception if there was an issue
         """
         msg = self._txrx_packet(command, timeout=timeout)
-        if msg != command:
+        if msg['command'] != command:
             raise comm_error.VEXCommError('Received command does not match sent command.', msg)
         if len(msg['payload']) != rx_len:
             raise comm_error.VEXCommError("Received data doesn't match expected length", msg)
@@ -87,6 +87,7 @@ class VEXDevice(GenericDevice):
         tx = self._form_simple_packet(command)
         if tx_data is not None:
             tx = bytes([*tx, *tx_data])
+        logger(__name__).debug(f'{self.__class__.__name__} TX: {bytes_to_str(tx)}')
         self.port.read_all()
         self.port.write(tx)
         self.port.flush()

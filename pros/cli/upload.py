@@ -1,7 +1,7 @@
 import pros.common.ui as ui
 import pros.conductor as c
-from pros.serial.ports import DirectPort
 from pros.serial.devices.vex import *
+from pros.serial.ports import DirectPort
 from .click_classes import *
 from .common import *
 
@@ -96,7 +96,7 @@ def upload(path: str, port: str, **kwargs):
         if kwargs['target'] == 'v5':
             device = V5Device(ser)
         elif kwargs['target'] == 'cortex':
-            device = CortexDevice(ser)
+            device = CortexDevice(ser).get_connected_device()
         with click.open_file(path, mode='rb') as pf:
             device.write_program(pf, *args, **kwargs)
     except Exception as e:
@@ -111,7 +111,7 @@ def upload(path: str, port: str, **kwargs):
 @default_options
 def ls_usb(target):
     class PortReport(object):
-        def __init__(self, header: str, ports: List[Any], machine_header: Optional[str]=None):
+        def __init__(self, header: str, ports: List[Any], machine_header: Optional[str] = None):
             self.header = header
             self.ports = [{'device': p.device, 'desc': p.description} for p in ports]
             self.machine_header = machine_header or header

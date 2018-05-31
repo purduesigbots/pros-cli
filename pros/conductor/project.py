@@ -35,7 +35,8 @@ class Project(Config):
         if 'kernel' in self.__dict__:
             # Add backwards compatibility with PROS CLI 2 projects by adding kernel as a pseudo-template
             self.templates['kernel'] = Template(user_files=self.all_files, name='kernel',
-                                                version=self.__dict__['kernel'], target=self.target)
+                                                version=self.__dict__['kernel'], target=self.target,
+                                                output='bin/output.bin')
 
     @property
     def location(self):
@@ -118,7 +119,8 @@ class Project(Config):
         return files
 
     def __str__(self):
-        return f'Project: {self.location} ({self.name}) for {self.target} with {", ".join([str(t) for t in self.templates.values()])}'
+        return f'Project: {self.location} ({self.name}) for {self.target} with ' \
+               f'{", ".join([str(t) for t in self.templates.values()])}'
 
     @property
     def kernel(self):
