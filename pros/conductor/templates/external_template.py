@@ -1,8 +1,9 @@
 import os.path
-import zipfile
 import tempfile
+import zipfile
 
 from pros.config import Config
+
 from .template import Template
 
 

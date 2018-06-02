@@ -5,6 +5,7 @@ from typing import *
 from pros.common import *
 from pros.conductor import LocalTemplate, Template, BaseTemplate
 from pros.config.config import Config, ConfigNotFoundException
+
 from .transaction import Transaction
 
 
@@ -44,8 +45,9 @@ class Project(Config):
 
     @property
     def name(self):
-        return self.project_name or os.path.basename(self.location) or \
-               os.path.basename(self.templates['kernel'].metadata['output']) or 'pros'
+        return self.project_name or os.path.basename(self.location) \
+               or os.path.basename(self.templates['kernel'].metadata['output']) \
+               or 'pros'
 
     @property
     def all_files(self) -> Set[str]:

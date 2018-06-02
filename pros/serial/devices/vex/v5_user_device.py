@@ -1,10 +1,9 @@
 from typing import *
 
 from cobs import cobs
-
 from pros.common.utils import logger
-from pros.serial.ports import BasePort
 from pros.serial.devices.stream_device import StreamDevice
+from pros.serial.ports import BasePort
 
 
 class V5UserDevice(StreamDevice):

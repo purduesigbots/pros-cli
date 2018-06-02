@@ -1,7 +1,7 @@
 import click.core
-
 from pros.common.utils import *
 from pros.serial.devices.vex import find_cortex_ports, find_v5_ports
+
 from .click_classes import *
 
 
@@ -132,7 +132,8 @@ def template_query(arg_name='query', required: bool = False):
         if not spec and required:
             raise ValueError(f'A {arg_name} is required to perform this command')
         query = c.BaseTemplate.create_query(spec,
-                                           **{value[i][2:]: value[i + 1] for i in range(0, int(len(value) / 2) * 2, 2)})
+                                            **{value[i][2:]: value[i + 1] for i in
+                                               range(0, int(len(value) / 2) * 2, 2)})
         logger(__name__).debug(query)
         return query
 

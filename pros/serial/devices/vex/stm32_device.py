@@ -11,6 +11,7 @@ from pros.common import logger, retries
 from pros.serial import bytes_to_str
 from pros.serial.devices.vex import VEXCommError
 from pros.serial.ports import BasePort
+
 from ..generic_device import GenericDevice
 from ..system_device import SystemDevice
 

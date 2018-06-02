@@ -1,5 +1,5 @@
-import subprocess
 import os
+import subprocess
 
 try:
     with open(os.devnull, 'w') as devnull:
@@ -10,7 +10,8 @@ try:
         sempre = 'dirty' if v.endswith('-dirty') else 'commit'
         pippre = 'alpha' if v.endswith('-dirty') else 'pre'
         build = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode().strip()
-        number_since = subprocess.check_output(['git', 'rev-list', v[:v.index('-')] + '..HEAD', '--count']).decode().strip()
+        number_since = subprocess.check_output(
+            ['git', 'rev-list', v[:v.index('-')] + '..HEAD', '--count']).decode().strip()
         semver = bv + '-' + sempre + '+' + build
         pipver = bv + pippre + number_since
         winver = v[:v.index('-')] + '.' + number_since
@@ -30,4 +31,3 @@ try:
         f.write(winver)
 except subprocess.CalledProcessError as e:
     print('Error calling git')
-

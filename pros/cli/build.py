@@ -5,8 +5,8 @@ import sys
 from typing import *
 
 import click
-
 import pros.conductor as c
+
 from .click_classes import PROSGroup
 from pros.common.cli_config import cli_config
 
@@ -72,15 +72,14 @@ def build_compile_commands(build_args):
     """
     from libscanbuild.compilation import Compilation, CompilationDatabase
     from libscanbuild.arguments import create_intercept_parser
-    from tempfile import TemporaryDirectory
     import itertools
 
-    def libscanbuild_capture(args):
-        import argparse
+    import argparse
+
+    def libscanbuild_capture(args: argparse.Namespace) -> Tuple[int, Iterable[Compilation]]:
         from libscanbuild.intercept import setup_environment, run_build, exec_trace_files, parse_exec_trace, \
             compilations
         from libear import temporary_directory
-        # type: argparse.Namespace -> Tuple[int, Iterable[Compilation]]
         """ Implementation of compilation database generation.
         :param args:    the parsed and validated command line arguments
         :return:        the exit status of build process. """
@@ -103,13 +102,11 @@ def build_compile_commands(build_args):
         make_cmd = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'make.exe')
     else:
         make_cmd = 'make'
-    with TemporaryDirectory() as td:
-        bindir = td.replace("\\", "/") if os.sep == '\\' else td
-        args = create_intercept_parser().parse_args(
-            ['--override-compiler', '--use-cc', 'arm-none-eabi-gcc', '--use-c++', 'arm-none-eabi-g++', make_cmd,
-             *build_args,
-             'CC=intercept-cc', 'CXX=intercept-c++'])
-        exit_code, entries = libscanbuild_capture(args)
+    args = create_intercept_parser().parse_args(
+        ['--override-compiler', '--use-cc', 'arm-none-eabi-gcc', '--use-c++', 'arm-none-eabi-g++', make_cmd,
+         *build_args,
+         'CC=intercept-cc', 'CXX=intercept-c++'])
+    exit_code, entries = libscanbuild_capture(args)
 
     any_entries, entries = itertools.tee(entries, 2)
     if not any(any_entries):
@@ -151,7 +148,8 @@ def build_compile_commands(build_args):
     new_entries, entries = itertools.tee(entries, 2)
     new_sources = set([e.source for e in entries])
     if os.path.isfile(args.cdb):
-        old_entries = itertools.filterfalse(lambda entry: entry.source in new_sources, CompilationDatabase.load(args.cdb))
+        old_entries = itertools.filterfalse(lambda entry: entry.source in new_sources,
+                                            CompilationDatabase.load(args.cdb))
     else:
         old_entries = []
 

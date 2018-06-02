@@ -1,5 +1,3 @@
-import os.path
-
 import pros.common.ui as ui
 from pros.cli.common import *
 from pros.common.cli_config import cli_config

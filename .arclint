@@ -3,6 +3,19 @@
 		"spelling": {
 			"type": "spelling",
 			"include": "(.*)"
+		},
+		"text": {
+			"type": "text",
+			"include": "(.*)",
+			"severity": {
+				"2": "disabled",
+				"3": "disabled"
+			}
+		},
+		"python": {
+			"type": "flake8",
+			"include": "(\\.py$)",
+			"exclude": "(__init__\\.py$)"
 		}
 	}
 }

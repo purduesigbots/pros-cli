@@ -1,14 +1,12 @@
 import logging.handlers
 import multiprocessing
-import os
 import threading
 import time
 
 import zmq
 from cobs import cobs
-
-import pros
 from pros.common.utils import *
+
 from .direct_port import DirectPort
 from .. import bytes_to_str
 

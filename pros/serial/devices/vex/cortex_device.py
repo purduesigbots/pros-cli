@@ -10,6 +10,7 @@ from pros.serial import bytes_to_str
 from pros.serial.devices.vex import VEXCommError
 from pros.serial.devices.vex.stm32_device import STM32Device
 from pros.serial.ports import list_all_comports
+
 from .vex_device import VEXDevice
 from ..system_device import SystemDevice
 
@@ -126,8 +127,8 @@ class CortexDevice(VEXDevice, SystemDevice):
                 of the response
                 :param command: Command to send the device
                 :param retries: Number of retries to attempt to parse the output before giving up and raising an error
-                :return: Returns a dictionary containing the received command field and the payload. Correctly computes the
-                payload length even if the extended command (0x56) is used (only applies to the V5).
+                :return: Returns a dictionary containing the received command field and the payload. Correctly computes
+                the payload length even if the extended command (0x56) is used (only applies to the V5).
                 """
         tx = self._tx_packet(command)
         self._rx_ack(timeout=timeout)

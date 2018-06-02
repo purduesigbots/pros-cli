@@ -5,11 +5,10 @@ import sys
 import threading
 
 import colorama
-
 from pros.common.utils import logger
 from pros.serial import decode_bytes_to_str
-from pros.serial.ports import PortConnectionException
 from pros.serial.devices import StreamDevice
+from pros.serial.ports import PortConnectionException
 
 
 # This file is a modification of the miniterm implementation on pyserial

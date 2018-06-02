@@ -4,11 +4,11 @@ import zipfile
 from datetime import datetime
 
 import jsonpickle
-
-from pros.common import logger
 import pros.common.ui as ui
+from pros.common import logger
 from pros.conductor import BaseTemplate
 from pros.conductor.templates import ExternalTemplate
+
 from .depot import Depot
 
 

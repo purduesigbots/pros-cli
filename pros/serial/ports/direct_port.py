@@ -1,8 +1,8 @@
 from typing import *
 
 import serial
-
 from pros.common import logger
+
 from .base_port import BasePort, PortConnectionException
 
 

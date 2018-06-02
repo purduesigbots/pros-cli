@@ -3,13 +3,13 @@ import signal
 import time
 
 import click
-
 import pros.conductor as c
-import pros.serial.ports as ports
 import pros.serial.devices as devices
+import pros.serial.ports as ports
 from pros.common.utils import logger
 from pros.serial.devices.vex.v5_user_device import V5UserDevice
 from pros.serial.terminal import Terminal
+
 from .click_classes import PROSGroup
 from .common import default_options, resolve_v5_port, resolve_cortex_port
 

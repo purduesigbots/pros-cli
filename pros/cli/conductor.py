@@ -1,6 +1,5 @@
 import os.path
 
-import pros.common as p
 import pros.common.ui as ui
 import pros.conductor as c
 from pros.cli.common import *

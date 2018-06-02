@@ -10,6 +10,7 @@ from pros.common import *
 from pros.serial import bytes_to_str
 from pros.serial import decode_bytes_to_str
 from pros.serial.ports import list_all_comports
+
 from .comm_error import VEXCommError
 from .crc import CRC
 from .message import Message

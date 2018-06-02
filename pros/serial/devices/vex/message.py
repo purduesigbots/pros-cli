@@ -5,7 +5,7 @@ from pros.serial import bytes_to_str
 
 class Message(bytes):
     def __new__(cls, rx: bytes, tx: bytes, internal_rx: Union[bytes, int] = None,
-                 bookmarks: Dict[str, bytes] = None):
+                bookmarks: Dict[str, bytes] = None):
         if internal_rx is None:
             internal_rx = rx
         if isinstance(internal_rx, int):

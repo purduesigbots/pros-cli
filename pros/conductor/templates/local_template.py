@@ -1,5 +1,6 @@
-from .template import Template
 import os
+
+from .template import Template
 
 
 class LocalTemplate(Template):

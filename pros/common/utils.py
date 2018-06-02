@@ -5,7 +5,6 @@ from functools import wraps, lru_cache
 from typing import *
 
 import click
-
 import pros
 import pros.cli.main
 

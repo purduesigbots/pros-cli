@@ -1,10 +1,10 @@
-import pros.common.ui as ui
-from .click_classes import *
-from .common import default_options
+import time
 
+import pros.common.ui as ui
 from pros.common import logger
 
-import time
+from .click_classes import *
+from .common import default_options
 
 
 @click.group(cls=PROSGroup)
@@ -38,5 +38,3 @@ def test():
     ui.finalize('test', {'hello': 'world'}, human_prefix='Created ')
 
     # ui.confirm('Hey')
-
-

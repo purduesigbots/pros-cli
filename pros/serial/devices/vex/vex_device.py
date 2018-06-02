@@ -4,6 +4,7 @@ from typing import *
 
 from pros.common import *
 from pros.serial import bytes_to_str
+
 from . import comm_error
 from .message import Message
 from ..generic_device import GenericDevice
