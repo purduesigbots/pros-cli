@@ -8,6 +8,7 @@ import click
 
 import pros.conductor as c
 from .click_classes import PROSGroup
+from pros.common.cli_config import cli_config
 
 
 @click.group(cls=PROSGroup)
@@ -22,6 +23,8 @@ def make(ctx, build_args):
     """
     Build current PROS project or cwd
     """
+    if cli_config().use_build_compile_commands:
+        return ctx.forward(build_compile_commands)
     env = os.environ.copy()
     # Add PROS toolchain to the beginning of PATH to ensure PROS binaries are preferred
     if os.environ.get('PROS_TOOLCHAIN'):
@@ -108,6 +111,10 @@ def build_compile_commands(build_args):
              'CC=intercept-cc', 'CXX=intercept-c++'])
         exit_code, entries = libscanbuild_capture(args)
 
+    any_entries, entries = itertools.tee(entries, 2)
+    if not any(any_entries):
+        return
+    click.echo('Capturing metadata for PROS Editor...')
     import subprocess
     env = os.environ.copy()
     # Add PROS toolchain to the beginning of PATH to ensure PROS binaries are preferred
