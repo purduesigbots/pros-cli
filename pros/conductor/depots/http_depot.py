@@ -6,8 +6,7 @@ from datetime import datetime
 import jsonpickle
 import pros.common.ui as ui
 from pros.common import logger
-from pros.conductor import BaseTemplate
-from pros.conductor.templates import ExternalTemplate
+from ..templates import BaseTemplate, ExternalTemplate
 
 from .depot import Depot
 

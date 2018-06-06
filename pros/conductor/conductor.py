@@ -3,11 +3,11 @@ import shutil
 from typing import *
 
 import click
-from pros.common import *
-from pros.conductor.depots import Depot, HttpDepot
-from pros.config import Config
 from semantic_version import Spec, Version
 
+from pros.common import *
+from pros.config import Config
+from .depots import Depot, HttpDepot
 from .project import Project
 from .templates import LocalTemplate, BaseTemplate, Template, ExternalTemplate
 

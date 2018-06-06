@@ -12,3 +12,5 @@ out/
 *.zip
 
 venv/
+
+*.pyc

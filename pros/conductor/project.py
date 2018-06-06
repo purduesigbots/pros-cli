@@ -3,9 +3,8 @@ import os.path
 from typing import *
 
 from pros.common import *
-from pros.conductor import LocalTemplate, Template, BaseTemplate
 from pros.config.config import Config, ConfigNotFoundException
-
+from .templates import LocalTemplate, Template, BaseTemplate
 from .transaction import Transaction
 
 

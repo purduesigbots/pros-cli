@@ -4,7 +4,7 @@ from typing import *
 import pros.common.ui as ui
 from pros.common import logger
 from pros.common.cli_config import cli_config
-from pros.conductor import BaseTemplate, Template
+from ..templates import BaseTemplate, Template
 
 
 class Depot(object):
