@@ -58,7 +58,7 @@ class Conductor(Config):
     def fetch_template(self, depot: Depot, template: BaseTemplate, **kwargs) -> LocalTemplate:
         for t in list(self.local_templates):
             if t.identifier == template.identifier:
-                self.remove_template(t)
+                self.purge_template(t)
 
         if 'destination' in kwargs:  # this is deprecated, will work (maybe) but not desirable behavior
             destination = kwargs.pop('destination')
@@ -79,7 +79,7 @@ class Conductor(Config):
         click.secho('Done', fg='green')
         return local_template
 
-    def remove_template(self, template: LocalTemplate):
+    def purge_template(self, template: LocalTemplate):
         if template not in self.local_templates:
             logger(__name__).info(f"{template.identifier} was not in the Conductor's local templates cache.")
         else:
@@ -94,18 +94,19 @@ class Conductor(Config):
     def resolve_templates(self, identifier: Union[str, BaseTemplate], allow_online: bool = True,
                           allow_offline: bool = True, force_refresh: bool = False, **kwargs) -> List[BaseTemplate]:
         results = []
+        kernel_version = kwargs.get('kernel_version', None)
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
             query = identifier
         if allow_online:
             for depot in self.depots.values():
-                results.extend(filter(lambda t: t.satisfies(query),
+                results.extend(filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                       depot.get_remote_templates(force_check=force_refresh, **kwargs)))
             logger(__name__).debug('Saving Conductor config after checking for remote updates')
             self.save()  # Save self since there may have been some updates from the depots
         if allow_offline:
-            results.extend(filter(lambda t: t.satisfies(query), self.local_templates))
+            results.extend(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))
         return results
 
     def resolve_template(self, identifier: Union[str, BaseTemplate], **kwargs) -> Optional[BaseTemplate]:
@@ -149,7 +150,8 @@ class Conductor(Config):
 
         kwargs['target'] = project.target
         if 'kernel' in project.templates:
-            kwargs['supported_kernels'] = project.templates['kernel'].version
+            # support_kernels for backwards compatibility, but kernel_version should be getting most of the exposure
+            kwargs['kernel_version'] = kwargs['supported_kernels'] = project.templates['kernel'].version
         template = self.resolve_template(identifier=identifier, allow_online=download_ok, **kwargs)
         if template is None:
             raise ValueError(f'Could not find a template satisfying {identifier} for {project.target}')
@@ -165,13 +167,23 @@ class Conductor(Config):
         template_installed = project.template_is_upgradeable(template)
         if force or (template_installed and upgrade_ok) or (not template_installed and install_ok):
             project.apply_template(template, force_system=kwargs.pop('force_system', False),
-                                   force_user=kwargs.pop('force_user', False))
+                                   force_user=kwargs.pop('force_user', False),
+                                   remove_empty_directories=kwargs.pop('remove_empty_directories', False))
             ui.finalize('apply', f'Finished applying {template.identifier} to {project.location}')
         else:
             logger(__name__).warning(f'Could not install {template.identifier} because it is '
                                      f'{"" if template_installed else "not "}new to the project. '
                                      f'Upgrading is {"" if upgrade_ok else "not "}allowed, and '
                                      f'installing is {"" if install_ok else "not "}allowed')
+
+    @staticmethod
+    def remove_template(project: Project, identifier: Union[str, BaseTemplate], remove_user: bool=True,
+                        remove_empty_directories: bool=True):
+        ui.logger(__name__).debug(f'Uninstalling templates matching {identifier}')
+        for template in project.resolve_template(identifier):
+            ui.echo(f'Uninstalling {template.identifier}')
+            project.remove_template(template, remove_user=remove_user,
+                                    remove_empty_directories=remove_empty_directories)
 
     def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
         proj = Project(path=path, create=True)

@@ -23,15 +23,16 @@ class BaseTemplate(object):
         if self.name == 'pros':
             self.name = 'kernel'
 
-    def satisfies(self, query: 'BaseTemplate') -> bool:
+    def satisfies(self, query: 'BaseTemplate', kernel_version: Union[str, Version]=None) -> bool:
         if query.name and self.name != query.name:
             return False
         if query.target and self.target != query.target:
             return False
         if query.version and Version(self.version) not in Spec(query.version):
             return False
-        if query.supported_kernels and self.supported_kernels and \
-                Version(query.supported_kernels) not in Spec(self.supported_kernels):
+        if kernel_version and isinstance(kernel_version, str):
+            kernel_version = Version(kernel_version)
+        if query.supported_kernels and kernel_version and kernel_version not in Spec(self.supported_kernels):
             return False
         keys_intersection = set(self.metadata.keys()).intersection(query.metadata.keys())
         # Find the intersection of the keys in the template's metadata with the keys in the query metadata

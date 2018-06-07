@@ -19,7 +19,7 @@ class Transaction(object):
             self.add(path, src)
 
     def add(self, path: str, src: str):
-        path = os.path.normpath(path)
+        path = os.path.normpath(path.replace('\\', '/'))
         self._add_files.add(path)
         self.effective_state.add(path)
         self._add_srcs[path] = src
@@ -31,7 +31,7 @@ class Transaction(object):
             self.rm(path)
 
     def rm(self, path: str):
-        path = os.path.normpath(path)
+        path = os.path.normpath(path.replace('\\', '/'))
         self._rm_files.add(path)
         if path in self.effective_state:
             self.effective_state.remove(path)
@@ -39,11 +39,16 @@ class Transaction(object):
             self._add_files.remove(path)
             self._add_srcs.pop(path)
 
-    def commit(self, label: str = 'Committing transaction'):
+    def commit(self, label: str = 'Committing transaction', remove_empty_directories: bool = True):
         with ui.progressbar(length=len(self._rm_files) + len(self._add_files), label=label) as pb:
-            for file in self._rm_files:
+            for file in sorted(self._rm_files, key=lambda p: p.count('/') + p.count('\\'), reverse=True):
                 os.remove(os.path.join(self.location, file))
                 logger(__name__).info(f'Removing {file}')
+                pardir = os.path.abspath(os.path.join(self.location, file, os.pardir))
+                while remove_empty_directories and len(os.listdir(pardir)) == 0:
+                    logger(__name__).info(f'Removing {os.path.relpath(pardir, self.location)}')
+                    os.rmdir(pardir)
+                    pardir = os.path.abspath(os.path.join(pardir, os.pardir))
                 pb.update(1)
             for file in self._add_files:
                 source = os.path.join(self._add_srcs[file], file)

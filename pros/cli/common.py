@@ -15,9 +15,8 @@ def verbose_option(f):
         if not isinstance(value, int):
             raise ValueError('Invalid log level: {}'.format(value))
         if value:
-            logger().setLevel(logging.INFO)
-            stdout_handler = ctx.obj['click_handler']  # type: logging.Handler
-            stdout_handler.setLevel(logging.INFO)
+            ctx.obj['click_handler'].setLevel(logging.INFO)
+            logging.root.setLevel(logging.INFO)
             logger(__name__).info('Verbose messages enabled')
         return value
 
@@ -36,7 +35,7 @@ def debug_option(f):
             raise ValueError('Invalid log level: {}'.format(value))
         if value:
             ctx.obj['click_handler'].setLevel(logging.DEBUG)
-            logging.basicConfig(level=logging.WARNING, handlers=[ctx.obj['click_handler']])
+            logging.root.setLevel(logging.DEBUG)
             logger(__name__).info('Debugging messages enabled')
         if logger('pros').isEnabledFor(logging.DEBUG):
             logger('pros').debug(f'CLI Version: {get_version()}')
@@ -55,9 +54,8 @@ def logging_option(f):
             value = getattr(logging, value.upper(), None)
         if not isinstance(value, int):
             raise ValueError('Invalid log level: {}'.format(value))
-        logger().setLevel(value)
-        stdout_handler = ctx.obj['click_handler']  # type: logging.Handler
-        stdout_handler.setLevel(value)
+        ctx.obj['click_handler'].setLevel(value)
+        logging.root.setLevel(value)
         return value
 
     return click.option('-l', '--log', help='Logging level', is_eager=True, expose_value=False, callback=callback,
@@ -79,8 +77,8 @@ def logfile_option(f):
         fmt_str = '%(name)s.%(funcName)s:%(levelname)s - %(asctime)s - %(message)s'
         handler.setFormatter(logging.Formatter(fmt_str))
         handler.setLevel(level)
-        logger().addHandler(handler)
-        logger().setLevel(min(logger().level, level))
+        logging.root.addHandler(handler)
+        logging.root.setLevel(min(logger().level, level))
 
     return click.option('--logfile', help='Log messages to a file', is_eager=True, expose_value=False,
                         callback=callback, default=(None, None),
@@ -153,7 +151,8 @@ def project_option(arg_name='project', required: bool = True, default='.'):
 
     def wrapper(f):
         return click.option(f'--{arg_name}', callback=callback, required=required,
-                            default=default, type=click.Path(exists=True))(f)
+                            default=default, type=click.Path(exists=True), show_default=True,
+                            help='PROS Project directory or file')(f)
 
     return wrapper
 

@@ -54,12 +54,13 @@ class Project(Config):
                 glob.glob(f'{self.location}/**/*', recursive=True)}
 
     def template_is_installed(self, query: BaseTemplate) -> bool:
-        return any([t.satisfies(query) for t in self.templates.values()])
+        return any([t.satisfies(query, kernel_version=self.kernel) for t in self.templates.values()])
 
     def template_is_upgradeable(self, query: BaseTemplate) -> bool:
         return any([query > t for t in self.templates.values()])
 
-    def apply_template(self, template: LocalTemplate, force_system: bool = False, force_user: bool = False):
+    def apply_template(self, template: LocalTemplate, force_system: bool = False, force_user: bool = False,
+                       remove_empty_directories: bool = False):
         """
         Applies a template to a project
         :param template:
@@ -106,8 +107,25 @@ class Project(Config):
         transaction.extend_add(template.system_files, template.location)
 
         logger(__name__).debug(transaction)
-        transaction.commit(label=f'Applying {template.identifier}')
+        transaction.commit(label=f'Applying {template.identifier}', remove_empty_directories=remove_empty_directories)
         self.templates[template.name] = template
+        self.save()
+
+    def remove_template(self, template: Template, remove_user: bool=False, remove_empty_directories: bool=True):
+        if not self.template_is_installed(template):
+            raise ValueError(f'{template.identifier} is not installed on this project.')
+        if template.name == 'kernel':
+            raise ValueError(f'Cannot remove the kernel template. Maybe create a new project?')
+
+        real_template = LocalTemplate(orig=template, location=self.location)
+        transaction = Transaction(self.location, set(self.all_files))
+        transaction.extend_rm(real_template.real_system_files)
+        if remove_user:
+            transaction.extend_rm(real_template.real_user_files)
+        logger(__name__).debug(transaction)
+        transaction.commit(label=f'Removing {template.identifier}...',
+                           remove_empty_directories=remove_empty_directories)
+        del self.templates[real_template.name]
         self.save()
 
     def list_template_files(self, include_system: bool = True, include_user: bool = True) -> List[str]:
@@ -118,6 +136,12 @@ class Project(Config):
             if include_user:
                 files.extend(t.user_files)
         return files
+
+    def resolve_template(self, query: Union[str, BaseTemplate]) -> List[Template]:
+        if isinstance(query, str):
+            query = BaseTemplate.create_query(query)
+        assert isinstance(query, BaseTemplate)
+        return [local_template for local_template in self.templates.values() if local_template.satisfies(query)]
 
     def __str__(self):
         return f'Project: {self.location} ({self.name}) for {self.target} with ' \

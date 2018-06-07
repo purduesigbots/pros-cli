@@ -164,4 +164,4 @@ def purge_template(query: c.BaseTemplate, force):
         click.confirm(f'Are you sure you want to remove multiple templates?', abort=True)
     for template in templates:
         if isinstance(template, c.LocalTemplate):
-            cond.remove_template(template)
+            cond.purge_template(template)

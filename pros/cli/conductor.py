@@ -80,6 +80,8 @@ def fetch(query: c.BaseTemplate):
               help="Force all system files to be inserted into the project")
 @click.option('--force-apply', 'force_apply', default=False, is_flag=True,
               help="Force apply the template, disregarding if the template is already installed.")
+@click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
+              help='Remove empty directories when removing files')
 @project_option()
 @template_query(required=True)
 @default_options
@@ -101,6 +103,8 @@ def apply(project: c.Project, query: c.BaseTemplate, **kwargs):
               help="Force all system files to be inserted into the project")
 @click.option('--force-apply', 'force_apply', default=False, is_flag=True,
               help="Force apply the template, disregarding if the template is already installed.")
+@click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
+              help='Remove empty directories when removing files')
 @project_option()
 @template_query(required=True)
 @default_options
@@ -114,7 +118,7 @@ def install(ctx: click.Context, **kwargs):
     ctx.invoke(apply, install_ok=True, **kwargs)
 
 
-@conductor.command(context_settings={'ignore_unknown_options': True})
+@conductor.command(context_settings={'ignore_unknown_options': True}, aliases=['u'])
 @click.option('--install/--no-install', 'install_ok', default=False)
 @click.option('--download/--no-download', 'download_ok', default=True)
 @click.option('--force-user', 'force_user', default=False, is_flag=True,
@@ -123,6 +127,8 @@ def install(ctx: click.Context, **kwargs):
               help="Force all system files to be inserted into the project")
 @click.option('--force-apply', 'force_apply', default=False, is_flag=True,
               help="Force apply the template, disregarding if the template is already installed.")
+@click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
+              help='Remove empty directories when removing files')
 @project_option()
 @template_query(required=False)
 @default_options
@@ -141,6 +147,24 @@ def upgrade(ctx: click.Context, project: c.Project, query: c.BaseTemplate, **kwa
             ctx.invoke(apply, upgrade_ok=True, project=project, query=q, **kwargs)
     else:
         ctx.invoke(apply, project=project, query=query, upgrade_ok=True, **kwargs)
+
+
+@conductor.command('uninstall')
+@click.option('--remove-user', is_flag=True, default=False, help='Also remove user files')
+@click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
+              help='Remove empty directories when removing files')
+@project_option()
+@template_query()
+@default_options
+def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: bool,
+                       remove_empty_directories: bool=False):
+    """
+    Uninstall a template from a PROS project
+
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor to learn more
+    """
+    c.Conductor().remove_template(project, query, remove_user=remove_user,
+                                  remove_empty_directories=remove_empty_directories)
 
 
 @conductor.command('new-project', aliases=['new', 'create-project'])
