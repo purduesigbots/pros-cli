@@ -56,7 +56,7 @@ def jinx():
                     await client.send(data)
                 except:
                     clients.remove(client)
-            await asyncio.sleep(0)
+            await asyncio.sleep(.2)
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(asyncio.wait([websockets.serve(client_handler, 'localhost', 9001), jinx_producer()]))
