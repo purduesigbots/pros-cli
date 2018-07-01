@@ -3,10 +3,10 @@ import shutil
 import zipfile
 
 import click
-from ..templates import BaseTemplate, ExternalTemplate, Template
-from pros.config.config import ConfigNotFoundException
 
+from pros.config import ConfigNotFoundException
 from .depot import Depot
+from ..templates import BaseTemplate, Template, ExternalTemplate
 
 
 class LocalDepot(Depot):

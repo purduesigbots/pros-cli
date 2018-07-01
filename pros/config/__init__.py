@@ -1,1 +1,1 @@
-from pros.config.config import Config
+from pros.config.config import Config, ConfigNotFoundException

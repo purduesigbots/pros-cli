@@ -9,6 +9,7 @@ import pros.cli.terminal
 import pros.cli.upload
 import pros.cli.v5_utils
 import pros.common.ui as ui
+import pros.common.ui.log
 from pros.cli.click_classes import *
 from pros.cli.common import default_options
 from pros.common.utils import get_version, logger
@@ -17,9 +18,9 @@ from pros.common.utils import get_version, logger
 def main():
     try:
         ctx_obj = {}
-        click_handler = ui.PROSLogHandler(ctx_obj=ctx_obj)
+        click_handler = pros.common.ui.log.PROSLogHandler(ctx_obj=ctx_obj)
         ctx_obj['click_handler'] = click_handler
-        formatter = ui.PROSLogFormatter('%(levelname)s - %(name)s:%(funcName)s - %(message)s', ctx_obj)
+        formatter = pros.common.ui.log.PROSLogFormatter('%(levelname)s - %(name)s:%(funcName)s - %(message)s', ctx_obj)
         click_handler.setFormatter(formatter)
         logging.basicConfig(level=logging.WARNING, handlers=[click_handler])
 
@@ -35,9 +36,9 @@ def version(ctx: click.Context, param, value):
         return
     ctx.ensure_object(dict)
     if ctx.obj.get('machine_output', False):
-        click.echo(get_version())
+        ui.echo(get_version())
     else:
-        click.echo('pros, version {}'.format(get_version()))
+        ui.echo('pros, version {}'.format(get_version()))
     ctx.exit(0)
 
 

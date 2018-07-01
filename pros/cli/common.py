@@ -15,8 +15,9 @@ def verbose_option(f):
         if not isinstance(value, int):
             raise ValueError('Invalid log level: {}'.format(value))
         if value:
-            ctx.obj['click_handler'].setLevel(logging.INFO)
-            logging.root.setLevel(logging.INFO)
+            logger().setLevel(min(logger().level, logging.INFO))
+            stdout_handler = ctx.obj['click_handler']  # type: logging.Handler
+            stdout_handler.setLevel(logging.INFO)
             logger(__name__).info('Verbose messages enabled')
         return value
 
@@ -34,9 +35,10 @@ def debug_option(f):
         if not isinstance(value, int):
             raise ValueError('Invalid log level: {}'.format(value))
         if value:
-            ctx.obj['click_handler'].setLevel(logging.DEBUG)
-            logging.root.setLevel(logging.DEBUG)
-            logger(__name__).info('Debugging messages enabled')
+            logging.getLogger().setLevel(min(logger().level, logging.DEBUG))
+            stdout_handler = ctx.obj['click_handler']  # type: logging.Handler
+            stdout_handler.setLevel(logging.DEBUG)
+            logging.getLogger(__name__).info('Debugging messages enabled')
         if logger('pros').isEnabledFor(logging.DEBUG):
             logger('pros').debug(f'CLI Version: {get_version()}')
         return value
@@ -54,8 +56,9 @@ def logging_option(f):
             value = getattr(logging, value.upper(), None)
         if not isinstance(value, int):
             raise ValueError('Invalid log level: {}'.format(value))
-        ctx.obj['click_handler'].setLevel(value)
-        logging.root.setLevel(value)
+        logging.getLogger().setLevel(min(logger().level, value))
+        stdout_handler = ctx.obj['click_handler']  # type: logging.Handler
+        stdout_handler.setLevel(value)
         return value
 
     return click.option('-l', '--log', help='Logging level', is_eager=True, expose_value=False, callback=callback,
@@ -77,8 +80,10 @@ def logfile_option(f):
         fmt_str = '%(name)s.%(funcName)s:%(levelname)s - %(asctime)s - %(message)s'
         handler.setFormatter(logging.Formatter(fmt_str))
         handler.setLevel(level)
-        logging.root.addHandler(handler)
-        logging.root.setLevel(min(logger().level, level))
+        logging.getLogger().addHandler(handler)
+        stdout_handler = ctx.obj['click_handler']  # type: logging.Handler
+        stdout_handler.setLevel(logging.getLogger().level)  # pin stdout_handler to its current log level
+        logging.getLogger().setLevel(min(logging.getLogger().level, level))
 
     return click.option('--logfile', help='Log messages to a file', is_eager=True, expose_value=False,
                         callback=callback, default=(None, None),
