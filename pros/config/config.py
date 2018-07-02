@@ -33,7 +33,15 @@ class Config(object):
                                 class_name = '{}.{}'.format(self.__class__.__module__, self.__class__.__qualname__)
                                 logger(__name__).debug(
                                     'Coercing {} to {}'.format(result['py/object'], class_name))
-                                self.__dict__.update(result['py/state'])
+                                old_object = result['py/object']
+                                try:
+                                    result['py/object'] = class_name
+                                    result = jsonpickle.unpickler.Unpickler().restore(result)
+                                except (json.decoder.JSONDecodeError, AttributeError) as e:
+                                    logger(__name__).debug(e)
+                                    logger(__name__).warning(f'Couldn\'t coerce {file} ({old_object}) to '
+                                                             f'{class_name}. Using rudimentary coercion')
+                                    self.__dict__.update(result['py/state'])
                             else:
                                 self.__dict__.update(result)
                         elif isinstance(result, object):

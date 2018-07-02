@@ -3,7 +3,7 @@ from typing import *
 
 import pros.common.ui as ui
 from pros.common import logger
-from pros.common.cli_config import cli_config
+from pros.config.cli_config import cli_config
 from ..templates import BaseTemplate, Template
 
 

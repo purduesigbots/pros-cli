@@ -1,7 +1,6 @@
 import click.core
-from pros.common.utils import *
-from pros.serial.devices.vex import find_cortex_ports, find_v5_ports
 
+from pros.common.utils import *
 from .click_classes import *
 
 
@@ -162,7 +161,18 @@ def project_option(arg_name='project', required: bool = True, default='.'):
     return wrapper
 
 
+root_commands = []
+
+
+def pros_root(f):
+    decorator = click.group(cls=PROSRoot)(f)
+    decorator.__name__ = f.__name__
+    root_commands.append(decorator)
+    return decorator
+
+
 def resolve_v5_port(port: Optional[str], type: str) -> Optional[str]:
+    from pros.serial.devices.vex import find_v5_ports
     if not port:
         ports = find_v5_ports(type)
         if len(ports) == 0:
@@ -181,6 +191,7 @@ def resolve_v5_port(port: Optional[str], type: str) -> Optional[str]:
 
 
 def resolve_cortex_port(port: Optional[str]) -> Optional[str]:
+    from pros.serial.devices.vex import find_cortex_ports
     if not port:
         ports = find_cortex_ports()
         if len(ports) == 0:

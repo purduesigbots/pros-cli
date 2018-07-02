@@ -1,5 +1,6 @@
 import logging
 import os
+import os.path
 import sys
 from functools import wraps, lru_cache
 from typing import *
@@ -72,10 +73,50 @@ def isdebug(obj: Union[str, object] = pros.__name__) -> bool:
 def ismachineoutput(ctx: click.Context = None) -> bool:
     if ctx is None:
         ctx = click.get_current_context(silent=True)
-    ctx.ensure_object(dict)
-    assert isinstance(ctx.obj, dict)
-    return ctx.obj.get('machine_output', False)
+    if isinstance(ctx, click.Context):
+        ctx.ensure_object(dict)
+        assert isinstance(ctx.obj, dict)
+        return ctx.obj.get('machine_output', False)
+    else:
+        return False
 
 
 def get_pros_dir():
     return click.get_app_dir('PROS')
+
+
+def download_file(url: str, ext: Optional[str]=None, desc: Optional[str]=None) -> Optional[str]:
+    """
+    Helper method to download a temporary file.
+    :param url: URL of the file to download
+    :param ext: Expected extension of the file to be downloaded
+    :param desc: Description of file being downloaded (for progressbar)
+    :return: The path of the downloaded file, or None if there was an error
+    """
+    import requests
+    from pros.common.ui import progressbar
+    from rfc6266 import parse_requests_response
+
+    response = requests.get(url, stream=True)
+    if response.status_code == 200:
+        if isinstance(ext, str) and 'Content-Disposition' in response.headers.keys():
+            filename = parse_requests_response(response).filename_sanitized(ext)
+        elif ext is None and 'Content-Disposition' in response.headers.keys():
+                filename = parse_requests_response(response).filename_unsafe
+        else:
+            filename = url.rsplit('/', 1)[-1]
+        output_path = os.path.join(get_pros_dir(), 'download', filename)
+
+        if os.path.exists(output_path):
+            os.remove(output_path)
+        elif not os.path.exists(os.path.dirname(output_path)):
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+        with open(output_path, mode='wb') as file:
+            with progressbar(length=int(response.headers['Content-Length']),
+                             label=desc or f'Downloading {filename}') as pb:
+                for chunk in response.iter_content(256):
+                    file.write(chunk)
+                    pb.update(len(chunk))
+        return output_path
+    return None

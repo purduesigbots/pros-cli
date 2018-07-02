@@ -8,14 +8,14 @@ import pros.common
 # import pros.conductor.providers.github_releases as githubreleases
 from pros.config.config import Config
 
-from .upgrade import UpgradeManifestV1
+if TYPE_CHECKING:
+    from pros.upgrade.manifests.upgrade_manifest_v1 import UpgradeManifestV1  # noqa: F401
 
 
 class CliConfig(Config):
     def __init__(self, file=None):
         if not file:
             file = os.path.join(click.get_app_dir('PROS'), 'cli.pros')
-        self.cached_upgrade: Tuple[datetime, UpgradeManifestV1] = (datetime.min, None)
         self.update_frequency: timedelta = timedelta(hours=1)
         self.override_use_build_compile_commands: Optional[bool] = None
 
@@ -30,7 +30,9 @@ class CliConfig(Config):
             return self.override_use_build_compile_commands
         return os.path.exists(os.path.expanduser(os.path.join('~', '.pros-atom')))
 
-    def get_upgrade_manifest(self, force: bool = False) -> Optional[UpgradeManifestV1]:
+    def get_upgrade_manifest(self, force: bool = False) -> Optional['UpgradeManifestV1']:
+        from pros.upgrade.manifests.upgrade_manifest_v1 import UpgradeManifestV1  # noqa: F811
+
         if not force and not self.needs_online_fetch(self.cached_upgrade[0]):
             return self.cached_upgrade[1]
         pros.common.logger(__name__).info('Fetching upgrade manifest...')
@@ -55,6 +57,8 @@ class CliConfig(Config):
 
 def cli_config() -> CliConfig:
     ctx = click.get_current_context(silent=True)
+    if not ctx or not isinstance(ctx, click.Context):
+        return CliConfig()
     ctx.ensure_object(dict)
     assert isinstance(ctx.obj, dict)
     if not hasattr(ctx.obj, 'cli_config') or not isinstance(ctx.obj['cli_config'], CliConfig):

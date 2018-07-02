@@ -1,18 +1,29 @@
 import logging
+import os.path
 
 import click
-import pros.cli.build
-import pros.cli.conductor
-import pros.cli.conductor_utils
-import pros.cli.misc_commands
-import pros.cli.terminal
-import pros.cli.upload
-import pros.cli.v5_utils
+
 import pros.common.ui as ui
 import pros.common.ui.log
 from pros.cli.click_classes import *
-from pros.cli.common import default_options
+from pros.cli.common import default_options, root_commands
 from pros.common.utils import get_version, logger
+
+root_sources = [
+    'build',
+    'conductor',
+    'conductor_utils',
+    'misc_commands',
+    'terminal',
+    'upload',
+    'v5_utils'
+]
+
+if os.path.exists(os.path.join(__file__, '..', '..', '..', '.git')):
+    root_sources.append('test')
+
+for root_source in root_sources:
+    __import__(f'pros.cli.{root_source}')
 
 
 def main():
@@ -44,12 +55,7 @@ def version(ctx: click.Context, param, value):
 
 @click.command('pros',
                cls=PROSCommandCollection,
-               sources=[pros.cli.build.build_cli,
-                        pros.cli.terminal.terminal_cli,
-                        pros.cli.upload.upload_cli,
-                        pros.cli.v5_utils.v5_utils_cli,
-                        pros.cli.conductor.conductor_cli,
-                        pros.cli.misc_commands.misc_commands_cli])
+               sources=root_commands)
 @default_options
 @click.option('--version', help='Displays version and exits', is_flag=True, expose_value=False, is_eager=True,
               callback=version)

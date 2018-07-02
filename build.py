@@ -3,6 +3,8 @@ import sys
 import requests.certs
 from cx_Freeze import Executable, setup
 
+from distutils.util import get_platform
+
 try:  # for pip >= 10 -- https://stackoverflow.com/a/49867265/3175586
     from pip._internal.req import parse_requirements
 except ImportError:  # for pip <= 9.0.3
@@ -15,7 +17,12 @@ build_exe_options = {
     'packages': ['ssl', 'requests', 'idna'],
     "include_files": [(requests.certs.where(), 'cacert.pem')],
     'excludes': ['pip', 'distutils'],  # optimization excludes
-    'constants': ['CLI_VERSION=\'{}\''.format(open('version').read().strip())],
+    'constants': [
+        f'{key}=\'{value}\'' for key, value in {
+            'CLI_VERSION': open('version').read().strip(),
+            'FROZEN_PLATFORM_V1': 'Windows64' if get_platform() == 'win-amd64' else 'Windows86'
+        }.items()
+    ],
     'include_msvcr': True
     # 'zip_include_packages': [],
     # 'zip_exclude_packages': []
@@ -23,7 +30,13 @@ build_exe_options = {
 
 build_mac_options = {
     'bundle_name': 'PROS CLI',
-    'iconfile': 'pros.icns'
+    'iconfile': 'pros.icns',
+    'constants': [
+        f'{key}=\'{value}\'' for key, value in {
+            'CLI_VERSION': open('version').read().strip(),
+            'FROZEN_PLATFORM_V1': 'MacOS'
+        }.items()
+    ]
 }
 
 modules = []

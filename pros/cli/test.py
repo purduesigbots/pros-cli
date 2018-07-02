@@ -2,12 +2,10 @@ import time
 
 import pros.common.ui as ui
 from pros.common import logger
-
-from .click_classes import *
-from .common import default_options
+from .common import default_options, pros_root
 
 
-@click.group(cls=PROSGroup)
+@pros_root
 def test_cli():
     pass
 

@@ -6,7 +6,7 @@ from pros.cli.common import *
 from pros.conductor.templates import ExternalTemplate
 
 
-@click.group(cls=PROSGroup)
+@pros_root
 def conductor_cli():
     pass
 

@@ -32,7 +32,7 @@ class BaseTemplate(object):
             return False
         if kernel_version and isinstance(kernel_version, str):
             kernel_version = Version(kernel_version)
-        if query.supported_kernels and kernel_version and kernel_version not in Spec(self.supported_kernels):
+        if self.supported_kernels and kernel_version and kernel_version not in Spec(self.supported_kernels):
             return False
         keys_intersection = set(self.metadata.keys()).intersection(query.metadata.keys())
         # Find the intersection of the keys in the template's metadata with the keys in the query metadata

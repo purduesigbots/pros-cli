@@ -1,9 +1,8 @@
 import pros.common.ui as ui
 from pros.cli.common import *
-from pros.common.cli_config import cli_config
 
 
-@click.group(cls=PROSGroup)
+@pros_root
 def misc_commands_cli():
     pass
 
@@ -11,25 +10,27 @@ def misc_commands_cli():
 @misc_commands_cli.command()
 @click.option('--force-check', default=False, is_flag=True,
               help='Force check for updates, disregarding auto-check frequency')
+@click.option('--no-install', default=False, is_flag=True,
+              help='Only check if a new version is available, do not attempt to install')
 @default_options
-def upgrade(force_check):
-    upgrade_manifest = cli_config().get_upgrade_manifest(force_check)
-    if not upgrade_manifest:
-        ui.logger(__name__).error('Failed to get upgrade information. Try running with --debug for more information')
-    ui.finalize(f'upgrade', upgrade_manifest)
-
-
-if os.path.exists(os.path.join(__file__, '..', '..', '..', '.git')):
-    @misc_commands_cli.command()
-    @click.option('--version', default=get_version())
-    @click.option('--download-url', prompt=True)
-    @click.option('--info-url', prompt=True)
-    def create_upgrade_manifest(version, download_url, info_url):
-        from pros.common.upgrade import UpgradeManifestV1
-        from semantic_version import Version
-        import jsonpickle
-        upgrade_manifest = UpgradeManifestV1()
-        upgrade_manifest.version = Version(version)
-        upgrade_manifest.download_url = download_url
-        upgrade_manifest.info_url = info_url
-        print(jsonpickle.encode(upgrade_manifest))
+def upgrade(force_check, no_install):
+    """
+    Check for updates to the PROS CLI
+    """
+    from pros.upgrade import UpgradeManager
+    manager = UpgradeManager()
+    manifest = manager.get_manifest(force_check)
+    ui.logger(__name__).debug(repr(manifest))
+    if manager.has_stale_manifest:
+        ui.logger(__name__).error('Failed to get latest upgrade information. '
+                                  'Try running with --debug for more information')
+        return -1
+    if not manager.needs_upgrade:
+        ui.finalize('upgradeInfo', 'PROS CLI is up to date')
+    else:
+        ui.finalize('upgradeInfo', manifest)
+        if not no_install:
+            if not manager.can_perform_upgrade:
+                ui.logger(__name__).error(f'This manifest cannot perform the upgrade.')
+                return -3
+            ui.finalize('upgradeComplete', manager.perform_upgrade())

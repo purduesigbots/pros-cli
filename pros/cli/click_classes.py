@@ -123,5 +123,9 @@ class PROSGroup(PROSFormatted, click.Group):
         return None
 
 
+class PROSRoot(PROSGroup):
+    pass
+
+
 class PROSCommandCollection(PROSFormatted, click.CommandCollection):
     pass
