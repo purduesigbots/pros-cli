@@ -178,8 +178,12 @@ class Project(Config):
         else:
             make_cmd = 'make'
         cwd = self.location
+        stdout_pipe = EchoPipe()
+        stderr_pipe = EchoPipe(err=True)
         process = subprocess.Popen(executable=make_cmd, args=[make_cmd, *build_args], cwd=cwd, env=env,
-                                   stdout=EchoPipe(), stderr=EchoPipe())
+                                   stdout=stdout_pipe, stderr=stderr_pipe)
+        stdout_pipe.close()
+        stderr_pipe.close()
         process.wait()
         return process.returncode
 
