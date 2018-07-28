@@ -1,10 +1,9 @@
-import os
-import os.path
+from typing import *
 
 import click
 
 import pros.conductor as c
-from pros.cli.common import pros_root, logger, default_options, project_option
+from pros.cli.common import pros_root, default_options, project_option
 
 
 @pros_root
@@ -24,32 +23,37 @@ def make(project: c.Project, build_args):
 
 
 @build_cli.command('make-upload', aliases=['mu'], hidden=True)
+@project_option()
 @click.pass_context
-def make_upload(ctx):
+def make_upload(ctx, project: c.Project):
     from .upload import upload
-    ctx.forward(make)
-    ctx.forward(upload)
+    return ctx.forward(make, project) == 0 and \
+           ctx.forward(upload) == 0
 
 
 @build_cli.command('make-upload-terminal', aliases=['mut'], hidden=True)
+@project_option()
 @click.pass_context
-def make_upload_terminal(ctx):
+def make_upload_terminal(ctx, project: c.Project):
     from .upload import upload
     from .terminal import terminal
-    ctx.forward(make)
-    ctx.forward(upload)
-    ctx.forward(terminal, request_banner=False)
+    return ctx.forward(make, project) == 0 and \
+           ctx.forward(upload) == 0 and \
+           ctx.forward(terminal, request_banner=False) == 0
 
 
 @build_cli.command('build-compile-commands', hidden=True)
+@project_option()
+@click.option('--suppress-output/--show-output', 'suppress_output', default=False, show_default=True,
+              help='Suppress output')
+@click.option('--compile-commands', type=click.File('w'), default=None)
+@click.option('--sandbox', default=False, is_flag=True)
 @click.argument('build-args', nargs=-1)
-def build_compile_commands(build_args):
+def build_compile_commands(project: c.Project, suppress_output: bool, compile_commands, sandbox: bool,
+                           build_args: List[str]):
     """
     Build a compile_commands.json compatible with cquery
     :return:
     """
-    project_path = c.Project.find_project(os.getcwd())
-    if not project_path:
-        logger(__name__).error('You must be inside a PROS project to invoke this command')
-        return -1
-    return c.Project(project_path).compile(build_args, scan_build=True)
+    return project.make_scan_build(build_args, cdb_file=compile_commands, suppress_output=suppress_output,
+                                   sandbox=sandbox)

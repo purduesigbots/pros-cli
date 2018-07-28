@@ -1,4 +1,5 @@
 import glob
+import io
 import os.path
 import sys
 from typing import *
@@ -165,7 +166,7 @@ class Project(Config):
             return self.__dict__['output']
         return 'bin/output.bin'
 
-    def _make(self, build_args: List[str]):
+    def make(self, build_args: List[str]):
         import subprocess
         env = os.environ.copy()
         # Add PROS toolchain to the beginning of PATH to ensure PROS binaries are preferred
@@ -187,12 +188,20 @@ class Project(Config):
         process.wait()
         return process.returncode
 
-    def _make_scan_build(self, build_args: List[str]):
+    def make_scan_build(self, build_args: Tuple[str], cdb_file: Optional[Union[str, io.IOBase]] = None,
+                        suppress_output: bool = False, sandbox: bool = False):
         from libscanbuild.compilation import Compilation, CompilationDatabase
         from libscanbuild.arguments import create_intercept_parser
         import itertools
 
+        import subprocess
         import argparse
+
+        if sandbox:
+            import tempfile
+            td = tempfile.TemporaryDirectory()
+            td_path = td.name.replace("\\", "/")
+            build_args = [*build_args, f'BINDIR={td_path}']
 
         def libscanbuild_capture(args: argparse.Namespace) -> Tuple[int, Iterable[Compilation]]:
             from libscanbuild.intercept import setup_environment, run_build, exec_trace_files, parse_exec_trace, \
@@ -207,11 +216,14 @@ class Project(Config):
                 environment = setup_environment(args, tmp_dir)
                 if os.environ.get('PROS_TOOLCHAIN'):
                     environment['PATH'] = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin') + os.pathsep + \
-                                          environment[
-                                              'PATH']
-                pipe = EchoPipe()
+                                          environment['PATH']
+                if not suppress_output:
+                    pipe = EchoPipe()
+                else:
+                    pipe = subprocess.DEVNULL
                 exit_code = run_build(args.build, env=environment, stdout=pipe, stderr=pipe, cwd=self.directory)
-                pipe.close()
+                if not suppress_output:
+                    pipe.close()
                 # read the intercepted exec calls
                 calls = (parse_exec_trace(file) for file in exec_trace_files(tmp_dir))
                 current = compilations(calls, args.cc, args.cxx)
@@ -229,11 +241,14 @@ class Project(Config):
              'CC=intercept-cc', 'CXX=intercept-c++'])
         exit_code, entries = libscanbuild_capture(args)
 
+        if sandbox:
+            td.cleanup()
+
         any_entries, entries = itertools.tee(entries, 2)
         if not any(any_entries):
             return exit_code
-        ui.echo('Capturing metadata for PROS Editor...')
-        import subprocess
+        if not suppress_output:
+            ui.echo('Capturing metadata for PROS Editor...')
         env = os.environ.copy()
         # Add PROS toolchain to the beginning of PATH to ensure PROS binaries are preferred
         if os.environ.get('PROS_TOOLCHAIN'):
@@ -270,8 +285,9 @@ class Project(Config):
                 cxx_sysroot_includes.append(f'-isystem{line}')
         new_entries, entries = itertools.tee(entries, 2)
         new_sources = set([e.source for e in entries])
-        cdb_file = os.path.join(self.directory, 'compile_commands.json')
-        if os.path.isfile(cdb_file):
+        if not cdb_file:
+            cdb_file = os.path.join(self.directory, 'compile_commands.json')
+        if isinstance(cdb_file, str) and os.path.isfile(cdb_file):
             old_entries = itertools.filterfalse(lambda entry: entry.source in new_sources,
                                                 CompilationDatabase.load(cdb_file))
         else:
@@ -298,9 +314,10 @@ class Project(Config):
 
         entries = itertools.chain(old_entries, new_entries)
         json_entries = list(map(entry_map, entries))
-        with open(cdb_file, 'w') as handle:
-            import json
-            json.dump(json_entries, handle, sort_keys=True, indent=4)
+        if isinstance(cdb_file, str):
+            cdb_file = open(cdb_file, 'w')
+        import json
+        json.dump(json_entries, cdb_file, sort_keys=True, indent=4)
 
         return exit_code
 
@@ -308,7 +325,7 @@ class Project(Config):
         if scan_build is None:
             from pros.config.cli_config import cli_config
             scan_build = cli_config().use_build_compile_commands
-        return self._make_scan_build(build_args) if scan_build else self._make(build_args)
+        return self.make_scan_build(build_args) if scan_build else self.make(build_args)
 
     @staticmethod
     def find_project(path: str, recurse_times: int = 10):
