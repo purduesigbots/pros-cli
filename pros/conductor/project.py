@@ -231,7 +231,7 @@ class Project(Config):
 
         any_entries, entries = itertools.tee(entries, 2)
         if not any(any_entries):
-            return
+            return exit_code
         ui.echo('Capturing metadata for PROS Editor...')
         import subprocess
         env = os.environ.copy()

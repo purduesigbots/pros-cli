@@ -210,7 +210,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
 
         if compile_after or build_cache:
             with ui.Notification():
-                project.compile([], scan_build=build_cache)
+                ctx.exit(project.compile([], scan_build=build_cache))
 
     except Exception as e:
         pros.common.logger(__name__).exception(e)
