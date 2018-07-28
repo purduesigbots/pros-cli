@@ -210,7 +210,7 @@ class Project(Config):
                                           environment[
                                               'PATH']
                 pipe = EchoPipe()
-                exit_code = run_build(args.build, env=environment, stdout=pipe, stderr=pipe)
+                exit_code = run_build(args.build, env=environment, stdout=pipe, stderr=pipe, cwd=self.directory)
                 pipe.close()
                 # read the intercepted exec calls
                 calls = (parse_exec_trace(file) for file in exec_trace_files(tmp_dir))
@@ -231,7 +231,7 @@ class Project(Config):
 
         any_entries, entries = itertools.tee(entries, 2)
         if not any(any_entries):
-            return
+            return exit_code
         ui.echo('Capturing metadata for PROS Editor...')
         import subprocess
         env = os.environ.copy()
@@ -239,7 +239,7 @@ class Project(Config):
         if os.environ.get('PROS_TOOLCHAIN'):
             env['PATH'] = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin') + os.pathsep + env['PATH']
         cc_sysroot = subprocess.run([make_cmd, 'cc-sysroot'], env=env, stdout=subprocess.PIPE,
-                                    stderr=subprocess.DEVNULL)
+                                    stderr=subprocess.DEVNULL, cwd=self.directory)
         lines = str(cc_sysroot.stdout.decode()).splitlines()
         lines = [l.strip() for l in lines]
         cc_sysroot_includes = []
@@ -254,7 +254,7 @@ class Project(Config):
             if copy:
                 cc_sysroot_includes.append(f'-isystem{line}')
         cxx_sysroot = subprocess.run([make_cmd, 'cxx-sysroot'], env=env, stdout=subprocess.PIPE,
-                                     stderr=subprocess.DEVNULL)
+                                     stderr=subprocess.DEVNULL, cwd=self.directory)
         lines = str(cxx_sysroot.stdout.decode()).splitlines()
         lines = [l.strip() for l in lines]
         cxx_sysroot_includes = []
@@ -270,9 +270,10 @@ class Project(Config):
                 cxx_sysroot_includes.append(f'-isystem{line}')
         new_entries, entries = itertools.tee(entries, 2)
         new_sources = set([e.source for e in entries])
-        if os.path.isfile(args.cdb):
+        cdb_file = os.path.join(self.directory, 'compile_commands.json')
+        if os.path.isfile(cdb_file):
             old_entries = itertools.filterfalse(lambda entry: entry.source in new_sources,
-                                                CompilationDatabase.load(args.cdb))
+                                                CompilationDatabase.load(cdb_file))
         else:
             old_entries = []
 
@@ -297,7 +298,7 @@ class Project(Config):
 
         entries = itertools.chain(old_entries, new_entries)
         json_entries = list(map(entry_map, entries))
-        with open(args.cdb, 'w') as handle:
+        with open(cdb_file, 'w') as handle:
             import json
             json.dump(json_entries, handle, sort_keys=True, indent=4)
 

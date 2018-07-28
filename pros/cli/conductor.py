@@ -197,7 +197,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
         version = '>0'
     if not force_system and c.Project.find_project(path) is not None:
         pros.common.logger(__name__).error('A project already exists in this location! Delete it first')
-        return -1
+        ctx.exit(-1)
     try:
         _conductor = c.Conductor()
         if target is None:
@@ -209,22 +209,12 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
         ctx.invoke(info_project, project=project)
 
         if compile_after or build_cache:
-            if not build_cache:
-                from .build import make
-                oldcwd = os.getcwd()
-                os.chdir(path)
-                ctx.invoke(make)
-                os.chdir(oldcwd)
-            else:
-                from .build import build_compile_commands
-                oldcwd = os.getcwd()
-                os.chdir(path)
-                ctx.invoke(build_compile_commands)
-                os.chdir(oldcwd)
+            with ui.Notification():
+                ctx.exit(project.compile([], scan_build=build_cache))
 
     except Exception as e:
         pros.common.logger(__name__).exception(e)
-        return -1
+        ctx.exit(-1)
 
 
 @conductor.command('query-templates',
