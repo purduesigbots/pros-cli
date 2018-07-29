@@ -28,15 +28,14 @@ def status(port: str):
 
     ser = DirectPort(port)
     device = V5Device(ser)
-    status = device.get_system_status()
     if ismachineoutput():
-        print(status)
+        print(device.status)
     else:
         print('Connected to V5 on {}'.format(port))
-        print('System version:', '{}.{}.{}b{}'.format(*status['system_version']))
-        print('CPU0 F/W version:', '{}.{}.{}b{}'.format(*status['cpu0_version']))
-        print('CPU1 SDK version:', '{}.{}.{}b{}'.format(*status['cpu1_version']))
-        print('System ID: 0x{:x}'.format(status['system_id']))
+        print('System version:', device.status['system_version'])
+        print('CPU0 F/W version:', device.status['cpu0_version'])
+        print('CPU1 SDK version:', device.status['cpu1_version'])
+        print('System ID: 0x{:x}'.format(device.status['system_id']))
 
 
 @v5.command('ls-files')

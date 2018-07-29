@@ -13,10 +13,10 @@ root_sources = [
     'build',
     'conductor',
     'conductor_utils',
-    'misc_commands',
     'terminal',
     'upload',
-    'v5_utils'
+    'v5_utils',
+    'misc_commands'  # misc_commands must be after upload so that "pros u" is an alias for upload, not upgrade
 ]
 
 if os.path.exists(os.path.join(__file__, '..', '..', '..', '.git')):
