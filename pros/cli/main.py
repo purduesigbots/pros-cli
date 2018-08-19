@@ -19,7 +19,12 @@ root_sources = [
     'misc_commands'  # misc_commands must be after upload so that "pros u" is an alias for upload, not upgrade
 ]
 
-if os.path.exists(os.path.join(__file__, '..', '..', '..', '.git')):
+if getattr(sys, 'frozen', False):
+    exe_file = sys.executable
+else:
+    exe_file = __file__
+
+if os.path.exists(os.path.join(exe_file, '..', '..', '..', '.git')):
     root_sources.append('test')
 
 for root_source in root_sources:
