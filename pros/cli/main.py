@@ -2,6 +2,7 @@ import logging
 import os.path
 
 import click
+import sys
 
 import pros.common.ui as ui
 import pros.common.ui.log
