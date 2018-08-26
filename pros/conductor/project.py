@@ -253,9 +253,9 @@ class Project(Config):
         # Add PROS toolchain to the beginning of PATH to ensure PROS binaries are preferred
         if os.environ.get('PROS_TOOLCHAIN'):
             env['PATH'] = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin') + os.pathsep + env['PATH']
-        cc_sysroot = subprocess.run([make_cmd, 'cc-sysroot'], env=env, stdout=subprocess.PIPE,
-                                    stderr=subprocess.DEVNULL, cwd=self.directory)
-        lines = str(cc_sysroot.stdout.decode()).splitlines()
+        cc_sysroot = subprocess.run([make_cmd, 'cc-sysroot'], env=env, stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.PIPE, cwd=self.directory)
+        lines = str(cc_sysroot.stderr.decode()).splitlines()
         lines = [l.strip() for l in lines]
         cc_sysroot_includes = []
         copy = False
@@ -268,9 +268,9 @@ class Project(Config):
                 continue
             if copy:
                 cc_sysroot_includes.append(f'-isystem{line}')
-        cxx_sysroot = subprocess.run([make_cmd, 'cxx-sysroot'], env=env, stdout=subprocess.PIPE,
-                                     stderr=subprocess.DEVNULL, cwd=self.directory)
-        lines = str(cxx_sysroot.stdout.decode()).splitlines()
+        cxx_sysroot = subprocess.run([make_cmd, 'cxx-sysroot'], env=env, stdout=subprocess.DEVNULL,
+                                     stderr=subprocess.PIPE, cwd=self.directory)
+        lines = str(cxx_sysroot.stderr.decode()).splitlines()
         lines = [l.strip() for l in lines]
         cxx_sysroot_includes = []
         copy = False
@@ -294,6 +294,10 @@ class Project(Config):
             old_entries = []
 
         extra_flags = ['-target', 'armv7ar-none-none-eabi']
+        logger(__name__).debug('cc_sysroot_includes')
+        logger(__name__).debug(cc_sysroot_includes)
+        logger(__name__).debug('cxx_sysroot_includes')
+        logger(__name__).debug(cxx_sysroot_includes)
 
         if sys.platform == 'win32':
             extra_flags.extend(["-fno-ms-extensions", "-fno-ms-compatibility", "-fno-delayed-template-parsing"])
