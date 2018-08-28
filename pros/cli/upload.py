@@ -46,7 +46,7 @@ def upload(path: str, port: str, **kwargs):
             logger(__name__).error('Specify a file to upload or set the cwd inside a PROS project')
             return -1
         project = c.Project(project_path)
-        path = project.output
+        path = os.path.join(project.location, project.output)
         if project.target == 'v5' and not kwargs['name']:
             kwargs['name'] = project.name
 
