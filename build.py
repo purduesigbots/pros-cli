@@ -6,7 +6,7 @@ import requests.certs
 from cx_Freeze import Executable, setup
 from install_requires import install_requires as install_reqs
 
-import pros
+import pros.cli.main
 
 build_exe_options = {
     'packages': ['ssl', 'requests', 'idna'] + [f'pros.cli.{root_source}' for root_source in pros.cli.main.root_sources],
