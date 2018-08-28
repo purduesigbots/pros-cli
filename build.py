@@ -1,20 +1,20 @@
+import os
 import sys
+from distutils.util import get_platform
 
 import requests.certs
 from cx_Freeze import Executable, setup
-
-from distutils.util import get_platform
 
 try:  # for pip >= 10 -- https://stackoverflow.com/a/49867265/3175586
     from pip._internal.req import parse_requirements
 except ImportError:  # for pip <= 9.0.3
     from pip.req import parse_requirements
-import pros
+import pros.cli.main
 
 install_reqs = [str(r.req) for r in parse_requirements('requirements.txt', session=False)]
 
 build_exe_options = {
-    'packages': ['ssl', 'requests', 'idna'],
+    'packages': ['ssl', 'requests', 'idna'] + [f'pros.cli.{root_source}' for root_source in pros.cli.main.root_sources],
     "include_files": [(requests.certs.where(), 'cacert.pem')],
     'excludes': ['pip', 'distutils'],  # optimization excludes
     'constants': [
@@ -30,18 +30,14 @@ build_exe_options = {
 
 build_mac_options = {
     'bundle_name': 'PROS CLI',
-    'iconfile': 'pros.icns',
-    'constants': [
-        f'{key}=\'{value}\'' for key, value in {
-            'CLI_VERSION': open('version').read().strip(),
-            'FROZEN_PLATFORM_V1': 'MacOS'
-        }.items()
-    ]
+    'iconfile': 'pros.icns'
 }
 
-modules = []
-for pkg in [pros]:
-    modules.append(pkg.__name__)
+if os.environ.get('MAC_SIGNING_IDENTITY') is not None:
+    build_mac_options['codesign_identity'] = os.environ.get('MAC_SIGNING_IDENTITY')
+    build_mac_options['codesign_deep'] = True
+
+modules = ['pros']
 
 if sys.platform == 'win32':
     extension = '.exe'

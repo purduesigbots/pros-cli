@@ -335,8 +335,8 @@ class Project(Config):
     def find_project(path: str, recurse_times: int = 10):
         path = os.path.abspath(path)
         if os.path.isfile(path):
-            return path
-        elif os.path.isdir(path):
+            path = os.path.dirname(path)
+        if os.path.isdir(path):
             for n in range(recurse_times):
                 if path is not None and os.path.isdir(path):
                     files = [f for f in os.listdir(path)
