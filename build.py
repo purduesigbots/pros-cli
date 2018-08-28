@@ -4,14 +4,9 @@ from distutils.util import get_platform
 
 import requests.certs
 from cx_Freeze import Executable, setup
+from install_requires import install_requires as install_reqs
 
-try:  # for pip >= 10 -- https://stackoverflow.com/a/49867265/3175586
-    from pip._internal.req import parse_requirements
-except ImportError:  # for pip <= 9.0.3
-    from pip.req import parse_requirements
-import pros.cli.main
-
-install_reqs = [str(r.req) for r in parse_requirements('requirements.txt', session=False)]
+import pros
 
 build_exe_options = {
     'packages': ['ssl', 'requests', 'idna'] + [f'pros.cli.{root_source}' for root_source in pros.cli.main.root_sources],
