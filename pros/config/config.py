@@ -68,6 +68,9 @@ class Config(object):
                     else:
                         logger(__name__).debug('Failed to save {} ({})'.format(file, e))
 
+        from pros.common.sentry import add_context
+        add_context(self)
+
     def __getstate__(self):
         state = self.__dict__.copy()
         if '_Config__ignored' in self.__dict__:

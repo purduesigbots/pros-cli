@@ -52,6 +52,9 @@ class Conductor(Config):
         if needs_saving:
             self.save()
 
+        from pros.common.sentry import add_context
+        add_context(self)
+
     def get_depot(self, name: str) -> Optional[Depot]:
         return self.depots.get(name)
 
@@ -177,8 +180,8 @@ class Conductor(Config):
                                      f'installing is {"" if install_ok else "not "}allowed')
 
     @staticmethod
-    def remove_template(project: Project, identifier: Union[str, BaseTemplate], remove_user: bool=True,
-                        remove_empty_directories: bool=True):
+    def remove_template(project: Project, identifier: Union[str, BaseTemplate], remove_user: bool = True,
+                        remove_empty_directories: bool = True):
         ui.logger(__name__).debug(f'Uninstalling templates matching {identifier}')
         for template in project.resolve_template(identifier):
             ui.echo(f'Uninstalling {template.identifier}')

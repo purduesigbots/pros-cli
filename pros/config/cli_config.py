@@ -18,6 +18,7 @@ class CliConfig(Config):
             file = os.path.join(click.get_app_dir('PROS'), 'cli.pros')
         self.update_frequency: timedelta = timedelta(hours=1)
         self.override_use_build_compile_commands: Optional[bool] = None
+        self.offer_sentry: Optional[bool] = None
 
         super(CliConfig, self).__init__(file)
 
