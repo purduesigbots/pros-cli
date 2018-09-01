@@ -171,38 +171,48 @@ def pros_root(f):
     return decorator
 
 
-def resolve_v5_port(port: Optional[str], type: str) -> Optional[str]:
+def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Optional[str]:
     from pros.serial.devices.vex import find_v5_ports
     if not port:
         ports = find_v5_ports(type)
         if len(ports) == 0:
-            logger(__name__).error('No {0} ports were found! If you think you have a {0} plugged in, '
-                                   'run this command again with the --debug flag'.format('v5'))
+            if not quiet:
+                logger(__name__).error('No {0} ports were found! If you think you have a {0} plugged in, '
+                                       'run this command again with the --debug flag'.format('v5'),
+                                       extra={'sentry': False})
             return None
         if len(ports) > 1:
-            port = click.prompt('Multiple {} ports were found. Please choose one: '.format('v5'),
-                                default=ports[0].device,
-                                type=click.Choice([p.device for p in ports]))
-            assert port in [p.device for p in ports]
+            if not quiet:
+                port = click.prompt('Multiple {} ports were found. Please choose one: '.format('v5'),
+                                    default=ports[0].device,
+                                    type=click.Choice([p.device for p in ports]))
+                assert port in [p.device for p in ports]
+            else:
+                return None
         else:
             port = ports[0].device
             logger(__name__).info('Automatically selected {}'.format(port))
     return port
 
 
-def resolve_cortex_port(port: Optional[str]) -> Optional[str]:
+def resolve_cortex_port(port: Optional[str], quiet: bool = False) -> Optional[str]:
     from pros.serial.devices.vex import find_cortex_ports
     if not port:
         ports = find_cortex_ports()
         if len(ports) == 0:
-            logger(__name__).error('No {0} ports were found! If you think you have a {0} plugged in, '
-                                   'run this command again with the --debug flag'.format('cortex'))
+            if not quiet:
+                logger(__name__).error('No {0} ports were found! If you think you have a {0} plugged in, '
+                                       'run this command again with the --debug flag'.format('cortex'),
+                                       extra={'sentry': False})
             return None
         if len(ports) > 1:
-            port = click.prompt('Multiple {} ports were found. Please choose one: '.format('cortex'),
-                                default=ports[0].device,
-                                type=click.Choice([p.device for p in ports]))
-            assert port in [p.device for p in ports]
+            if not quiet:
+                port = click.prompt('Multiple {} ports were found. Please choose one: '.format('cortex'),
+                                    default=ports[0].device,
+                                    type=click.Choice([p.device for p in ports]))
+                assert port in [p.device for p in ports]
+            else:
+                return None
         else:
             port = ports[0].device
             logger(__name__).info('Automatically selected {}'.format(port))

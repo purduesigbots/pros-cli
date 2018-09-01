@@ -44,10 +44,15 @@ def terminal(port: str, backend: str, **kwargs):
     if port == 'default':
         project_path = c.Project.find_project(os.getcwd())
         if project_path is None:
-            logger(__name__).error('You must be in a PROS project directory to enable default port selecting')
-            return -1
-        project = c.Project(project_path)
-        port = project.target
+            v5_port = resolve_v5_port(None, 'user', quiet=True)
+            cortex_port = resolve_cortex_port(None, quiet=True)
+            if ((v5_port is None) ^ (cortex_port is None)) or (v5_port is not None and v5_port == cortex_port):
+                port = v5_port or cortex_port
+            else:
+                raise click.UsageError('You must be in a PROS project directory to enable default port selecting')
+        else:
+            project = c.Project(project_path)
+            port = project.target
 
     if port == 'v5':
         port = None
