@@ -114,11 +114,12 @@ class Conductor(Config):
 
     def resolve_template(self, identifier: Union[str, BaseTemplate], **kwargs) -> Optional[BaseTemplate]:
         if isinstance(identifier, str):
-            query = BaseTemplate.create_query(name=identifier, **kwargs)
-        else:
-            assert isinstance(identifier, BaseTemplate)
-            query = identifier
+            kwargs['name'] = identifier
+        elif isinstance(identifier, BaseTemplate):
+            kwargs['orig'] = identifier
+        query = BaseTemplate.create_query(**kwargs)
         logger(__name__).info(f'Query: {query}')
+        logger(__name__).debug(query.__dict__)
         templates = self.resolve_templates(query, **kwargs)
         logger(__name__).info(f'Candidates: {", ".join([str(t) for t in templates])}')
         if not any(templates):

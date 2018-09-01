@@ -71,6 +71,7 @@ class Project(Config):
         :param force_user:
         :return:
         """
+        assert template.target == self.target
         transaction = Transaction(self.location, set(self.all_files))
         installed_user_files = set()
         for lib_name, lib in self.templates.items():
