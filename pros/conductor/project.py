@@ -179,10 +179,9 @@ class Project(Config):
             make_cmd = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'make.exe')
         else:
             make_cmd = 'make'
-        cwd = self.location
         stdout_pipe = EchoPipe()
         stderr_pipe = EchoPipe(err=True)
-        process = subprocess.Popen(executable=make_cmd, args=[make_cmd, *build_args], cwd=cwd, env=env,
+        process = subprocess.Popen(executable=make_cmd, args=[make_cmd, *build_args], cwd=self.directory, env=env,
                                    stdout=stdout_pipe, stderr=stderr_pipe)
         stdout_pipe.close()
         stderr_pipe.close()
@@ -222,6 +221,7 @@ class Project(Config):
                     pipe = EchoPipe()
                 else:
                     pipe = subprocess.DEVNULL
+                logger(__name__).debug(self.directory)
                 exit_code = run_build(args.build, env=environment, stdout=pipe, stderr=pipe, cwd=self.directory)
                 if not suppress_output:
                     pipe.close()
@@ -254,9 +254,9 @@ class Project(Config):
         # Add PROS toolchain to the beginning of PATH to ensure PROS binaries are preferred
         if os.environ.get('PROS_TOOLCHAIN'):
             env['PATH'] = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin') + os.pathsep + env['PATH']
-        cc_sysroot = subprocess.run([make_cmd, 'cc-sysroot'], env=env, stdout=subprocess.DEVNULL,
+        cc_sysroot = subprocess.run([make_cmd, 'cc-sysroot'], env=env, stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE, cwd=self.directory)
-        lines = str(cc_sysroot.stderr.decode()).splitlines()
+        lines = str(cc_sysroot.stderr.decode()).splitlines() + str(cc_sysroot.stdout.decode()).splitlines()
         lines = [l.strip() for l in lines]
         cc_sysroot_includes = []
         copy = False
@@ -269,9 +269,9 @@ class Project(Config):
                 continue
             if copy:
                 cc_sysroot_includes.append(f'-isystem{line}')
-        cxx_sysroot = subprocess.run([make_cmd, 'cxx-sysroot'], env=env, stdout=subprocess.DEVNULL,
+        cxx_sysroot = subprocess.run([make_cmd, 'cxx-sysroot'], env=env, stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE, cwd=self.directory)
-        lines = str(cxx_sysroot.stderr.decode()).splitlines()
+        lines = str(cxx_sysroot.stderr.decode()).splitlines() + str(cxx_sysroot.stdout.decode()).splitlines()
         lines = [l.strip() for l in lines]
         cxx_sysroot_includes = []
         copy = False
