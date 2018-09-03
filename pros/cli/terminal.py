@@ -60,6 +60,7 @@ def terminal(port: str, backend: str, **kwargs):
     elif port == 'cortex':
         port = None
         port = resolve_cortex_port(port)
+        kwargs['raw'] = True
     if not port:
         return -1
 

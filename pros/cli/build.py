@@ -30,8 +30,8 @@ def make(project: c.Project, build_args):
 @click.pass_context
 def make_upload(ctx, project: c.Project):
     from .upload import upload
-
-    return ctx.forward(make, project) == 0 and ctx.forward(upload) == 0
+    ctx.forward(make, project)
+    ctx.forward(upload)
 
 
 @build_cli.command('make-upload-terminal', aliases=['mut'], hidden=True)
@@ -40,8 +40,9 @@ def make_upload(ctx, project: c.Project):
 def make_upload_terminal(ctx, project: c.Project):
     from .upload import upload
     from .terminal import terminal
-    return ctx.forward(make, project) == 0 and ctx.forward(upload) == 0 and ctx.forward(terminal,
-                                                                                        request_banner=False) == 0
+    ctx.forward(make, project)
+    ctx.forward(upload)
+    ctx.forward(terminal, request_banner=False)
 
 
 @build_cli.command('build-compile-commands', hidden=True)
