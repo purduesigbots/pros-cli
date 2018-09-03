@@ -99,12 +99,16 @@ def download_file(url: str, ext: Optional[str]=None, desc: Optional[str]=None) -
 
     response = requests.get(url, stream=True)
     if response.status_code == 200:
-        if isinstance(ext, str) and 'Content-Disposition' in response.headers.keys():
-            filename = parse_requests_response(response).filename_sanitized(ext)
-        elif ext is None and 'Content-Disposition' in response.headers.keys():
-                filename = parse_requests_response(response).filename_unsafe
-        else:
-            filename = url.rsplit('/', 1)[-1]
+        filename: str = url.rsplit('/', 1)[-1]
+        if 'Content-Disposition' in response.headers.keys():
+            try:
+                disposition = parse_requests_response(response)
+                if isinstance(ext, str):
+                    filename = disposition.filename_sanitized(ext)
+                else:
+                    filename = disposition.filename_unsafe
+            except RuntimeError:
+                pass
         output_path = os.path.join(get_pros_dir(), 'download', filename)
 
         if os.path.exists(output_path):
