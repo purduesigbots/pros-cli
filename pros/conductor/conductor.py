@@ -204,6 +204,9 @@ class Conductor(Config):
         if not no_default_libs:
             for library in self.default_libraries[proj.target]:
                 try:
+                    # remove kernel version so that latest template satisfying query is correctly selected
+                    if 'version' in kwargs:
+                        kwargs.pop('version')
                     self.apply_template(proj, library, **kwargs)
                 except Exception as e:
                     logger(__name__).exception(e)
