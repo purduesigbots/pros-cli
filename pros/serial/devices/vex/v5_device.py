@@ -42,9 +42,9 @@ def find_v5_ports(p_type: str):
     # TODO: test this code path (hard)
     if len(user_ports) != len(system_ports):
         if len(user_ports) > len(system_ports):
-            user_ports = set(user_ports) - set(system_ports)
+            user_ports = [p for p in user_ports if p not in system_ports]
         else:
-            system_ports = set(system_ports) - set(user_ports)
+            system_ports = [p for p in system_ports if p not in user_ports]
 
     if len(user_ports) == len(system_ports) and len(user_ports) > 0:
         if p_type.lower() == 'user':
