@@ -10,4 +10,5 @@ pyzmq
 cobs
 scan-build==2.0.13
 rfc6266
+raven
 observable

@@ -43,10 +43,9 @@ def upload(path: str, port: str, **kwargs):
     if path is None or os.path.isdir(path):
         project_path = c.Project.find_project(path or os.getcwd())
         if project_path is None:
-            logger(__name__).error('Specify a file to upload or set the cwd inside a PROS project')
-            return -1
+            raise click.UsageError('Specify a file to upload or set the cwd inside a PROS project')
         project = c.Project(project_path)
-        path = project.output
+        path = os.path.join(project.location, project.output)
         if project.target == 'v5' and not kwargs['name']:
             kwargs['name'] = project.name
 

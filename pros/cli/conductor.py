@@ -157,7 +157,7 @@ def upgrade(ctx: click.Context, project: c.Project, query: c.BaseTemplate, **kwa
 @template_query()
 @default_options
 def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: bool,
-                       remove_empty_directories: bool=False):
+                       remove_empty_directories: bool = False):
     """
     Uninstall a template from a PROS project
 
@@ -196,7 +196,8 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
     if version.lower() == 'latest' or not version:
         version = '>0'
     if not force_system and c.Project.find_project(path) is not None:
-        pros.common.logger(__name__).error('A project already exists in this location! Delete it first')
+        pros.common.logger(__name__).error('A project already exists in this location! Delete it first',
+                                           extra={'sentry': False})
         ctx.exit(-1)
     try:
         _conductor = c.Conductor()

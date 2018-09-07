@@ -52,6 +52,9 @@ class Conductor(Config):
         if needs_saving:
             self.save()
 
+        from pros.common.sentry import add_context
+        add_context(self)
+
     def get_depot(self, name: str) -> Optional[Depot]:
         return self.depots.get(name)
 
@@ -111,11 +114,12 @@ class Conductor(Config):
 
     def resolve_template(self, identifier: Union[str, BaseTemplate], **kwargs) -> Optional[BaseTemplate]:
         if isinstance(identifier, str):
-            query = BaseTemplate.create_query(name=identifier, **kwargs)
-        else:
-            assert isinstance(identifier, BaseTemplate)
-            query = identifier
+            kwargs['name'] = identifier
+        elif isinstance(identifier, BaseTemplate):
+            kwargs['orig'] = identifier
+        query = BaseTemplate.create_query(**kwargs)
         logger(__name__).info(f'Query: {query}')
+        logger(__name__).debug(query.__dict__)
         templates = self.resolve_templates(query, **kwargs)
         logger(__name__).info(f'Candidates: {", ".join([str(t) for t in templates])}')
         if not any(templates):
@@ -177,8 +181,8 @@ class Conductor(Config):
                                      f'installing is {"" if install_ok else "not "}allowed')
 
     @staticmethod
-    def remove_template(project: Project, identifier: Union[str, BaseTemplate], remove_user: bool=True,
-                        remove_empty_directories: bool=True):
+    def remove_template(project: Project, identifier: Union[str, BaseTemplate], remove_user: bool = True,
+                        remove_empty_directories: bool = True):
         ui.logger(__name__).debug(f'Uninstalling templates matching {identifier}')
         for template in project.resolve_template(identifier):
             ui.echo(f'Uninstalling {template.identifier}')
@@ -200,6 +204,9 @@ class Conductor(Config):
         if not no_default_libs:
             for library in self.default_libraries[proj.target]:
                 try:
+                    # remove kernel version so that latest template satisfying query is correctly selected
+                    if 'version' in kwargs:
+                        kwargs.pop('version')
                     self.apply_template(proj, library, **kwargs)
                 except Exception as e:
                     logger(__name__).exception(e)

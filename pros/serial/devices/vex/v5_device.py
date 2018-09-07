@@ -9,7 +9,7 @@ from typing import *
 from pros.common import *
 from pros.serial import bytes_to_str
 from pros.serial import decode_bytes_to_str
-from pros.serial.ports import list_all_comports
+from pros.serial.ports import list_all_comports, BasePort
 
 from .comm_error import VEXCommError
 from .crc import CRC
@@ -78,6 +78,16 @@ class V5Device(VEXDevice, SystemDevice):
     VEX_CRC16 = CRC(16, 0x1021)  # CRC-16-CCIT
     VEX_CRC32 = CRC(32, 0x04C11DB7)  # CRC-32 (the one used everywhere but has no name)
 
+    def __init__(self, port: BasePort):
+        self._status = None
+        super().__init__(port)
+
+    @property
+    def status(self):
+        if not self._status:
+            self._status = self.get_system_status()
+        return self._status
+
     def write_program(self, file: typing.BinaryIO, remote_name: str = None, ini: ConfigParser = None, slot: int = 0,
                       file_len: int = -1, run_after: bool = False, target: str = 'flash', **kwargs):
         if target == 'ddr':
@@ -92,11 +102,13 @@ class V5Device(VEXDevice, SystemDevice):
             logger(__name__).info('Truncating remote name to {} for length.'.format(remote_name[:20]))
             remote_name = remote_name[:20]
         project_ini = ConfigParser()
+        from semantic_version import Spec
+        default_icon = 'USER902x.bmp' if Spec('>=1.0.0-22').match(self.status['system_version']) else 'USER999x.bmp'
         project_ini['program'] = {
             'version': kwargs.get('version', '0.0.0') or '0.0.0',
             'name': remote_name,
             'slot': slot,
-            'icon': kwargs.get('icon', 'USER999x.bmp') or 'USER999x.bmp',
+            'icon': kwargs.get('icon', default_icon) or default_icon,
             'description': 'Created with PROS',
             'date': datetime.now().isoformat()
         }
@@ -356,10 +368,11 @@ class V5Device(VEXDevice, SystemDevice):
         logger(__name__).debug('Sending ext 0x22 command')
         rx = self._txrx_ext_struct(0x22, [], "<x12B3xBI12x")
         logger(__name__).debug('Completed ext 0x22 command')
+        from semantic_version import Version
         return {
-            'system_version': rx[0:4],
-            'cpu0_version': rx[4:8],
-            'cpu1_version': rx[8:12],
+            'system_version': Version('{}.{}.{}-{}'.format(*rx[0:4])),
+            'cpu0_version': Version('{}.{}.{}-{}'.format(*rx[4:8])),
+            'cpu1_version': Version('{}.{}.{}-{}'.format(*rx[8:12])),
             'touch_version': rx[12],
             'system_id': rx[13]
         }

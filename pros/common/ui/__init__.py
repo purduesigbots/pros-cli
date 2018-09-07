@@ -101,7 +101,9 @@ def finalize(method: str, data: Union[str, Dict, object, List[Union[str, Dict, o
     elif isinstance(data, dict):
         human_readable = data
     elif isinstance(data, List):
-        if isinstance(data[0], str):
+        if len(data) == 0:
+            human_readable = ''
+        elif isinstance(data[0], str):
             human_readable = '\n'.join(data)
         elif isinstance(data[0], dict) or isinstance(data[0], object):
             if hasattr(data[0], '__str__'):

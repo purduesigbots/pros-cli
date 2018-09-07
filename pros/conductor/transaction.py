@@ -42,13 +42,21 @@ class Transaction(object):
     def commit(self, label: str = 'Committing transaction', remove_empty_directories: bool = True):
         with ui.progressbar(length=len(self._rm_files) + len(self._add_files), label=label) as pb:
             for file in sorted(self._rm_files, key=lambda p: p.count('/') + p.count('\\'), reverse=True):
-                os.remove(os.path.join(self.location, file))
-                logger(__name__).info(f'Removing {file}')
-                pardir = os.path.abspath(os.path.join(self.location, file, os.pardir))
+                file_path = os.path.join(self.location, file)
+                if os.path.isfile(file_path):
+                    logger(__name__).info(f'Removing {file}')
+                    os.remove(os.path.join(self.location, file))
+                else:
+                    logger(__name__).info(f'Not removing nonexistent {file}')
+                pardir = os.path.abspath(os.path.join(file_path, os.pardir))
                 while remove_empty_directories and len(os.listdir(pardir)) == 0:
                     logger(__name__).info(f'Removing {os.path.relpath(pardir, self.location)}')
                     os.rmdir(pardir)
                     pardir = os.path.abspath(os.path.join(pardir, os.pardir))
+                    if pardir == self.location:
+                        # Don't try and recursively delete folders outside the scope of the
+                        # transaction directory
+                        break
                 pb.update(1)
             for file in self._add_files:
                 source = os.path.join(self._add_srcs[file], file)

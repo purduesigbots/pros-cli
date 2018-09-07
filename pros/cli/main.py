@@ -1,7 +1,10 @@
 import logging
 import os.path
 
+import pros.common.sentry
+
 import click
+import sys
 
 import pros.common.ui as ui
 import pros.common.ui.log
@@ -13,13 +16,18 @@ root_sources = [
     'build',
     'conductor',
     'conductor_utils',
-    'misc_commands',
     'terminal',
     'upload',
-    'v5_utils'
+    'v5_utils',
+    'misc_commands'  # misc_commands must be after upload so that "pros u" is an alias for upload, not upgrade
 ]
 
-if os.path.exists(os.path.join(__file__, '..', '..', '..', '.git')):
+if getattr(sys, 'frozen', False):
+    exe_file = sys.executable
+else:
+    exe_file = __file__
+
+if os.path.exists(os.path.join(exe_file, '..', '..', '..', '.git')):
     root_sources.append('test')
 
 for root_source in root_sources:
@@ -34,7 +42,6 @@ def main():
         formatter = pros.common.ui.log.PROSLogFormatter('%(levelname)s - %(name)s:%(funcName)s - %(message)s', ctx_obj)
         click_handler.setFormatter(formatter)
         logging.basicConfig(level=logging.WARNING, handlers=[click_handler])
-
         cli.main(prog_name='pros', obj=ctx_obj)
     except KeyboardInterrupt:
         click.echo('Aborted!')
@@ -60,7 +67,7 @@ def version(ctx: click.Context, param, value):
 @click.option('--version', help='Displays version and exits', is_flag=True, expose_value=False, is_eager=True,
               callback=version)
 def cli():
-    pass
+    pros.common.sentry.register()
 
 
 if __name__ == '__main__':

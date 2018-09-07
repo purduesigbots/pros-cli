@@ -71,6 +71,7 @@ class Project(Config):
         :param force_user:
         :return:
         """
+        assert template.target == self.target
         transaction = Transaction(self.location, set(self.all_files))
         installed_user_files = set()
         for lib_name, lib in self.templates.items():
@@ -178,10 +179,9 @@ class Project(Config):
             make_cmd = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'make.exe')
         else:
             make_cmd = 'make'
-        cwd = self.location
         stdout_pipe = EchoPipe()
         stderr_pipe = EchoPipe(err=True)
-        process = subprocess.Popen(executable=make_cmd, args=[make_cmd, *build_args], cwd=cwd, env=env,
+        process = subprocess.Popen(executable=make_cmd, args=[make_cmd, *build_args], cwd=self.directory, env=env,
                                    stdout=stdout_pipe, stderr=stderr_pipe)
         stdout_pipe.close()
         stderr_pipe.close()
@@ -221,6 +221,7 @@ class Project(Config):
                     pipe = EchoPipe()
                 else:
                     pipe = subprocess.DEVNULL
+                logger(__name__).debug(self.directory)
                 exit_code = run_build(args.build, env=environment, stdout=pipe, stderr=pipe, cwd=self.directory)
                 if not suppress_output:
                     pipe.close()
@@ -254,8 +255,8 @@ class Project(Config):
         if os.environ.get('PROS_TOOLCHAIN'):
             env['PATH'] = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin') + os.pathsep + env['PATH']
         cc_sysroot = subprocess.run([make_cmd, 'cc-sysroot'], env=env, stdout=subprocess.PIPE,
-                                    stderr=subprocess.DEVNULL, cwd=self.directory)
-        lines = str(cc_sysroot.stdout.decode()).splitlines()
+                                    stderr=subprocess.PIPE, cwd=self.directory)
+        lines = str(cc_sysroot.stderr.decode()).splitlines() + str(cc_sysroot.stdout.decode()).splitlines()
         lines = [l.strip() for l in lines]
         cc_sysroot_includes = []
         copy = False
@@ -269,8 +270,8 @@ class Project(Config):
             if copy:
                 cc_sysroot_includes.append(f'-isystem{line}')
         cxx_sysroot = subprocess.run([make_cmd, 'cxx-sysroot'], env=env, stdout=subprocess.PIPE,
-                                     stderr=subprocess.DEVNULL, cwd=self.directory)
-        lines = str(cxx_sysroot.stdout.decode()).splitlines()
+                                     stderr=subprocess.PIPE, cwd=self.directory)
+        lines = str(cxx_sysroot.stderr.decode()).splitlines() + str(cxx_sysroot.stdout.decode()).splitlines()
         lines = [l.strip() for l in lines]
         cxx_sysroot_includes = []
         copy = False
@@ -294,6 +295,10 @@ class Project(Config):
             old_entries = []
 
         extra_flags = ['-target', 'armv7ar-none-none-eabi']
+        logger(__name__).debug('cc_sysroot_includes')
+        logger(__name__).debug(cc_sysroot_includes)
+        logger(__name__).debug('cxx_sysroot_includes')
+        logger(__name__).debug(cxx_sysroot_includes)
 
         if sys.platform == 'win32':
             extra_flags.extend(["-fno-ms-extensions", "-fno-ms-compatibility", "-fno-delayed-template-parsing"])
@@ -331,8 +336,8 @@ class Project(Config):
     def find_project(path: str, recurse_times: int = 10):
         path = os.path.abspath(path)
         if os.path.isfile(path):
-            return path
-        elif os.path.isdir(path):
+            path = os.path.dirname(path)
+        if os.path.isdir(path):
             for n in range(recurse_times):
                 if path is not None and os.path.isdir(path):
                     files = [f for f in os.listdir(path)
