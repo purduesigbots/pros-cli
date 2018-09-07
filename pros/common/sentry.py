@@ -14,6 +14,8 @@ client: Optional['Client'] = None
 __excepthook = None  # hook into uncaught exceptions before Sentry gets a hold of them so we can prompt the user
 cli_config: 'CliConfig' = None
 
+SUPPRESSED_EXCEPTIONS = [PermissionError]
+
 
 def prompt_to_send(send: Callable, *args, **kwargs):
     """
@@ -48,7 +50,11 @@ class SentryHandler(logging.Handler):
         super().__init__(*args, **kwargs)
 
     def emit(self, record: logging.LogRecord):
-        if record.levelno == logging.ERROR and getattr(record, 'sentry', record.levelno == logging.ERROR):
+        # record level must be at least logging.ERROR; the sentry attribute (if present) must be true;
+        # and if we're logging an exception, it must not be a suppressed exception (execution info implies execution
+        # info is not in suppressed exceptions)
+        if record.levelno >= logging.ERROR and getattr(record, 'sentry', True) and \
+                (record.exc_info is None or not any(issubclass(record.exc_info[0], e) for e in SUPPRESSED_EXCEPTIONS)):
             def _send():
                 if record.exc_info:
                     self.sentry_client.captureException(exc_info=record.exc_info)

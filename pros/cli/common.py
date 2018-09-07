@@ -34,7 +34,7 @@ def debug_option(f):
         if not isinstance(value, int):
             raise ValueError('Invalid log level: {}'.format(value))
         if value:
-            logging.getLogger().setLevel(min(logger().level, logging.DEBUG))
+            logging.getLogger().setLevel(logging.DEBUG)
             stdout_handler = ctx.obj['click_handler']  # type: logging.Handler
             stdout_handler.setLevel(logging.DEBUG)
             logging.getLogger(__name__).info('Debugging messages enabled')
