@@ -1,4 +1,3 @@
-from .click_classes import *
 from .common import *
 
 
@@ -154,37 +153,32 @@ def rm_all(port: str, vid: int):
 
 
 @v5.command(short_help='Run a V5 Program')
-@click.argument('file', required=False, default=None)
+@click.argument('slot', required=False, default=1, type=click.IntRange(1, 8))
 @click.argument('port', required=False, default=None)
 @default_options
-def run(file: str, port: str):
+def run(slot: str, port: str):
     """
     Run a V5 program
-
-    If FILE is unspecified or is a directory, then attempts to find the correct filename based on the PROS project
     """
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
+    file = f'slot_{slot}.bin'
     import re
-    if not file or os.path.isdir(file):
-        import pros.conductor as c
-        path = c.Project.find_project(file)
-        if path:
-            file = f'{c.Project(path).name}.bin'
-    elif not re.match(r'[\w\.]{1,24}', file):
+    if not re.match(r'[\w\.]{1,24}', file):
         logger(__name__).error('file must be a valid V5 filename')
         return 1
     port = resolve_v5_port(port, 'system')
+    if not port:
+        return -1
     ser = DirectPort(port)
     device = V5Device(ser)
     device.execute_program_file(file, run=True)
 
 
 @v5.command(short_help='Stop a V5 Program')
-@click.argument('file', required=False, default=None)
 @click.argument('port', required=False, default=None)
 @default_options
-def stop(file: str, port: str):
+def stop(port: str):
     """
     Stops a V5 program
 
@@ -192,16 +186,9 @@ def stop(file: str, port: str):
     """
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
-    import re
-    if not file or os.path.isdir(file):
-        import pros.conductor as c
-        path = c.Project.find_project(file)
-        if path:
-            file = f'{c.Project(path).name}.bin'
-    elif not re.match(r'[\w\.]{1,24}', file):
-        logger(__name__).error('file must be a valid V5 filename')
-        return 1
     port = resolve_v5_port(port, 'system')
+    if not port:
+        return -1
     ser = DirectPort(port)
     device = V5Device(ser)
-    device.execute_program_file(file, run=False)
+    device.execute_program_file('', run=False)
