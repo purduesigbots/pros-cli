@@ -91,7 +91,7 @@ def apply(project: c.Project, query: c.BaseTemplate, **kwargs):
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor to learn more
     """
-    c.Conductor().apply_template(project, identifier=query, **kwargs)
+    return c.Conductor().apply_template(project, identifier=query, **kwargs)
 
 
 @conductor.command(aliases=['i', 'in'], context_settings={'ignore_unknown_options': True})
@@ -115,7 +115,7 @@ def install(ctx: click.Context, **kwargs):
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor to learn more
     """
-    ctx.invoke(apply, install_ok=True, **kwargs)
+    return ctx.invoke(apply, install_ok=True, **kwargs)
 
 
 @conductor.command(context_settings={'ignore_unknown_options': True}, aliases=['u'])

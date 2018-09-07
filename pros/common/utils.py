@@ -6,6 +6,7 @@ from functools import wraps, lru_cache
 from typing import *
 
 import click
+
 import pros
 
 
@@ -85,7 +86,19 @@ def get_pros_dir():
     return click.get_app_dir('PROS')
 
 
-def download_file(url: str, ext: Optional[str]=None, desc: Optional[str]=None) -> Optional[str]:
+def with_click_context(func):
+    ctx = click.get_current_context(silent=True)
+    if not ctx or not isinstance(ctx, click.Context):
+        return func
+    else:
+        def _wrap(*args, **kwargs):
+            with ctx:
+                return func(*args, **kwargs)
+
+        return _wrap
+
+
+def download_file(url: str, ext: Optional[str] = None, desc: Optional[str] = None) -> Optional[str]:
     """
     Helper method to download a temporary file.
     :param url: URL of the file to download
@@ -102,7 +115,7 @@ def download_file(url: str, ext: Optional[str]=None, desc: Optional[str]=None) -
         if isinstance(ext, str) and 'Content-Disposition' in response.headers.keys():
             filename = parse_requests_response(response).filename_sanitized(ext)
         elif ext is None and 'Content-Disposition' in response.headers.keys():
-                filename = parse_requests_response(response).filename_unsafe
+            filename = parse_requests_response(response).filename_unsafe
         else:
             filename = url.rsplit('/', 1)[-1]
         output_path = os.path.join(get_pros_dir(), 'download', filename)
