@@ -334,7 +334,7 @@ class Project(Config):
 
     @staticmethod
     def find_project(path: str, recurse_times: int = 10):
-        path = os.path.abspath(path)
+        path = os.path.abspath(path or '.')
         if os.path.isfile(path):
             path = os.path.dirname(path)
         if os.path.isdir(path):
