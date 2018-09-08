@@ -4,6 +4,9 @@ from .component import Component
 
 
 class Container(Component):
+    """
+    A Container has multiple Components, possibly a title, and possibly a description
+    """
     def __init__(self, *elements: Component,
                  title: Optional[AnyStr] = None, description: Optional[AnyStr] = None):
         self.title = title

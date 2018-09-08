@@ -5,15 +5,26 @@ from pros.common.ui.interactive.parameters.parameter import Parameter
 
 
 class Component(object):
+    """
+    A Component is the basic building block of something to render to users.
+
+    Components must convey type. For backwards compatibility, Components will advertise their class hierarchy to
+    the renderer so that it may try to render something reasonable if the renderer hasn't implemented a handler
+    for the specific component class.
+    For instance, DropDownComponent is a subclass of BasicParameterComponent, ParameterizedComponent, and finally
+    Component. If a renderer has not implemented DropDownComponent, then it can render its version of a
+    BasicParameterComponent (or ParameterizedComponent). Although a dropdown isn't rendered to the user, something
+    reasonable can still be displayed.
+    """
     @classmethod
     def get_hierarchy(cls, base: type) -> Optional[List[str]]:
         if base == cls:
             return [base.__name__]
         for t in base.__bases__:
-            l = cls.get_hierarchy(t)
-            if l:
-                l.insert(0, base.__name__)
-                return l
+            lst = cls.get_hierarchy(t)
+            if lst:
+                lst.insert(0, base.__name__)
+                return lst
         return None
 
     def __getstate__(self) -> Dict:
@@ -26,6 +37,9 @@ P = TypeVar('P', bound=Parameter)
 
 
 class ParameterizedComponent(Component, Generic[P]):
+    """
+    A ParameterizedComponent has a parameter which takes a value
+    """
     def __init__(self, parameter: P):
         self.parameter = parameter
 
@@ -42,6 +56,9 @@ class ParameterizedComponent(Component, Generic[P]):
 
 
 class BasicParameterComponent(ParameterizedComponent[P], Generic[P]):
+    """
+    A BasicParameterComponent is a ParameterizedComponent with a label.
+    """
     def __init__(self, label: AnyStr, parameter: P):
         super().__init__(parameter)
         self.label = label

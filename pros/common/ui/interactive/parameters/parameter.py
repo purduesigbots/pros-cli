@@ -6,6 +6,9 @@ T = TypeVar('T')
 
 
 class Parameter(Observable, Generic[T]):
+    """
+    A Parameter is an observable value
+    """
     def __init__(self, initial_value: T):
         super().__init__()
         self.value = initial_value

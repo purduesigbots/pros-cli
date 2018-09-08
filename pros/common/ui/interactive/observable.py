@@ -17,7 +17,7 @@ class Observable(observable.Observable):
         if uuid in _uuid_table:
             _uuid_table[uuid].trigger(event, *args, **kwargs)
         else:
-            logger(__name__).warning(f'Could not find an Observable to notify with UUID: {uuid}')
+            logger(__name__).warning(f'Could not find an Observable to notify with UUID: {uuid}', sentry=True)
 
     def on(self, event, *handlers,
            bound_args: Tuple[Any, ...] = None, bound_kwargs: Dict[str, Any] = None,
@@ -46,6 +46,10 @@ class Observable(observable.Observable):
                 return bound
 
         return super(Observable, self).on(event, *[bind(h) for h in handlers])
+
+    def trigger(self, event, *args, **kw):
+        logger(__name__).debug(f'Triggered {self} "{event}" event: {args} {kw}')
+        return super().trigger(event, *args, **kw)
 
     def __init__(self):
         self.uuid = str(uuid())

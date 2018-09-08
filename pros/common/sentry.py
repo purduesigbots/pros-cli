@@ -53,7 +53,7 @@ class SentryHandler(logging.Handler):
         # record level must be at least logging.ERROR; the sentry attribute (if present) must be true;
         # and if we're logging an exception, it must not be a suppressed exception (execution info implies execution
         # info is not in suppressed exceptions)
-        if record.levelno >= logging.ERROR and getattr(record, 'sentry', True) and \
+        if getattr(record, 'sentry', record.levelno >= logging.ERROR) and \
                 (record.exc_info is None or not any(issubclass(record.exc_info[0], e) for e in SUPPRESSED_EXCEPTIONS)):
             def _send():
                 if record.exc_info:
