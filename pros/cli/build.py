@@ -3,7 +3,7 @@ from typing import *
 import click
 
 import pros.conductor as c
-from pros.cli.common import pros_root, default_options, project_option
+from pros.cli.common import pros_root, default_options, project_option, logger
 
 
 @pros_root
@@ -21,6 +21,7 @@ def make(project: c.Project, build_args):
     """
     exit_code = project.compile(build_args)
     if exit_code != 0:
+        logger(__name__).debug(f'Failed to make project: Exit Code {exit_code}')
         raise click.ClickException('Failed to build')
     return exit_code
 
@@ -61,5 +62,6 @@ def build_compile_commands(project: c.Project, suppress_output: bool, compile_co
     exit_code = project.make_scan_build(build_args, cdb_file=compile_commands, suppress_output=suppress_output,
                                         sandbox=sandbox)
     if exit_code != 0:
+        logger(__name__).debug(f'Failed to make project: Exit Code {exit_code}')
         raise click.ClickException('Failed to build')
     return exit_code

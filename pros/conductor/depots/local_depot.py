@@ -7,11 +7,13 @@ import click
 from pros.config import ConfigNotFoundException
 from .depot import Depot
 from ..templates import BaseTemplate, Template, ExternalTemplate
+from pros.common.utils import logger
 
 
 class LocalDepot(Depot):
     def fetch_template(self, template: BaseTemplate, destination: str, **kwargs) -> Template:
         if 'location' not in kwargs:
+            logger(__name__).debug(f"Template not specified. Provided arguments: {kwargs}")
             raise KeyError('Location of local template must be specified.')
         location = kwargs['location']
         if os.path.isdir(location):

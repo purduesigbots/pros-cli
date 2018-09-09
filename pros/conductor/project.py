@@ -343,6 +343,7 @@ class Project(Config):
                     files = [f for f in os.listdir(path)
                              if os.path.isfile(os.path.join(path, f)) and f.lower() == 'project.pros']
                     if len(files) == 1:  # found a project.pros file!
+                        logger(__name__).info(f'Found Project Path: {os.path.join(path, files[0])}')
                         return os.path.join(path, files[0])
                     path = os.path.dirname(path)
                 else:
