@@ -3,6 +3,7 @@ import struct
 import typing
 from configparser import ConfigParser
 from datetime import datetime, timedelta
+from enum import IntEnum
 from io import BytesIO, StringIO
 from typing import *
 
@@ -10,7 +11,6 @@ from pros.common import *
 from pros.serial import bytes_to_str
 from pros.serial import decode_bytes_to_str
 from pros.serial.ports import list_all_comports, BasePort
-
 from .comm_error import VEXCommError
 from .crc import CRC
 from .message import Message
@@ -75,6 +75,12 @@ def find_v5_ports(p_type: str):
 
 class V5Device(VEXDevice, SystemDevice):
     vid_map = {'user': 1, 'system': 15}  # type: Dict[str, int]
+
+    class FTCompleteOptions(IntEnum):
+        DONT_RUN = 0
+        RUN_IMMEDIATELY = 0b01
+        RUN_SCREEN = 0b11
+
     VEX_CRC16 = CRC(16, 0x1021)  # CRC-16-CCIT
     VEX_CRC32 = CRC(32, 0x04C11DB7)  # CRC-32 (the one used everywhere but has no name)
 
@@ -89,9 +95,11 @@ class V5Device(VEXDevice, SystemDevice):
         return self._status
 
     def write_program(self, file: typing.BinaryIO, remote_name: str = None, ini: ConfigParser = None, slot: int = 0,
-                      file_len: int = -1, run_after: bool = False, target: str = 'flash', **kwargs):
+                      file_len: int = -1, run_after: FTCompleteOptions = FTCompleteOptions.DONT_RUN,
+                      target: str = 'flash', quirk: int = 0, **kwargs):
+        remote_base = f'slot_{slot + 1}'
         if target == 'ddr':
-            self.write_file(file, f'slot_{slot + 1}.bin', file_len=file_len, type='bin',
+            self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin',
                             target='ddr', run_after=run_after, **kwargs)
             return
         if not isinstance(ini, ConfigParser):
@@ -103,7 +111,7 @@ class V5Device(VEXDevice, SystemDevice):
             remote_name = remote_name[:20]
         project_ini = ConfigParser()
         from semantic_version import Spec
-        default_icon = 'USER902x.bmp' if Spec('>=1.0.0-22').match(self.status['system_version']) else 'USER999x.bmp'
+        default_icon = 'USER902x.bmp' if Spec('>=1.0.0-22').match(self.status['cpu0_version']) else 'USER999x.bmp'
         project_ini['program'] = {
             'version': kwargs.get('version', '0.0.0') or '0.0.0',
             'name': remote_name,
@@ -113,15 +121,28 @@ class V5Device(VEXDevice, SystemDevice):
             'date': datetime.now().isoformat()
         }
         project_ini.update(ini)
-        remote_base = f'slot_{slot + 1}'
-        self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', **kwargs)
-        with StringIO() as ini_str:
-            project_ini.write(ini_str)
-            logger(__name__).info(f'Created ini: {ini_str.getvalue()}')
-            with BytesIO(ini_str.getvalue().encode(encoding='ascii')) as ini_bin:
-                self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
-        if run_after:
-            self.execute_program_file(f'{remote_base}.bin')
+        if (quirk & 0xff) == 1:
+            # WRITE BIN FILE
+            self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after, **kwargs)
+            with StringIO() as ini_str:
+                project_ini.write(ini_str)
+                logger(__name__).info(f'Created ini: {ini_str.getvalue()}')
+                with BytesIO(ini_str.getvalue().encode(encoding='ascii')) as ini_bin:
+                    # WRITE INI FILE
+                    self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
+        elif (quirk & 0xff) == 0:
+            # STOP PROGRAM
+            self.execute_program_file('', run=False)
+            with StringIO() as ini_str:
+                project_ini.write(ini_str)
+                logger(__name__).info(f'Created ini: {ini_str.getvalue()}')
+                with BytesIO(ini_str.getvalue().encode(encoding='ascii')) as ini_bin:
+                    # WRITE INI FILE
+                    self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
+            # WRITE BIN FILE
+            self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after, **kwargs)
+        else:
+            raise ValueError(f'Unknown quirk option: {quirk}')
 
     def read_file(self, file: typing.IO[bytes], remote_file: str, vid: int_str = 'user', target: int_str = 'flash'):
         if isinstance(vid, str):
@@ -135,8 +156,8 @@ class V5Device(VEXDevice, SystemDevice):
             file.write(self.ft_read(metadata['addr'] + i, packet_size))
         self.ft_complete()
 
-    def write_file(self, file: typing.BinaryIO, remote_file: str, file_len: int = -1, run_after: bool = False,
-                   **kwargs):
+    def write_file(self, file: typing.BinaryIO, remote_file: str, file_len: int = -1,
+                   run_after: FTCompleteOptions = FTCompleteOptions.DONT_RUN, **kwargs):
         if file_len < 0:
             file_len = file.seek(0, 2)
             file.seek(0, 0)
@@ -162,7 +183,7 @@ class V5Device(VEXDevice, SystemDevice):
                 progress.update(packet_size)
                 logger(__name__).debug('Completed {} of {} bytes'.format(i + packet_size, file_len))
         logger(__name__).debug('Data transfer complete, sending ft complete')
-        self.ft_complete(run_program=run_after)
+        self.ft_complete(options=run_after)
 
     @retries
     def query_system_version(self) -> bytearray:
@@ -213,11 +234,11 @@ class V5Device(VEXDevice, SystemDevice):
         return rx
 
     @retries
-    def ft_complete(self, run_program: bool = False):
+    def ft_complete(self, options: FTCompleteOptions = FTCompleteOptions.DONT_RUN):
         logger(__name__).debug('Sending ext 0x12 command')
-        options = 0
-        options |= (1 if run_program else 0)
-        tx_payload = struct.pack("<B", options)
+        if isinstance(options, bool):
+            options = self.FTCompleteOptions.RUN_IMMEDIATELY if options else self.FTCompleteOptions.DONT_RUN
+        tx_payload = struct.pack("<B", options.value)
         ret = self._txrx_ext_packet(0x12, tx_payload, 0, timeout=5.0)
         logger(__name__).debug('Completed ext 0x12 command')
         return ret

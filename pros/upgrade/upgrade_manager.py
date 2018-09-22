@@ -28,6 +28,11 @@ class UpgradeManager(Config):
 
     @property
     def has_stale_manifest(self):
+        if self._manifest is None:
+            logger(__name__).debug('Upgrade manager\'s manifest is nonexistent')
+        if datetime.now() - self._last_check > cli_config().update_frequency:
+            logger(__name__).debug(f'Upgrade manager\'s last check occured at {self._last_check}.')
+            logger(__name__).debug(f'Was longer ago than update frequency ({cli_config().update_frequency}) allows.')
         return (self._manifest is None) or (datetime.now() - self._last_check > cli_config().update_frequency)
 
     def get_manifest(self, force: bool = False) -> UpgradeManifestV1:

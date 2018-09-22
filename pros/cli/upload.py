@@ -1,7 +1,6 @@
 import pros.common.ui as ui
 import pros.conductor as c
 
-from .click_classes import *
 from .common import *
 
 
@@ -16,6 +15,7 @@ def upload_cli():
 @click.argument('path', type=click.Path(exists=True), default=None, required=False)
 @click.argument('port', type=str, default=None, required=False)
 @click.option('--run-after/--no-run-after', 'run_after', default=True, help='Immediately run the uploaded program')
+@click.option('-q', '--quirk', type=int, default=0)
 @click.option('--name', type=str, default=None, required=False, help='Remote program name',
               cls=PROSOption, group='V5 Options')
 @click.option('--slot', default=1, show_default=True, type=click.IntRange(min=1, max=8), help='Program slot on the GUI',
@@ -26,6 +26,10 @@ def upload_cli():
               cls=PROSOption, group='V5 Options', hidden=True)
 @click.option('--ini-config', type=click.Path(exists=True), default=None, help='Specify a Program Configuration File',
               cls=PROSOption, group='V5 Options', hidden=True)
+@click.option('--run-screen/--execute', 'run_screen', default=True,
+              cls=PROSOption, group='V5 Options', help='Open "run program" screen after uploading, instead of executing'
+                                                       ' program. This option may help with controller connectivity '
+                                                       'reliability and prevent robots from running off tables.')
 @default_options
 def upload(path: str, port: str, **kwargs):
     """
@@ -60,12 +64,16 @@ def upload(path: str, port: str, **kwargs):
         if 'name' not in kwargs:
             kwargs['name'] = project.name
     if 'target' not in kwargs:
+        logger(__name__).debug(f'Target not specified. Arguments provided: {kwargs}')
         raise click.UsageError('Target not specified. specify a project (using the file argument) or target manually')
 
     if kwargs['target'] == 'v5':
         port = resolve_v5_port(port, 'system')
     elif kwargs['target'] == 'cortex':
         port = resolve_cortex_port(port)
+    else:
+        logger(__name__).debug(f"Invalid target provided: {kwargs['target']}")
+        logger(__name__).debug('Target should be one of ("v5" or "cortex").')
     if not port:
         return -1
 
@@ -74,6 +82,12 @@ def upload(path: str, port: str, **kwargs):
             kwargs['name'] = os.path.splitext(os.path.basename(path))[0]
         args.append(kwargs.pop('name').replace('@', '_'))
         kwargs['slot'] -= 1
+        if kwargs['run_after'] and kwargs['run_screen']:
+            kwargs['run_after'] = vex.V5Device.FTCompleteOptions.RUN_SCREEN
+        elif kwargs['run_after'] and not kwargs['run_screen']:
+            kwargs['run_after'] = vex.V5Device.FTCompleteOptions.RUN_IMMEDIATELY
+        else:
+            kwargs['run_after'] = vex.V5Device.FTCompleteOptions.DONT_RUN
     elif kwargs['target'] == 'cortex':
         pass
 

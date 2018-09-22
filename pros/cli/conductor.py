@@ -49,6 +49,7 @@ def fetch(query: c.BaseTemplate):
     elif query.metadata.get('origin', None) == 'local':
         if 'location' not in query.metadata:
             logger(__name__).error('--location option is required for the local depot. Specify --location <file>')
+            logger(__name__).debug(f'Query options provided: {query.metadata}')
             return -1
         template_file = query.metadata['location']
 
@@ -57,15 +58,20 @@ def fetch(query: c.BaseTemplate):
         template = ExternalTemplate(template_file)
         query.metadata['location'] = template_file
         depot = c.LocalDepot()
+        logger(__name__).debug(f'Template file found: {template_file}')
     else:
+        if template_file:
+            logger(__name__).debug(f'Template file exists but is not a valid template: {template_file}')
         template = c.Conductor().resolve_template(query, allow_offline=False)
-        logger(__name__).debug(template)
+        logger(__name__).debug(f'Template from resolved query: {template}')
         if template is None:
             logger(__name__).error(f'There are no templates matching {query}!')
             return -1
         depot = c.Conductor().get_depot(template.metadata['origin'])
+        logger(__name__).debug(f'Found depot: {depot}')
     # query.metadata contain all of the extra args that also go to the depot. There's no way for us to determine
     # whether the arguments are for the template or for the depot, so they share them
+    logger(__name__).debug(f'Additional depot and template args: {query.metadata}')
     c.Conductor().fetch_template(depot, template, **query.metadata)
 
 
@@ -196,8 +202,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
     if version.lower() == 'latest' or not version:
         version = '>0'
     if not force_system and c.Project.find_project(path) is not None:
-        pros.common.logger(__name__).error('A project already exists in this location! Delete it first',
-                                           extra={'sentry': False})
+        logger(__name__).error('A project already exists in this location! Delete it first', extra={'sentry': False})
         ctx.exit(-1)
     try:
         _conductor = c.Conductor()
