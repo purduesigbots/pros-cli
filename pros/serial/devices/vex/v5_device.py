@@ -197,7 +197,6 @@ class V5Device(VEXDevice, SystemDevice):
                 self.ft_write(addr + i, file.read(packet_size))
                 progress.update(packet_size)
                 logger(__name__).debug('Completed {} of {} bytes'.format(i + packet_size, file_len))
-                time.sleep(0.02)
         logger(__name__).debug('Data transfer complete, sending ft complete')
         self.ft_complete(options=run_after)
 
