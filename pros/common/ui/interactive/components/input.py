@@ -1,9 +1,9 @@
 from typing import *
 
-from .component import BasicParameterComponent, P
+from .component import BasicParameterizedComponent, P
 
 
-class InputBox(BasicParameterComponent[P], Generic[P]):
+class InputBox(BasicParameterizedComponent[P], Generic[P]):
     def __init__(self, label: AnyStr, parameter: P, placeholder: Optional = None):
         super(InputBox, self).__init__(label, parameter)
         self.placeholder = placeholder

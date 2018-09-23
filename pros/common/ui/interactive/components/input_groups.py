@@ -1,8 +1,8 @@
-from .component import BasicParameterComponent
+from .component import BasicParameterizedComponent
 from pros.common.ui.interactive.parameters.misc_parameters import OptionParameter
 
 
-class DropDownBox(BasicParameterComponent[OptionParameter]):
+class DropDownBox(BasicParameterizedComponent[OptionParameter]):
     def __getstate__(self):
         return dict(
             **super(DropDownBox, self).__getstate__(),

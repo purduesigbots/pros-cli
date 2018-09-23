@@ -55,7 +55,7 @@ class ParameterizedComponent(Component, Generic[P]):
         )
 
 
-class BasicParameterComponent(ParameterizedComponent[P], Generic[P]):
+class BasicParameterizedComponent(ParameterizedComponent[P], Generic[P]):
     """
     A BasicParameterComponent is a ParameterizedComponent with a label.
     """
@@ -65,6 +65,6 @@ class BasicParameterComponent(ParameterizedComponent[P], Generic[P]):
 
     def __getstate__(self):
         return dict(
-            **super(BasicParameterComponent, self).__getstate__(),
+            **super(BasicParameterizedComponent, self).__getstate__(),
             text=self.label,
         )
