@@ -29,7 +29,7 @@ class Component(object):
 
     def __getstate__(self) -> Dict:
         return dict(
-            type=Component.get_hierarchy(self.__class__)
+            etype=Component.get_hierarchy(self.__class__)
         )
 
 

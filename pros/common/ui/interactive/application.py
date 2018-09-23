@@ -40,7 +40,7 @@ class Application(Observable):
 
     def __getstate__(self):
         return dict(
-            app_type=Application.get_hierarchy(self.__class__),
+            etype=Application.get_hierarchy(self.__class__),
             elements=[e.__getstate__() for e in self.build()]
         )
 

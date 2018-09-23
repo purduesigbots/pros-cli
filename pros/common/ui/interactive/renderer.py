@@ -61,8 +61,7 @@ class MachineOutputRenderer(Renderer):
 
                 if 'uuid' in value and 'event' in value:
                     Observable.notify(value['uuid'], value['event'], *value.get('args', []), **value.get('kwargs', {}))
-                else:
-                    require_redraw = True
+                require_redraw = True
             except queue.Empty:
                 time.sleep(0.1)
             except (KeyboardInterrupt, EOFError):
