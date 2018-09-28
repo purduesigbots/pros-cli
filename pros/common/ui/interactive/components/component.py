@@ -47,6 +47,9 @@ class ParameterizedComponent(Component, Generic[P]):
         extra_state = {}
         if isinstance(self.parameter, ValidatableParameter):
             extra_state['valid'] = self.parameter.is_valid()
+            reason = self.parameter.is_valid_reason()
+            if reason:
+                extra_state['valid_reason'] = self.parameter.is_valid_reason()
         return dict(
             **super(ParameterizedComponent, self).__getstate__(),
             **extra_state,

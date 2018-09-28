@@ -26,6 +26,10 @@ class MachineOutputRenderer(Renderer):
         def kill():
             nonlocal running
             running = False
+            self._output({
+                'uuid': app.uuid,
+                'should_exit': True
+            })
 
         @app.on_redraw
         def require_redraw():
@@ -72,14 +76,13 @@ class MachineOutputRenderer(Renderer):
                 continue
         input_thread.join()
 
-    def render(self, app: Application) -> None:
+    @staticmethod
+    def _output(data: dict):
+        data['type'] = 'input/interactive'
         if ui.ismachineoutput():
-            ui._machineoutput(dict(
-                type='input/interactive',
-                **app.__getstate__()
-            ))
+            ui._machineoutput(data)
         else:
-            ui.echo(str(dict(
-                type='input/interactive',
-                **app.__getstate__()
-            )))
+            ui.echo(str(data))
+
+    def render(self, app: Application) -> None:
+        self._output(app.__getstate__())

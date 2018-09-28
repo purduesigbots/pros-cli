@@ -1,7 +1,9 @@
+import sys
 from typing import *
 
 from .components import Component
 from .observable import Observable
+from .parameters import ValidatableParameter
 
 
 class Application(Observable):
@@ -41,14 +43,15 @@ class Application(Observable):
     def __getstate__(self):
         return dict(
             etype=Application.get_hierarchy(self.__class__),
-            elements=[e.__getstate__() for e in self.build()]
+            elements=[e.__getstate__() for e in self.build()],
+            uuid=self.uuid
         )
 
 
 class Modal(Application):
     def __init__(self, title: AnyStr, description: Optional[AnyStr] = None,
                  will_abort: bool = True, confirm_button: AnyStr = 'Continue', cancel_button: AnyStr = 'Cancel',
-                 can_confirm: bool = True):
+                 can_confirm: Optional[bool] = None):
         super().__init__()
         self.title = title
         self.description = description
@@ -60,11 +63,17 @@ class Modal(Application):
         self.on('confirm', self._confirm)
 
     def confirm(self, *args, **kwargs):
-        pass
+        raise NotImplementedError()
 
     @property
     def can_confirm(self):
-        return self._can_confirm
+        if self._can_confirm is not None:
+            return self._can_confirm
+        return all([
+            p.is_valid
+            for p in vars(self)
+            if isinstance(p, ValidatableParameter)
+        ])
 
     def build(self) -> Generator[Component, None, None]:
         raise NotImplementedError()

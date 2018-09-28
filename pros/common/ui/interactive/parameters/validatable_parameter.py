@@ -16,11 +16,19 @@ class ValidatableParameter(Parameter, Generic[T]):
         super().__init__(initial_value)
         self.allow_invalid_input = allow_invalid_input
 
-    def validate(self, value: T) -> bool:
-        raise NotImplementedError()
+    def validate(self, value: T) -> Union[bool, str]:
+        raise bool(value)
 
     def is_valid(self, value: T = None) -> bool:
-        return self.validate(value if value is not None else self.value)
+        rv = self.validate(value if value is not None else self.value)
+        if isinstance(rv, bool):
+            return rv
+        else:
+            return False
+
+    def is_valid_reason(self, value: T = None) -> Optional[str]:
+        rv = self.validate(value if value is not None else self.value)
+        return rv if isinstance(rv, str) else None
 
     def update(self, new_value):
         if self.allow_invalid_input or self.is_valid(new_value):
