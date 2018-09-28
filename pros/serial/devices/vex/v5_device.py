@@ -94,6 +94,25 @@ class V5Device(VEXDevice, SystemDevice):
             self._status = self.get_system_status()
         return self._status
 
+    def generate_ini_file(self, remote_name: str = None, slot: int = 0, ini: ConfigParser = None, **kwargs):
+        project_ini = ConfigParser()
+        from semantic_version import Spec
+        default_icon = 'USER902x.bmp' if Spec('>=1.0.0-22').match(self.status['cpu0_version']) else 'USER999x.bmp'
+        project_ini['program'] = {
+            'version': kwargs.get('version', '0.0.0') or '0.0.0',
+            'name': remote_name,
+            'slot': slot,
+            'icon': kwargs.get('icon', default_icon) or default_icon,
+            'description': 'Created with PROS',
+            'date': datetime.now().isoformat()
+        }
+        if ini:
+            project_ini.update(ini)
+        with StringIO() as ini_str:
+            project_ini.write(ini_str)
+            logger(__name__).info(f'Created ini: {ini_str.getvalue()}')
+            return ini_str.getvalue()
+
     def write_program(self, file: typing.BinaryIO, remote_name: str = None, ini: ConfigParser = None, slot: int = 0,
                       file_len: int = -1, run_after: FTCompleteOptions = FTCompleteOptions.DONT_RUN,
                       target: str = 'flash', quirk: int = 0, **kwargs):
@@ -109,36 +128,22 @@ class V5Device(VEXDevice, SystemDevice):
         if len(remote_name) > 20:
             logger(__name__).info('Truncating remote name to {} for length.'.format(remote_name[:20]))
             remote_name = remote_name[:20]
-        project_ini = ConfigParser()
-        from semantic_version import Spec
-        default_icon = 'USER902x.bmp' if Spec('>=1.0.0-22').match(self.status['cpu0_version']) else 'USER999x.bmp'
-        project_ini['program'] = {
-            'version': kwargs.get('version', '0.0.0') or '0.0.0',
-            'name': remote_name,
-            'slot': slot,
-            'icon': kwargs.get('icon', default_icon) or default_icon,
-            'description': 'Created with PROS',
-            'date': datetime.now().isoformat()
-        }
-        project_ini.update(ini)
+
+        ini_file = self.generate_ini_file(remote_name=remote_name, slot=slot, ini=ini, **kwargs)
+        logger(__name__).info(f'Created ini: {ini_file}')
+
         if (quirk & 0xff) == 1:
             # WRITE BIN FILE
             self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after, **kwargs)
-            with StringIO() as ini_str:
-                project_ini.write(ini_str)
-                logger(__name__).info(f'Created ini: {ini_str.getvalue()}')
-                with BytesIO(ini_str.getvalue().encode(encoding='ascii')) as ini_bin:
-                    # WRITE INI FILE
-                    self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
+            with BytesIO(ini_file.encode(encoding='ascii')) as ini_bin:
+                # WRITE INI FILE
+                self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
         elif (quirk & 0xff) == 0:
             # STOP PROGRAM
             self.execute_program_file('', run=False)
-            with StringIO() as ini_str:
-                project_ini.write(ini_str)
-                logger(__name__).info(f'Created ini: {ini_str.getvalue()}')
-                with BytesIO(ini_str.getvalue().encode(encoding='ascii')) as ini_bin:
-                    # WRITE INI FILE
-                    self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
+            with BytesIO(ini_file.encode(encoding='ascii')) as ini_bin:
+                # WRITE INI FILE
+                self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
             # WRITE BIN FILE
             self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after, **kwargs)
         else:
