@@ -17,7 +17,6 @@ class Parameter(Observable, Generic[T]):
 
     def update(self, new_value):
         self.value = new_value
-        print(self.value)
         self.trigger('changed', self)
 
     def on_changed(self, *handlers: Callable, **kwargs):

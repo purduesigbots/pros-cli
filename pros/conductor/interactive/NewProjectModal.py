@@ -18,14 +18,15 @@ class NonExistentProjectParameter(parameters.ValidatableParameter[str]):
             return 'Do not have write permission to path'
         if Project.find_project(value) is not None:
             return 'Project path already exists, delete it first'
+        blacklisted_directories = []
         # TODO: Proper Windows support
         if sys.platform == 'win32':
-            blacklisted_directories = [
+            blacklisted_directories.extend([
                 os.environ.get('WINDIR', os.path.join('C:', 'Windows')),
                 os.environ.get('PROGRAMFILES', os.path.join('C:', 'Program Files'))
-            ]
-            if any(value.startswith(d) for d in blacklisted_directories):
-                return 'Cannot create project in a system directory'
+            ])
+        if any(value.startswith(d) for d in blacklisted_directories):
+            return 'Cannot create project in a system directory'
         if not os.path.exists(value):
             parent = os.path.split(value)[0]
             while parent and not os.path.exists(parent):

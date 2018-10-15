@@ -15,7 +15,7 @@ def interactive():
 @interactive.command()
 @default_options
 def new_project():
-    from pros.common.ui.interactive.renderer import MachineOutputRenderer
+    from pros.common.ui.interactive.renderers import MachineOutputRenderer
     from pros.conductor.interactive.NewProjectModal import NewProjectModal
     app = NewProjectModal()
-    MachineOutputRenderer().run(app)
+    MachineOutputRenderer(app).run()

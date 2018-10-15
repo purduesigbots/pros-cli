@@ -1,4 +1,4 @@
-from pros.common.ui.interactive.renderer import MachineOutputRenderer
+from pros.common.ui.interactive.renderers import MachineOutputRenderer
 from pros.conductor.interactive.NewProjectModal import NewProjectModal
 from pros.serial.terminal.console import Console
 from .common import default_options, pros_root
@@ -13,6 +13,6 @@ def test_cli():
 @default_options
 def test():
     app = NewProjectModal()
-    MachineOutputRenderer().run(app)
+    MachineOutputRenderer(app).run()
 
     # ui.confirm('Hey')
