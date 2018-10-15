@@ -1,5 +1,6 @@
 from pros.common.ui.interactive.renderer import MachineOutputRenderer
 from pros.conductor.interactive.NewProjectModal import NewProjectModal
+from pros.serial.terminal.console import Console
 from .common import default_options, pros_root
 
 

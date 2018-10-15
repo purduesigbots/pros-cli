@@ -7,6 +7,7 @@ from click.termui import visible_prompt_func
 import pros.common.ui as ui
 from pros.common.ui.interactive.observable import Observable
 from .application import Application
+from pros.serial.terminal.console import Console
 
 
 class Renderer(object):
@@ -19,13 +20,20 @@ class Renderer(object):
 
 class MachineOutputRenderer(Renderer):
     def run(self, app: Application) -> None:
-        running = True
+        import threading
+        import signal
+
+        alive: threading.Event = threading.Event()
+        signal.signal(signal.SIGINT, lambda *_: alive.set())  # SIGINT handler
+        console = Console()
+
         require_redraw = True
 
         @app.on_exit
         def kill():
-            nonlocal running
-            running = False
+            nonlocal alive
+            alive.set()
+            console.cancel()
             self._output({
                 'uuid': app.uuid,
                 'should_exit': True
@@ -36,27 +44,38 @@ class MachineOutputRenderer(Renderer):
             nonlocal require_redraw
             require_redraw = True
 
-        import threading
         import queue
         import time
 
         q = queue.Queue()
 
         def reader():
-            # noinspection PyUnreachableCode
+            nonlocal alive
             try:
-                while True:
-                    try:
-                        q.put(json.loads(visible_prompt_func('').strip()))
-                    except JSONDecodeError as e:
-                        ui.logger(__name__).exception(e)
-            except EOFError:
-                running = False
+                line = ''
+                while not alive.is_set():
+                    c = console.getkey()
+                    if not c:
+                        continue
+                    if c == '\x03':
+                        break
+                    elif c == '\n':
+                        try:
+                            q.put(json.loads(line.strip()))
+                        except JSONDecodeError as e:
+                            ui.logger(__name__).exception(e)
+                        finally:
+                            line = ''
+                    else:
+                        line += c
+            except (KeyboardInterrupt, EOFError):
+                pass
+            alive.set()
 
         input_thread = threading.Thread(target=reader)
         input_thread.start()
 
-        while running:
+        while not alive.is_set():
             if require_redraw:
                 self.render(app)
                 require_redraw = False
@@ -68,13 +87,10 @@ class MachineOutputRenderer(Renderer):
                 require_redraw = True
             except queue.Empty:
                 time.sleep(0.1)
-            except (KeyboardInterrupt, EOFError):
+        with ui.Notification():
+            if input_thread.is_alive():
+                console.cancel()
                 input_thread.join()
-                raise Abort()
-            except JSONDecodeError as e:
-                ui.logger(__name__).exception(e)
-                continue
-        input_thread.join()
 
     @staticmethod
     def _output(data: dict):
