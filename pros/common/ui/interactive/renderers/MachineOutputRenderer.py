@@ -23,6 +23,7 @@ class MachineOutputRenderer(Renderer):
         self.require_redraw = False
 
         app.on_redraw(self.redraw)
+        app.on_exit(lambda: self.stop())
 
     def redraw(self):
         self.require_redraw = True
@@ -59,7 +60,7 @@ class MachineOutputRenderer(Renderer):
 
     def stop(self):
         if not self.alive.is_set():
-            ui.logger(__name__).warning('Stopping interactive application')
+            ui.logger(__name__).debug('Stopping interactive application')
             self._output({
                 'uuid': self.app.uuid,
                 'should_exit': True

@@ -46,7 +46,7 @@ class NonExistentProjectParameter(parameters.ValidatableParameter[str]):
 
 
 class NewProjectModal(application.Modal):
-    directory = NonExistentProjectParameter(os.path.expanduser('~'))
+    directory = NonExistentProjectParameter(os.path.join(os.path.expanduser('~'), 'My PROS Project'))
     targets = parameters.OptionParameter('v5', ['v5', 'cortex'])
     kernel_versions = parameters.OptionParameter('latest', ['latest'])
     install_default_libraries = parameters.BooleanParameter(True)
@@ -72,7 +72,8 @@ class NewProjectModal(application.Modal):
         self.exit()
         from pros.cli.conductor import new_project
         self.click_ctx.invoke(new_project, path=self.directory.value, target=self.targets.value,
-                              version=self.kernel_versions.value)
+                              version=self.kernel_versions.value,
+                              no_default_libs=not self.install_default_libraries.value)
 
     def build(self) -> Generator[components.Component, None, None]:
         yield components.DirectorySelector('Project Directory', self.directory)
