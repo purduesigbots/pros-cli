@@ -1,17 +1,26 @@
+import sys
 from typing import *
 
 import serial
-from pros.common import logger
 
+from pros.common import logger
+from pros.serial.ports.exceptions import ConnectionRefusedException
 from .base_port import BasePort, PortConnectionException
 
 
 def create_serial_port(port_name: str, timeout: Optional[float] = 1.0) -> serial.Serial:
-    port = serial.Serial(port_name, baudrate=115200, bytesize=serial.EIGHTBITS,
-                         parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE)
-    port.timeout = timeout
-    port.inter_byte_timeout = 0.2
-    return port
+    try:
+        port = serial.Serial(port_name, baudrate=115200, bytesize=serial.EIGHTBITS,
+                             parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE)
+        port.timeout = timeout
+        port.inter_byte_timeout = 0.2
+        return port
+    except serial.SerialException as e:
+        if False and PermissionError.__name__ in str(e) and 'Access is denied' in str(e):
+            tb = sys.exc_info()[2]
+            raise ConnectionRefusedException(port_name, e).with_traceback(tb)
+        else:
+            raise e
 
 
 class DirectPort(BasePort):
