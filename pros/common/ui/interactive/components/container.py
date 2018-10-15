@@ -1,4 +1,4 @@
-from pros.common.ui.interactive.parameters import Parameter
+from pros.common.ui.interactive.parameters import BooleanParameter
 from typing import *
 
 from .component import Component
@@ -14,7 +14,7 @@ class Container(Component):
         self.title = title
         self.description = description
         self.elements = elements
-        self.collapsed = Parameter(collapsed)
+        self.collapsed = BooleanParameter(collapsed)
 
     def __getstate__(self):
         extra_state = {

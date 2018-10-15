@@ -49,6 +49,7 @@ class NewProjectModal(application.Modal):
     directory = NonExistentProjectParameter(os.path.expanduser('~'))
     targets = parameters.OptionParameter('v5', ['v5', 'cortex'])
     kernel_versions = parameters.OptionParameter('latest', ['latest'])
+    install_default_libraries = parameters.BooleanParameter(True)
 
     def __init__(self, ctx: Context = None, conductor: Optional[Conductor] = None):
         super().__init__('Create a new project')
@@ -76,4 +77,8 @@ class NewProjectModal(application.Modal):
     def build(self) -> Generator[components.Component, None, None]:
         yield components.DirectorySelector('Project Directory', self.directory)
         yield components.ButtonGroup('Target', self.targets)
-        yield components.DropDownBox('Kernel Version', self.kernel_versions)
+        yield components.Container(
+            components.DropDownBox('Kernel Version', self.kernel_versions),
+            components.Checkbox('Install default libraries', self.install_default_libraries),
+            title='Advanced'
+        )

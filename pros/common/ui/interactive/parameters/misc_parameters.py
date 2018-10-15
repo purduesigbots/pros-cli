@@ -16,4 +16,9 @@ class OptionParameter(ValidatableParameter, Generic[T]):
 
 
 class BooleanParameter(Parameter[bool]):
-    pass
+    def update(self, new_value):
+        true_prefixes = ['T', 'Y']
+        true_matches = ['1']
+        v = str(new_value).upper()
+        is_true = v in true_matches or any(v.startswith(p) for p in true_prefixes)
+        super(BooleanParameter, self).update(is_true)
