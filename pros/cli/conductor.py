@@ -185,15 +185,15 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
               help='Force update all remote depots, ignoring automatic update checks')
 @click.option('--no-default-libs', 'no_default_libs', default=False, is_flag=True,
               help='Do not install any default libraries after creating the project.')
-@click.option('--compile-after', is_flag=True, default=False, show_default=True,
+@click.option('--compile-after', is_flag=True, default=True, show_default=True,
               help='Compile the project after creation')
-@click.option('--build-cache', is_flag=True, default=False, show_default=False,
+@click.option('--build-cache', is_flag=True, default=None, show_default=False,
               help='Build compile commands cache after creation. Overrides --compile-after if both are specified.')
 @click.pass_context
 @default_options
 def new_project(ctx: click.Context, path: str, target: str, version: str,
                 force_user: bool = False, force_system: bool = False,
-                no_default_libs: bool = False, compile_after: bool = False, build_cache: bool = False, **kwargs):
+                no_default_libs: bool = False, compile_after: bool = True, build_cache: bool = None, **kwargs):
     """
     Create a new PROS project
 
@@ -216,6 +216,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
 
         if compile_after or build_cache:
             with ui.Notification():
+                ui.echo('Building project...')
                 ctx.exit(project.compile([], scan_build=build_cache))
 
     except Exception as e:
