@@ -178,7 +178,7 @@ class EchoPipe(threading.Thread):
         and start the thread
         """
         self.click_ctx = ctx or click.get_current_context(silent=True)
-        self.stderr = err
+        self.is_err = err
         threading.Thread.__init__(self)
         self.daemon = False
         self.fdRead, self.fdWrite = os.pipe()
@@ -194,7 +194,7 @@ class EchoPipe(threading.Thread):
         """Run the thread, logging everything.
         """
         for line in iter(self.pipeReader.readline, ''):
-            echo(line.strip('\n'), ctx=self.click_ctx, err=self.stderr)
+            echo(line.strip('\n'), ctx=self.click_ctx, err=self.is_err)
 
         self.pipeReader.close()
 

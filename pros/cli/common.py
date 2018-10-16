@@ -100,6 +100,10 @@ def machine_output_option(f):
         ctx.ensure_object(dict)
         if value:
             ctx.obj[param.name] = value
+            logging.getLogger().setLevel(logging.DEBUG)
+            stdout_handler = ctx.obj['click_handler']  # type: logging.Handler
+            stdout_handler.setLevel(logging.DEBUG)
+            logging.getLogger(__name__).info('Debugging messages enabled')
         return value
 
     decorator = click.option('--machine-output', expose_value=False, is_flag=True, default=False, is_eager=True,
