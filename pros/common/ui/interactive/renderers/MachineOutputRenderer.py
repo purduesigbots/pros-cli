@@ -1,8 +1,5 @@
 import json
 import sys
-import threading
-import time
-from queue import Queue, Empty
 
 from pros.common import ui
 from pros.common.ui.interactive.observable import Observable
@@ -14,76 +11,33 @@ from ..application import Application
 class MachineOutputRenderer(Renderer):
     def __init__(self, app: Application):
         super().__init__(app)
-        self.reader_thread = threading.Thread(target=self.reader, name='machine-renderer-input')
-        self.alive = threading.Event()
+        self.alive = False
 
-        self.have_sigint = False
+        @app.on_redraw
+        def on_redraw():
+            self.render(self.app)
 
-        self.q = Queue()
-        self.require_redraw = False
-
-        app.on_redraw(self.redraw)
         app.on_exit(lambda: self.stop())
 
-    def redraw(self):
-        self.require_redraw = True
-
-    def reader(self):
-        try:
-            line = ''
-            while not self.alive.is_set():
-                try:
-                    c = sys.stdin.read(1)
-                except KeyboardInterrupt:
-                    c = '\x03'
-                if self.alive.is_set():
-                    break
-                elif c == '\x03' or self.have_sigint:
-                    self.stop()
-                    break
-                elif c == '\n' or c == '\r':
-                    if line:
-                        try:
-                            self.q.put(json.loads(line.strip()))
-                        except json.JSONDecodeError as e:
-                            ui.logger(__name__).exception(e)
-                        finally:
-                            line = ''
-                else:
-                    line += c
-        except Exception as e:
-            if not self.alive.is_set():
-                ui.logger(__name__).exception(e)
-            else:
-                ui.logger(__name__).debug(e)
-        ui.logger(__name__).info('App reader dying')
-
-    def stop(self):
-        if not self.alive.is_set():
-            ui.logger(__name__).debug('Stopping interactive application')
-            self._output({
-                'uuid': self.app.uuid,
-                'should_exit': True
-            })
-            self.alive.set()
-            ui.logger(__name__).info('All done!')
-
     def run(self) -> None:
-        self.reader_thread.start()
-        while not self.alive.is_set():
-            if self.require_redraw:
-                self.render(self.app)
-                self.require_redraw = False
+        self.alive = True
+        while self.alive:
+            self.render(self.app)
+            line = sys.stdin.readline()
             try:
-                value = self.q.get(block=False)
-
+                value = json.loads(line.strip())
                 if 'uuid' in value and 'event' in value:
                     Observable.notify(value['uuid'], value['event'], *value.get('args', []), **value.get('kwargs', {}))
-                    self.redraw()
+            except json.JSONDecodeError as e:
+                ui.logger(__name__).exception(e)
 
-            except Empty:
-                time.sleep(0.1)
-        self.stop()
+    def stop(self):
+        self._output({
+            'uuid': self.app.uuid,
+            'should_exit': True
+        })
+        self.alive = False
+        ui.logger(__name__).info('All done!')
 
     @staticmethod
     def _output(data: dict):
@@ -94,4 +48,5 @@ class MachineOutputRenderer(Renderer):
             ui.echo(str(data))
 
     def render(self, app: Application) -> None:
-        self._output(app.__getstate__())
+        if self.alive:
+            self._output(app.__getstate__())
