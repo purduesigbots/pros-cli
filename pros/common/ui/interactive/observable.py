@@ -10,8 +10,16 @@ _uuid_table = dict()  # type: Dict[str, Observable]
 
 
 class Observable(observable.Observable):
+    """
+    Wrapper class for the observable package for use in interactive UI. It registers itself with a global registry
+    to facilitate updates from any context (e.g. from a renderer).
+    """
+
     @classmethod
     def notify(cls, uuid, event, *args, **kwargs):
+        """
+        Triggers an Observable given its UUID. See arguments for Observable.trigger
+        """
         if isinstance(uuid, Observable):
             uuid = uuid.uuid
         if uuid in _uuid_table:

@@ -7,7 +7,14 @@ from .parameters import ValidatableParameter
 
 
 class Application(Observable):
+    """
+    An Application manages the lifecycle of an interactive UI that is rendered to the users. It creates a view for the
+    model the application is rendering.
+    """
     def build(self) -> Generator[Component, None, None]:
+        """
+        Creates a list of components to render
+        """
         raise NotImplementedError()
 
     def on_exit(self, *handlers: Callable):
@@ -49,6 +56,10 @@ class Application(Observable):
 
 
 class Modal(Application):
+    """
+    An Application which is typically displayed in a pop-up box. It has a title, description, continue button,
+    and cancel button.
+    """
     def __init__(self, title: AnyStr, description: Optional[AnyStr] = None,
                  will_abort: bool = True, confirm_button: AnyStr = 'Continue', cancel_button: AnyStr = 'Cancel',
                  can_confirm: Optional[bool] = None):

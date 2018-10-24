@@ -8,6 +8,9 @@ T = TypeVar('T')
 class ValidatableParameter(Parameter, Generic[T]):
     """
     A ValidatableParameter is a parameter which has some restriction on valid values.
+
+    By default, on_changed will subscribe to valid value changes, e.g. only when the Parameter's value is valid does
+    the callback get invoked. This event tag is "changed_validated"
     """
     def __init__(self, initial_value: T, allow_invalid_input: bool = True):
         """
