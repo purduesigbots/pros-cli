@@ -9,6 +9,6 @@ colorama
 pyzmq
 cobs
 scan-build==2.0.13
-rfc6266
+rfc6266-parser
 raven
 observable
