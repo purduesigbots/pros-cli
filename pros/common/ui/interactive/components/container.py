@@ -10,11 +10,11 @@ class Container(Component):
     """
 
     def __init__(self, *elements: Component,
-                 title: Optional[AnyStr] = None, description: Optional[AnyStr] = None, collapsed: bool = False):
+                 title: Optional[AnyStr] = None, description: Optional[AnyStr] = None, collapsed: Union[BooleanParameter, bool] = False):
         self.title = title
         self.description = description
         self.elements = elements
-        self.collapsed = BooleanParameter(collapsed)
+        self.collapsed = BooleanParameter(collapsed) if isinstance(collapsed, bool) else collapsed
 
     def __getstate__(self):
         extra_state = {

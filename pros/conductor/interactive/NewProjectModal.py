@@ -50,6 +50,7 @@ class NewProjectModal(application.Modal):
     targets = parameters.OptionParameter('v5', ['v5', 'cortex'])
     kernel_versions = parameters.OptionParameter('latest', ['latest'])
     install_default_libraries = parameters.BooleanParameter(True)
+    advanced_collapsed = parameters.BooleanParameter(True)
 
     def __init__(self, ctx: Context = None, conductor: Optional[Conductor] = None):
         super().__init__('Create a new project')
@@ -81,5 +82,6 @@ class NewProjectModal(application.Modal):
         yield components.Container(
             components.DropDownBox('Kernel Version', self.kernel_versions),
             components.Checkbox('Install default libraries', self.install_default_libraries),
-            title='Advanced'
+            title='Advanced',
+            collapsed=self.advanced_collapsed
         )
