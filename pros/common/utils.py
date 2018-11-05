@@ -108,7 +108,7 @@ def download_file(url: str, ext: Optional[str] = None, desc: Optional[str] = Non
     """
     import requests
     from pros.common.ui import progressbar
-    from rfc6266 import parse_requests_response
+    from rfc6266_parser import parse_requests_response
 
     response = requests.get(url, stream=True)
     if response.status_code == 200:
