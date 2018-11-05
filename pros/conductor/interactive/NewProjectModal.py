@@ -67,7 +67,7 @@ class NewProjectModal(application.Modal):
         if len(templates) == 0:
             self.kernel_versions.options = parameters.OptionParameter('latest', ['latest'])
         else:
-            self.kernel_versions.options = ['latest'] + sorted([t.version for t in templates], reverse=True)
+            self.kernel_versions.options = ['latest'] + sorted({t.version for t in templates}, reverse=True)
         self.redraw()
 
     def confirm(self, *args, **kwargs):
