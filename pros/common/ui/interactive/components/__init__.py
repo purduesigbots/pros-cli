@@ -3,8 +3,8 @@ from .component import Component
 from .container import Container
 from .input import InputBox, DirectorySelector, FileSelector
 from .input_groups import ButtonGroup, DropDownBox
-from .label import Label
+from .label import Label, Spinner
 from .checkbox import Checkbox
 
 __all__ = ['Component', 'Button', 'Container', 'InputBox', 'ButtonGroup', 'DropDownBox', 'Label',
-           'DirectorySelector', 'FileSelector', 'Checkbox']
+           'DirectorySelector', 'FileSelector', 'Checkbox', 'Spinner']
