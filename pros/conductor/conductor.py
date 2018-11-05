@@ -198,6 +198,8 @@ class Conductor(Config):
         else:
             proj.project_name = os.path.basename(os.path.normpath(os.path.abspath(path)))
         if 'version' in kwargs:
+            if kwargs['version'] == 'latest':
+                kwargs['version'] = '>=0'
             self.apply_template(proj, identifier='kernel', **kwargs)
         proj.save()
 

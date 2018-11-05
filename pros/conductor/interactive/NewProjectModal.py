@@ -1,12 +1,12 @@
 import os.path
 import sys
-from typing import *
 
 from click import Context, get_current_context
-
+from pros.common import ui
 from pros.common.ui.interactive import parameters, components, application
 from pros.common.ui.interactive.parameters.validatable_parameter import T
 from pros.conductor import Conductor, Project
+from typing import *
 
 
 class NonExistentProjectParameter(parameters.ValidatableParameter[str]):
@@ -65,16 +65,26 @@ class NewProjectModal(application.Modal):
         if len(templates) == 0:
             self.kernel_versions.options = parameters.OptionParameter('latest', ['latest'])
         else:
-            self.kernel_versions.options = ['latest'] + [t.version for t in templates]
+            self.kernel_versions.options = ['latest'] + sorted([t.version for t in templates], reverse=True)
         self.redraw()
 
     def confirm(self, *args, **kwargs):
         assert self.can_confirm
         self.exit()
-        from pros.cli.conductor import new_project
-        self.click_ctx.invoke(new_project, path=self.directory.value, target=self.targets.value,
-                              version=self.kernel_versions.value,
-                              no_default_libs=not self.install_default_libraries.value)
+        project = self.conductor.new_project(
+            path=self.directory.value,
+            target=self.targets.value,
+            version=self.kernel_versions.value,
+            no_default_libs=not self.install_default_libraries.value
+        )
+
+        from pros.conductor.project import ProjectReport
+        report = ProjectReport(project)
+        ui.finalize('project-report', report)
+
+        with ui.Notification():
+            ui.echo('Building project...')
+            project.compile([])
 
     def build(self) -> Generator[components.Component, None, None]:
         yield components.DirectorySelector('Project Directory', self.directory)
