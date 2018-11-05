@@ -23,6 +23,8 @@ class MachineOutputRenderer(Renderer):
         self.alive = True
         while self.alive:
             self.render(self.app)
+            if not self.alive:
+                break
             line = sys.stdin.readline()
             try:
                 value = json.loads(line.strip())
