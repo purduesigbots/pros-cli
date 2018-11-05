@@ -19,3 +19,12 @@ def new_project():
     from pros.conductor.interactive.NewProjectModal import NewProjectModal
     app = NewProjectModal()
     MachineOutputRenderer(app).run()
+
+
+@interactive.command()
+@default_options
+def update_project():
+    from pros.common.ui.interactive.renderers import MachineOutputRenderer
+    from pros.conductor.interactive.UpdateProjectModal import UpdateProjectModal
+    app = UpdateProjectModal()
+    MachineOutputRenderer(app).run()
