@@ -193,7 +193,7 @@ class Conductor(Config):
         proj = Project(path=path, create=True)
         if 'target' in kwargs:
             proj.target = kwargs['target']
-        if 'project_name' in kwargs:
+        if 'project_name' in kwargs and kwargs['project_name'] and not kwargs['project_name'].isspace():
             proj.project_name = kwargs['project_name']
         else:
             proj.project_name = os.path.basename(os.path.normpath(os.path.abspath(path)))

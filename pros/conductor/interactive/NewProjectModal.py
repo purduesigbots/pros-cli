@@ -50,6 +50,8 @@ class NewProjectModal(application.Modal):
     targets = parameters.OptionParameter('v5', ['v5', 'cortex'])
     kernel_versions = parameters.OptionParameter('latest', ['latest'])
     install_default_libraries = parameters.BooleanParameter(True)
+
+    project_name = parameters.Parameter(None)
     advanced_collapsed = parameters.BooleanParameter(True)
 
     def __init__(self, ctx: Context = None, conductor: Optional[Conductor] = None):
@@ -75,7 +77,8 @@ class NewProjectModal(application.Modal):
             path=self.directory.value,
             target=self.targets.value,
             version=self.kernel_versions.value,
-            no_default_libs=not self.install_default_libraries.value
+            no_default_libs=not self.install_default_libraries.value,
+            project_name=self.project_name.value
         )
 
         from pros.conductor.project import ProjectReport
@@ -89,7 +92,11 @@ class NewProjectModal(application.Modal):
     def build(self) -> Generator[components.Component, None, None]:
         yield components.DirectorySelector('Project Directory', self.directory)
         yield components.ButtonGroup('Target', self.targets)
+        
+        project_name_placeholder = os.path.basename(os.path.normpath(os.path.abspath(self.directory.value)))
+
         yield components.Container(
+            components.InputBox('Project Name', self.project_name, placeholder=project_name_placeholder),
             components.DropDownBox('Kernel Version', self.kernel_versions),
             components.Checkbox('Install default libraries', self.install_default_libraries),
             title='Advanced',
