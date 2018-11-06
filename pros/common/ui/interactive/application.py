@@ -1,9 +1,7 @@
-import sys
 from typing import *
 
 from .components import Component
 from .observable import Observable
-from .parameters import ValidatableParameter
 
 
 class Application(Observable):
@@ -11,11 +9,15 @@ class Application(Observable):
     An Application manages the lifecycle of an interactive UI that is rendered to the users. It creates a view for the
     model the application is rendering.
     """
+
     def build(self) -> Generator[Component, None, None]:
         """
         Creates a list of components to render
         """
         raise NotImplementedError()
+
+    def __del__(self):
+        self.exit()
 
     def on_exit(self, *handlers: Callable):
         return super(Application, self).on('end', *handlers)
@@ -59,6 +61,7 @@ class Modal(Application):
     An Application which is typically displayed in a pop-up box. It has a title, description, continue button,
     and cancel button.
     """
+
     def __init__(self, title: AnyStr, description: Optional[AnyStr] = None,
                  will_abort: bool = True, confirm_button: AnyStr = 'Continue', cancel_button: AnyStr = 'Cancel',
                  can_confirm: Optional[bool] = None):
@@ -72,18 +75,23 @@ class Modal(Application):
 
         self.on('confirm', self._confirm)
 
+        def on_cancel():
+            nonlocal self
+            self.cancel()
+
+        self.on('cancel', on_cancel)
+
     def confirm(self, *args, **kwargs):
         raise NotImplementedError()
+
+    def cancel(self, *args, **kwargs):
+        self.exit()
 
     @property
     def can_confirm(self):
         if self._can_confirm is not None:
             return self._can_confirm
-        return all([
-            p.is_valid
-            for p in vars(self)
-            if isinstance(p, ValidatableParameter)
-        ])
+        return True
 
     def build(self) -> Generator[Component, None, None]:
         raise NotImplementedError()

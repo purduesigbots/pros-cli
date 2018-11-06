@@ -65,7 +65,7 @@ class NewProjectModal(application.Modal):
     def target_changed(self, new_target):
         templates = self.conductor.resolve_templates('kernel', target=new_target.value)
         if len(templates) == 0:
-            self.kernel_versions.options = parameters.OptionParameter('latest', ['latest'])
+            self.kernel_versions.options = ['latest']
         else:
             self.kernel_versions.options = ['latest'] + sorted({t.version for t in templates}, reverse=True)
         self.redraw()
@@ -88,6 +88,10 @@ class NewProjectModal(application.Modal):
         with ui.Notification():
             ui.echo('Building project...')
             project.compile([])
+
+    @property
+    def can_confirm(self):
+        return self.directory.is_valid() and self.targets.is_valid() and self.kernel_versions.is_valid()
 
     def build(self) -> Generator[components.Component, None, None]:
         yield components.DirectorySelector('Project Directory', self.directory)

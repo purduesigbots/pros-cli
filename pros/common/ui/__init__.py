@@ -34,34 +34,14 @@ def echo(text: str, err: bool = False, nl: bool = True, notify_value: int = None
 
 
 def confirm(text: str, default: bool = False, abort: bool = False, prompt_suffix: bool = ': ',
-            show_default: bool = True, err: bool = False, title: bool = 'Please confirm:'):
+            show_default: bool = True, err: bool = False, title: AnyStr = 'Please confirm:',
+            log: str=None):
     if ismachineoutput():
-        obj = {
-            'type': 'input/confirm',
-            'title': title,
-            'description': text,
-            'abort': abort,
-            'default': default,
-            'show_default': show_default
-        }
+        from pros.common.ui.interactive.ConfirmModal import ConfirmModal
+        from pros.common.ui.interactive.renderers import MachineOutputRenderer
 
-        while 1:
-            _machineoutput(obj)
-            try:
-                value = visible_prompt_func('').lower().strip()
-            except (KeyboardInterrupt, EOFError):
-                raise Abort()
-            if value in ('y', 'yes'):
-                rv = True
-            elif value in ('n', 'no'):
-                rv = False
-            elif value == '':
-                rv = default
-            else:
-                echo('Error: invalid input', err=err)
-                continue
-            break
-        return rv
+        app = ConfirmModal(text, abort, title, log)
+        return MachineOutputRenderer(app).run()
     else:
         return click.confirm(text, default=default, abort=abort, prompt_suffix=prompt_suffix,
                              show_default=show_default, err=err)
