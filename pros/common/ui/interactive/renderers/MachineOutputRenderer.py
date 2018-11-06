@@ -3,6 +3,7 @@ import sys
 
 from pros.common import ui
 from pros.common.ui.interactive.observable import Observable
+from typing import *
 
 from .Renderer import Renderer
 from ..application import Application
@@ -19,19 +20,22 @@ class MachineOutputRenderer(Renderer):
 
         app.on_exit(lambda: self.stop())
 
-    def run(self) -> None:
+    def run(self) -> Any:
         self.alive = True
         while self.alive:
             self.render(self.app)
             if not self.alive:
                 break
             line = sys.stdin.readline()
+            if line.strip().isspace():
+                continue
             try:
                 value = json.loads(line.strip())
                 if 'uuid' in value and 'event' in value:
                     Observable.notify(value['uuid'], value['event'], *value.get('args', []), **value.get('kwargs', {}))
             except json.JSONDecodeError as e:
                 ui.logger(__name__).exception(e)
+        return self.run_rv
 
     def stop(self):
         self._output({

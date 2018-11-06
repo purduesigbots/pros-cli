@@ -29,12 +29,11 @@ class Application(Observable):
     def redraw(self):
         self.trigger('redraw')
 
-    @staticmethod
-    def on_updated(event, handler):
-        def binding(self):
-            return self.on(event, handler)
+    def set_return(self, value):
+        self.trigger('return', value)
 
-        return binding
+    def on_return_set(self, *handlers: Callable, **kwargs):
+        return super(Application, self).on('return', *handlers, **kwargs)
 
     @classmethod
     def get_hierarchy(cls, base: type) -> Optional[List[str]]:
