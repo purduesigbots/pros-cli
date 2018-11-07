@@ -1,5 +1,6 @@
 import click.core
 
+from pros.common.sentry import add_tag
 from pros.common.utils import *
 from .click_classes import *
 
@@ -98,6 +99,7 @@ def machine_output_option(f):
 
     def callback(ctx, param, value):
         ctx.ensure_object(dict)
+        add_tag('machine-output', value)
         if value:
             ctx.obj[param.name] = value
             logging.getLogger().setLevel(logging.DEBUG)

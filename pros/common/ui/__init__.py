@@ -2,7 +2,7 @@ import threading
 
 import jsonpickle
 from click._termui_impl import ProgressBar as _click_ProgressBar
-from click.termui import visible_prompt_func, Abort
+from sentry_sdk import add_breadcrumb
 
 from ..utils import *
 
@@ -26,6 +26,7 @@ def _machine_notify(method: str, obj: Dict[str, Any], notify_value: Optional[int
 
 def echo(text: str, err: bool = False, nl: bool = True, notify_value: int = None, color: Any = None,
          output_machine: bool = True, ctx: Optional[click.Context] = None):
+    add_breadcrumb(message=text, category='echo')
     if ismachineoutput(ctx):
         if output_machine:
             return _machine_notify('echo', {'text': text + ('\n' if nl else '')}, notify_value)
@@ -35,16 +36,19 @@ def echo(text: str, err: bool = False, nl: bool = True, notify_value: int = None
 
 def confirm(text: str, default: bool = False, abort: bool = False, prompt_suffix: bool = ': ',
             show_default: bool = True, err: bool = False, title: AnyStr = 'Please confirm:',
-            log: str=None):
+            log: str = None):
+    add_breadcrumb(message=text, category='confirm')
     if ismachineoutput():
         from pros.common.ui.interactive.ConfirmModal import ConfirmModal
         from pros.common.ui.interactive.renderers import MachineOutputRenderer
 
         app = ConfirmModal(text, abort, title, log)
-        return MachineOutputRenderer(app).run()
+        rv = MachineOutputRenderer(app).run()
     else:
-        return click.confirm(text, default=default, abort=abort, prompt_suffix=prompt_suffix,
-                             show_default=show_default, err=err)
+        rv = click.confirm(text, default=default, abort=abort, prompt_suffix=prompt_suffix,
+                           show_default=show_default, err=err)
+    add_breadcrumb(message=f'User responded: {rv}')
+    return rv
 
 
 def prompt(text, default=None, hide_input=False,
@@ -111,7 +115,7 @@ def finalize(method: str, data: Union[str, Dict, object, List[Union[str, Dict, o
             'human': human_readable
         })
     else:
-        click.echo(human_readable)
+        echo(human_readable)
 
 
 class _MachineOutputProgessBar(_click_ProgressBar):
@@ -153,7 +157,7 @@ class Notification(object):
 
 
 class EchoPipe(threading.Thread):
-    def __init__(self, err: bool=False, ctx: Optional[click.Context] = None):
+    def __init__(self, err: bool = False, ctx: Optional[click.Context] = None):
         """Setup the object with a logger and a loglevel
         and start the thread
         """
