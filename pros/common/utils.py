@@ -93,7 +93,10 @@ def with_click_context(func):
     else:
         def _wrap(*args, **kwargs):
             with ctx:
-                return func(*args, **kwargs)
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    logger(__name__).error(e)
 
         return _wrap
 
