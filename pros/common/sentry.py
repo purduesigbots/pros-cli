@@ -28,7 +28,19 @@ def prompt_to_send(event: Dict[str, Any], hint: Optional[Dict[str, Any]]) -> Opt
         if not event['tags']:
             event['tags'] = dict()
 
-        event['tags']['confirmed'] = ui.confirm('We detected something went wrong! Do you want to send a report?')
+        extra_text = ''
+        if 'message' in event:
+            extra_text += event['message'] + '\n'
+        if 'culprit' in event:
+            extra_text += event['culprit'] + '\n'
+        if 'logentry' in event and 'message' in event['logentry']:
+            extra_text += event['logentry']['message'] + '\n'
+        if 'exc_info' in hint:
+            import traceback
+            extra_text += ''.join(traceback.format_exception(*hint['exc_info'], limit=4))
+
+        event['tags']['confirmed'] = ui.confirm('We detected something went wrong! Do you want to send a report?',
+                                                log=extra_text)
         if event['tags']['confirmed']:
             ui.echo('Sending bug report.')
 
@@ -74,12 +86,9 @@ def add_context(obj: object, override_handlers: bool = True, key: str = None) ->
     if override_handlers:
         jsonpickle.handlers.register(BaseTemplate, TemplateHandler, base=True)
 
-    from sentry_sdk import add_breadcrumb
-    add_breadcrumb(
-        category=key,
-        level='info',
-        data=obj
-    )
+    from sentry_sdk import configure_scope
+    with configure_scope() as scope:
+        scope.set_extra((key or obj.__class__.__qualname__), jsonpickle.pickler.Pickler(unpicklable=False).flatten(obj))
 
     if override_handlers:
         jsonpickle.handlers.unregister(BaseTemplate)

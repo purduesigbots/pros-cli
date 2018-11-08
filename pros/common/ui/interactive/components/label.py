@@ -14,9 +14,14 @@ class Label(Component):
         )
 
 
+class VerbatimLabel(Label):
+    pass
+
+
 class Spinner(Label):
     """
     Spinner is a component which indicates to the user that something is happening in the background
     """
+
     def __init__(self):
         super(Spinner, self).__init__('Loading...')

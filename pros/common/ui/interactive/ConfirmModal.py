@@ -25,4 +25,4 @@ class ConfirmModal(application.Modal):
     def build(self) -> Generator[components.Component, None, None]:
         yield components.Label(self.text)
         if self.log:
-            yield components.Label(self.log)
+            yield components.VerbatimLabel(self.log)
