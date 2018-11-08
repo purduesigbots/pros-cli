@@ -22,7 +22,9 @@ class Application(Observable):
     def on_exit(self, *handlers: Callable):
         return super(Application, self).on('end', *handlers)
 
-    def exit(self):
+    def exit(self, **kwargs):
+        if 'return' in kwargs:
+            self.set_return(kwargs['return'])
         self.trigger('end')
 
     def on_redraw(self, *handlers: Callable, **kwargs):

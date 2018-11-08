@@ -19,7 +19,6 @@ class ConfirmModal(application.Modal):
         self.exit()
 
     def cancel(self):
-        print('Cancelling')
         self.set_return(False)
         super(ConfirmModal, self).cancel()
 

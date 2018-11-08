@@ -56,7 +56,7 @@ class Observable(observable.Observable):
         return super(Observable, self).on(event, *[bind(h) for h in handlers])
 
     def trigger(self, event, *args, **kw):
-        logger(__name__).debug(f'Triggered {self} "{event}" event: {args} {kw}')
+        logger(__name__).debug(f'Triggered {self.uuid} ({type(self).__name__}) "{event}" event: {args} {kw}')
         return super().trigger(event, *args, **kw)
 
     def __init__(self):
