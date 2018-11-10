@@ -1,24 +1,12 @@
 import os.path
 
 from click import Context, get_current_context
+from typing import *
+
 from pros.common import ui
 from pros.common.ui.interactive import parameters, components, application
 from pros.conductor import Conductor, Project, BaseTemplate
-from typing import *
-
-T = TypeVar('T')
-
-
-class ExistingProjectParameter(parameters.ValidatableParameter[str]):
-    def update(self, new_value):
-        project = Project.find_project(new_value)
-        if project:
-            project = Project(project).directory
-        super(ExistingProjectParameter, self).update(project or new_value)
-
-    def validate(self, value: T):
-        project = Project.find_project(value)
-        return project is not None or 'Path is not inside a PROS project'
+from .parameters import ExistingProjectParameter
 
 
 class UpdateProjectModal(application.Modal):
