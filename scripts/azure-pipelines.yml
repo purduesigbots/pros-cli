@@ -16,7 +16,7 @@ jobs:
       vmImage: vs2017-win2016
 
     steps:
-      - task: GetPythonVersion$0
+      - task: UsePythonVersion@0
         inputs:
           versionSpec: '$(python.version)'
           architecture: '$(buildArch)'
@@ -36,7 +36,7 @@ jobs:
       vmImage: macos-10.13
 
     steps:
-      - task: GetPythonVersion$0
+      - task: UsePythonVersion@0
         inputs:
           versionSpec: '$(python.version)'
           architecture: '$(buildArch)'
@@ -61,7 +61,7 @@ jobs:
       vmImage: ubuntu-16.04
 
     steps:
-      - task: GetPythonVersion$0
+      - task: UsePythonVersion@0
         inputs:
           versionSpec: '$(python.version)'
           architecture: '$(buildArch)'
