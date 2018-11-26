@@ -2,6 +2,18 @@ variables:
   python.version: '3.6'
 
 jobs:
+  - job: Update Build Number
+    timeoutInMinutes: 5
+    pool:
+      vmImage: ubuntu-16.04
+
+      steps:
+        - task: UsePythonVersion@0
+          inputs:
+            versionSpec: '$(python.version)'
+        - script: python version.py
+        - bash: echo "##[build.updatebuildnumber]`cat version`"
+
   - job: Windows
     timeoutInMinutes: 30
     strategy:
