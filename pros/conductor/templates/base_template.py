@@ -71,6 +71,8 @@ class BaseTemplate(object):
             raise ValueError(f'Malformed identifier: {name}')
         if '@' in name:
             name, kwargs['version'] = name.split('@')
+        if kwargs.get('version', 'latest') == 'latest':
+            kwargs['version'] = '>=0'
         if name == 'kernal':
             ui.echo("Assuming 'kernal' is the British spelling of kernel.")
             name = 'kernel'

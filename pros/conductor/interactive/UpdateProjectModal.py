@@ -6,6 +6,7 @@ from typing import *
 from pros.common import ui
 from pros.common.ui.interactive import parameters, components, application
 from pros.conductor import Conductor, Project, BaseTemplate
+from pros.conductor.project.ProjectTransaction import ProjectTransaction
 from .parameters import ExistingProjectParameter
 
 
@@ -68,7 +69,15 @@ class UpdateProjectModal(application.Modal):
             ui.logger(__name__).exception(e)
 
     def confirm(self, *args, **kwargs):
-        pass
+        self.exit()
+        transaction = ProjectTransaction(self.project, self.conductor)
+        transaction.apply_template(BaseTemplate.create_query('kernel', version=self.kernel_versions.value))
+        for name, parameter in self.template_versions.items():
+            if parameter.value == 'uninstall':
+                transaction.rm_template(BaseTemplate.create_query(name))
+            else:
+                transaction.apply_template(BaseTemplate.create_query(name, version=parameter.value))
+        transaction.execute()
 
     def build(self) -> Generator[components.Component, None, None]:
         yield components.DirectorySelector('Project Directory', self.project_path)
