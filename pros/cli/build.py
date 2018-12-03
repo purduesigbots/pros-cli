@@ -53,6 +53,7 @@ def make_upload_terminal(ctx, project: c.Project):
 @click.option('--compile-commands', type=click.File('w'), default=None)
 @click.option('--sandbox', default=False, is_flag=True)
 @click.argument('build-args', nargs=-1)
+@default_options
 def build_compile_commands(project: c.Project, suppress_output: bool, compile_commands, sandbox: bool,
                            build_args: List[str]):
     """
