@@ -14,11 +14,13 @@ from pros.serial.ports import list_all_comports
 
 
 class UploadProjectModal(application.Modal):
-    def __init__(self):
+    def __init__(self, project: Optional[Project]):
         super(UploadProjectModal, self).__init__('Upload Project', confirm_button='Upload')
 
-        self.project: Optional[Project] = None
-        self.project_path = ExistingProjectParameter(os.path.join(os.path.expanduser('~'), 'My PROS Project'))
+        self.project: Optional[Project] = project
+        self.project_path = ExistingProjectParameter(
+            project.location if project else os.path.join(os.path.expanduser('~'), 'My PROS Project')
+        )
 
         self.port = parameters.OptionParameter('', [''])
 

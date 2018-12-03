@@ -1,11 +1,11 @@
 import os.path
-
-from click import Context, get_current_context
 from typing import *
 
+from click import Context, get_current_context
+
 from pros.common import ui
-from pros.common.ui.interactive import parameters, components, application
-from pros.conductor import Conductor, Project, BaseTemplate
+from pros.common.ui.interactive import application, components, parameters
+from pros.conductor import BaseTemplate, Conductor, Project
 from pros.conductor.project.ProjectTransaction import ProjectTransaction
 from .parameters import ExistingProjectParameter
 
@@ -21,14 +21,17 @@ class UpdateProjectModal(application.Modal):
         self._is_processing = bool(value)
         self.redraw()
 
-    def __init__(self, ctx: Optional[Context] = None, conductor: Optional[Conductor] = None):
+    def __init__(self, ctx: Optional[Context] = None, conductor: Optional[Conductor] = None,
+                 project: Optional[Project] = None):
         super().__init__('Update a project')
         self.conductor = conductor or Conductor()
         self.click_ctx = ctx or get_current_context()
         self._is_processing = False
 
-        self.project: Optional[Project] = None
-        self.project_path = ExistingProjectParameter(os.path.join(os.path.expanduser('~'), 'My PROS Project'))
+        self.project: Optional[Project] = project
+        self.project_path = ExistingProjectParameter(
+            project.location if project else os.path.join(os.path.expanduser('~'), 'My PROS Project')
+        )
 
         self.name = parameters.Parameter(None)
         self.kernel_versions = parameters.OptionParameter('latest', ['latest'])
