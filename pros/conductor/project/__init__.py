@@ -1,39 +1,16 @@
 import glob
 import io
 import os.path
+import pathlib
 import sys
+from typing import *
 
 from pros.common import *
 from pros.common.ui import EchoPipe
 from pros.config.config import Config, ConfigNotFoundException
-from typing import *
-
-from .templates import LocalTemplate, Template, BaseTemplate
-from .transaction import Transaction
-
-
-class ProjectReport(object):
-    def __init__(self, project: 'Project'):
-        self.project = {
-            "target": project.target,
-            "location": os.path.abspath(project.location),
-            "name": project.name,
-            "templates": [{"name": t.name, "version": t.version, "origin": t.origin} for t in
-                          project.templates.values()]
-        }
-
-    def __str__(self):
-        import tabulate
-        s = f'PROS Project for {self.project["target"]} at: {self.project["location"]}' \
-            f' ({self.project["name"]})' if self.project["name"] else ''
-        s += '\n'
-        rows = [t.values() for t in self.project["templates"]]
-        headers = [h.capitalize() for h in self.project["templates"][0].keys()]
-        s += tabulate.tabulate(rows, headers=headers)
-        return s
-
-    def __getstate__(self):
-        return self.__dict__
+from .ProjectReport import ProjectReport
+from ..templates import BaseTemplate, LocalTemplate, Template
+from ..transaction import Transaction
 
 
 class Project(Config):
@@ -67,8 +44,8 @@ class Project(Config):
                                                 output='bin/output.bin')
 
     @property
-    def location(self):
-        return os.path.dirname(self.save_file)
+    def location(self) -> pathlib.Path:
+        return pathlib.Path(os.path.dirname(self.save_file))
 
     @property
     def name(self):
@@ -174,7 +151,7 @@ class Project(Config):
 
     def __str__(self):
         return f'Project: {self.location} ({self.name}) for {self.target} with ' \
-               f'{", ".join([str(t) for t in self.templates.values()])}'
+            f'{", ".join([str(t) for t in self.templates.values()])}'
 
     @property
     def kernel(self):
@@ -379,3 +356,6 @@ class Project(Config):
                 else:
                     return None
         return None
+
+
+__all__ = ['Project', 'ProjectReport']
