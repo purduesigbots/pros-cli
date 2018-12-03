@@ -1,4 +1,4 @@
-from .common import default_options, pros_root, PROSGroup
+from .common import PROSGroup, default_options, pros_root
 
 
 @pros_root
@@ -28,3 +28,11 @@ def update_project():
     from pros.conductor.interactive.UpdateProjectModal import UpdateProjectModal
     app = UpdateProjectModal()
     MachineOutputRenderer(app).run()
+
+
+@interactive.command()
+@default_options
+def upload():
+    from pros.common.ui.interactive.renderers import MachineOutputRenderer
+    from pros.serial.interactive import UploadProjectModal
+    MachineOutputRenderer(UploadProjectModal()).run()
