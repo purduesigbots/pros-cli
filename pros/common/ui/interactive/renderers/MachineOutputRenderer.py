@@ -23,14 +23,15 @@ def _remove_renderer(renderer: 'MachineOutputRenderer'):
     global current
 
     stack: List['MachineOutputRenderer'] = current
-    stack.remove(renderer)
+    if renderer in stack:
+        stack.remove(renderer)
 
 
-def _current_renderer() -> 'MachineOutputRenderer':
+def _current_renderer() -> Optional['MachineOutputRenderer']:
     global current
 
     stack: List['MachineOutputRenderer'] = current
-    return stack[-1]
+    return stack[-1] if len(stack) > 0 else None
 
 
 class MachineOutputRenderer(Renderer):
@@ -91,8 +92,10 @@ class MachineOutputRenderer(Renderer):
             'should_exit': True
         })
 
+        _remove_renderer(self)
         top_renderer = _current_renderer()
-        top_renderer.wake_me()
+        if top_renderer:
+            top_renderer.wake_me()
 
     def wake_me(self):
         """
