@@ -63,7 +63,7 @@ class Project(Config):
         if template.target != self.target:
             return TemplateAction.NotApplicable
         from semantic_version import Spec, Version
-        if Version(self.kernel) not in Spec(template.supported_kernels):
+        if Version(self.kernel) not in Spec(template.supported_kernels or '>0'):
             return TemplateAction.NotApplicable
         for current in self.templates.values():
             if template.name != current.name:
