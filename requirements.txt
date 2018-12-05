@@ -11,3 +11,4 @@ cobs
 scan-build
 rfc6266-parser
 raven
+pypng

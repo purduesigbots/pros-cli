@@ -219,7 +219,7 @@ class V5Device(VEXDevice, SystemDevice):
         if isinstance(options['function'], str):
             options['function'] = {'upload': 1, 'download': 2}[options['function'].lower()]
         if isinstance(options['target'], str):
-            options['target'] = {'ddr': 0, 'flash': 1}[options['target'].lower()]
+            options['target'] = {'ddr': 0, 'flash': 1, 'screen': 2}[options['target'].lower()]
         if isinstance(options['vid'], str):
             options['vid'] = self.vid_map[options['vid'].lower()]
         if isinstance(options['type'], str):
@@ -402,6 +402,41 @@ class V5Device(VEXDevice, SystemDevice):
             'touch_version': rx[12],
             'system_id': rx[13]
         }
+
+    @retries
+    def do_screen_capture(self) -> None:
+        # This will only copy data in memory, not send!
+        logger(__name__).debug('Sending ext 0x28 command')
+        rx = self._txrx_ext_struct(0x28, [], '')
+        logger(__name__).debug('Completed ext 0x28 command')
+
+    def get_screen_capture_data(self, crop_w: int = 480) -> List[List[int]]:
+        self.do_screen_capture()
+        width, height = 512, 272
+        file_size = width * height * 4  # ARGB
+
+        rx = []
+        ft_meta = self.ft_initialize('', function='download', vid='system', target='screen')
+        for i in range(0, file_size, ft_meta['max_packet_size']):
+            packet_size = ft_meta['max_packet_size']
+            if i + ft_meta['max_packet_size'] > file_size:
+                packet_size = file_size - i
+
+            tx_payload = struct.pack("<IH", i, packet_size)
+            rx_fmt = "<I{}I".format(packet_size // 4)
+            rx += [*self._txrx_ext_struct(0x14, tx_payload, rx_fmt, check_ack=False, check_length=False)[1:]]
+        self.ft_complete()
+
+        i, data = 0, [[] for _ in range(height)]
+        for y in range(height):
+            for x in range(width - 1):
+                if x < crop_w:
+                    px = rx[y * width + x]
+                    data[y].append((px & 0xff0000) >> 16)
+                    data[y].append((px & 0x00ff00) >> 8)
+                    data[y].append(px & 0x0000ff)
+
+        return data, crop_w, height
 
     def _txrx_ext_struct(self, command: int, tx_data: Union[Iterable, bytes, bytearray],
                          unpack_fmt: str, check_length: bool = True, check_ack: bool = True,
