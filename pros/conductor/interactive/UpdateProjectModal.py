@@ -74,12 +74,14 @@ class UpdateProjectModal(application.Modal):
     def confirm(self, *args, **kwargs):
         self.exit()
         transaction = ProjectTransaction(self.project, self.conductor)
-        transaction.apply_template(BaseTemplate.create_query('kernel', version=self.kernel_versions.value))
+        transaction.apply_template(BaseTemplate.create_query('kernel', version=self.kernel_versions.value),
+                                   suppress_already_installed=True)
         for name, parameter in self.template_versions.items():
             if parameter.value == 'uninstall':
                 transaction.rm_template(BaseTemplate.create_query(name))
             else:
-                transaction.apply_template(BaseTemplate.create_query(name, version=parameter.value))
+                transaction.apply_template(BaseTemplate.create_query(name, version=parameter.value),
+                                           suppress_already_installed=True)
         transaction.execute()
 
     def build(self) -> Generator[components.Component, None, None]:

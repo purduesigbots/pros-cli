@@ -160,7 +160,8 @@ class Conductor(Config):
             kwargs['kernel_version'] = kwargs['supported_kernels'] = project.templates['kernel'].version
         template = self.resolve_template(identifier=identifier, allow_online=download_ok, **kwargs)
         if template is None:
-            raise dont_send(InvalidTemplateException(f'Could not find a template satisfying {identifier} for {project.target}'))
+            raise dont_send(
+                InvalidTemplateException(f'Could not find a template satisfying {identifier} for {project.target}'))
 
         if not isinstance(template, LocalTemplate):
             with ui.Notification():
@@ -170,7 +171,9 @@ class Conductor(Config):
         logger(__name__).info(str(project))
         valid_action = project.get_template_actions(template)
         if valid_action == TemplateAction.NotApplicable:
-            raise dont_send(InvalidTemplateException(f'{template.identifier} is not applicable to {project}'))
+            raise dont_send(
+                InvalidTemplateException(f'{template.identifier} is not applicable to {project}', reason=valid_action)
+            )
         if force \
                 or (valid_action == TemplateAction.Upgradable and upgrade_ok) \
                 or (valid_action == TemplateAction.Installable and install_ok):
@@ -181,7 +184,8 @@ class Conductor(Config):
         else:
             raise dont_send(
                 InvalidTemplateException(f'Could not install {template.identifier} because it is {valid_action.name},'
-                                         f' but that is not allowed.'))
+                                         f' and that is not allowed.', reason=valid_action)
+            )
 
     @staticmethod
     def remove_template(project: Project, identifier: Union[str, BaseTemplate], remove_user: bool = True,

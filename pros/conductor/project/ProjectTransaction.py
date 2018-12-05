@@ -6,6 +6,7 @@ from typing import *
 
 import pros.common.ui as ui
 import pros.conductor as c
+from pros.conductor.project.template_resolution import InvalidTemplateException, TemplateAction
 
 
 class ProjectTransaction(object):
@@ -38,8 +39,7 @@ class ProjectTransaction(object):
                         raise ValueError('Action did not complete successfully')
             ui.echo('All actions performed successfully')
         except Exception as e:
-            ui.logger(__name__).warning(f'Failed to perform transaction, restoring project to previous state\n'
-                                        f'{str(e)}')
+            ui.logger(__name__).warning(f'Failed to perform transaction, restoring project to previous state')
 
             with zipfile.ZipFile(tfn) as zf:
                 with ui.progressbar(zf.namelist(), label=f'Restoring {self.project.name} from {tfn}') as pb:
@@ -51,9 +51,15 @@ class ProjectTransaction(object):
             ui.echo(f'Removing {tfn}')
             os.remove(tfn)
 
-    def apply_template(self, template: c.BaseTemplate):
+    def apply_template(self, template: c.BaseTemplate, suppress_already_installed: bool = False, **kwargs):
         def action(conductor: c.Conductor, p: c.Project) -> Optional[bool]:
-            conductor.apply_template(p, template)
+            try:
+                conductor.apply_template(p, template, **kwargs)
+            except InvalidTemplateException as e:
+                if e.reason != TemplateAction.AlreadyInstalled or not suppress_already_installed:
+                    raise e
+                else:
+                    ui.logger(__name__).warning(str(e))
             return None
 
         self.add_action(action)

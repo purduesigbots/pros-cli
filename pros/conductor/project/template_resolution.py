@@ -9,4 +9,6 @@ class TemplateAction(Enum):
 
 
 class InvalidTemplateException(Exception):
-    pass
+    def __init__(self, *args, reason: TemplateAction = None):
+        self.reason = reason
+        super(InvalidTemplateException, self).__init__(*args)
