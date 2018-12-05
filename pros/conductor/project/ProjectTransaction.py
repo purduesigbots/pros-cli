@@ -29,8 +29,8 @@ class ProjectTransaction(object):
                         zf.write(file, arcname=file.relative_to(location))
 
         try:
-            for action in self.actions:
-                with ui.Notification():
+            with ui.Notification():
+                for action in self.actions:
                     ui.logger(__name__).debug(f'Performing {action}')
                     rv = action(self.conductor, self.project)
                     ui.logger(__name__).debug(f'{action} returned {rv}')

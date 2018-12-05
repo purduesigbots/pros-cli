@@ -6,10 +6,12 @@ import click
 from semantic_version import Spec, Version
 
 from pros.common import *
+from pros.conductor.project import TemplateAction
+from pros.conductor.project.template_resolution import InvalidTemplateException
 from pros.config import Config
 from .depots import Depot, HttpDepot
 from .project import Project
-from .templates import LocalTemplate, BaseTemplate, Template, ExternalTemplate
+from .templates import BaseTemplate, ExternalTemplate, LocalTemplate, Template
 
 MAINLINE_NAME = 'pros-mainline'
 MAINLINE_URL = 'https://purduesigbots.github.io/pros-mainline/pros-mainline.json'
@@ -158,7 +160,7 @@ class Conductor(Config):
             kwargs['kernel_version'] = kwargs['supported_kernels'] = project.templates['kernel'].version
         template = self.resolve_template(identifier=identifier, allow_online=download_ok, **kwargs)
         if template is None:
-            raise ValueError(f'Could not find a template satisfying {identifier} for {project.target}')
+            raise dont_send(InvalidTemplateException(f'Could not find a template satisfying {identifier} for {project.target}'))
 
         if not isinstance(template, LocalTemplate):
             with ui.Notification():
@@ -166,19 +168,20 @@ class Conductor(Config):
         assert isinstance(template, LocalTemplate)
 
         logger(__name__).info(str(project))
-        # template_is_upgradeable (weaker "is this name installed" and newer version)
-        # NOT template_is_installed (stronger "is this exact template installed")
-        template_installed = project.template_is_upgradeable(template)
-        if force or (template_installed and upgrade_ok) or (not template_installed and install_ok):
+        valid_action = project.get_template_actions(template)
+        if valid_action == TemplateAction.NotApplicable:
+            raise dont_send(InvalidTemplateException(f'{template.identifier} is not applicable to {project}'))
+        if force \
+                or (valid_action == TemplateAction.Upgradable and upgrade_ok) \
+                or (valid_action == TemplateAction.Installable and install_ok):
             project.apply_template(template, force_system=kwargs.pop('force_system', False),
                                    force_user=kwargs.pop('force_user', False),
                                    remove_empty_directories=kwargs.pop('remove_empty_directories', False))
             ui.finalize('apply', f'Finished applying {template.identifier} to {project.location}')
         else:
-            logger(__name__).warning(f'Could not install {template.identifier} because it is '
-                                     f'{"" if template_installed else "not "}new to the project. '
-                                     f'Upgrading is {"" if upgrade_ok else "not "}allowed, and '
-                                     f'installing is {"" if install_ok else "not "}allowed')
+            raise dont_send(
+                InvalidTemplateException(f'Could not install {template.identifier} because it is {valid_action.name},'
+                                         f' but that is not allowed.'))
 
     @staticmethod
     def remove_template(project: Project, identifier: Union[str, BaseTemplate], remove_user: bool = True,

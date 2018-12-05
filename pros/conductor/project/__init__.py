@@ -7,6 +7,7 @@ from typing import *
 
 from pros.common import *
 from pros.common.ui import EchoPipe
+from pros.conductor.project.template_resolution import TemplateAction
 from pros.config.config import Config, ConfigNotFoundException
 from .ProjectReport import ProjectReport
 from ..templates import BaseTemplate, LocalTemplate, Template
@@ -58,11 +59,30 @@ class Project(Config):
         return {os.path.relpath(p, self.location) for p in
                 glob.glob(f'{self.location}/**/*', recursive=True)}
 
+    def get_template_actions(self, template: BaseTemplate) -> TemplateAction:
+        if template.target != self.target:
+            return TemplateAction.NotApplicable
+        from semantic_version import Spec, Version
+        if Version(self.kernel) not in Spec(template.supported_kernels):
+            return TemplateAction.NotApplicable
+        for current in self.templates.values():
+            if template.name != current.name:
+                continue
+            if template > current:
+                return TemplateAction.Upgradable
+            elif template == current:
+                return TemplateAction.AlreadyInstalled
+
+        if any([template > current for current in self.templates.values()]):
+            return TemplateAction.Upgradable
+        else:
+            return TemplateAction.Installable
+
     def template_is_installed(self, query: BaseTemplate) -> bool:
-        return any([t.satisfies(query, kernel_version=self.kernel) for t in self.templates.values()])
+        return self.get_template_actions(query) == TemplateAction.Installable
 
     def template_is_upgradeable(self, query: BaseTemplate) -> bool:
-        return any([query > t for t in self.templates.values()])
+        return self.get_template_actions(query) == TemplateAction.Upgradable
 
     def apply_template(self, template: LocalTemplate, force_system: bool = False, force_user: bool = False,
                        remove_empty_directories: bool = False):

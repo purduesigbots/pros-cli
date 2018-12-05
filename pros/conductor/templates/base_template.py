@@ -51,9 +51,17 @@ class BaseTemplate(object):
 
     def __gt__(self, other):
         if isinstance(other, BaseTemplate):
+            # TODO: metadata comparison
             return self.name == other.name and Version(self.version) > Version(other.version)
         else:
             return False
+
+    def __eq__(self, other):
+        if isinstance(other, BaseTemplate):
+            # TODO: metadata comparison
+            return self.name == other.name and Version(self.version) == Version(other.version)
+        else:
+            return super(BaseTemplate, self).__eq__(other)
 
     @property
     def identifier(self):
