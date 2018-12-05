@@ -38,14 +38,15 @@ class ProjectTransaction(object):
                         raise ValueError('Action did not complete successfully')
             ui.echo('All actions performed successfully')
         except Exception as e:
-            ui.logger(__name__).warning('Failed to perform transaction, restoring project to previous state')
+            ui.logger(__name__).warning(f'Failed to perform transaction, restoring project to previous state\n'
+                                        f'{str(e)}')
 
             with zipfile.ZipFile(tfn) as zf:
                 with ui.progressbar(zf.namelist(), label=f'Restoring {self.project.name} from {tfn}') as pb:
                     for file in pb:
                         zf.extract(file, path=location)
 
-            ui.logger(__name__).error(e)
+            ui.logger(__name__).exception(e)
         finally:
             ui.echo(f'Removing {tfn}')
             os.remove(tfn)
