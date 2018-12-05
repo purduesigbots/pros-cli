@@ -25,7 +25,7 @@ def new_project():
 
 
 @interactive.command()
-@project_option(required=False)
+@project_option(required=False, default=None, allow_none=True)
 @default_options
 def update_project(project: Optional[c.Project]):
     from pros.common.ui.interactive.renderers import MachineOutputRenderer
@@ -35,7 +35,7 @@ def update_project(project: Optional[c.Project]):
 
 
 @interactive.command()
-@project_option(required=False)
+@project_option(required=False, default=None, allow_none=True)
 @default_options
 def upload(project: Optional[c.Project]):
     from pros.common.ui.interactive.renderers import MachineOutputRenderer
