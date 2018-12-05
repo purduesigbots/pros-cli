@@ -24,14 +24,14 @@ def _machine_notify(method: str, obj: Dict[str, Any], notify_value: Optional[int
     _machineoutput(obj)
 
 
-def echo(text: str, err: bool = False, nl: bool = True, notify_value: int = None, color: Any = None,
+def echo(text: Any, err: bool = False, nl: bool = True, notify_value: int = None, color: Any = None,
          output_machine: bool = True, ctx: Optional[click.Context] = None):
     add_breadcrumb(message=text, category='echo')
     if ismachineoutput(ctx):
         if output_machine:
-            return _machine_notify('echo', {'text': text + ('\n' if nl else '')}, notify_value)
+            return _machine_notify('echo', {'text': str(text) + ('\n' if nl else '')}, notify_value)
     else:
-        return click.echo(text, nl=nl, err=err, color=color)
+        return click.echo(str(text), nl=nl, err=err, color=color)
 
 
 def confirm(text: str, default: bool = False, abort: bool = False, prompt_suffix: bool = ': ',
