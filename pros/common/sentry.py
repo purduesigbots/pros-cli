@@ -24,6 +24,9 @@ def prompt_to_send(event: Dict[str, Any], hint: Optional[Dict[str, Any]]) -> Opt
         if 'extra' in event and not event['extra'].get('sentry', True):
             ui.logger(__name__).debug('Not sending candidate event because event was tagged with extra.sentry = False')
             return
+        if 'exc_info' in hint and not getattr(hint['exc_info'][1], 'sentry', True):
+            ui.logger(__name__).debug('Not sending candidate event because exception was tagged with sentry = False')
+            return
 
         if not event['tags']:
             event['tags'] = dict()

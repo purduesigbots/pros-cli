@@ -2,7 +2,7 @@ import logging
 import os
 import os.path
 import sys
-from functools import wraps, lru_cache
+from functools import lru_cache, wraps
 from typing import *
 
 import click
@@ -140,3 +140,8 @@ def download_file(url: str, ext: Optional[str] = None, desc: Optional[str] = Non
                     pb.update(len(chunk))
         return output_path
     return None
+
+
+def dont_send(e: Exception):
+    e.sentry = False
+    return e
