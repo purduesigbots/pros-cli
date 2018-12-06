@@ -12,6 +12,7 @@ class Parameter(Observable, Generic[T]):
     Triggering the "update" event will cause the value to update.
     The Parameter will trigger a "changed" event if the value was updated
     """
+
     def __init__(self, initial_value: T):
         super().__init__()
         self.value = initial_value
