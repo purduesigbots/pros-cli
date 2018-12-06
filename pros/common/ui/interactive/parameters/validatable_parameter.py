@@ -20,7 +20,7 @@ class ValidatableParameter(Parameter, Generic[T]):
         self.allow_invalid_input = allow_invalid_input
 
     def validate(self, value: T) -> Union[bool, str]:
-        raise bool(value)
+        return bool(value)
 
     def is_valid(self, value: T = None) -> bool:
         rv = self.validate(value if value is not None else self.value)

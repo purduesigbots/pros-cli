@@ -73,6 +73,9 @@ class MachineOutputRenderer(Renderer):
                     Observable.notify(value['uuid'], value['event'], *value.get('args', []), **value.get('kwargs', {}))
             except json.JSONDecodeError as e:
                 ui.logger(__name__).exception(e)
+            except BaseException as e:
+                ui.logger(__name__).exception(e)
+                break
         self.stop_sem.release()
         self.stop()
         return self.run_rv
