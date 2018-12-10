@@ -14,6 +14,7 @@ def upload_cli():
               help='Specify the target microcontroller. Overridden when a PROS project is specified.')
 @click.argument('path', type=click.Path(exists=True), default=None, required=False)
 @click.argument('port', type=str, default=None, required=False)
+@project_option(required=False)
 @click.option('--run-after/--no-run-after', 'run_after', default=True, help='Immediately run the uploaded program')
 @click.option('-q', '--quirk', type=int, default=0)
 @click.option('--name', type=str, default=None, required=False, help='Remote program name',
@@ -31,7 +32,7 @@ def upload_cli():
                                                        ' program. This option may help with controller connectivity '
                                                        'reliability and prevent robots from running off tables.')
 @default_options
-def upload(path: str, port: str, **kwargs):
+def upload(path: str, project: Optional[c.Project], port: str, **kwargs):
     """
     Upload a binary to a microcontroller.
 
@@ -45,10 +46,11 @@ def upload(path: str, port: str, **kwargs):
     from pros.serial.ports import DirectPort
     args = []
     if path is None or os.path.isdir(path):
-        project_path = c.Project.find_project(path or os.getcwd())
-        if project_path is None:
-            raise click.UsageError('Specify a file to upload or set the cwd inside a PROS project')
-        project = c.Project(project_path)
+        if project is None:
+            project_path = c.Project.find_project(path or os.getcwd())
+            if project_path is None:
+                raise click.UsageError('Specify a file to upload or set the cwd inside a PROS project')
+            project = c.Project(project_path)
         path = os.path.join(project.location, project.output)
         if project.target == 'v5' and not kwargs['name']:
             kwargs['name'] = project.name
