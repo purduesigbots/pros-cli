@@ -493,7 +493,7 @@ class V5Device(VEXDevice, SystemDevice):
             payload = bytearray()
         payload_length = len(payload)
         assert payload_length <= 0x7f_ff
-        if payload_length > 0x80:
+        if payload_length >= 0x80:
             payload_length = [(payload_length >> 8) | 0x80, payload_length & 0xff]
         else:
             payload_length = [payload_length]
