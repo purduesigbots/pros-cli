@@ -278,7 +278,8 @@ class Terminal(object):
         self._start_rx()
         self._start_tx()
 
-    def stop(self):
+    # noinspection PyUnusedLocal
+    def stop(self, *args):
         if not self.alive.is_set():
             logger(__name__).warning('Stopping terminal')
             self.alive.set()

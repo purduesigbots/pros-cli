@@ -2,6 +2,8 @@ from typing import *
 
 from semantic_version import Version, Spec
 
+from pros.common import ui
+
 
 class BaseTemplate(object):
     def __init__(self, **kwargs):
@@ -69,4 +71,7 @@ class BaseTemplate(object):
             raise ValueError(f'Malformed identifier: {name}')
         if '@' in name:
             name, kwargs['version'] = name.split('@')
+        if name == 'kernal':
+            ui.echo("Assuming 'kernal' is the British spelling of kernel.")
+            name = 'kernel'
         return cls(name=name, **kwargs)
