@@ -2,12 +2,14 @@ import os.path
 from typing import *
 
 from click import Context, get_current_context
+from semantic_version import Version
 
 from pros.common import ui
 from pros.common.ui.interactive import application, components, parameters
 from pros.conductor import BaseTemplate, Conductor, Project
 from pros.conductor.project.ProjectTransaction import ProjectTransaction
-from .parameters import ExistingProjectParameter
+from .components import TemplateListingComponent
+from .parameters import ExistingProjectParameter, TemplateParameter
 
 
 class UpdateProjectModal(application.Modal):
@@ -20,6 +22,19 @@ class UpdateProjectModal(application.Modal):
     def is_processing(self, value: bool):
         self._is_processing = bool(value)
         self.redraw()
+
+    def _generate_transaction(self) -> ProjectTransaction:
+        transaction = ProjectTransaction(self.project, self.conductor)
+        if self.name.value != self.project.name:
+            transaction.change_name(self.name.value)
+        if self.project.template_is_applicable(self.current_kernel.value):
+            transaction.apply_template(self.current_kernel.value)
+        for template in self.current_templates:
+            if template.removed:
+                transaction.rm_template(BaseTemplate.create_query(template.value.name))
+            elif self.project.template_is_applicable(template.value):
+                transaction.apply_template(template.value)
+        return transaction
 
     def __init__(self, ctx: Optional[Context] = None, conductor: Optional[Conductor] = None,
                  project: Optional[Project] = None):
@@ -34,10 +49,16 @@ class UpdateProjectModal(application.Modal):
         )
 
         self.name = parameters.Parameter(None)
-        self.kernel_versions = parameters.OptionParameter('latest', ['latest'])
-        self.template_versions: Dict[str, parameters.OptionParameter] = dict()
+        self.current_kernel: TemplateParameter = None
+        self.current_templates: List[TemplateParameter] = []
+        self.new_templates: List[TemplateParameter] = []
 
         self.templates_collapsed = parameters.BooleanParameter(False)
+        self.add_template_button = components.Button('Add Template')
+
+        @self.add_template_button.on_clicked
+        def on_add_template():
+            self.new_templates.append(TemplateParameter())
 
         cb = self.project_path.on_changed(self.project_changed, asynchronous=True)
         if self.project_path.is_valid():
@@ -50,22 +71,23 @@ class UpdateProjectModal(application.Modal):
 
             self.name.update(self.project.project_name)
 
-            kernel_templates = self.conductor.resolve_templates('kernel', target=self.project.target)
-            if len(kernel_templates) == 0:
-                self.kernel_versions.options = ['latest']
-            else:
-                self.kernel_versions.options = ['latest'] + sorted({t.version for t in kernel_templates}, reverse=True)
-
-            self.template_versions: Dict[str, parameters.OptionParameter] = dict()
-            for template in self.project.templates.keys():
-                if template == 'kernel':
-                    continue
-                template_query = BaseTemplate(name=template, version='>=0')
-                candidate_templates = self.conductor.resolve_templates(template_query)
-                self.template_versions[template_query.name] = parameters.OptionParameter(
-                    'latest',
-                    ['latest', 'uninstall'] + sorted({t.version for t in candidate_templates}, reverse=True)
+            self.current_kernel = TemplateParameter(None,
+                                                    versions=sorted({
+                                                        t for t in self.conductor.resolve_templates(
+                                                        self.project.templates['kernel'].as_query())
+                                                    }, key=lambda v: Version(v.version), reverse=True))
+            self.current_templates = [
+                TemplateParameter(
+                    None,
+                    versions=sorted({
+                        t
+                        for t in self.conductor.resolve_templates(t.as_query())
+                    }, key=lambda v: Version(v.version), reverse=True)
                 )
+                for t in self.project.templates.values()
+                if t.name != 'kernel'
+            ]
+            self.new_templates = []
 
             self.is_processing = False
         except BaseException as e:
@@ -73,16 +95,7 @@ class UpdateProjectModal(application.Modal):
 
     def confirm(self, *args, **kwargs):
         self.exit()
-        transaction = ProjectTransaction(self.project, self.conductor)
-        transaction.apply_template(BaseTemplate.create_query('kernel', version=self.kernel_versions.value),
-                                   suppress_already_installed=True)
-        for name, parameter in self.template_versions.items():
-            if parameter.value == 'uninstall':
-                transaction.rm_template(BaseTemplate.create_query(name))
-            else:
-                transaction.apply_template(BaseTemplate.create_query(name, version=parameter.value),
-                                           suppress_already_installed=True)
-        transaction.execute()
+        self._generate_transaction().execute()
 
     def build(self) -> Generator[components.Component, None, None]:
         yield components.DirectorySelector('Project Directory', self.project_path)
@@ -92,14 +105,13 @@ class UpdateProjectModal(application.Modal):
             assert self.project is not None
             yield components.Label(f'Modify your {self.project.target} project.')
             yield components.InputBox('Project Name', self.name)
-            yield components.DropDownBox('Kernel Version', self.kernel_versions)
-            templates = [
-                components.DropDownBox(name, parameter)
-                for name, parameter
-                in self.template_versions.items()
-            ]
+            yield TemplateListingComponent(self.current_kernel, editable=dict(version=True), removable=False)
             yield components.Container(
-                *templates,
+                *(TemplateListingComponent(t, editable=dict(version=True), removable=True) for t in
+                  self.current_templates),
+                self.add_template_button,
                 title='Templates',
                 collapsed=self.templates_collapsed
             )
+            yield components.Label('What will happen when you click "Continue":')
+            yield components.VerbatimLabel(self._generate_transaction().describe())

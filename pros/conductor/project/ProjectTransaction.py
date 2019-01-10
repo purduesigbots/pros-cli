@@ -9,16 +9,97 @@ import pros.conductor as c
 from pros.conductor.project.template_resolution import InvalidTemplateException, TemplateAction
 
 
+class Action(object):
+    def execute(self, conductor: c.Conductor, project: c.Project) -> None:
+        raise NotImplementedError()
+
+    def describe(self, conductor: c.Conductor, project: c.Project) -> str:
+        raise NotImplementedError()
+
+
+class ApplyTemplateAction(Action):
+    def __init__(self, template: c.BaseTemplate, apply_kwargs: Dict[str, Any] = None,
+                 suppress_already_installed: bool = False):
+        self.template = template
+        self.apply_kwargs = apply_kwargs or {}
+        self.suppress_already_installed = suppress_already_installed
+
+    def execute(self, conductor: c.Conductor, project: c.Project):
+        try:
+            conductor.apply_template(project, self.template, **self.apply_kwargs)
+        except InvalidTemplateException as e:
+            if e.reason != TemplateAction.AlreadyInstalled or not self.suppress_already_installed:
+                raise e
+            else:
+                ui.logger(__name__).warning(str(e))
+        return None
+
+    def describe(self, conductor: c.Conductor, project: c.Project):
+        action = project.get_template_actions(conductor.resolve_template(self.template))
+        if action == TemplateAction.NotApplicable:
+            return f'{self.template.identifier} cannot be applied to project.'
+        if action == TemplateAction.Installable:
+            return f'{self.template.identifier} will installed to project.'
+        if action == TemplateAction.Downgradable:
+            return f'Project will be downgraded to {self.template.identifier} from' \
+                f' {project.templates[self.template.name].version}.'
+        if action == TemplateAction.Upgradable:
+            return f'Project will be upgraded to {self.template.identifier} from' \
+                f' {project.templates[self.template.name].version}.'
+        if action == TemplateAction.AlreadyInstalled:
+            if self.apply_kwargs.get('force_apply'):
+                return f'{self.template.identifier} will be re-applied.'
+            elif self.suppress_already_installed:
+                return f'{self.template.identifier} will not be re-applied.'
+            else:
+                return f'{self.template.identifier} cannot be applied to project because it is already installed.'
+
+
+class RemoveTemplateAction(Action):
+    def __init__(self, template: c.BaseTemplate, remove_kwargs: Dict[str, Any] = None,
+                 suppress_not_removable: bool = False):
+        self.template = template
+        self.remove_kwargs = remove_kwargs or {}
+        self.suppress_not_removable = suppress_not_removable
+
+    def execute(self, conductor: c.Conductor, project: c.Project):
+        try:
+            conductor.remove_template(project, self.template, **self.remove_kwargs)
+        except ValueError as e:
+            if not self.suppress_not_removable:
+                raise e
+            else:
+                ui.logger(__name__).warning(str(e))
+
+    def describe(self, conductor: c.Conductor, project: c.Project) -> str:
+        return f'{self.template.identifier} will be removed'
+
+
+class ChangeProjectNameAction(Action):
+    def __init__(self, new_name: str):
+        self.new_name = new_name
+
+    def execute(self, conductor: c.Conductor, project: c.Project):
+        project.project_name = self.new_name
+        project.save()
+
+    def describe(self, conductor: c.Conductor, project: c.Project):
+        return f'Project will be renamed to: "{self.new_name}"'
+
+
 class ProjectTransaction(object):
     def __init__(self, project: c.Project, conductor: Optional[c.Conductor] = None):
         self.project = project
         self.conductor = conductor or c.Conductor()
-        self.actions = []
+        self.actions: List[Action] = []
 
-    def add_action(self, action: Callable[[c.Conductor, c.Project], Optional[bool]]) -> None:
+    def add_action(self, action: Action) -> None:
         self.actions.append(action)
 
     def execute(self):
+        if len(self.actions) == 0:
+            ui.logger(__name__).warning('No actions necessary.')
+            return
         location = self.project.location
         tfd, tfn = tempfile.mkstemp(prefix='pros-project-', suffix=f'-{self.project.name}.zip', text='w+b')
         with os.fdopen(tfd, 'w+b') as tf:
@@ -32,8 +113,8 @@ class ProjectTransaction(object):
         try:
             with ui.Notification():
                 for action in self.actions:
-                    ui.logger(__name__).debug(f'Performing {action}')
-                    rv = action(self.conductor, self.project)
+                    ui.logger(__name__).debug(action.describe(self.conductor, self.project))
+                    rv = action.execute(self.conductor, self.project)
                     ui.logger(__name__).debug(f'{action} returned {rv}')
                     if rv is not None and not rv:
                         raise ValueError('Action did not complete successfully')
@@ -52,21 +133,24 @@ class ProjectTransaction(object):
             os.remove(tfn)
 
     def apply_template(self, template: c.BaseTemplate, suppress_already_installed: bool = False, **kwargs):
-        def action(conductor: c.Conductor, p: c.Project) -> Optional[bool]:
-            try:
-                conductor.apply_template(p, template, **kwargs)
-            except InvalidTemplateException as e:
-                if e.reason != TemplateAction.AlreadyInstalled or not suppress_already_installed:
-                    raise e
-                else:
-                    ui.logger(__name__).warning(str(e))
-            return None
+        self.add_action(
+            ApplyTemplateAction(template, suppress_already_installed=suppress_already_installed, apply_kwargs=kwargs)
+        )
 
-        self.add_action(action)
+    def rm_template(self, template: c.BaseTemplate, suppress_not_removable: bool = False, **kwargs):
+        self.add_action(
+            RemoveTemplateAction(template, suppress_not_removable=suppress_not_removable, remove_kwargs=kwargs)
+        )
 
-    def rm_template(self, template: c.BaseTemplate):
-        def action(conductor: c.Conductor, p: c.Project) -> Optional[bool]:
-            conductor.remove_template(p, template)
-            return None
+    def change_name(self, new_name: str):
+        self.add_action(ChangeProjectNameAction(new_name))
 
-        self.add_action(action)
+    def describe(self) -> str:
+        if len(self.actions) > 0:
+            return '\n'.join(
+                f'- {a.describe(self.conductor, self.project)}'
+                for a in self.actions
+            )
+        else:
+            return 'No actions necessary.'
+
