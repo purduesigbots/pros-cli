@@ -60,6 +60,7 @@ class Project(Config):
                 glob.glob(f'{self.location}/**/*', recursive=True)}
 
     def get_template_actions(self, template: BaseTemplate) -> TemplateAction:
+        ui.logger(__name__).debug(template)
         if template.target != self.target:
             return TemplateAction.NotApplicable
         from semantic_version import Spec, Version
@@ -70,8 +71,10 @@ class Project(Config):
                 continue
             if template > current:
                 return TemplateAction.Upgradable
-            elif template == current:
+            if template == current:
                 return TemplateAction.AlreadyInstalled
+            if current > template:
+                return TemplateAction.Downgradable
 
         if any([template > current for current in self.templates.values()]):
             return TemplateAction.Upgradable
@@ -83,6 +86,10 @@ class Project(Config):
 
     def template_is_upgradeable(self, query: BaseTemplate) -> bool:
         return self.get_template_actions(query) == TemplateAction.Upgradable
+
+    def template_is_applicable(self, query: BaseTemplate) -> bool:
+        ui.logger(__name__).debug(query.target)
+        return self.get_template_actions(query) in TemplateAction.UnforcedApplicable
 
     def apply_template(self, template: LocalTemplate, force_system: bool = False, force_user: bool = False,
                        remove_empty_directories: bool = False):

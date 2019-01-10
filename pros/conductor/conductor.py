@@ -97,21 +97,30 @@ class Conductor(Config):
         self.save()
 
     def resolve_templates(self, identifier: Union[str, BaseTemplate], allow_online: bool = True,
-                          allow_offline: bool = True, force_refresh: bool = False, **kwargs) -> List[BaseTemplate]:
-        results = []
+                          allow_offline: bool = True, force_refresh: bool = False,
+                          unique: bool = True, **kwargs) -> List[BaseTemplate]:
+        results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
             query = identifier
+        if allow_offline:
+            offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates)
+            if unique:
+                results.update(offline_results)
+            else:
+                results.extend(offline_results)
         if allow_online:
             for depot in self.depots.values():
-                results.extend(filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
-                                      depot.get_remote_templates(force_check=force_refresh, **kwargs)))
+                online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
+                                        depot.get_remote_templates(force_check=force_refresh, **kwargs))
+                if unique:
+                    results.update(online_results)
+                else:
+                    results.extend(online_results)
             logger(__name__).debug('Saving Conductor config after checking for remote updates')
             self.save()  # Save self since there may have been some updates from the depots
-        if allow_offline:
-            results.extend(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))
         return results
 
     def resolve_template(self, identifier: Union[str, BaseTemplate], **kwargs) -> Optional[BaseTemplate]:
@@ -155,6 +164,7 @@ class Conductor(Config):
     def apply_template(self, project: Project, identifier: Union[str, BaseTemplate], **kwargs):
         upgrade_ok = kwargs.get('upgrade_ok', True)
         install_ok = kwargs.get('install_ok', True)
+        downgrade_ok = kwargs.get('downgrade_ok', True)
         download_ok = kwargs.get('download_ok', True)
         force = kwargs.get('force_apply', False)
 
@@ -180,7 +190,8 @@ class Conductor(Config):
             )
         if force \
                 or (valid_action == TemplateAction.Upgradable and upgrade_ok) \
-                or (valid_action == TemplateAction.Installable and install_ok):
+                or (valid_action == TemplateAction.Installable and install_ok) \
+                or (valid_action == TemplateAction.Downgradable and downgrade_ok):
             project.apply_template(template, force_system=kwargs.pop('force_system', False),
                                    force_user=kwargs.pop('force_user', False),
                                    remove_empty_directories=kwargs.pop('remove_empty_directories', False))

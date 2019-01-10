@@ -1,11 +1,15 @@
-from enum import Enum
+from enum import Flag, auto
 
 
-class TemplateAction(Enum):
-    NotApplicable = 0
-    Installable = 1
-    Upgradable = 2
-    AlreadyInstalled = 3
+class TemplateAction(Flag):
+    NotApplicable = auto()
+    Installable = auto()
+    Upgradable = auto()
+    AlreadyInstalled = auto()
+    Downgradable = auto()
+
+    UnforcedApplicable = Installable | Upgradable | Downgradable
+    ForcedApplicable = UnforcedApplicable | AlreadyInstalled
 
 
 class InvalidTemplateException(Exception):
