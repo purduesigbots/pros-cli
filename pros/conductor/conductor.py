@@ -127,6 +127,10 @@ class Conductor(Config):
         if not any(templates):
             return None
         query.version = str(Spec(query.version or '>0').select([Version(t.version) for t in templates]))
+        v = Version(query.version)
+        v.prerelease = v.prerelease if len(v.prerelease) else ('', )
+        v.build = v.build if len(v.build) else ('', )
+        query.version = f'=={v}'
         logger(__name__).info(f'Resolved to {query.identifier}')
         templates = self.resolve_templates(query, **kwargs)
         if not any(templates):
