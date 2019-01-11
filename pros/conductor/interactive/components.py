@@ -22,7 +22,7 @@ class TemplateListingComponent(components.Container):
             else:
                 yield components.Label(self.template.value.version)
         if self.removable:
-            remove_button = components.Button('Remove')
+            remove_button = components.Button('Don\'t remove' if self.template.removed else 'Remove')
             remove_button.on_clicked(lambda: self.template.trigger('removed'))
             yield remove_button
 
