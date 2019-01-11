@@ -87,9 +87,9 @@ class Project(Config):
     def template_is_upgradeable(self, query: BaseTemplate) -> bool:
         return self.get_template_actions(query) == TemplateAction.Upgradable
 
-    def template_is_applicable(self, query: BaseTemplate) -> bool:
+    def template_is_applicable(self, query: BaseTemplate, force_apply: bool = False) -> bool:
         ui.logger(__name__).debug(query.target)
-        return self.get_template_actions(query) in TemplateAction.UnforcedApplicable
+        return self.get_template_actions(query) in (TemplateAction.ForcedApplicable if force_apply else TemplateAction.UnforcedApplicable)
 
     def apply_template(self, template: LocalTemplate, force_system: bool = False, force_user: bool = False,
                        remove_empty_directories: bool = False):
@@ -276,7 +276,7 @@ class Project(Config):
              'CC=intercept-cc', 'CXX=intercept-c++'])
         exit_code, entries = libscanbuild_capture(args)
 
-        if sandbox:
+        if sandbox and td:
             td.cleanup()
 
         any_entries, entries = itertools.tee(entries, 2)

@@ -57,33 +57,51 @@ class ExistingProjectParameter(p.ValidatableParameter[str]):
 
 
 class TemplateParameter(p.ValidatableParameter[BaseTemplate]):
-    def __init__(self, template: Optional[BaseTemplate], allow_invalid_input: bool = True, versions: Optional[List[BaseTemplate]] = None):
-        version_templates: Optional[Dict[str, BaseTemplate]] = {t.version: t for t in versions}
-        if not template and (not versions or len(versions) == 0):
+    def _update_versions(self):
+        if self.name.value in self.options:
+            self.version = p.OptionParameter(
+                    self.value.version,
+                    list(sorted(self.options[self.value.name].keys(), reverse=True, key=lambda v: Version(v)))
+            )
+
+            if self.version.value not in self.version.options:
+                self.version.value = self.version.options[0]
+        else:
+            self.version = p.AlwaysInvalidParameter(self.value.version)
+
+    def __init__(self, template: Optional[BaseTemplate], options: List[BaseTemplate], allow_invalid_input: bool = True):
+        if not template and len(options) == 0:
             raise ValueError('At least template or versions must be defined for a TemplateParameter')
+
+        self.options = {t.name: {_t.version: _t for _t in options if t.name == _t.name} for t in options}
+
         if not template:
-            template = version_templates[str(Spec('>0').select([Version(v) for v in version_templates.keys()]))]
+            first_template = list(self.options.values())[0]
+            template = first_template[str(Spec('>0').select([Version(v) for v in first_template.keys()]))]
 
         super().__init__(template, allow_invalid_input)
 
-        self.name: p.ValidatableParameter[str] = p.ValidatableParameter(self.value.name, allow_invalid_input)
-        if not self.value.version and versions:
-            self.value.version = Spec('>0').select([Version(v) for v in version_templates.keys()])
+        self.name: p.ValidatableParameter[str] = p.ValidatableParameter(
+            self.value.name,
+            allow_invalid_input,
+            validate=lambda v: True if v in self.options.keys() else f'Could not find a template named {v}'
+        )
+        if not self.value.version and self.value.name in self.options:
+            self.value.version = Spec('>0').select([Version(v) for v in self.options[self.value.name].keys()])
 
-        if versions:
-            self.version: p.OptionParameter[str] = p.OptionParameter(self.value.version, list(version_templates.keys()))
-        else:
-            self.version: p.ValidatableParameter[str] = p.ValidatableParameter(self.value.version, allow_invalid_input)
+        self.version = None
+        self._update_versions()
 
         @self.name.on_any_changed
         def name_any_changed(v: p.ValidatableParameter):
             self.value.name = v.value
+            self._update_versions()
             self.trigger('changed', self)
 
         @self.version.on_any_changed
         def version_any_changed(v: p.ValidatableParameter):
-            if version_templates and v.value in version_templates.keys():
-                self.value = version_templates[v.value]
+            if v.value in self.options[self.name.value].keys():
+                self.value = self.options[self.name.value][v.value]
             else:
                 self.value.version = v.value
             self.trigger('changed', self)

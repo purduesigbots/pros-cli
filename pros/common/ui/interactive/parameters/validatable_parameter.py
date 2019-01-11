@@ -12,15 +12,18 @@ class ValidatableParameter(Parameter, Generic[T]):
     By default, on_changed will subscribe to valid value changes, e.g. only when the Parameter's value is valid does
     the callback get invoked. This event tag is "changed_validated"
     """
-    def __init__(self, initial_value: T, allow_invalid_input: bool = True):
+
+    def __init__(self, initial_value: T, allow_invalid_input: bool = True,
+                 validate: Optional[Callable[[T], Union[bool, str]]] = None):
         """
         :param allow_invalid_input: Allow invalid input to be propagated to the `changed` event
         """
         super().__init__(initial_value)
         self.allow_invalid_input = allow_invalid_input
+        self.validate_lambda = validate or (lambda v: bool(v))
 
     def validate(self, value: T) -> Union[bool, str]:
-        return bool(value)
+        return self.validate_lambda(value)
 
     def is_valid(self, value: T = None) -> bool:
         rv = self.validate(value if value is not None else self.value)
@@ -50,3 +53,8 @@ class ValidatableParameter(Parameter, Generic[T]):
         Subscribe to event whenever value changes (regardless of whether or not new value is valid)
         """
         return self.on('changed', *handlers, **kwargs)
+
+
+class AlwaysInvalidParameter(ValidatableParameter[T], Generic[T]):
+    def validate(self, value: T):
+        return False
