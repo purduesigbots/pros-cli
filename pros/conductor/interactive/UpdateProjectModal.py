@@ -97,6 +97,10 @@ class UpdateProjectModal(application.Modal):
         self.exit()
         self._generate_transaction().execute()
 
+    @property
+    def can_confirm(self):
+        return self.project and self._generate_transaction().can_execute()
+
     def build(self) -> Generator[components.Component, None, None]:
         yield components.DirectorySelector('Project Directory', self.project_path)
         if self.is_processing:

@@ -121,7 +121,7 @@ class Conductor(Config):
                     results.extend(online_results)
             logger(__name__).debug('Saving Conductor config after checking for remote updates')
             self.save()  # Save self since there may have been some updates from the depots
-        return results
+        return list(results)
 
     def resolve_template(self, identifier: Union[str, BaseTemplate], **kwargs) -> Optional[BaseTemplate]:
         if isinstance(identifier, str):

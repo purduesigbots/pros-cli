@@ -16,8 +16,12 @@ class Action(object):
     def describe(self, conductor: c.Conductor, project: c.Project) -> str:
         raise NotImplementedError()
 
+    def can_execute(self, conductor: c.Conductor, project: c.Project) -> bool:
+        raise NotImplementedError()
+
 
 class ApplyTemplateAction(Action):
+
     def __init__(self, template: c.BaseTemplate, apply_kwargs: Dict[str, Any] = None,
                  suppress_already_installed: bool = False):
         self.template = template
@@ -37,7 +41,7 @@ class ApplyTemplateAction(Action):
     def describe(self, conductor: c.Conductor, project: c.Project):
         action = project.get_template_actions(conductor.resolve_template(self.template))
         if action == TemplateAction.NotApplicable:
-            return f'{self.template.identifier} cannot be applied to project.'
+            return f'{self.template.identifier} cannot be applied to project!'
         if action == TemplateAction.Installable:
             return f'{self.template.identifier} will installed to project.'
         if action == TemplateAction.Downgradable:
@@ -53,6 +57,12 @@ class ApplyTemplateAction(Action):
                 return f'{self.template.identifier} will not be re-applied.'
             else:
                 return f'{self.template.identifier} cannot be applied to project because it is already installed.'
+
+    def can_execute(self, conductor: c.Conductor, project: c.Project) -> bool:
+        action = project.get_template_actions(conductor.resolve_template(self.template))
+        if action == TemplateAction.AlreadyInstalled:
+            return self.apply_kwargs.get('force_apply') or self.suppress_already_installed
+        return action in [TemplateAction.Installable, TemplateAction.Downgradable, TemplateAction.Upgradable]
 
 
 class RemoveTemplateAction(Action):
@@ -74,6 +84,9 @@ class RemoveTemplateAction(Action):
     def describe(self, conductor: c.Conductor, project: c.Project) -> str:
         return f'{self.template.identifier} will be removed'
 
+    def can_execute(self, conductor: c.Conductor, project: c.Project):
+        return True
+
 
 class ChangeProjectNameAction(Action):
     def __init__(self, new_name: str):
@@ -85,6 +98,9 @@ class ChangeProjectNameAction(Action):
 
     def describe(self, conductor: c.Conductor, project: c.Project):
         return f'Project will be renamed to: "{self.new_name}"'
+
+    def can_execute(self, conductor: c.Conductor, project: c.Project):
+        return True
 
 
 class ProjectTransaction(object):
@@ -154,3 +170,5 @@ class ProjectTransaction(object):
         else:
             return 'No actions necessary.'
 
+    def can_execute(self) -> bool:
+        return all(a.can_execute(self.conductor, self.project) for a in self.actions)
