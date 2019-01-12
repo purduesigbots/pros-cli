@@ -213,7 +213,7 @@ def capture(file_name: str, port: str, force: bool = False):
         return -1
     ser = DirectPort(port)
     device = V5Device(ser)
-    i_data, width, height = device.get_screen_capture_data()
+    i_data, width, height = device.capture_screen()
 
     if i_data is None:
         print('Failed to capture screen from connected brain.')
@@ -226,7 +226,7 @@ def capture(file_name: str, port: str, force: bool = False):
         file_name = f'{time_s}_{width}x{height}_pros_capture.png'
     if file_name == '-':
         # Send the data to stdout to allow for piping
-        print(png_data, end='')
+        print(i_data, end='')
         return
 
     if not file_name.endswith('.png'):

@@ -8,9 +8,8 @@ from io import BytesIO, StringIO
 from typing import *
 
 from pros.common import *
-from pros.serial import bytes_to_str
-from pros.serial import decode_bytes_to_str
-from pros.serial.ports import list_all_comports, BasePort
+from pros.serial import bytes_to_str, decode_bytes_to_str
+from pros.serial.ports import BasePort, list_all_comports
 from .comm_error import VEXCommError
 from .crc import CRC
 from .message import Message
@@ -149,16 +148,24 @@ class V5Device(VEXDevice, SystemDevice):
         else:
             raise ValueError(f'Unknown quirk option: {quirk}')
 
-    def read_file(self, file: typing.IO[bytes], remote_file: str, vid: int_str = 'user', target: int_str = 'flash'):
+    def read_file(self, file: typing.IO[bytes], remote_file: str, vid: int_str = 'user', target: int_str = 'flash',
+                  addr: Optional[int] = None, file_len: Optional[int] = None):
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
-        metadata = self.get_file_metadata_by_name(remote_file, vid=vid)
+        if addr is None:
+            metadata = self.get_file_metadata_by_name(remote_file, vid=vid)
+            addr = metadata['addr']
         ft_meta = self.ft_initialize(remote_file, function='download', vid=vid, target=target)
-        for i in range(0, ft_meta['file_size'], ft_meta['max_packet_size']):
-            packet_size = ft_meta['max_packet_size']
-            if i + ft_meta['max_packet_size'] > ft_meta['file_size']:
-                packet_size = ft_meta['file_size'] - i
-            file.write(self.ft_read(metadata['addr'] + i, packet_size))
+        if file_len is None:
+            file_len = ft_meta['file_size']
+        with ui.progressbar(length=file_len, label='Downloading {}'.format(remote_file)) as progress:
+            for i in range(0, file_len, ft_meta['max_packet_size']):
+                packet_size = ft_meta['max_packet_size']
+                if i + ft_meta['max_packet_size'] > file_len:
+                    packet_size = ft_meta['file_size'] - i
+                file.write(self.ft_read(addr + i, packet_size))
+                progress.update(packet_size)
+                logger(__name__).debug('Completed {} of {} bytes'.format(i + packet_size, file_len))
         self.ft_complete()
 
     def write_file(self, file: typing.BinaryIO, remote_file: str, file_len: int = -1,
@@ -189,6 +196,26 @@ class V5Device(VEXDevice, SystemDevice):
                 logger(__name__).debug('Completed {} of {} bytes'.format(i + packet_size, file_len))
         logger(__name__).debug('Data transfer complete, sending ft complete')
         self.ft_complete(options=run_after)
+
+    def capture_screen(self) -> Tuple[List[int], int, int]:
+        self.sc_init()
+        width, height = 512, 272
+        file_size = width * height * 4  # ARGB
+
+        rx_io = BytesIO()
+        self.read_file(rx_io, '', vid='system', target='screen', addr=0, file_len=file_size)
+        rx = rx_io.getvalue()
+
+        i, data = 0, [[] for _ in range(height)]
+        for y in range(height):
+            for x in range(width - 1):
+                if x < 480:
+                    px = rx[y * width + x]
+                    data[y].append((px & 0xff0000) >> 16)
+                    data[y].append((px & 0x00ff00) >> 8)
+                    data[y].append(px & 0x0000ff)
+
+        return data, 480, height
 
     @retries
     def query_system_version(self) -> bytearray:
@@ -404,39 +431,14 @@ class V5Device(VEXDevice, SystemDevice):
         }
 
     @retries
-    def do_screen_capture(self) -> None:
+    def sc_init(self) -> None:
+        """
+        Send command to initialize screen capture
+        """
         # This will only copy data in memory, not send!
         logger(__name__).debug('Sending ext 0x28 command')
         rx = self._txrx_ext_struct(0x28, [], '')
         logger(__name__).debug('Completed ext 0x28 command')
-
-    def get_screen_capture_data(self, crop_w: int = 480) -> List[List[int]]:
-        self.do_screen_capture()
-        width, height = 512, 272
-        file_size = width * height * 4  # ARGB
-
-        rx = []
-        ft_meta = self.ft_initialize('', function='download', vid='system', target='screen')
-        for i in range(0, file_size, ft_meta['max_packet_size']):
-            packet_size = ft_meta['max_packet_size']
-            if i + ft_meta['max_packet_size'] > file_size:
-                packet_size = file_size - i
-
-            tx_payload = struct.pack("<IH", i, packet_size)
-            rx_fmt = "<I{}I".format(packet_size // 4)
-            rx += [*self._txrx_ext_struct(0x14, tx_payload, rx_fmt, check_ack=False, check_length=False)[1:]]
-        self.ft_complete()
-
-        i, data = 0, [[] for _ in range(height)]
-        for y in range(height):
-            for x in range(width - 1):
-                if x < crop_w:
-                    px = rx[y * width + x]
-                    data[y].append((px & 0xff0000) >> 16)
-                    data[y].append((px & 0x00ff00) >> 8)
-                    data[y].append(px & 0x0000ff)
-
-        return data, crop_w, height
 
     def _txrx_ext_struct(self, command: int, tx_data: Union[Iterable, bytes, bytearray],
                          unpack_fmt: str, check_length: bool = True, check_ack: bool = True,
