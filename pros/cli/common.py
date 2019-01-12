@@ -171,6 +171,19 @@ def project_option(arg_name='project', required: bool = True, default: str = '.'
     return wrapper
 
 
+def shadow_command(command: click.Command):
+    def wrapper(f):
+        if isinstance(f, click.Command):
+            f.params.extend(p for p in command.params if p.name not in [p.name for p in command.params])
+        else:
+            if not hasattr(f, '__click_params__'):
+                f.__click_params__ = []
+            f.__click_params__.extend(p for p in command.params if p.name not in [p.name for p in f.__click_params__])
+        return f
+
+    return wrapper
+
+
 root_commands = []
 
 

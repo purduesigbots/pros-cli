@@ -3,7 +3,8 @@ from typing import *
 import click
 
 import pros.conductor as c
-from pros.cli.common import pros_root, default_options, project_option, logger
+from pros.cli.common import default_options, logger, project_option, pros_root, shadow_command
+from .upload import upload
 
 
 @pros_root
@@ -27,23 +28,25 @@ def make(project: c.Project, build_args):
 
 
 @build_cli.command('make-upload', aliases=['mu'], hidden=True)
+@click.option('build_args', '--make', '-m', multiple=True, help='Send arguments to make (e.g. compile target)')
+@shadow_command(upload)
 @project_option()
 @click.pass_context
-def make_upload(ctx, project: c.Project):
-    from .upload import upload
-    ctx.forward(make, project)
-    ctx.forward(upload)
+def make_upload(ctx, project: c.Project, build_args: List[str], **upload_args):
+    ctx.invoke(make, project=project, build_args=build_args)
+    ctx.invoke(upload, project=project, **upload_args)
 
 
 @build_cli.command('make-upload-terminal', aliases=['mut'], hidden=True)
+@click.option('build_args', '--make', '-m', multiple=True, help='Send arguments to make (e.g. compile target)')
+@shadow_command(upload)
 @project_option()
 @click.pass_context
-def make_upload_terminal(ctx, project: c.Project):
-    from .upload import upload
+def make_upload_terminal(ctx, project: c.Project, build_args, **upload_args):
     from .terminal import terminal
-    ctx.forward(make, project)
-    ctx.forward(upload)
-    ctx.forward(terminal, request_banner=False)
+    ctx.invoke(make, project=project, build_args=build_args)
+    ctx.invoke(upload, project=project, **upload_args)
+    ctx.invoke(terminal, port=project.target, request_banner=False)
 
 
 @build_cli.command('build-compile-commands', hidden=True)
