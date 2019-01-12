@@ -94,7 +94,6 @@ class TemplateParameter(p.ValidatableParameter[BaseTemplate]):
 
         @self.name.on_any_changed
         def name_any_changed(v: p.ValidatableParameter):
-            self.value.name = v.value
             self._update_versions()
             self.trigger('changed', self)
 
