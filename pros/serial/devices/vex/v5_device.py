@@ -103,7 +103,7 @@ class V5Device(VEXDevice, SystemDevice):
             'name': remote_name,
             'slot': slot,
             'icon': kwargs.get('icon', default_icon) or default_icon,
-            'description': 'Created with PROS',
+            'description': kwargs.get('description', 'Created with PROS'),
             'date': datetime.now().isoformat()
         }
         if ini:

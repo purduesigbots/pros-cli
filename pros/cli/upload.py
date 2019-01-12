@@ -32,7 +32,7 @@ def upload_cli():
                                                        ' program. This option may help with controller connectivity '
                                                        'reliability and prevent robots from running off tables.')
 @default_options
-def upload(path: str, project: Optional[c.Project], port: str, **kwargs):
+def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwargs):
     """
     Upload a binary to a microcontroller.
 

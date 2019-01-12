@@ -1,5 +1,6 @@
 import click.core
 
+from pros.common.sentry import add_tag
 from pros.common.utils import *
 from .click_classes import *
 
@@ -98,8 +99,13 @@ def machine_output_option(f):
 
     def callback(ctx, param, value):
         ctx.ensure_object(dict)
+        add_tag('machine-output', value)
         if value:
             ctx.obj[param.name] = value
+            logging.getLogger().setLevel(logging.DEBUG)
+            stdout_handler = ctx.obj['click_handler']  # type: logging.Handler
+            stdout_handler.setLevel(logging.DEBUG)
+            logging.getLogger(__name__).info('Debugging messages enabled')
         return value
 
     decorator = click.option('--machine-output', expose_value=False, is_flag=True, default=False, is_eager=True,
@@ -145,8 +151,10 @@ def template_query(arg_name='query', required: bool = False):
     return wrapper
 
 
-def project_option(arg_name='project', required: bool = True, default='.'):
+def project_option(arg_name='project', required: bool = True, default: str = '.', allow_none: bool = False):
     def callback(ctx: click.Context, param: click.Parameter, value: str):
+        if allow_none and value is None:
+            return None
         import pros.conductor as c
         project_path = c.Project.find_project(value)
         if project_path is None:
