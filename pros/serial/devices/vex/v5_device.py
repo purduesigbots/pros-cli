@@ -206,7 +206,7 @@ class V5Device(VEXDevice, SystemDevice):
         self.read_file(rx_io, '', vid='system', target='screen', addr=0, file_len=file_size)
         rx = rx_io.getvalue()
 
-        i, data = 0, [[] for _ in range(height)]
+        data = [[] for _ in range(height)]
         for y in range(height):
             for x in range(width - 1):
                 if x < 480:
@@ -437,7 +437,7 @@ class V5Device(VEXDevice, SystemDevice):
         """
         # This will only copy data in memory, not send!
         logger(__name__).debug('Sending ext 0x28 command')
-        rx = self._txrx_ext_struct(0x28, [], '')
+        self._txrx_ext_struct(0x28, [], '')
         logger(__name__).debug('Completed ext 0x28 command')
 
     def _txrx_ext_struct(self, command: int, tx_data: Union[Iterable, bytes, bytearray],
