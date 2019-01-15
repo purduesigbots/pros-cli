@@ -10,6 +10,7 @@ from .base_port import BasePort, PortConnectionException
 
 def create_serial_port(port_name: str, timeout: Optional[float] = 1.0) -> serial.Serial:
     try:
+        logger(__name__).debug(f'Opening serial port {port_name}')
         port = serial.Serial(port_name, baudrate=115200, bytesize=serial.EIGHTBITS,
                              parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE)
         port.timeout = timeout
