@@ -2,6 +2,7 @@ import glob
 import io
 import os.path
 import sys
+from pathlib import Path
 from typing import *
 
 from pros.common import *
@@ -44,6 +45,10 @@ class Project(Config):
     @property
     def location(self):
         return os.path.dirname(self.save_file)
+
+    @property
+    def path(self):
+        return Path(self.location)
 
     @property
     def name(self):
