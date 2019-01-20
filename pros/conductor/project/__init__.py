@@ -3,6 +3,7 @@ import io
 import os.path
 import pathlib
 import sys
+from pathlib import Path
 from typing import *
 
 from pros.common import *
@@ -47,6 +48,10 @@ class Project(Config):
     @property
     def location(self) -> pathlib.Path:
         return pathlib.Path(os.path.dirname(self.save_file))
+
+    @property
+    def path(self):
+        return Path(self.location)
 
     @property
     def name(self):
