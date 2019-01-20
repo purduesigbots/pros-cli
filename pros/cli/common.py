@@ -99,7 +99,7 @@ def machine_output_option(f):
 
     def callback(ctx, param, value):
         ctx.ensure_object(dict)
-        add_tag('machine-output', value)
+        add_tag('machine-output', value)  # goes in sentry report
         if value:
             ctx.obj[param.name] = value
             logging.getLogger().setLevel(logging.DEBUG)

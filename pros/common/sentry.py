@@ -122,7 +122,7 @@ def register(cfg: Optional['CliConfig'] = None):
     from pros.upgrade import get_platformv2
 
     client = sentry.Client(
-        'https://3a47f0c9826a455b835131ef341b22b2@sentry.io/1317899',
+        'https://00bd27dcded6436cad5c8b2941d6a9d6@sentry.io/1226033',
         before_send=prompt_to_send,
         release=ui.get_version()
     )
