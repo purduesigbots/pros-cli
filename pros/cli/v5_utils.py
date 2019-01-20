@@ -152,37 +152,6 @@ def rm_all(port: str, vid: int):
         device.erase_file(file, vid=vid)
 
 
-@v5.command('rm-slot')
-@click.argument('slot')
-@click.argument('port', required=False, default=None)
-@default_options
-def rm_slot(slot: str, port: str):
-    """
-    Remove a program from the V5 by slot number or name.
-    """
-    from pros.serial.devices.vex import V5Device
-    from pros.serial.ports import DirectPort
-    import io
-    port = resolve_v5_port(port, 'system')
-    if not port:
-        return -1
-
-    ser = DirectPort(port)
-    device = V5Device(ser)
-    c = device.get_dir_count()
-    files = []
-    for i in range(0, c):
-        metadata = device.get_file_metadata_by_idx(i)
-        if metadata['type'] == 'ini':
-            f = io.BytesIO()
-            device.read_file(f, metadata['filename'])
-            f.seek(0, 0)
-            print(f.readlines())
-
-    for file in files:
-        device.erase_file(file)
-
-
 @v5.command(short_help='Run a V5 Program')
 @click.argument('slot', required=False, default=1, type=click.IntRange(1, 8))
 @click.argument('port', required=False, default=None)

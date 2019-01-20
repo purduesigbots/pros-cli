@@ -5,7 +5,7 @@ from pros.common.utils import *
 from .click_classes import *
 
 
-def verbose_option(f):
+def verbose_option(f: Union[click.Command, Callable]):
     def callback(ctx: click.Context, param: click.core.Parameter, value: Any):
         if value is None:
             return None
@@ -25,7 +25,7 @@ def verbose_option(f):
                         callback=callback, cls=PROSOption, group='Standard Options')(f)
 
 
-def debug_option(f):
+def debug_option(f: Union[click.Command, Callable]):
     def callback(ctx: click.Context, param: click.core.Parameter, value: Any):
         if value is None:
             return None
@@ -47,7 +47,7 @@ def debug_option(f):
                         callback=callback, cls=PROSOption, group='Standard Options')(f)
 
 
-def logging_option(f):
+def logging_option(f: Union[click.Command, Callable]):
     def callback(ctx: click.Context, param: click.core.Parameter, value: Any):
         if value is None:
             return None
@@ -66,7 +66,7 @@ def logging_option(f):
                         cls=PROSOption, group='Standard Options')(f)
 
 
-def logfile_option(f):
+def logfile_option(f: Union[click.Command, Callable]):
     def callback(ctx: click.Context, param: click.core.Parameter, value: Any):
         if value is None or value[0] is None:
             return None
@@ -92,12 +92,12 @@ def logfile_option(f):
                         ), cls=PROSOption, group='Standard Options')(f)
 
 
-def machine_output_option(f):
+def machine_output_option(f: Union[click.Command, Callable]):
     """
     provides a wrapper for creating the machine output option (so don't have to create callback, parameters, etc.)
     """
 
-    def callback(ctx, param, value):
+    def callback(ctx: click.Context, param: click.Parameter, value: str):
         ctx.ensure_object(dict)
         add_tag('machine-output', value)  # goes in sentry report
         if value:
@@ -114,7 +114,7 @@ def machine_output_option(f):
     return decorator
 
 
-def default_options(f):
+def default_options(f: Union[click.Command, Callable]):
     """
      combines verbosity, debug, machine output options (most commonly used)
     """
@@ -145,7 +145,7 @@ def template_query(arg_name='query', required: bool = False):
         logger(__name__).debug(query)
         return query
 
-    def wrapper(f):
+    def wrapper(f: Union[click.Command, Callable]):
         return click.argument(arg_name, nargs=-1, required=required, callback=callback)(f)
 
     return wrapper
@@ -163,7 +163,7 @@ def project_option(arg_name='project', required: bool = True, default: str = '.'
                                    f'with --project project/path')
         return c.Project(project_path)
 
-    def wrapper(f):
+    def wrapper(f: Union[click.Command, Callable]):
         return click.option(f'--{arg_name}', callback=callback, required=required,
                             default=default, type=click.Path(exists=True), show_default=True,
                             help='PROS Project directory or file')(f)
@@ -172,7 +172,7 @@ def project_option(arg_name='project', required: bool = True, default: str = '.'
 
 
 def shadow_command(command: click.Command):
-    def wrapper(f):
+    def wrapper(f: Union[click.Command, Callable]):
         if isinstance(f, click.Command):
             f.params.extend(p for p in command.params if p.name not in [p.name for p in command.params])
         else:
