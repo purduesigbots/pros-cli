@@ -8,7 +8,8 @@ semantic_version
 colorama
 pyzmq
 cobs
-scan-build
+scan-build==2.0.13
 rfc6266-parser
-raven
+sentry-sdk
+observable
 pypng
