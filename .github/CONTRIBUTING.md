@@ -17,7 +17,7 @@
 2. Create a new branch: `git checkout -b my-branch-name`
 3. Make your changes
 4. Push to your fork and submit a pull request.
-5. Wait for your pull request to be reviewed. In order to ensure that the PROS kernel is stable, we take extra time to test pull requests. As a result, your pull request may take some time to be merged into master.
+5. Wait for your pull request to be reviewed. In order to ensure that the PROS CLI user experience is as smooth as possible, we take extra time to test pull requests. As a result, your pull request may take some time to be merged into master.
 
 Here are a few tips that can help expedite your pull request being accepted:
 - Follow existing code's style-- we use the `flake8` linter.
