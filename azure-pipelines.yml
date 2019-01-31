@@ -54,10 +54,13 @@ jobs:
   pool:
     vmImage: ubuntu-16.04
   steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: $(python.version.linux)
-        architecture: $(buildArch)
+    - bash: apt-add-repository ppa:deadsnakes/ppa
+    - bash: apt-get update
+    - bash: apt-get install python3.6 python3.6-dev
+#     - task: UsePythonVersion@0
+#       inputs:
+#         versionSpec: $(python.version.linux)
+#         architecture: $(buildArch)
     - script: python version.py
     - bash: scripts/build.sh
       displayName: Build
