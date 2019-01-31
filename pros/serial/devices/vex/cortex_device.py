@@ -6,6 +6,7 @@ from typing import *
 
 from pros.common import ui
 from pros.common.utils import retries, logger
+from pros.conductor import Project
 from pros.serial import bytes_to_str
 from pros.serial.devices.vex import VEXCommError
 from pros.serial.devices.vex.stm32_device import STM32Device
@@ -78,6 +79,11 @@ class CortexDevice(VEXDevice, SystemDevice):
             return stm32
         except VEXCommError:
             return self
+
+    def upload_project(self, project: Project, **kwargs):
+        assert project.target == 'cortex'
+        with open(project.output, mode='rb') as pf:
+            return self.write_program(pf, **kwargs)
 
     def write_program(self, file: typing.BinaryIO, **kwargs):
         logger(__name__).info('Writing program to Cortex')
