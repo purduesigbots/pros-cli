@@ -54,9 +54,9 @@ jobs:
   pool:
     vmImage: ubuntu-16.04
   steps:
-    - bash: apt-add-repository ppa:deadsnakes/ppa
-    - bash: apt-get update
-    - bash: apt-get install python3.6 python3.6-dev
+    - bash: sudo apt-add-repository ppa:deadsnakes/ppa
+    - bash: sudo apt-get update
+    - bash: sudo apt-get install python3.6 python3.6-dev
 #     - task: UsePythonVersion@0
 #       inputs:
 #         versionSpec: $(python.version.linux)
