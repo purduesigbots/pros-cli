@@ -97,7 +97,7 @@ def apply(project: c.Project, query: c.BaseTemplate, **kwargs):
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor to learn more
     """
-    c.Conductor().apply_template(project, identifier=query, **kwargs)
+    return c.Conductor().apply_template(project, identifier=query, **kwargs)
 
 
 @conductor.command(aliases=['i', 'in'], context_settings={'ignore_unknown_options': True})
@@ -121,7 +121,7 @@ def install(ctx: click.Context, **kwargs):
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor to learn more
     """
-    ctx.invoke(apply, install_ok=True, **kwargs)
+    return ctx.invoke(apply, install_ok=True, **kwargs)
 
 
 @conductor.command(context_settings={'ignore_unknown_options': True}, aliases=['u'])
@@ -185,15 +185,15 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
               help='Force update all remote depots, ignoring automatic update checks')
 @click.option('--no-default-libs', 'no_default_libs', default=False, is_flag=True,
               help='Do not install any default libraries after creating the project.')
-@click.option('--compile-after', is_flag=True, default=False, show_default=True,
+@click.option('--compile-after', is_flag=True, default=True, show_default=True,
               help='Compile the project after creation')
-@click.option('--build-cache', is_flag=True, default=False, show_default=False,
+@click.option('--build-cache', is_flag=True, default=None, show_default=False,
               help='Build compile commands cache after creation. Overrides --compile-after if both are specified.')
 @click.pass_context
 @default_options
 def new_project(ctx: click.Context, path: str, target: str, version: str,
                 force_user: bool = False, force_system: bool = False,
-                no_default_libs: bool = False, compile_after: bool = False, build_cache: bool = False, **kwargs):
+                no_default_libs: bool = False, compile_after: bool = True, build_cache: bool = None, **kwargs):
     """
     Create a new PROS project
 
@@ -216,6 +216,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
 
         if compile_after or build_cache:
             with ui.Notification():
+                ui.echo('Building project...')
                 ctx.exit(project.compile([], scan_build=build_cache))
 
     except Exception as e:
@@ -281,29 +282,7 @@ def info_project(project: c.Project, ls_upgrades):
     Visit https://pros.cs.purdue.edu/v5/cli/conductor to learn more
     """
 
-    class ProjectReport(object):
-        def __init__(self, project: c.Project):
-            self.project = {
-                "target": project.target,
-                "location": os.path.abspath(project.location),
-                "name": project.name,
-                "templates": [{"name": t.name, "version": t.version, "origin": t.origin} for t in
-                              project.templates.values()]
-            }
-
-        def __str__(self):
-            import tabulate
-            s = f'PROS Project for {self.project["target"]} at: {self.project["location"]}' \
-                f' ({self.project["name"]})' if self.project["name"] else ''
-            s += '\n'
-            rows = [t.values() for t in self.project["templates"]]
-            headers = [h.capitalize() for h in self.project["templates"][0].keys()]
-            s += tabulate.tabulate(rows, headers=headers)
-            return s
-
-        def __getstate__(self):
-            return self.__dict__
-
+    from pros.conductor.project import ProjectReport
     report = ProjectReport(project)
     _conductor = c.Conductor()
     if ls_upgrades:

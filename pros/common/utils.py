@@ -2,10 +2,11 @@ import logging
 import os
 import os.path
 import sys
-from functools import wraps, lru_cache
+from functools import lru_cache, wraps
 from typing import *
 
 import click
+
 import pros
 
 
@@ -85,7 +86,22 @@ def get_pros_dir():
     return click.get_app_dir('PROS')
 
 
-def download_file(url: str, ext: Optional[str]=None, desc: Optional[str]=None) -> Optional[str]:
+def with_click_context(func):
+    ctx = click.get_current_context(silent=True)
+    if not ctx or not isinstance(ctx, click.Context):
+        return func
+    else:
+        def _wrap(*args, **kwargs):
+            with ctx:
+                try:
+                    return func(*args, **kwargs)
+                except BaseException as e:
+                    logger(__name__).exception(e)
+
+        return _wrap
+
+
+def download_file(url: str, ext: Optional[str] = None, desc: Optional[str] = None) -> Optional[str]:
     """
     Helper method to download a temporary file.
     :param url: URL of the file to download
@@ -124,3 +140,8 @@ def download_file(url: str, ext: Optional[str]=None, desc: Optional[str]=None) -
                     pb.update(len(chunk))
         return output_path
     return None
+
+
+def dont_send(e: Exception):
+    e.sentry = False
+    return e

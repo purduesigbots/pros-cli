@@ -192,3 +192,53 @@ def stop(port: str):
     ser = DirectPort(port)
     device = V5Device(ser)
     device.execute_program_file('', run=False)
+
+
+@v5.command(short_help='Take a screen capture of the display')
+@click.argument('file_name', required=False, default=None)
+@click.argument('port', required=False, default=None)
+@click.option('--force', is_flag=True, type=bool, default=False)
+@default_options
+def capture(file_name: str, port: str, force: bool = False):
+    """
+    Take a screen capture of the display
+    """
+    from pros.serial.devices.vex import V5Device
+    from pros.serial.ports import DirectPort
+    import png
+    import os
+
+    port = resolve_v5_port(port, 'system')
+    if not port:
+        return -1
+    ser = DirectPort(port)
+    device = V5Device(ser)
+    i_data, width, height = device.capture_screen()
+
+    if i_data is None:
+        print('Failed to capture screen from connected brain.')
+        return -1
+
+    # Sanity checking and default values for filenames
+    if file_name is None:
+        import time
+        time_s = time.strftime('%Y-%m-%d-%H%M%S')
+        file_name = f'{time_s}_{width}x{height}_pros_capture.png'
+    if file_name == '-':
+        # Send the data to stdout to allow for piping
+        print(i_data, end='')
+        return
+
+    if not file_name.endswith('.png'):
+        file_name += '.png'
+
+    if not force and os.path.exists(file_name):
+        print(f'{file_name} already exists. Refusing to overwrite!')
+        print('Re-run this command with the --force argument to overwrite existing files.')
+        return -1
+
+    with open(file_name, 'wb') as file_:
+        w = png.Writer(width, height)
+        w.write(file_, i_data)
+
+    print(f'Saved screen capture to {file_name}')

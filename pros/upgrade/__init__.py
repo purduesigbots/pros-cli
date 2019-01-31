@@ -1,3 +1,8 @@
-from .upgrade_manager import UpgradeManager
+from .upgrade_manager import UpgradeManager, UpgradeManifestV2
 
-__all__ = ['UpgradeManager']
+
+def get_platformv2():
+    return UpgradeManifestV2().platform
+
+
+__all__ = ['UpgradeManager', 'get_platformv2']
