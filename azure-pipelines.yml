@@ -28,6 +28,8 @@ jobs:
   pool:
     vmImage: vs2017-win2016
   steps:
+    - powershell: choco install 7zip.install -y
+      displayName: Install 7z
     - task: UsePythonVersion@0
       inputs:
         versionSpec: $(python.version.windows)
