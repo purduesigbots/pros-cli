@@ -1,5 +1,6 @@
 variables:
-  python.version: '3.6.5'
+  python.version.linux: '3.6.5'
+  python.version.windows: '3.6.4'
 
 jobs:
 - job: UpdateBuildNumber
@@ -10,7 +11,7 @@ jobs:
   steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: $(python.version)
+        versionSpec: $(python.version.linux)
         architecture: x64
     - script: python version.py
     - bash: echo "##vso[build.UpdateBuildNumber]`cat version`"
@@ -29,7 +30,7 @@ jobs:
   steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: $(python.version)
+        versionSpec: $(python.version.windows)
         architecture: $(buildArch)
     - script: python version.py
     - powershell: scripts/build.ps1
@@ -53,7 +54,7 @@ jobs:
   steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: $(python.version)
+        versionSpec: $(python.version.linux)
         architecture: $(buildArch)
     - script: python version.py
     - bash: scripts/build.sh
