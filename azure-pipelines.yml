@@ -1,5 +1,5 @@
 variables:
-  python.version: '3.6'
+  python.version: '3.6.5'
 
 jobs:
 - job: UpdateBuildNumber
