@@ -25,16 +25,19 @@ def test(project: Project):
     ser = DirectPort(port)
     device = vex.V5Device(ser)
     # p = Path(r'C:\Users\Elliot\Downloads')
-    # output = p.joinpath('firmware.bin')
-    # library = p.joinpath('std_library.bin')
+    # hot = p.joinpath('firmware.bin')
+    # cold = p.joinpath('std_library.bin')
     # p = Path(r'C:\Users\Elliot\dev\pros\v5-sdk-beta\sdk\examples\library_demo')
-    # output = p.joinpath('build', 'firmware.bin')
-    # library = p.joinpath('library', 'build', 'std_library.bin')
+    # hot = p.joinpath('build', 'firmware.bin')
+    # cold = p.joinpath('cold', 'build', 'std_library.bin')
     p = project.path
-    output = p.joinpath('bin', 'output.package.bin')
-    library = p.joinpath('bin', 'v5.package.bin')
-    with click.open_file(output, mode='rb') as pf:
-        with click.open_file(library, mode='rb') as lf:
-            device.write_program(pf, remote_name=project.name, addr=0x07800000,
-                                 linked_file=lf, linked_file_addr=0x03800000, linked_remote_name=library.name)
-                                 linked_file=lf, linked_file_addr=0x03800000, linked_remote_name=library.name)
+    hot = p.joinpath('bin', 'hot.package.bin')
+    cold = p.joinpath('bin', 'cold.package.bin')
+    # with open(hot, mode='rb') as pf:
+    #     with open(cold, mode='rb') as lf:
+    #         kwargs=dict(target='v5', run_after=device.FTCompleteOptions.DONT_RUN, quirk=0, slot=0, program_version=None, icon=None, ini_config=None, run_screen=True,
+    #             remote_name=project.name, addr=project.templates['kernel'].metadata['hot_addr'], force_upload_linked=True,
+    #                              linked_file=lf, linked_file_addr=project.templates['kernel'].metadata['cold_addr'], linked_remote_name='1234567890123456789')
+    #         print(kwargs)
+    #         device.write_program(pf, **kwargs)
+    device.set_programt

@@ -1,5 +1,3 @@
-import time
-
 import re
 import struct
 import time
@@ -11,6 +9,7 @@ from io import BytesIO, StringIO
 from typing import *
 
 from pros.common import *
+from pros.conductor import Project
 from pros.serial import bytes_to_str, decode_bytes_to_str
 from pros.serial.ports import BasePort, list_all_comports
 from .comm_error import VEXCommError
@@ -181,6 +180,37 @@ class V5Device(VEXDevice, SystemDevice):
             self._status = self.get_system_status()
         return self._status
 
+    @staticmethod
+    def generate_cold_hash(project: Project, extra: dict):
+        keys = {k: t.version for k, t in project.templates.items()}
+        keys.update(extra)
+        from hashlib import md5
+        from base64 import b64encode
+        return b64encode(md5(str(keys).encode('ascii')).digest()).rstrip(b'=').decode('ascii')
+
+    def upload_project(self, project: Project, **kwargs):
+        assert project.target == 'v5'
+        print(project.templates['kernel'].metadata)
+        if 'hot_output' in project.templates['kernel'].metadata and \
+                'cold_output' in project.templates['kernel'].metadata:
+            hot_path = project.location.joinpath(project.templates['kernel'].metadata['hot_output'])
+            cold_path = project.location.joinpath(project.templates['kernel'].metadata['cold_output'])
+            monolith_path = project.location.joinpath(project.output)
+            print((not monolith_path.exists() or hot_path.stat().st_mtime > monolith_path.stat().st_mtime))
+            if hot_path.exists() and cold_path.exists() and \
+                    (not monolith_path.exists() or hot_path.stat().st_mtime > monolith_path.stat().st_mtime):
+                with open(hot_path, mode='rb') as hot:
+                    with open(cold_path, mode='rb') as cold:
+                        kwargs['linked_file'] = cold
+                        kwargs['linked_remote_name'] = self.generate_cold_hash(project, {})
+                        kwargs['linked_file_addr'] = project.templates['kernel'].metadata.get('cold_addr', 0x03800000)
+                        kwargs['addr'] = project.templates['kernel'].metadata.get('hot_addr', 0x07800000)
+                        kwargs['run_after'] = True
+                        print(kwargs)
+                        return self.write_program(hot, **kwargs)
+        with open(project.output, mode='rb') as pf:
+            return self.write_program(pf, **kwargs)
+
     def generate_ini_file(self, remote_name: str = None, slot: int = 0, ini: ConfigParser = None, **kwargs):
         project_ini = ConfigParser()
         from semantic_version import Spec
@@ -222,7 +252,8 @@ class V5Device(VEXDevice, SystemDevice):
         logger(__name__).info(f'Created ini: {ini_file}')
 
         if linked_file is not None:
-            self.upload_library(linked_file, remote_name=linked_remote_name, addr=linked_file_addr, force_upload=True)
+            self.upload_library(linked_file, remote_name=linked_remote_name, addr=linked_file_addr,
+                                force_upload=kwargs.pop('force_upload_linked', False))
 
         if (quirk & 0xff) == 1:
             # WRITE BIN FILE
@@ -242,6 +273,14 @@ class V5Device(VEXDevice, SystemDevice):
                             linked_filename=linked_remote_name, **kwargs)
         else:
             raise ValueError(f'Unknown quirk option: {quirk}')
+
+    def ensure_library_space(self, name: str, vid: int_str, target_name: str):
+        entries = self.get_dir_count(vid=vid)
+        if entries <= 2:
+            return
+        libraries = list(filter(lambda e: e['filename'] != name,
+                                [self.get_file_metadata_by_idx(i) for i in range(0, entries)]))
+        programs = [self.get_file_metadata_by_idx(i) for i in range(0, self.get_dir_count())]
 
     def upload_library(self, file: typing.BinaryIO, remote_name: str = None, file_len: int = -1, vid: int_str = 'pros',
                        force_upload: bool = False, **kwargs):
@@ -396,7 +435,7 @@ class V5Device(VEXDevice, SystemDevice):
             'version': 0x01_00_00_00,
             'name': file_name
         }
-        options.update({k: v for k, v in kwargs.items() if k in options})
+        options.update({k: v for k, v in kwargs.items() if k in options and v is not None})
 
         if isinstance(options['function'], str):
             options['function'] = {'upload': 1, 'download': 2}[options['function'].lower()]
@@ -406,14 +445,15 @@ class V5Device(VEXDevice, SystemDevice):
             options['vid'] = self.vid_map[options['vid'].lower()]
         if isinstance(options['type'], str):
             options['type'] = options['type'].encode(encoding='ascii')
+        if isinstance(options['name'], str):
+            options['name'] = options['name'].encode(encoding='ascii')
         options['options'] |= 1 if options['overwrite'] else 0
         options['timestamp'] = int((options['timestamp'] - datetime(2000, 1, 1)).total_seconds())
 
         logger(__name__).debug('Initializing file transfer w/: {}'.format(options))
         tx_payload = struct.pack("<4B3I4s2I24s", options['function'], options['target'], options['vid'],
                                  options['options'], options['length'], options['addr'], options['crc'],
-                                 options['type'], options['timestamp'], options['version'],
-                                 options['name'].encode(encoding='ascii'))
+                                 options['type'], options['timestamp'], options['version'], options['name'])
         rx = self._txrx_ext_struct(0x11, tx_payload, "<H2I")
         rx = dict(zip(['max_packet_size', 'file_size', 'crc'], rx))
         logger(__name__).debug('response: {}'.format(rx))
@@ -426,7 +466,7 @@ class V5Device(VEXDevice, SystemDevice):
         if isinstance(options, bool):
             options = self.FTCompleteOptions.RUN_IMMEDIATELY if options else self.FTCompleteOptions.DONT_RUN
         tx_payload = struct.pack("<B", options.value)
-        ret = self._txrx_ext_packet(0x12, tx_payload, 0, timeout=5.0)
+        ret = self._txrx_ext_packet(0x12, tx_payload, 0, timeout=10.0)
         logger(__name__).debug('Completed ext 0x12 command')
         return ret
 
@@ -461,8 +501,10 @@ class V5Device(VEXDevice, SystemDevice):
         logger(__name__).debug('Sending ext 0x15 command')
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
+        if isinstance(link_name, str):
+            link_name = link_name.encode(encoding='ascii')
         logger(__name__).debug(f'Linking current ft to {link_name} (vid={vid})')
-        tx_payload = struct.pack("<2B24s", vid, options, link_name.encode(encoding='ascii'))
+        tx_payload = struct.pack("<2B24s", vid, options, link_name)
         ret = self._txrx_ext_packet(0x15, tx_payload, 0)
         logger(__name__).debug('Completed ext 0x15 command')
         return ret
@@ -513,6 +555,7 @@ class V5Device(VEXDevice, SystemDevice):
         tx_payload = struct.pack("<2B24s", vid, options, file_name.encode(encoding='ascii'))
         rx = self._txrx_ext_struct(0x19, tx_payload, "<B3l4sll24s")
         rx = dict(zip(['linkvid', 'size', 'addr', 'crc', 'type', 'timestamp', 'version', 'linked_filename'], rx))
+        logger(__name__).debug(rx)
         rx['type'] = decode_bytes_to_str(rx['type'])
         rx['timestamp'] = datetime(2000, 1, 1) + timedelta(seconds=rx['timestamp'])
         rx['linked_filename'] = decode_bytes_to_str(rx['linked_filename'])
@@ -525,10 +568,10 @@ class V5Device(VEXDevice, SystemDevice):
         options = {
             'vid': 'user',
             'options': 0,
-            'addr': -1,
-            'type': -1,
-            'timestamp': -1,
-            'version': -1
+            'addr': 0xff_ff_ff_ff,
+            'type': b'\xff\xff\xff\xff',
+            'timestamp': 0xff_ff_ff_ff,
+            'version': 0xff_ff_ff_ff
         }  # Dict[str, Any]
         options.update(**kwargs)
         if isinstance(options['vid'], str):
