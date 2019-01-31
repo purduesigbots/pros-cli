@@ -37,3 +37,4 @@ def test(project: Project):
         with click.open_file(library, mode='rb') as lf:
             device.write_program(pf, remote_name=project.name, addr=0x07800000,
                                  linked_file=lf, linked_file_addr=0x03800000, linked_remote_name=library.name)
+                                 linked_file=lf, linked_file_addr=0x03800000, linked_remote_name=library.name)

@@ -1,3 +1,5 @@
+import time
+
 import re
 import struct
 import time
@@ -188,7 +190,7 @@ class V5Device(VEXDevice, SystemDevice):
             'name': remote_name,
             'slot': slot,
             'icon': kwargs.get('icon', default_icon) or default_icon,
-            'description': 'Created with PROS',
+            'description': kwargs.get('description', 'Created with PROS'),
             'date': datetime.now().isoformat()
         }
         if ini:
@@ -326,10 +328,11 @@ class V5Device(VEXDevice, SystemDevice):
         display_name = remote_file
         if hasattr(file, 'name'):
             display_name = '{} ({})'.format(remote_file, file.name)
+        max_packet_size = int(ft_meta['max_packet_size'] / 2)
         with ui.progressbar(length=file_len, label='Uploading {}'.format(display_name)) as progress:
-            for i in range(0, file_len, ft_meta['max_packet_size']):
-                packet_size = ft_meta['max_packet_size']
-                if i + ft_meta['max_packet_size'] > file_len:
+            for i in range(0, file_len, max_packet_size):
+                packet_size = max_packet_size
+                if i + max_packet_size > file_len:
                     packet_size = file_len - i
                 logger(__name__).debug('Writing {} bytes at 0x{:02X}'.format(packet_size, addr + i))
                 self.ft_write(addr + i, file.read(packet_size))
