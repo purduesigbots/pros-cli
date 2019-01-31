@@ -8,6 +8,9 @@ then
     python=python3.6
 fi
 
+echo Upgrading pip
+$python -m pip install --upgrade pip
+
 echo Installing wheel and cx_Freeze
 $python -m pip install wheel cx_Freeze
 
