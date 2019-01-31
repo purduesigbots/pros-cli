@@ -39,7 +39,7 @@ jobs:
       displayName: Build
     - task: PublishPipelineArtifact@0
       inputs:
-        # artifactName: 'pros_cli-$(Build.BuildNumber)-win-$(buildArch)'
+        artifactName: 'pros_cli-$(Build.BuildNumber)-win-$(buildArch)'
         targetPath: 'out'
 
 - job: Linux
