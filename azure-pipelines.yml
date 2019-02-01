@@ -78,14 +78,16 @@ jobs:
     - UpdateBuildNumber
     - Linux
   steps:
+    - checkout: none
     - task: DownloadPipelineArtifact@0
       inputs:
         artifactName: 'pros_cli-$(Build.BuildNumber)-linux-x64'
         targetPath: $(System.DefaultWorkingDirectory)
-    - script: 'pip install twine'
+    - script: 'sudo pip install twine'
     - task: TwineAuthenticate@0
       inputs:
         artifactFeeds: 'pros'
-    - script: 'ls $(System.DefaultWorkingDirectory)'
-    - script: 'twine -r pros --config-file $(PYPIRC_PATH) $(System.DefaultWorkingDirectory)/*.whl'
+    - script: |
+        sudo pip install twine
+        twine -r pros --config-file $(PYPIRC_PATH) $(System.DefaultWorkingDirectory)/*.whl
 
