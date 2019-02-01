@@ -13,11 +13,11 @@ jobs:
       inputs:
         versionSpec: $(python.version.linux)
         architecture: x64
-    - script: echo $SYSTEM_DEFINITIONID
     - script: python version.py
     - bash: echo "##vso[build.UpdateBuildNumber]`cat version`"
 
 - job: Windows
+  dependsOn: UpdateBuildNumber
   timeoutInMinutes: 30
   strategy:
     maxParallel: 2
@@ -45,6 +45,7 @@ jobs:
 
 - job: Linux
   timeoutInMinutes: 30
+  dependsOn: UpdateBuildNumber
   strategy:
     maxParallel: 2
     matrix:
@@ -72,5 +73,19 @@ jobs:
         artifactName: 'pros_cli-$(Build.BuildNumber)-linux-$(buildArch)'
         targetPath: 'out'
 
-
+- job: PublishArtifact
+  dependsOn:
+    - UpdateBuildNumber
+    - Linux
+  steps:
+    - task: DownloadPipelineArtifact@0
+      inputs:
+        artifactName: 'pros_cli-$(Build.BuildNumber)-linux-x64'
+        targetPath: $(System.DefaultWorkingDirectory)
+    - script: 'pip install twine'
+    - task: TwineAuthenticate@0
+      inputs:
+        artifactFeeds: 'pros'
+    - script: 'ls $(System.DefaultWorkingDirectory)'
+    - script: 'twine -r pros --config-file $(PYPIRC_PATH) $(System.DefaultWorkingDirectory)/*.whl'
 
