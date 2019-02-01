@@ -57,9 +57,11 @@ jobs:
     vmImage: ubuntu-16.04
   steps:
 #   Microsoft/azure-pipelines-image-generation#225
-    - bash: sudo apt-add-repository ppa:deadsnakes/ppa
-    - bash: sudo apt-get update
-    - bash: sudo apt-get install python3.6 python3.6-dev python3-setuptools
+    - bash: |
+        sudo apt-add-repository ppa:deadsnakes/ppa
+        sudo apt-get update
+        sudo apt-get install python3.6 python3.6-dev python3-setuptools
+      displayName: Use Python 3.6
 #     Hopefully this will work soon
 #     - task: UsePythonVersion@0
 #       inputs:
