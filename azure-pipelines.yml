@@ -1,0 +1,75 @@
+variables:
+  python.version.linux: '3.6.5'
+  python.version.windows: '3.6.4'
+
+jobs:
+- job: UpdateBuildNumber
+  timeoutInMinutes: 5
+  pool:
+    vmImage: ubuntu-16.04
+
+  steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: $(python.version.linux)
+        architecture: x64
+    - script: python version.py
+    - bash: echo "##vso[build.UpdateBuildNumber]`cat version`"
+
+- job: Windows
+  timeoutInMinutes: 30
+  strategy:
+    maxParallel: 2
+    matrix:
+      x64:
+        buildArch: x64
+      x86:
+        buildArch: x86
+  pool:
+    vmImage: vs2017-win2016
+  steps:
+    - powershell: choco install 7zip.install -y
+      displayName: Install 7z
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: $(python.version.windows)
+        architecture: $(buildArch)
+    - script: python version.py
+    - powershell: scripts/build.ps1
+      displayName: Build
+    - task: PublishPipelineArtifact@0
+      inputs:
+        artifactName: 'pros_cli-$(Build.BuildNumber)-win-$(buildArch)'
+        targetPath: 'out'
+
+- job: Linux
+  timeoutInMinutes: 30
+  strategy:
+    maxParallel: 2
+    matrix:
+      x64:
+        buildArch: x64
+      x86:
+        buildArch: x86
+  pool:
+    vmImage: ubuntu-16.04
+  steps:
+#   Microsoft/azure-pipelines-image-generation#225
+    - bash: sudo apt-add-repository ppa:deadsnakes/ppa
+    - bash: sudo apt-get update
+    - bash: sudo apt-get install python3.6 python3.6-dev python3-setuptools
+#     Hopefully this will work soon
+#     - task: UsePythonVersion@0
+#       inputs:
+#         versionSpec: $(python.version.linux)
+#         architecture: $(buildArch)
+    - script: python version.py
+    - bash: scripts/build.sh
+      displayName: Build
+    - task: PublishPipelineArtifact@0
+      inputs:
+        artifactName: 'pros_cli-$(Build.BuildNumber)-linux-$(buildArch)'
+        targetPath: 'out'
+
+
+

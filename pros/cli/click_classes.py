@@ -9,6 +9,10 @@ class PROSFormatted(click.BaseCommand):
     Common format functions used in the PROS derived classes. Derived classes mix and match which functions are needed
     """
 
+    def __init__(self, *args, hidden: bool = False, **kwargs):
+        super(PROSFormatted, self).__init__(*args, **kwargs)
+        self.hidden = hidden
+
     def format_commands(self, ctx, formatter):
         """Extra format methods for multi methods that adds all the commands
                 after the options.
@@ -55,9 +59,7 @@ class PROSFormatted(click.BaseCommand):
 
 
 class PROSCommand(PROSFormatted, click.Command):
-    def __init__(self, name, hidden: bool = False, **kwargs):
-        super().__init__(name, **kwargs)
-        self.hidden = hidden
+    pass
 
 
 class PROSMultiCommand(PROSFormatted, click.MultiCommand):

@@ -34,7 +34,7 @@ def upload_cli():
 @click.option('--compress-bin/--no-compress-bin', 'compress_bin', cls=PROSOption, group='V5 Options', default=True,
               help='Compress the program binary before uploading.')
 @default_options
-def upload(path: str, project: Optional[c.Project], port: str, **kwargs):
+def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwargs):
     """
     Upload a binary to a microcontroller.
 
