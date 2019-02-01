@@ -1,5 +1,3 @@
-import time
-
 import gzip
 import io
 import re
