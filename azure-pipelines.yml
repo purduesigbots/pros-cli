@@ -13,7 +13,7 @@ jobs:
       inputs:
         versionSpec: $(python.version.linux)
         architecture: x64
-    - script: echo $BUILD_DEFINITIONID
+    - script: echo $SYSTEM_DEFINITIONID
     - script: python version.py
     - bash: echo "##vso[build.UpdateBuildNumber]`cat version`"
 
