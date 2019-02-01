@@ -1,3 +1,5 @@
+import gzip
+import io
 import re
 import struct
 import typing
@@ -6,6 +8,8 @@ from datetime import datetime, timedelta
 from enum import IntEnum
 from io import BytesIO, StringIO
 from typing import *
+
+from semantic_version import Spec
 
 from pros.common import *
 from pros.serial import bytes_to_str, decode_bytes_to_str
@@ -173,6 +177,21 @@ class V5Device(VEXDevice, SystemDevice):
         if file_len < 0:
             file_len = file.seek(0, 2)
             file.seek(0, 0)
+        if kwargs['compress_bin'] and self.status['system_version'] in Spec('>=1.0.5'):
+            buf = io.BytesIO()
+            with ui.progressbar(length=file_len, label='Compressing binary') as progress:
+                with gzip.GzipFile(fileobj=buf, mode='wb') as f:
+                    while True:
+                        data = file.read(16 * 1024)
+                        if not data:
+                            break
+                        f.write(data)
+                        progress.update(len(data))
+            file = buf
+            # recompute file length
+            file_len = file.seek(0, 2)
+            file.seek(0, 0)
+
         crc32 = self.VEX_CRC32.compute(file.read(file_len))
         file.seek(-file_len, 2)
         addr = kwargs.get('addr', 0x03800000)
@@ -195,9 +214,13 @@ class V5Device(VEXDevice, SystemDevice):
                 progress.update(packet_size)
                 logger(__name__).debug('Completed {} of {} bytes'.format(i + packet_size, file_len))
         logger(__name__).debug('Data transfer complete, sending ft complete')
+        # TODO: necessary?
+        if kwargs['compress_bin'] and self.status['system_version'] in Spec('>=1.0.5'):
+            logger(__name__).info('Closing gzip file')
+            file.close()
         self.ft_complete(options=run_after)
 
-    def capture_screen(self) -> Tuple[List[int], int, int]:
+    def capture_screen(self) -> Tuple[List[List[int]], int, int]:
         self.sc_init()
         width, height = 512, 272
         file_size = width * height * 4  # ARGB
