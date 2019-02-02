@@ -1,11 +1,14 @@
 import re
 import struct
 import typing
+from collections import defaultdict
 from configparser import ConfigParser
 from datetime import datetime, timedelta
 from enum import IntEnum
 from io import BytesIO, StringIO
 from typing import *
+
+from semantic_version import Spec
 
 from pros.common import *
 from pros.conductor import Project
@@ -94,33 +97,45 @@ class V5Device(VEXDevice, SystemDevice):
             self._status = self.get_system_status()
         return self._status
 
-    @staticmethod
-    def generate_cold_hash(project: Project, extra: dict):
+    def generate_cold_hash(self, project: Project, extra: dict):
         keys = {k: t.version for k, t in project.templates.items()}
         keys.update(extra)
         from hashlib import md5
         from base64 import b64encode
-        return b64encode(md5(str(keys).encode('ascii')).digest()).rstrip(b'=').decode('ascii')
+        name = b64encode(md5(str(keys).encode('ascii')).digest()).rstrip(b'=').decode('ascii')
+        if Spec('<=1.0.0-27').match(self.status['cpu0_version']):
+            # Bug prevents linked files from being > 18 characters long.
+            # 17 characters is probably good enough for hash, so no need to fail out
+            name = name[:17]
+        return name
 
     def upload_project(self, project: Project, **kwargs):
         assert project.target == 'v5'
-        print(project.templates['kernel'].metadata)
+        monolith_path = project.location.joinpath(project.output)
+        if monolith_path.exists():
+            logger(__name__).debug(f'Monolith exists! ({monolith_path})')
         if 'hot_output' in project.templates['kernel'].metadata and \
                 'cold_output' in project.templates['kernel'].metadata:
             hot_path = project.location.joinpath(project.templates['kernel'].metadata['hot_output'])
             cold_path = project.location.joinpath(project.templates['kernel'].metadata['cold_output'])
-            monolith_path = project.location.joinpath(project.output)
-            print((not monolith_path.exists() or hot_path.stat().st_mtime > monolith_path.stat().st_mtime))
-            if hot_path.exists() and cold_path.exists() and \
-                    (not monolith_path.exists() or hot_path.stat().st_mtime > monolith_path.stat().st_mtime):
+            upload_hot_cold = False
+            if hot_path.exists() and cold_path.exists():
+                logger(__name__).debug(f'Hot and cold files exist! ({hot_path}; {cold_path})')
+                if monolith_path.exists():
+                    monolith_mtime = monolith_path.stat().st_mtime
+                    hot_mtime = hot_path.stat().st_mtime
+                    logger(__name__).debug(f'Monolith last modified: {monolith_mtime}')
+                    logger(__name__).debug(f'Hot last modified: {hot_mtime}')
+                    if hot_mtime > monolith_mtime:
+                        upload_hot_cold = True
+                        logger(__name__).debug('Hot file is newer than monolith!')
+            if upload_hot_cold:
                 with open(hot_path, mode='rb') as hot:
                     with open(cold_path, mode='rb') as cold:
                         kwargs['linked_file'] = cold
                         kwargs['linked_remote_name'] = self.generate_cold_hash(project, {})
                         kwargs['linked_file_addr'] = project.templates['kernel'].metadata.get('cold_addr', 0x03800000)
                         kwargs['addr'] = project.templates['kernel'].metadata.get('hot_addr', 0x07800000)
-                        kwargs['run_after'] = True
-                        print(kwargs)
                         return self.write_program(hot, **kwargs)
         with open(project.output, mode='rb') as pf:
             return self.write_program(pf, **kwargs)

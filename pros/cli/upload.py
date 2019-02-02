@@ -89,6 +89,7 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
             kwargs['run_after'] = vex.V5Device.FTCompleteOptions.RUN_IMMEDIATELY
         else:
             kwargs['run_after'] = vex.V5Device.FTCompleteOptions.DONT_RUN
+        kwargs.pop('run_screen')
     elif kwargs['target'] == 'cortex':
         pass
 

@@ -9,7 +9,6 @@ def test_cli():
     pass
 
 
-@project_option()
 @test_cli.command()
 @default_options
 def test():
