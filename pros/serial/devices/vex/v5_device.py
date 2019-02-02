@@ -342,7 +342,7 @@ class V5Device(VEXDevice, SystemDevice):
             if name is not None and linked_vid == vid and linked_name == name:
                 logger(__name__).debug(f'{program_names} will be removed because the library will be replaced')
                 orphaned_files.extend(program_names)
-            elif linked_vid != 0:
+            elif linked_vid != 0:  # linked_vid == 0 means there's no link. Can't be orphaned if there's no link
                 if link in unused_libraries:
                     # the library is being used
                     logger(__name__).debug(f'{link} is being used')
