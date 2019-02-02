@@ -89,7 +89,7 @@ jobs:
     - script: 'sudo pip install twine'
     - task: TwineAuthenticate@0
       inputs:
-        artifactFeeds: 'pros'
+        artifactFeeds: 'pros-cli'
     - script: |
         sudo pip install twine
         twine upload -r pros --config-file $(PYPIRC_PATH) $(System.DefaultWorkingDirectory)/*.whl
