@@ -135,20 +135,23 @@ class V5Device(VEXDevice, SystemDevice):
         ini_file = self.generate_ini_file(remote_name=remote_name, slot=slot, ini=ini, **kwargs)
         logger(__name__).info(f'Created ini: {ini_file}')
 
+        should_compress_bin = kwargs.pop('compress_bin', False)
         if (quirk & 0xff) == 1:
             # WRITE BIN FILE
-            self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after, **kwargs)
+            self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after,
+                            compress_bin=should_compress_bin, **kwargs)
             with BytesIO(ini_file.encode(encoding='ascii')) as ini_bin:
                 # WRITE INI FILE
-                self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
+                self.write_file(ini_bin, f'{remote_base}.ini', type='ini', compress_bin=False, **kwargs)
         elif (quirk & 0xff) == 0:
             # STOP PROGRAM
             self.execute_program_file('', run=False)
             with BytesIO(ini_file.encode(encoding='ascii')) as ini_bin:
                 # WRITE INI FILE
-                self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
+                self.write_file(ini_bin, f'{remote_base}.ini', type='ini', compress_bin=False, **kwargs)
             # WRITE BIN FILE
-            self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after, **kwargs)
+            self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after,
+                            compress_bin=should_compress_bin, **kwargs)
         else:
             raise ValueError(f'Unknown quirk option: {quirk}')
 
