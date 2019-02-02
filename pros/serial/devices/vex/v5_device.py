@@ -289,13 +289,119 @@ class V5Device(VEXDevice, SystemDevice):
         else:
             raise ValueError(f'Unknown quirk option: {quirk}')
 
-    def ensure_library_space(self, name: str, vid: int_str, target_name: str):
-        entries = self.get_dir_count(vid=vid)
-        if entries <= 2:
-            return
-        libraries = list(filter(lambda e: e['filename'] != name,
-                                [self.get_file_metadata_by_idx(i) for i in range(0, entries)]))
-        programs = [self.get_file_metadata_by_idx(i) for i in range(0, self.get_dir_count())]
+    def ensure_library_space(self, name: Optional[str] = None, vid: int_str = None,
+                             target_name: Optional[str] = None):
+        """
+        Uses algorithms, for loops, and if statements to determine what files should be removed
+
+        This method searches for any orphaned files:
+            - libraries without any user files linking to it
+            - user files whose link does not exist
+        and removes them without prompt
+
+        It will also ensure that only 3 libraries are being used on the V5.
+        If there are more than 3 libraries, then the oldest libraries are elected for eviction after a prompt.
+        "oldest" is determined by the most recently uploaded library or program linking to that library
+        """
+        assert not (vid is None and name is not None)
+        used_libraries = []
+        if vid is not None:
+            if isinstance(vid, str):
+                vid = self.vid_map[vid.lower()]
+            # assume all libraries
+            unused_libraries = [
+                (vid, l['filename'])
+                for l
+                in [self.get_file_metadata_by_idx(i)
+                    for i in range(0, self.get_dir_count(vid=vid))
+                    ]
+            ]
+            if name is not None:
+                if (vid, name) in unused_libraries:
+                    # we'll be overwriting the library anyway, so remove it as a candidate for removal
+                    unused_libraries.remove((vid, name))
+                used_libraries.append((vid, name))
+        else:
+            unused_libraries = []
+
+        programs: Dict[str, Dict] = {
+            # need the linked file metadata, so we have to use the get_file_metadata_by_name command
+            p['filename']: self.get_file_metadata_by_name(p['filename'], vid='user')
+            for p
+            in [self.get_file_metadata_by_idx(i)
+                for i in range(0, self.get_dir_count(vid='user'))]
+            if p['type'] == 'bin'
+        }
+        library_usage: Dict[Tuple[int, str], List[str]] = defaultdict(list)
+        for program_name, metadata in programs.items():
+            library_usage[(metadata['linked_vid'], metadata['linked_filename'])].append(program_name)
+
+        orphaned_files: List[Union[str, Tuple[int, str]]] = []
+        for link, program_names in library_usage.items():
+            linked_vid, linked_name = link
+            if name is not None and linked_vid == vid and linked_name == name:
+                logger(__name__).debug(f'{program_names} will be removed because the library will be replaced')
+                orphaned_files.extend(program_names)
+            elif linked_vid != 0:
+                if link in unused_libraries:
+                    # the library is being used
+                    logger(__name__).debug(f'{link} is being used')
+                    unused_libraries.remove(link)
+                    used_libraries.append(link)
+                else:
+                    try:
+                        self.get_file_metadata_by_name(linked_name, vid=linked_vid)
+                        logger(__name__).debug(f'{link} exists')
+                        used_libraries.extend(link)
+                    except VEXCommError as e:
+                        logger(__name__).debug(dont_send(e))
+                        logger(__name__).debug(f'{program_names} will be removed because {link} does not exist')
+                        orphaned_files.extend(program_names)
+        orphaned_files.extend(unused_libraries)
+        if target_name is not None and target_name in orphaned_files:
+            # the file will be overwritten anyway
+            orphaned_files.remove(target_name)
+        if len(orphaned_files) > 0:
+            logger(__name__).warning(f'Removing {len(orphaned_files)} orphaned file(s) ({orphaned_files})')
+            for file in orphaned_files:
+                if isinstance(file, tuple):
+                    self.erase_file(file_name=file[1], vid=file[0])
+                else:
+                    self.erase_file(file_name=file, erase_all=True, vid='user')
+
+        if len(used_libraries) > 3:
+            libraries = [
+                (linked_vid, linked_name, self.get_file_metadata_by_name(linked_name, vid=linked_vid)['timestamp'])
+                for linked_vid, linked_name
+                in used_libraries
+            ]
+            library_usage_timestamps = sorted([
+                (
+                    linked_vid,
+                    linked_name,
+                    # get the most recent timestamp of the library and all files linking to it
+                    max(linked_timestamp, *[programs[p]['timestamp'] for p in library_usage[(linked_vid, linked_name)]])
+                )
+                for linked_vid, linked_name, linked_timestamp
+                in libraries
+            ], key=lambda t: t[2])
+            evicted_files: List[Union[str, Tuple[int, str]]] = []
+            evicted_file_list = ''
+            for evicted_library in library_usage_timestamps[:3]:
+                evicted_files.append(evicted_library[0:2])
+                evicted_files.extend(library_usage[evicted_library[0:2]])
+                evicted_file_list += evicted_library[1] + ', '
+                evicted_file_list += ', '.join(library_usage[evicted_file_list[0:2]])
+            evicted_file_list = evicted_file_list[:2]  # remove last ", "
+            assert len(evicted_files) > 0
+            if confirm(f'There are too many files on the V5. PROS can remove the following suggested old files: '
+                       f'{evicted_file_list}',
+                       title='Confirm file eviction plan:'):
+                for file in evicted_files:
+                    if isinstance(file, tuple):
+                        self.erase_file(file_name=file[1], vid=file[0])
+                    else:
+                        self.erase_file(file_name=file, erase_all=True, vid='user')
 
     def upload_library(self, file: typing.BinaryIO, remote_name: str = None, file_len: int = -1, vid: int_str = 'pros',
                        force_upload: bool = False, **kwargs):
@@ -326,13 +432,16 @@ class V5Device(VEXDevice, SystemDevice):
                     logger(__name__).debug('File already onboard V5!')
                     return
                 else:
-                    logger(__name__).debug('Something didn\'t match')
+                    logger(__name__).warning(f'Library onboard doesn\'t match! '
+                                             f'Length was {response["size"]} but expected {file_len} '
+                                             f'CRC: was {response["crc"]:x} but expected {crc32:x}')
             except VEXCommError as e:
                 logger(__name__).debug(e)
         else:
-            logger(__name__).debug('Skipping already-uploaded checks')
+            logger(__name__).info('Skipping already-uploaded checks')
 
         logger(__name__).debug('Going to worry about uploading the file now')
+        self.ensure_library_space(remote_name, vid, )
         self.write_file(file, remote_name, file_len, vid=vid, **kwargs)
 
     def read_file(self, file: typing.IO[bytes], remote_file: str, vid: int_str = 'user', target: int_str = 'flash',
@@ -569,7 +678,7 @@ class V5Device(VEXDevice, SystemDevice):
             vid = self.vid_map[vid.lower()]
         tx_payload = struct.pack("<2B24s", vid, options, file_name.encode(encoding='ascii'))
         rx = self._txrx_ext_struct(0x19, tx_payload, "<B3l4sll24s")
-        rx = dict(zip(['linkvid', 'size', 'addr', 'crc', 'type', 'timestamp', 'version', 'linked_filename'], rx))
+        rx = dict(zip(['linked_vid', 'size', 'addr', 'crc', 'type', 'timestamp', 'version', 'linked_filename'], rx))
         logger(__name__).debug(rx)
         rx['type'] = decode_bytes_to_str(rx['type'])
         rx['timestamp'] = datetime(2000, 1, 1) + timedelta(seconds=rx['timestamp'])
