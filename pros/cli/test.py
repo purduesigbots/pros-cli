@@ -40,4 +40,4 @@ def test(project: Project):
     #                              linked_file=lf, linked_file_addr=project.templates['kernel'].metadata['cold_addr'], linked_remote_name='1234567890123456789')
     #         print(kwargs)
     #         device.write_program(pf, **kwargs)
-    device.set_programt
+    device.ensure_library_space(name='tE57fk9WTMo56tzJi', vid='pros',  target_name=None)
