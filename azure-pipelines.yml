@@ -79,7 +79,7 @@ jobs:
   dependsOn:
     - UpdateBuildNumber
     - Linux
-  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.SourceBranch', 'refs/heads/develop'))
+  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.SourceBranch', 'refs/heads/develop')))
   steps:
     - checkout: none
     - task: DownloadPipelineArtifact@0
