@@ -38,7 +38,7 @@ def find_v5_ports(p_type: str):
     system_ports = [p for p in ports if filter_v5_ports(p, ['0'], ['System', 'Communications'])]
     joystick_ports = [p for p in ports if filter_v5_ports(p, ['1'], ['Controller'])]
 
-    # TODO: test this code path (hard)
+    # Testing this code path is hard!
     if len(user_ports) != len(system_ports):
         if len(user_ports) > len(system_ports):
             user_ports = [p for p in user_ports if p not in system_ports]
@@ -49,7 +49,7 @@ def find_v5_ports(p_type: str):
         if p_type.lower() == 'user':
             return user_ports
         elif p_type.lower() == 'system':
-            return system_ports
+            return [*system_ports, *joystick_ports]
         else:
             raise ValueError(f'Invalid port type specified: {p_type}')
 
@@ -64,10 +64,10 @@ def find_v5_ports(p_type: str):
         if p_type.lower() == 'user':
             return [ports[1]]
         elif p_type.lower() == 'system':
-            return [ports[0]]
+            return [ports[0], *joystick_ports]
         else:
             raise ValueError(f'Invalid port type specified: {p_type}')
-    if len(joystick_ports) > 0:
+    if len(joystick_ports) > 0 and p_type.lower() == 'system':
         return joystick_ports
     return []
 
