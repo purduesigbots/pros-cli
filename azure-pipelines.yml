@@ -92,5 +92,5 @@ jobs:
         artifactFeeds: 'pros-cli'
     - script: |
         sudo pip install twine
-        twine upload -r pros --config-file $(PYPIRC_PATH) $(System.DefaultWorkingDirectory)/*.whl
+        twine upload -r pros-cli --config-file $(PYPIRC_PATH) $(System.DefaultWorkingDirectory)/*.whl
 
