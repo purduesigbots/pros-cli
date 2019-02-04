@@ -75,7 +75,6 @@ def find_v5_ports(p_type: str):
         return joystick_ports
     return []
 
-
 class V5Device(VEXDevice, SystemDevice):
     vid_map = {'user': 1, 'system': 15, 'rms': 16, 'pros': 24, 'mw': 32}  # type: Dict[str, int]
 
