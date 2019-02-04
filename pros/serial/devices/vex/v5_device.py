@@ -40,6 +40,7 @@ def find_v5_ports(p_type: str):
     # Doesn't work on macOS or Jonathan's Dell, so we have a fallback (below)
     user_ports = [p for p in ports if filter_v5_ports(p, ['2'], ['User'])]
     system_ports = [p for p in ports if filter_v5_ports(p, ['0'], ['System', 'Communications'])]
+    joystick_ports = []  # joystick comms are very slow/unusable
     joystick_ports = [p for p in ports if filter_v5_ports(p, ['1'], ['Controller'])]
 
     # TODO: test this code path (hard)
@@ -77,11 +78,6 @@ def find_v5_ports(p_type: str):
 
 
 def with_download_channel(f):
-    """
-    Function decorator for use inside V5Device class. Needs to be outside the class because @staticmethod prevents
-    us from making a function decorator
-    """
-
     def wrapped(device, *args, **kwargs):
         with V5Device.DownloadChannel(device):
             f(device, *args, **kwargs)
@@ -110,7 +106,8 @@ class V5Device(VEXDevice, SystemDevice):
             pass
 
         class ControllerFlags(IntFlag):
-            CONNECTED = 0x02
+            CONNECTED = 0x0200
+            PIT_CHANNEL = 0x0004
 
         flag_map = {Product.BRAIN: BrainFlags, Product.CONTROLLER: ControllerFlags}
 
@@ -153,6 +150,9 @@ class V5Device(VEXDevice, SystemDevice):
                 self.device.default_timeout = 2.
                 if V5Device.SystemVersion.ControllerFlags.CONNECTED not in version.product_flags:
                     raise VEXCommError('V5 Controller doesn\'t appear to be connected to a V5 Brain', version)
+                if V5Device.SystemVersion.ControllerFlags.PIT_CHANNEL not in version.product_flags:
+                    logger(__name__).debug('Already in download channel!')
+                    return self  # already in download channel
                 ui.echo('Transferring V5 to download channel')
                 self.device.ft_transfer_channel('download')
                 logger(__name__).debug('Sleeping for a while to let V5 start channel transfer')
@@ -163,8 +163,12 @@ class V5Device(VEXDevice, SystemDevice):
                 while V5Device.SystemVersion.ControllerFlags.CONNECTED not in version.product_flags and \
                         time.time() - start_time < self.timeout:
                     version = self.device.query_system_version()
+                    if V5Device.SystemVersion.ControllerFlags.CONNECTED in version.product_flags and \
+                            V5Device.SystemVersion.ControllerFlags.PIT_CHANNEL not in version.product_flags:
+                        break
                     time.sleep(0.25)
-                if V5Device.SystemVersion.ControllerFlags.CONNECTED not in version.product_flags:
+                if V5Device.SystemVersion.ControllerFlags.PIT_CHANNEL in version.product_flags or \
+                        V5Device.SystemVersion.ControllerFlags.CONNECTED not in version.product_flags:
                     raise VEXCommError('Could not transfer V5 Controller to download channel', version)
                 logger(__name__).info('V5 should been transferred to higher bandwidth download channel')
                 return self
@@ -173,9 +177,9 @@ class V5Device(VEXDevice, SystemDevice):
 
         def __exit__(self, *exc):
             version = self.device.query_system_version()
-            if version.product == V5Device.SystemVersion.Product.CONTROLLER:
-                self.device.ft_transfer_channel('pit')
+            if V5Device.SystemVersion.ControllerFlags.PIT_CHANNEL not in version.product_flags:
                 ui.echo('V5 has been transferred back to pit channel')
+                self.device.ft_transfer_channel('pit')
 
     @property
     def status(self):
@@ -505,7 +509,7 @@ class V5Device(VEXDevice, SystemDevice):
         self.ft_complete(options=run_after)
 
     @with_download_channel
-    def capture_screen(self) -> Tuple[List[List[int]], int, int]:
+    def capture_screen(self) -> Tuple[List[int], int, int]:
         self.sc_init()
         width, height = 512, 272
         file_size = width * height * 4  # ARGB
@@ -528,7 +532,7 @@ class V5Device(VEXDevice, SystemDevice):
     @retries
     def query_system_version(self) -> SystemVersion:
         logger(__name__).debug('Sending simple 0xA408 command')
-        ret = self._txrx_simple_struct(0xA4, '>8B')
+        ret = self._txrx_simple_struct(0xA4, '>6BH')
         logger(__name__).debug('Completed simple 0xA408 command')
         return V5Device.SystemVersion(ret)
 
