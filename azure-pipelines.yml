@@ -17,6 +17,7 @@ jobs:
     - bash: echo "##vso[build.UpdateBuildNumber]`cat version`"
 
 - job: Windows
+  dependsOn: UpdateBuildNumber
   timeoutInMinutes: 30
   strategy:
     maxParallel: 2
@@ -44,6 +45,7 @@ jobs:
 
 - job: Linux
   timeoutInMinutes: 30
+  dependsOn: UpdateBuildNumber
   strategy:
     maxParallel: 2
     matrix:
@@ -55,9 +57,11 @@ jobs:
     vmImage: ubuntu-16.04
   steps:
 #   Microsoft/azure-pipelines-image-generation#225
-    - bash: sudo apt-add-repository ppa:deadsnakes/ppa
-    - bash: sudo apt-get update
-    - bash: sudo apt-get install python3.6 python3.6-dev python3-setuptools
+    - bash: |
+        sudo apt-add-repository ppa:deadsnakes/ppa
+        sudo apt-get update
+        sudo apt-get install python3.6 python3.6-dev python3-setuptools
+      displayName: Use Python 3.6
 #     Hopefully this will work soon
 #     - task: UsePythonVersion@0
 #       inputs:
@@ -71,5 +75,22 @@ jobs:
         artifactName: 'pros_cli-$(Build.BuildNumber)-linux-$(buildArch)'
         targetPath: 'out'
 
-
+- job: PublishArtifact
+  dependsOn:
+    - UpdateBuildNumber
+    - Linux
+  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.SourceBranch'], 'refs/heads/develop')))
+  steps:
+    - checkout: none
+    - task: DownloadPipelineArtifact@0
+      inputs:
+        artifactName: 'pros_cli-$(Build.BuildNumber)-linux-x64'
+        targetPath: $(System.DefaultWorkingDirectory)
+    - script: 'sudo pip install twine'
+    - task: TwineAuthenticate@0
+      inputs:
+        artifactFeeds: 'pros-cli'
+    - script: |
+        sudo pip install twine
+        twine upload -r pros-cli --config-file $(PYPIRC_PATH) $(System.DefaultWorkingDirectory)/*.whl
 
