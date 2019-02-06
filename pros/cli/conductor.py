@@ -202,7 +202,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
     if version.lower() == 'latest' or not version:
         version = '>0'
     if not force_system and c.Project.find_project(path) is not None:
-        logger(__name__).error('A project already exists in this location! Delete it first', extra={'sentry': False})
+        logger(__name__).error('A project already exists in this location! Delete it first. Are you creating a project in an existing one?', extra={'sentry': False})
         ctx.exit(-1)
     try:
         _conductor = c.Conductor()
