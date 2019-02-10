@@ -77,7 +77,8 @@ def find_v5_ports(p_type: str):
 
 
 class V5Device(VEXDevice, SystemDevice):
-    vid_map = {'user': 1, 'system': 15}  # type: Dict[str, int]
+    vid_map = {'user': 1, 'system': 15, 'rms': 16, 'pros': 24, 'mw': 32}  # type: Dict[str, int]
+
     class FTCompleteOptions(IntEnum):
         DONT_RUN = 0
         RUN_IMMEDIATELY = 0b01
@@ -128,13 +129,15 @@ class V5Device(VEXDevice, SystemDevice):
                     if hot_mtime > monolith_mtime:
                         upload_hot_cold = True
                         logger(__name__).debug('Hot file is newer than monolith!')
+                else:
+                    upload_hot_cold =True
             if upload_hot_cold:
                 with open(hot_path, mode='rb') as hot:
                     with open(cold_path, mode='rb') as cold:
                         kwargs['linked_file'] = cold
                         kwargs['linked_remote_name'] = self.generate_cold_hash(project, {})
-                        kwargs['linked_file_addr'] = project.templates['kernel'].metadata.get('cold_addr', 0x03800000)
-                        kwargs['addr'] = project.templates['kernel'].metadata.get('hot_addr', 0x07800000)
+                        kwargs['linked_file_addr'] = int(project.templates['kernel'].metadata.get('cold_addr', 0x03800000))
+                        kwargs['addr'] = int(project.templates['kernel'].metadata.get('hot_addr', 0x07800000))
                         return self.write_program(hot, **kwargs)
         with open(project.output, mode='rb') as pf:
             return self.write_program(pf, **kwargs)
@@ -382,12 +385,6 @@ class V5Device(VEXDevice, SystemDevice):
         if file_len < 0:
             file_len = file.seek(0, 2)
             file.seek(0, 0)
-        # Check if we're uploading wirelessly - if we are and it's a big file (>0x2,5000 bytes), prompt to make sure
-        # they really want to
-        version = self.query_system_version()
-        if version.product == V5Device.SystemVersion.Product.CONTROLLER and file_len > 0x25000:
-            confirm(f'You\'re about to upload {file_len} bytes wirelessly. This could take some time, and you should '
-                    f'consider uploading directly with a wire.', abort=True)
         crc32 = self.VEX_CRC32.compute(file.read(file_len))
         file.seek(0, 0)
         addr = kwargs.get('addr', 0x03800000)
