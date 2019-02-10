@@ -547,7 +547,7 @@ class V5Device(VEXDevice, SystemDevice):
             -> Dict[str, Any]:
         logger(__name__).debug('Sending ext 0x17 command')
         tx_payload = struct.pack("<2B", file_idx, options)
-        rx = self._txrx_ext_struct(0x17, tx_payload, "<B3l4sll24s")
+        rx = self._txrx_ext_struct(0x17, tx_payload, "<B3L4sLL24s")
         rx = dict(zip(['idx', 'size', 'addr', 'crc', 'type', 'timestamp', 'version', 'filename'], rx))
         rx['type'] = decode_bytes_to_str(rx['type'])
         rx['timestamp'] = datetime(2000, 1, 1) + timedelta(seconds=rx['timestamp'])
@@ -575,7 +575,7 @@ class V5Device(VEXDevice, SystemDevice):
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
         tx_payload = struct.pack("<2B24s", vid, options, file_name.encode(encoding='ascii'))
-        rx = self._txrx_ext_struct(0x19, tx_payload, "<B3l4sll24s")
+        rx = self._txrx_ext_struct(0x19, tx_payload, "<B3L4sLL24s")
         rx = dict(zip(['linked_vid', 'size', 'addr', 'crc', 'type', 'timestamp', 'version', 'linked_filename'], rx))
         logger(__name__).debug(rx)
         rx['type'] = decode_bytes_to_str(rx['type'])
