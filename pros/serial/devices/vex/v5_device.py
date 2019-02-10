@@ -369,11 +369,12 @@ class V5Device(VEXDevice, SystemDevice):
         ft_meta = self.ft_initialize(remote_file, function='download', vid=vid, target=target)
         if file_len is None:
             file_len = ft_meta['file_size']
+        max_packet_size = ft_meta['max_packet_size']
         with ui.progressbar(length=file_len, label='Downloading {}'.format(remote_file)) as progress:
-            for i in range(0, file_len, ft_meta['max_packet_size']):
-                packet_size = ft_meta['max_packet_size']
-                if i + ft_meta['max_packet_size'] > file_len:
-                    packet_size = ft_meta['file_size'] - i
+            for i in range(0, file_len, max_packet_size):
+                packet_size = max_packet_size
+                if i + max_packet_size > file_len:
+                    packet_size = file_len - i
                 file.write(self.ft_read(addr + i, packet_size))
                 progress.update(packet_size)
                 logger(__name__).debug('Completed {} of {} bytes'.format(i + packet_size, file_len))
@@ -510,13 +511,11 @@ class V5Device(VEXDevice, SystemDevice):
     @retries
     def ft_read(self, addr: int, n_bytes: int) -> bytearray:
         logger(__name__).debug('Sending ext 0x14 command')
-        req_n_bytes = n_bytes + ((4 - (n_bytes % 4)) if n_bytes % 4 != 0 else 0)
-        tx_payload = struct.pack("<IH", addr, req_n_bytes)
-        rx_fmt = "<I{}s{}s".format(n_bytes, ((4 - (n_bytes % 4)) if n_bytes % 4 != 0 else 0))
-        ret = self._txrx_ext_struct(0x14, tx_payload, rx_fmt, check_ack=False,
-                                    check_length=False)[1]
+        tx_payload = struct.pack("<IH", addr, n_bytes)
+        rx_fmt = "<I{}s".format(n_bytes)
+        ret = self._txrx_ext_struct(0x14, tx_payload, rx_fmt, check_ack=False)[1]
         logger(__name__).debug('Completed ext 0x14 command')
-        return ret[:-1]
+        return ret
 
     @retries
     def ft_set_link(self, link_name: str, vid: int_str = 'user', options: int = 0):
