@@ -132,14 +132,14 @@ class V5Device(VEXDevice, SystemDevice):
                 else:
                     upload_hot_cold =True
             if upload_hot_cold:
-                with open(hot_path, mode='rb') as hot:
-                    with open(cold_path, mode='rb') as cold:
+                with hot_path.open(mode='rb') as hot:
+                    with cold_path.open(mode='rb') as cold:
                         kwargs['linked_file'] = cold
                         kwargs['linked_remote_name'] = self.generate_cold_hash(project, {})
                         kwargs['linked_file_addr'] = int(project.templates['kernel'].metadata.get('cold_addr', 0x03800000))
                         kwargs['addr'] = int(project.templates['kernel'].metadata.get('hot_addr', 0x07800000))
                         return self.write_program(hot, **kwargs)
-        with open(project.output, mode='rb') as pf:
+        with monolith_path.open(mode='rb') as pf:
             return self.write_program(pf, **kwargs)
 
     def generate_ini_file(self, remote_name: str = None, slot: int = 0, ini: ConfigParser = None, **kwargs):
