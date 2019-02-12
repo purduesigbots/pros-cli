@@ -191,6 +191,16 @@ class V5Device(VEXDevice, SystemDevice):
                       target: str = 'flash', quirk: int = 0, linked_file: Optional[typing.BinaryIO] = None,
                       linked_remote_name: Optional[str] = None, linked_file_addr: Optional[int] = None,
                       compress_bin: bool = True, **kwargs):
+        action_string = f'Uploading program "{remote_name}"'
+        finish_string = f'Finished uploading "{remote_name}"'
+        if hasattr(file, 'name'):
+            action_string += f' ({Path(file.name).name})'
+            finish_string += f' ({Path(file.name).name})'
+        action_string += f' to V5 slot {slot + 1} on {self.port}'
+        if compress_bin:
+            action_string += ' (compressed)'
+        ui.echo(action_string)
+
         remote_base = f'slot_{slot + 1}'
         if target == 'ddr':
             self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin',
@@ -229,6 +239,7 @@ class V5Device(VEXDevice, SystemDevice):
                             linked_filename=linked_remote_name, compress=compress_bin, **kwargs)
         else:
             raise ValueError(f'Unknown quirk option: {quirk}')
+        ui.finalize('upload', f'{finish_string} to V5')
 
     def ensure_library_space(self, name: Optional[str] = None, vid: int_str = None,
                              target_name: Optional[str] = None):
@@ -374,7 +385,7 @@ class V5Device(VEXDevice, SystemDevice):
                 logger(__name__).debug(response)
                 logger(__name__).debug({'file len': file_len, 'crc': crc32})
                 if response['size'] == file_len and response['crc'] == crc32:
-                    logger(__name__).debug('File already onboard V5!')
+                    ui.echo('Library is already onboard V5')
                     return
                 else:
                     logger(__name__).warning(f'Library onboard doesn\'t match! '
@@ -434,9 +445,6 @@ class V5Device(VEXDevice, SystemDevice):
         if len(remote_file) > 24:
             logger(__name__).info('Truncating {} to {} due to length'.format(remote_file, remote_file[:24]))
             remote_file = remote_file[:24]
-        display_name = remote_file
-        if hasattr(file, 'name'):
-            display_name = '{} ({})'.format(remote_file, file.name)
         max_packet_size = int(ft_meta['max_packet_size'] / 2)
         with ui.progressbar(length=file_len, label='Uploading {}'.format(display_name)) as progress:
             for i in range(0, file_len, max_packet_size):

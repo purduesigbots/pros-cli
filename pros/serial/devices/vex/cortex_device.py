@@ -2,6 +2,7 @@ import itertools
 import time
 import typing
 from enum import IntFlag
+from pathlib import Path
 from typing import *
 
 from pros.common import ui
@@ -86,6 +87,12 @@ class CortexDevice(VEXDevice, SystemDevice):
             return self.write_program(pf, **kwargs)
 
     def write_program(self, file: typing.BinaryIO, **kwargs):
+        action_string = ''
+        if hasattr(file, 'name'):
+            action_string += f' {Path(file.name).name}'
+        action_string += f' to Cortex on {self.port}'
+        ui.echo(f'Uploading {action_string}')
+
         logger(__name__).info('Writing program to Cortex')
         status = self.query_system()
         logger(__name__).info(status)
@@ -93,7 +100,10 @@ class CortexDevice(VEXDevice, SystemDevice):
             self.send_to_download_channel()
 
         bootloader = self.expose_bootloader()
-        return bootloader.write_program(file, **kwargs)
+        rv = bootloader.write_program(file, **kwargs)
+
+        ui.finalize('upload', f'Finished uploading {action_string}')
+        return rv
 
     @retries
     def query_system(self) -> SystemStatus:

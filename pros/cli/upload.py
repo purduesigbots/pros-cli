@@ -95,13 +95,6 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     elif kwargs['target'] == 'cortex':
         pass
 
-    # print what was decided
-    compressed_label = ' (compressed) ' if kwargs['compress_bin'] else ' '
-    ui.echo(f"Uploading {path}{compressed_label}to {kwargs['target']} device on {port}", nl=False)
-    if kwargs['target'] == 'v5':
-        ui.echo(f' as {kwargs["remote_name"]} to slot {kwargs["slot"] + 1}', nl=False)
-    ui.echo('')
-
     logger(__name__).debug('Arguments: {}'.format(str(kwargs)))
 
     # Do the actual uploading!
@@ -120,8 +113,6 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     except Exception as e:
         logger(__name__).exception(e, exc_info=True)
         exit(1)
-
-    ui.finalize('upload', f'Finished uploading {path} to {kwargs["target"]} on {port}')
 
 
 @upload_cli.command('lsusb', aliases=['ls-usb', 'ls-devices', 'lsdev', 'list-usb', 'list-devices'])
