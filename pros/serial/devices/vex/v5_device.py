@@ -242,6 +242,24 @@ class V5Device(VEXDevice, SystemDevice):
 
         return data, 480, height
 
+    def used_slots(self) -> Dict[int, Optional[str]]:
+        rv = {}
+        for slot in range(1, 8):
+            ini = self.read_ini(f'slot_{slot}.ini')
+            rv[slot] = ini['program']['name'] if ini is not None else None
+        return rv
+
+    def read_ini(self, remote_name: str) -> Optional[ConfigParser]:
+        try:
+            rx_io = BytesIO()
+            self.read_file(rx_io, remote_name)
+            config = ConfigParser()
+            rx_io.seek(0, 0)
+            config.read_string(rx_io.read().decode('ascii'))
+            return config
+        except VEXCommError as e:
+            return None
+
     @retries
     def query_system_version(self) -> bytearray:
         logger(__name__).debug('Sending simple 0xA4 command')
