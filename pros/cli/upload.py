@@ -168,8 +168,9 @@ def ls_usb(target):
 
 
 @upload_cli.command('upload-terminal', aliases=['ut'], hidden=True)
+@shadow_command(upload)
 @click.pass_context
-def make_upload_terminal(ctx):
+def make_upload_terminal(ctx, **upload_kwargs):
     from .terminal import terminal
-    ctx.forward(upload)
+    ctx.forward(upload, **upload_kwargs)
     ctx.forward(terminal, request_banner=False)
