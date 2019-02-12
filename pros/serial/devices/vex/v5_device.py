@@ -164,6 +164,8 @@ class V5Device(VEXDevice, SystemDevice):
                             project.templates['kernel'].metadata.get('cold_addr', 0x03800000))
                         kwargs['addr'] = int(project.templates['kernel'].metadata.get('hot_addr', 0x07800000))
                         return self.write_program(hot, **kwargs)
+        if not monolith_path.exists():
+            raise ui.dont_send(Exception('No output files were found! Have you built your project?'))
         with monolith_path.open(mode='rb') as pf:
             return self.write_program(pf, **kwargs)
 

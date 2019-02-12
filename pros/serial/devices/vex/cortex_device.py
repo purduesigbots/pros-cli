@@ -83,7 +83,10 @@ class CortexDevice(VEXDevice, SystemDevice):
 
     def upload_project(self, project: Project, **kwargs):
         assert project.target == 'cortex'
-        with open(project.output, mode='rb') as pf:
+        output_path = project.path.joinpath(project.output)
+        if not output_path.exists():
+            raise ui.dont_send(Exception('No output files were found! Have you built your project?'))
+        with output_path.open(mode='rb') as pf:
             return self.write_program(pf, **kwargs)
 
     def write_program(self, file: typing.BinaryIO, **kwargs):
