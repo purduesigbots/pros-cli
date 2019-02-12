@@ -2,7 +2,7 @@ import threading
 
 import jsonpickle
 from click._termui_impl import ProgressBar as _click_ProgressBar
-from click.termui import visible_prompt_func, Abort
+from sentry_sdk import add_breadcrumb
 
 from ..utils import *
 
@@ -24,47 +24,31 @@ def _machine_notify(method: str, obj: Dict[str, Any], notify_value: Optional[int
     _machineoutput(obj)
 
 
-def echo(text: str, err: bool = False, nl: bool = True, notify_value: int = None, color: Any = None,
+def echo(text: Any, err: bool = False, nl: bool = True, notify_value: int = None, color: Any = None,
          output_machine: bool = True, ctx: Optional[click.Context] = None):
+    add_breadcrumb(message=text, category='echo')
     if ismachineoutput(ctx):
         if output_machine:
-            return _machine_notify('echo', {'text': text + ('\n' if nl else '')}, notify_value)
+            return _machine_notify('echo', {'text': str(text) + ('\n' if nl else '')}, notify_value)
     else:
-        return click.echo(text, nl=nl, err=err, color=color)
+        return click.echo(str(text), nl=nl, err=err, color=color)
 
 
 def confirm(text: str, default: bool = False, abort: bool = False, prompt_suffix: bool = ': ',
-            show_default: bool = True, err: bool = False, title: bool = 'Please confirm:'):
+            show_default: bool = True, err: bool = False, title: AnyStr = 'Please confirm:',
+            log: str = None):
+    add_breadcrumb(message=text, category='confirm')
     if ismachineoutput():
-        obj = {
-            'type': 'input/confirm',
-            'title': title,
-            'description': text,
-            'abort': abort,
-            'default': default,
-            'show_default': show_default
-        }
+        from pros.common.ui.interactive.ConfirmModal import ConfirmModal
+        from pros.common.ui.interactive.renderers import MachineOutputRenderer
 
-        while 1:
-            _machineoutput(obj)
-            try:
-                value = visible_prompt_func('').lower().strip()
-            except (KeyboardInterrupt, EOFError):
-                raise Abort()
-            if value in ('y', 'yes'):
-                rv = True
-            elif value in ('n', 'no'):
-                rv = False
-            elif value == '':
-                rv = default
-            else:
-                echo('Error: invalid input', err=err)
-                continue
-            break
-        return rv
+        app = ConfirmModal(text, abort, title, log)
+        rv = MachineOutputRenderer(app).run()
     else:
-        return click.confirm(text, default=default, abort=abort, prompt_suffix=prompt_suffix,
-                             show_default=show_default, err=err)
+        rv = click.confirm(text, default=default, abort=abort, prompt_suffix=prompt_suffix,
+                           show_default=show_default, err=err)
+    add_breadcrumb(message=f'User responded: {rv}')
+    return rv
 
 
 def prompt(text, default=None, hide_input=False,
@@ -85,7 +69,7 @@ def progressbar(iterable: Iterable = None, length: int = None, label: str = None
                 fill_char: str = '#', empty_char: str = '-', bar_template: str = '%(label)s [%(bar)s] %(info)s',
                 info_sep: str = ' ', width: int = 36):
     if ismachineoutput():
-        return _MachineOutputProgessBar(**locals())
+        return _MachineOutputProgressBar(**locals())
     else:
         return click.progressbar(**locals())
 
@@ -131,21 +115,21 @@ def finalize(method: str, data: Union[str, Dict, object, List[Union[str, Dict, o
             'human': human_readable
         })
     else:
-        click.echo(human_readable)
+        echo(human_readable)
 
 
-class _MachineOutputProgessBar(_click_ProgressBar):
+class _MachineOutputProgressBar(_click_ProgressBar):
     def __init__(self, *args, **kwargs):
         global _current_notify_value
         kwargs['file'] = open(os.devnull, 'w')
         self.notify_value = kwargs.pop('notify_value', _current_notify_value)
-        super(_MachineOutputProgessBar, self).__init__(*args, **kwargs)
+        super(_MachineOutputProgressBar, self).__init__(*args, **kwargs)
 
     def __del__(self):
         self.file.close()
 
     def render_progress(self):
-        super(_MachineOutputProgessBar, self).render_progress()
+        super(_MachineOutputProgressBar, self).render_progress()
         obj = {'text': self.label, 'pct': self.pct}
         if self.show_eta and self.eta_known and not self.finished:
             obj['eta'] = self.eta
@@ -173,12 +157,12 @@ class Notification(object):
 
 
 class EchoPipe(threading.Thread):
-    def __init__(self, err: bool=False, ctx: Optional[click.Context] = None):
+    def __init__(self, err: bool = False, ctx: Optional[click.Context] = None):
         """Setup the object with a logger and a loglevel
         and start the thread
         """
         self.click_ctx = ctx or click.get_current_context(silent=True)
-        self.stderr = err
+        self.is_err = err
         threading.Thread.__init__(self)
         self.daemon = False
         self.fdRead, self.fdWrite = os.pipe()
@@ -194,7 +178,7 @@ class EchoPipe(threading.Thread):
         """Run the thread, logging everything.
         """
         for line in iter(self.pipeReader.readline, ''):
-            echo(line.strip('\n'), ctx=self.click_ctx, err=self.stderr)
+            echo(line.strip('\n'), ctx=self.click_ctx, err=self.is_err)
 
         self.pipeReader.close()
 

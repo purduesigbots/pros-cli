@@ -1,6 +1,6 @@
 from typing import *
 
-from semantic_version import Version, Spec
+from semantic_version import Spec, Version
 
 from pros.common import ui
 
@@ -25,7 +25,7 @@ class BaseTemplate(object):
         if self.name == 'pros':
             self.name = 'kernel'
 
-    def satisfies(self, query: 'BaseTemplate', kernel_version: Union[str, Version]=None) -> bool:
+    def satisfies(self, query: 'BaseTemplate', kernel_version: Union[str, Version] = None) -> bool:
         if query.name and self.name != query.name:
             return False
         if query.target and self.target != query.target:
@@ -51,9 +51,24 @@ class BaseTemplate(object):
 
     def __gt__(self, other):
         if isinstance(other, BaseTemplate):
+            # TODO: metadata comparison
             return self.name == other.name and Version(self.version) > Version(other.version)
         else:
             return False
+
+    def __eq__(self, other):
+        if isinstance(other, BaseTemplate):
+            return self.identifier == other.identifier
+        else:
+            return super().__eq__(other)
+
+    def __hash__(self):
+        return self.identifier.__hash__()
+
+    def as_query(self, version='>0', metadata=False, **kwargs):
+        if isinstance(metadata, bool) and not metadata:
+            metadata = dict()
+        return BaseTemplate(orig=self, version=version, metadata=metadata, **kwargs)
 
     @property
     def identifier(self):
@@ -71,6 +86,8 @@ class BaseTemplate(object):
             raise ValueError(f'Malformed identifier: {name}')
         if '@' in name:
             name, kwargs['version'] = name.split('@')
+        if kwargs.get('version', 'latest') == 'latest':
+            kwargs['version'] = '>=0'
         if name == 'kernal':
             ui.echo("Assuming 'kernal' is the British spelling of kernel.")
             name = 'kernel'

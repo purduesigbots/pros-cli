@@ -1,67 +1,56 @@
-import logging
-import sys
 from typing import *
 
-from .ui import confirm, echo
-from .utils import get_version
+import pros.common.ui as ui
 
 if TYPE_CHECKING:
-    from raven import Client  # noqa: F401, flake8 issue with "if TYPE_CHECKING"
+    from sentry_sdk import Client, Hub, Scope  # noqa: F401, flake8 issue with "if TYPE_CHECKING"
     import jsonpickle.handlers  # noqa: F401, flake8 issue, flake8 issue with "if TYPE_CHECKING"
     from pros.config.cli_config import CliConfig  # noqa: F401, flake8 issue, flake8 issue with "if TYPE_CHECKING"
 
-client: Optional['Client'] = None
-__excepthook = None  # hook into uncaught exceptions before Sentry gets a hold of them so we can prompt the user
 cli_config: 'CliConfig' = None
 
 SUPPRESSED_EXCEPTIONS = [PermissionError]
 
 
-def prompt_to_send(send: Callable, *args, **kwargs):
+def prompt_to_send(event: Dict[str, Any], hint: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     """
     Asks the user for permission to send data to Sentry
     """
     global cli_config
-    if cli_config is None or (cli_config.offer_sentry is not None and not cli_config.offer_sentry):
-        return
-    rv = confirm('We detected something went wrong! '
-                 'Would you like to send a bug report to the PROS Development team?',
-                 default=True)
-    if client:
-        # for data we see, this should always be true. But if it's not we have a good indicator that we're not properly
-        # catching things before sentry ships data out
-        client.extra_context({'explicit_permission': rv})
-    if rv:
-        echo('Sending report...')
-        send(*args, **kwargs)
-    if not rv and cli_config.offer_sentry is None:
-        cli_config.offer_sentry = confirm('Do you want to continue seeing these prompts? '
-                                          'No will disable sending any bug reports.', default=True)
-        cli_config.save()
+    with ui.Notification():
+        if cli_config is None or (cli_config.offer_sentry is not None and not cli_config.offer_sentry):
+            return
 
+        if 'extra' in event and not event['extra'].get('sentry', True):
+            ui.logger(__name__).debug('Not sending candidate event because event was tagged with extra.sentry = False')
+            return
+        if 'exc_info' in hint and not getattr(hint['exc_info'][1], 'sentry', True):
+            ui.logger(__name__).debug('Not sending candidate event because exception was tagged with sentry = False')
+            return
 
-class SentryHandler(logging.Handler):
-    """
-    Log handler which will send errors to Sentry, with the user's permission
-    """
+        if not event['tags']:
+            event['tags'] = dict()
 
-    def __init__(self, client: 'Client', *args, **kwargs):
-        self.sentry_client = client
-        super().__init__(*args, **kwargs)
+        extra_text = ''
+        if 'message' in event:
+            extra_text += event['message'] + '\n'
+        if 'culprit' in event:
+            extra_text += event['culprit'] + '\n'
+        if 'logentry' in event and 'message' in event['logentry']:
+            extra_text += event['logentry']['message'] + '\n'
+        if 'exc_info' in hint:
+            import traceback
+            extra_text += ''.join(traceback.format_exception(*hint['exc_info'], limit=4))
 
-    def emit(self, record: logging.LogRecord):
-        # record level must be at least logging.ERROR; the sentry attribute (if present) must be true;
-        # and if we're logging an exception, it must not be a suppressed exception (execution info implies execution
-        # info is not in suppressed exceptions)
-        if record.levelno >= logging.ERROR and getattr(record, 'sentry', True) and \
-                (record.exc_info is None or not any(issubclass(record.exc_info[0], e) for e in SUPPRESSED_EXCEPTIONS)):
-            def _send():
-                if record.exc_info:
-                    self.sentry_client.captureException(exc_info=record.exc_info)
-                else:
-                    self.sentry_client.captureMessage(record.getMessage())
+        event['tags']['confirmed'] = ui.confirm('We detected something went wrong! Do you want to send a report?',
+                                                log=extra_text)
+        if event['tags']['confirmed']:
+            ui.echo('Sending bug report.')
 
-            prompt_to_send(_send)
+            ui.echo(f'Want to get updates? Visit https://pros.cs.purdue.edu/report.html?event={event["event_id"]}')
+            return event
+        else:
+            ui.echo('Not sending bug report.')
 
 
 def add_context(obj: object, override_handlers: bool = True, key: str = None) -> None:
@@ -71,9 +60,6 @@ def add_context(obj: object, override_handlers: bool = True, key: str = None) ->
     :param override_handlers: Override some serialization handlers to reduce the output sent to Sentry
     :param key: Name of the object to be inserted into the context, may be None to use the classname of obj
     """
-    global client
-    if not client:
-        return
 
     import jsonpickle.handlers  # noqa: F811, flake8 issue with "if TYPE_CHECKING"
     from pros.conductor.templates import BaseTemplate
@@ -103,46 +89,47 @@ def add_context(obj: object, override_handlers: bool = True, key: str = None) ->
     if override_handlers:
         jsonpickle.handlers.register(BaseTemplate, TemplateHandler, base=True)
 
-    client.extra_context({
-        (key or obj.__class__.__qualname__): jsonpickle.pickler.Pickler(unpicklable=False).flatten(obj)
-    })
+    from sentry_sdk import configure_scope
+    with configure_scope() as scope:
+        scope.set_extra((key or obj.__class__.__qualname__), jsonpickle.pickler.Pickler(unpicklable=False).flatten(obj))
 
     if override_handlers:
         jsonpickle.handlers.unregister(BaseTemplate)
 
 
-def register(cfg: Optional['CliConfig'] = None):
-    from raven import Client  # noqa: F811, flake8 issue with "if TYPE_CHECKING"
+def add_tag(key: str, value: str):
+    from sentry_sdk import configure_scope
 
-    global client, __excepthook, cli_config
+    with configure_scope() as scope:
+        scope.set_tag(key, value)
+
+
+def register(cfg: Optional['CliConfig'] = None):
+    global cli_config, client
 
     if cfg is None:
         from pros.config.cli_config import cli_config as get_cli_config
         cli_config = get_cli_config()
     else:
         cli_config = cfg
+
     assert cli_config is not None
 
     if cli_config.offer_sentry is False:
         return
 
-    client = Client('https://00bd27dcded6436cad5c8b2941d6a9d6:e7e9b3eb1ba94951b5079d22b0416627@sentry.io/1226033',
-                    install_logging_hook=True,
-                    install_sys_hook=True,
-                    hook_libraries=['requests'],
-                    release=get_version(),
-                    tags={
-                        'platformv2': 'not yet implemented'
-                    })
-    _handler = SentryHandler(client)
-    logging.getLogger('').addHandler(_handler)
+    import sentry_sdk as sentry
+    from pros.upgrade import get_platformv2
 
-    __excepthook = sys.excepthook
+    client = sentry.Client(
+        'https://00bd27dcded6436cad5c8b2941d6a9d6@sentry.io/1226033',
+        before_send=prompt_to_send,
+        release=ui.get_version()
+    )
+    sentry.Hub.current.bind_client(client)
 
-    def handle_exception(*args):
-        prompt_to_send(__excepthook, *args)
-
-    sys.excepthook = handle_exception
+    with sentry.configure_scope() as scope:
+        scope.set_tag('platformv2', get_platformv2().name)
 
 
-__all__ = ['add_context', 'register']
+__all__ = ['add_context', 'register', 'add_tag']

@@ -7,15 +7,18 @@ if [ $? -ne 0 ]
 then
     python=python3.6
 fi
+pipinstall="pip install --user"
+echo Upgrading pip
+$python -m $pipinstall --upgrade pip
 
 echo Installing wheel and cx_Freeze
-$python -m pip install wheel cx_Freeze
+$python -m $pipinstall wheel cx_Freeze
 
 echo Updating version
 $python version.py
 
 echo Installing pros-cli requirements
-$python -m pip install --upgrade -r requirements.txt
+$python -m $pipinstall --upgrade -r requirements.txt
 
 echo Building Wheel
 $python setup.py bdist_wheel

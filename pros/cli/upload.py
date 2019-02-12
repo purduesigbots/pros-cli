@@ -31,8 +31,10 @@ def upload_cli():
               cls=PROSOption, group='V5 Options', help='Open "run program" screen after uploading, instead of executing'
                                                        ' program. This option may help with controller connectivity '
                                                        'reliability and prevent robots from running off tables.')
+@click.option('--compress-bin/--no-compress-bin', 'compress_bin', cls=PROSOption, group='V5 Options', default=True,
+              help='Compress the program binary before uploading.')
 @default_options
-def upload(path: str, project: Optional[c.Project], port: str, **kwargs):
+def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwargs):
     """
     Upload a binary to a microcontroller.
 
@@ -94,7 +96,8 @@ def upload(path: str, project: Optional[c.Project], port: str, **kwargs):
         pass
 
     # print what was decided
-    ui.echo('Uploading {} to {} device on {}'.format(path, kwargs['target'], port), nl=False)
+    compressed_label = ' (compressed) ' if kwargs['compress_bin'] else ' '
+    ui.echo(f"Uploading {path}{compressed_label}to {kwargs['target']} device on {port}", nl=False)
     if kwargs['target'] == 'v5':
         ui.echo(f' as {args[0]} to slot {kwargs["slot"] + 1}', nl=False)
     ui.echo('')

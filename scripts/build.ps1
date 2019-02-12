@@ -31,7 +31,7 @@ Write-Information "Adding vcruntime140.dll to zip"
 
 Write-Information "Moving artifacts to ./out"
 
-Remove-Item -Recurse -Force -Path .\out | Out-Null
+if (Test-Path .\out) { Remove-Item -Recurse -Force -Path .\out | Out-Null }
 New-Item ./out -ItemType directory | Out-Null
 Remove-Item .\out\* -Recurse | Out-Null
 

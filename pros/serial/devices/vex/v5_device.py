@@ -1,3 +1,5 @@
+import gzip
+import io
 import re
 import struct
 import time
@@ -7,6 +9,8 @@ from datetime import datetime, timedelta
 from enum import IntEnum, IntFlag
 from io import BytesIO, StringIO
 from typing import *
+
+from semantic_version import Spec
 
 from pros.common import *
 from pros.serial import bytes_to_str, decode_bytes_to_str
@@ -188,7 +192,7 @@ class V5Device(VEXDevice, SystemDevice):
             'name': remote_name,
             'slot': slot,
             'icon': kwargs.get('icon', default_icon) or default_icon,
-            'description': 'Created with PROS',
+            'description': kwargs.get('description', 'Created with PROS'),
             'date': datetime.now().isoformat()
         }
         if ini:
@@ -201,7 +205,7 @@ class V5Device(VEXDevice, SystemDevice):
     @with_download_channel
     def write_program(self, file: typing.BinaryIO, remote_name: str = None, ini: ConfigParser = None, slot: int = 0,
                       file_len: int = -1, run_after: FTCompleteOptions = FTCompleteOptions.DONT_RUN,
-                      target: str = 'flash', quirk: int = 0, **kwargs):
+                      target: str = 'flash', quirk: int = 0, compress_bin: bool = True, **kwargs):
         remote_base = f'slot_{slot + 1}'
         if target == 'ddr':
             self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin',
@@ -220,7 +224,8 @@ class V5Device(VEXDevice, SystemDevice):
 
         if (quirk & 0xff) == 1:
             # WRITE BIN FILE
-            self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after, **kwargs)
+            self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after,
+                            compress=compress_bin, **kwargs)
             with BytesIO(ini_file.encode(encoding='ascii')) as ini_bin:
                 # WRITE INI FILE
                 self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
@@ -231,7 +236,8 @@ class V5Device(VEXDevice, SystemDevice):
                 # WRITE INI FILE
                 self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
             # WRITE BIN FILE
-            self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after, **kwargs)
+            self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after,
+                            compress=compress_bin, **kwargs)
         else:
             raise ValueError(f'Unknown quirk option: {quirk}')
 
@@ -256,10 +262,25 @@ class V5Device(VEXDevice, SystemDevice):
         self.ft_complete()
 
     def write_file(self, file: typing.BinaryIO, remote_file: str, file_len: int = -1,
-                   run_after: FTCompleteOptions = FTCompleteOptions.DONT_RUN, **kwargs):
+                   run_after: FTCompleteOptions = FTCompleteOptions.DONT_RUN, compress: bool = False, **kwargs):
         if file_len < 0:
             file_len = file.seek(0, 2)
             file.seek(0, 0)
+        if compress and self.status['system_version'] in Spec('>=1.0.5'):
+            buf = io.BytesIO()
+            with ui.progressbar(length=file_len, label='Compressing binary') as progress:
+                with gzip.GzipFile(fileobj=buf, mode='wb') as f:
+                    while True:
+                        data = file.read(16 * 1024)
+                        if not data:
+                            break
+                        f.write(data)
+                        progress.update(len(data))
+            file = buf
+            # recompute file length
+            file_len = file.seek(0, 2)
+            file.seek(0, 0)
+
         crc32 = self.VEX_CRC32.compute(file.read(file_len))
         file.seek(-file_len, 2)
         addr = kwargs.get('addr', 0x03800000)
@@ -272,16 +293,20 @@ class V5Device(VEXDevice, SystemDevice):
         display_name = remote_file
         if hasattr(file, 'name'):
             display_name = '{} ({})'.format(remote_file, file.name)
+        max_packet_size = int(ft_meta['max_packet_size'] / 2)
         with ui.progressbar(length=file_len, label='Uploading {}'.format(display_name)) as progress:
-            for i in range(0, file_len, ft_meta['max_packet_size']):
-                packet_size = ft_meta['max_packet_size']
-                if i + ft_meta['max_packet_size'] > file_len:
+            for i in range(0, file_len, max_packet_size):
+                packet_size = max_packet_size
+                if i + max_packet_size > file_len:
                     packet_size = file_len - i
                 logger(__name__).debug('Writing {} bytes at 0x{:02X}'.format(packet_size, addr + i))
                 self.ft_write(addr + i, file.read(packet_size))
                 progress.update(packet_size)
                 logger(__name__).debug('Completed {} of {} bytes'.format(i + packet_size, file_len))
         logger(__name__).debug('Data transfer complete, sending ft complete')
+        if compress and self.status['system_version'] in Spec('>=1.0.5'):
+            logger(__name__).info('Closing gzip file')
+            file.close()
         self.ft_complete(options=run_after)
 
     @with_download_channel
