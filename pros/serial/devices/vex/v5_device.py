@@ -8,7 +8,9 @@ from configparser import ConfigParser
 from datetime import datetime, timedelta
 from enum import IntEnum
 from io import BytesIO, StringIO
+from pathlib import Path
 from typing import *
+from typing import BinaryIO
 
 from semantic_version import Spec
 
@@ -78,6 +80,22 @@ def find_v5_ports(p_type: str):
     return []
 
 
+def compress_file(file: BinaryIO, file_len: int, label='Compressing binary') -> Tuple[BinaryIO, int]:
+    buf = io.BytesIO()
+    with ui.progressbar(length=file_len, label=label) as progress:
+        with gzip.GzipFile(fileobj=buf, mode='wb', mtime=0) as f:
+            while True:
+                data = file.read(16 * 1024)
+                if not data:
+                    break
+                f.write(data)
+                progress.update(len(data))
+    # recompute file length
+    file_len = buf.seek(0, 2)
+    buf.seek(0, 0)
+    return buf, file_len
+
+
 class V5Device(VEXDevice, SystemDevice):
     vid_map = {'user': 1, 'system': 15, 'rms': 16, 'pros': 24, 'mw': 32}  # type: Dict[str, int]
 
@@ -98,6 +116,10 @@ class V5Device(VEXDevice, SystemDevice):
         if not self._status:
             self._status = self.get_system_status()
         return self._status
+
+    @property
+    def can_compress(self):
+        return self.status['system_version'] in Spec('>=1.0.5')
 
     def generate_cold_hash(self, project: Project, extra: dict):
         keys = {k: t.version for k, t in project.templates.items()}
@@ -132,13 +154,14 @@ class V5Device(VEXDevice, SystemDevice):
                         upload_hot_cold = True
                         logger(__name__).debug('Hot file is newer than monolith!')
                 else:
-                    upload_hot_cold =True
+                    upload_hot_cold = True
             if upload_hot_cold:
                 with hot_path.open(mode='rb') as hot:
                     with cold_path.open(mode='rb') as cold:
                         kwargs['linked_file'] = cold
                         kwargs['linked_remote_name'] = self.generate_cold_hash(project, {})
-                        kwargs['linked_file_addr'] = int(project.templates['kernel'].metadata.get('cold_addr', 0x03800000))
+                        kwargs['linked_file_addr'] = int(
+                            project.templates['kernel'].metadata.get('cold_addr', 0x03800000))
                         kwargs['addr'] = int(project.templates['kernel'].metadata.get('hot_addr', 0x07800000))
                         return self.write_program(hot, **kwargs)
         with monolith_path.open(mode='rb') as pf:
@@ -186,7 +209,7 @@ class V5Device(VEXDevice, SystemDevice):
 
         if linked_file is not None:
             self.upload_library(linked_file, remote_name=linked_remote_name, addr=linked_file_addr,
-                                force_upload=kwargs.pop('force_upload_linked', False))
+                                compress=compress_bin, force_upload=kwargs.pop('force_upload_linked', False))
 
         if (quirk & 0xff) == 1:
             # WRITE BIN FILE
@@ -322,7 +345,7 @@ class V5Device(VEXDevice, SystemDevice):
                         self.erase_file(file_name=file, erase_all=True, vid='user')
 
     def upload_library(self, file: typing.BinaryIO, remote_name: str = None, file_len: int = -1, vid: int_str = 'pros',
-                       force_upload: bool = False, **kwargs):
+                       force_upload: bool = False, compress: bool = True, **kwargs):
         """
         Upload a file used for linking. Contains the logic to check if the file is already present in the filesystem
         and to prompt the user if we need to evict a library (and user programs).
@@ -338,6 +361,10 @@ class V5Device(VEXDevice, SystemDevice):
         if file_len < 0:
             file_len = file.seek(0, 2)
             file.seek(0, 0)
+
+        if compress and self.can_compress:
+            file, file_len = compress_file(file, file_len, label='Compressing library')
+
         crc32 = self.VEX_CRC32.compute(file.read(file_len))
         file.seek(0, 0)
 
@@ -389,20 +416,11 @@ class V5Device(VEXDevice, SystemDevice):
         if file_len < 0:
             file_len = file.seek(0, 2)
             file.seek(0, 0)
-        if compress and self.status['system_version'] in Spec('>=1.0.5'):
-            buf = io.BytesIO()
-            with ui.progressbar(length=file_len, label='Compressing binary') as progress:
-                with gzip.GzipFile(fileobj=buf, mode='wb') as f:
-                    while True:
-                        data = file.read(16 * 1024)
-                        if not data:
-                            break
-                        f.write(data)
-                        progress.update(len(data))
-            file = buf
-            # recompute file length
-            file_len = file.seek(0, 2)
-            file.seek(0, 0)
+        display_name = remote_file
+        if hasattr(file, 'name'):
+            display_name = f'{remote_file} ({Path(file.name).name})'
+        if compress and self.can_compress:
+            file, file_len = compress_file(file, file_len)
 
         crc32 = self.VEX_CRC32.compute(file.read(file_len))
         file.seek(0, 0)
