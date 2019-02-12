@@ -74,6 +74,9 @@ class UploadProjectModal(application.Modal[None]):
                     ),
                     'description': parameters.Parameter(
                         self.project.upload_options.get('description', 'Created with PROS')
+                    ),
+                    'compress_bin': parameters.BooleanParameter(
+                        self.project.upload_options.get('compress_bin', True)
                     )
                 }
             else:
@@ -93,6 +96,7 @@ class UploadProjectModal(application.Modal[None]):
             kwargs['name'] = self.advanced_options['name'].value
             kwargs['slot'] = self.advanced_options['slot'].value
             kwargs['description'] = self.advanced_options['description'].value
+            kwargs['compress_bin'] = self.advanced_options['compress_bin'].value
         self.exit()
         get_current_context().invoke(upload, **kwargs)
 
@@ -118,5 +122,6 @@ class UploadProjectModal(application.Modal[None]):
                 components.InputBox('Program Name', self.advanced_options['name']),
                 components.InputBox('Slot', self.advanced_options['slot']),
                 components.InputBox('Description', self.advanced_options['description']),
+                components.Checkbox('Compress Binary', self.advanced_options['compress_bin']),
                 title='Advanced V5 Options',
                 collapsed=self.advanced_options_collapsed)
