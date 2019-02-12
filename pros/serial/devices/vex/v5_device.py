@@ -1,3 +1,5 @@
+import gzip
+import io
 import re
 import struct
 import typing
@@ -164,7 +166,8 @@ class V5Device(VEXDevice, SystemDevice):
     def write_program(self, file: typing.BinaryIO, remote_name: str = None, ini: ConfigParser = None, slot: int = 0,
                       file_len: int = -1, run_after: FTCompleteOptions = FTCompleteOptions.DONT_RUN,
                       target: str = 'flash', quirk: int = 0, linked_file: Optional[typing.BinaryIO] = None,
-                      linked_remote_name: Optional[str] = None, linked_file_addr: Optional[int] = None, **kwargs):
+                      linked_remote_name: Optional[str] = None, linked_file_addr: Optional[int] = None,
+                      compress_bin: bool = True, **kwargs):
         remote_base = f'slot_{slot + 1}'
         if target == 'ddr':
             self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin',
@@ -188,7 +191,7 @@ class V5Device(VEXDevice, SystemDevice):
         if (quirk & 0xff) == 1:
             # WRITE BIN FILE
             self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after,
-                            linked_filename=linked_remote_name, **kwargs)
+                            linked_filename=linked_remote_name, compress=compress_bin, **kwargs)
             with BytesIO(ini_file.encode(encoding='ascii')) as ini_bin:
                 # WRITE INI FILE
                 self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
@@ -200,7 +203,7 @@ class V5Device(VEXDevice, SystemDevice):
                 self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
             # WRITE BIN FILE
             self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after,
-                            linked_filename=linked_remote_name, **kwargs)
+                            linked_filename=linked_remote_name, compress=compress_bin, **kwargs)
         else:
             raise ValueError(f'Unknown quirk option: {quirk}')
 
@@ -382,10 +385,25 @@ class V5Device(VEXDevice, SystemDevice):
 
     def write_file(self, file: typing.BinaryIO, remote_file: str, file_len: int = -1,
                    run_after: FTCompleteOptions = FTCompleteOptions.DONT_RUN, linked_filename: Optional[str] = None,
-                   linked_vid: int_str = 'pros', **kwargs):
+                   linked_vid: int_str = 'pros', compress: bool = False, **kwargs):
         if file_len < 0:
             file_len = file.seek(0, 2)
             file.seek(0, 0)
+        if compress and self.status['system_version'] in Spec('>=1.0.5'):
+            buf = io.BytesIO()
+            with ui.progressbar(length=file_len, label='Compressing binary') as progress:
+                with gzip.GzipFile(fileobj=buf, mode='wb') as f:
+                    while True:
+                        data = file.read(16 * 1024)
+                        if not data:
+                            break
+                        f.write(data)
+                        progress.update(len(data))
+            file = buf
+            # recompute file length
+            file_len = file.seek(0, 2)
+            file.seek(0, 0)
+
         crc32 = self.VEX_CRC32.compute(file.read(file_len))
         file.seek(0, 0)
         addr = kwargs.get('addr', 0x03800000)
@@ -412,9 +430,12 @@ class V5Device(VEXDevice, SystemDevice):
                 progress.update(packet_size)
                 logger(__name__).debug('Completed {} of {} bytes'.format(i + packet_size, file_len))
         logger(__name__).debug('Data transfer complete, sending ft complete')
+        if compress and self.status['system_version'] in Spec('>=1.0.5'):
+            logger(__name__).info('Closing gzip file')
+            file.close()
         self.ft_complete(options=run_after)
 
-    def capture_screen(self) -> Tuple[List[int], int, int]:
+    def capture_screen(self) -> Tuple[List[List[int]], int, int]:
         self.sc_init()
         width, height = 512, 272
         file_size = width * height * 4  # ARGB
