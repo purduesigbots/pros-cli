@@ -53,7 +53,7 @@ def find_v5_ports(p_type: str):
         if p_type.lower() == 'user':
             return user_ports
         elif p_type.lower() == 'system':
-            return [*system_ports, *joystick_ports]
+            return system_ports + joystick_ports
         else:
             raise ValueError(f'Invalid port type specified: {p_type}')
 
