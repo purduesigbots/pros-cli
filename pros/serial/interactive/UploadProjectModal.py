@@ -51,7 +51,7 @@ class UploadProjectModal(application.Modal[None]):
                 device.used_slots().items()
             ]
         else:
-            slot_options = [str(i) for i in range(1, 8)]
+            slot_options = [str(i) for i in range(1, 9)]
         project_name = self.advanced_options['name'].value
         if 'slot' in self.project.upload_options:
             # first, see if the project has it specified in its upload options

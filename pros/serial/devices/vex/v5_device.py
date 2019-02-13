@@ -244,7 +244,7 @@ class V5Device(VEXDevice, SystemDevice):
 
     def used_slots(self) -> Dict[int, Optional[str]]:
         rv = {}
-        for slot in range(1, 8):
+        for slot in range(1, 9):
             ini = self.read_ini(f'slot_{slot}.ini')
             rv[slot] = ini['program']['name'] if ini is not None else None
         return rv
