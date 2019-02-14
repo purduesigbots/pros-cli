@@ -163,7 +163,7 @@ class V5Device(VEXDevice, SystemDevice):
                 packet_size = ft_meta['max_packet_size']
                 if i + ft_meta['max_packet_size'] > file_len:
                     packet_size = ft_meta['file_size'] - i
-                file.write(self.ft_read(addr + i, packet_size))
+                file.write(self.ft_read(addr + i, packet_size, clip=target != 'screen'))
                 progress.update(packet_size)
                 logger(__name__).debug('Completed {} of {} bytes'.format(i + packet_size, file_len))
         self.ft_complete()
@@ -205,6 +205,7 @@ class V5Device(VEXDevice, SystemDevice):
         rx_io = BytesIO()
         self.read_file(rx_io, '', vid='system', target='screen', addr=0, file_len=file_size)
         rx = rx_io.getvalue()
+        rx = struct.unpack('<{}I'.format(len(rx) // 4), rx)
 
         data = [[] for _ in range(height)]
         for y in range(height):
@@ -291,7 +292,7 @@ class V5Device(VEXDevice, SystemDevice):
         return ret
 
     @retries
-    def ft_read(self, addr: int, n_bytes: int) -> bytearray:
+    def ft_read(self, addr: int, n_bytes: int, clip: bool = True) -> bytearray:
         logger(__name__).debug('Sending ext 0x14 command')
         req_n_bytes = n_bytes + ((4 - (n_bytes % 4)) if n_bytes % 4 != 0 else 0)
         tx_payload = struct.pack("<IH", addr, req_n_bytes)
@@ -299,7 +300,9 @@ class V5Device(VEXDevice, SystemDevice):
         ret = self._txrx_ext_struct(0x14, tx_payload, rx_fmt, check_ack=False,
                                     check_length=False)[1]
         logger(__name__).debug('Completed ext 0x14 command')
-        return ret[:-1]
+        if clip:
+            return ret[:-1]
+        return ret
 
     @retries
     def ft_set_link(self, link_name: str, vid: int_str = 'user', options: int = 0):
