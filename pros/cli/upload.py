@@ -79,7 +79,7 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
         logger(__name__).debug(f"Invalid target provided: {kwargs['target']}")
         logger(__name__).debug('Target should be one of ("v5" or "cortex").')
     if not port:
-        return -1
+        raise dont_send(click.UsageError('No port provided or located. Make sure to specify --target if needed.'))
 
     if kwargs['target'] == 'v5':
         if kwargs['name'] is None:
