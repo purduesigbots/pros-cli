@@ -27,7 +27,7 @@ def prompt_to_send(event: Dict[str, Any], hint: Optional[Dict[str, Any]]) -> Opt
             ui.logger(__name__).debug('Not sending candidate event because event was tagged with extra.sentry = False')
             return
         if 'exc_info' in hint and (not getattr(hint['exc_info'][1], 'sentry', True) or
-                                   any(hint['exc_info'][0] is e for e in SUPPRESSED_EXCEPTIONS)):
+                                   any(isinstance(hint['exc_info'][1], t) for t in SUPPRESSED_EXCEPTIONS)):
             ui.logger(__name__).debug('Not sending candidate event because exception was tagged with sentry = False')
             return
 
