@@ -534,8 +534,8 @@ class V5Device(VEXDevice, SystemDevice):
             file, file_len = compress_file(file, file_len)
 
         if self.is_wireless and file_len > 0x25000:
-            confirm(f'You\'re about to upload {file_len} bytes wirelessly. This could take some time, and you should '
-                    f'consider uploading directly with a wire.', abort=True, default=False)
+            confirm(f'You\'re about to download {file_len} bytes wirelessly. This could take some time, and you should '
+                    f'consider downloading directly with a wire.', abort=True, default=False)
         crc32 = self.VEX_CRC32.compute(file.read(file_len))
         file.seek(0, 0)
         addr = kwargs.get('addr', 0x03800000)
