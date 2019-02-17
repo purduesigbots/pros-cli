@@ -10,7 +10,6 @@ from .parameters import NonExistentProjectParameter
 
 
 class NewProjectModal(application.Modal[None]):
-    directory = NonExistentProjectParameter(os.path.join(os.path.expanduser('~'), 'My PROS Project'))
     targets = parameters.OptionParameter('v5', ['v5', 'cortex'])
     kernel_versions = parameters.OptionParameter('latest', ['latest'])
     install_default_libraries = parameters.BooleanParameter(True)
@@ -18,10 +17,12 @@ class NewProjectModal(application.Modal[None]):
     project_name = parameters.Parameter(None)
     advanced_collapsed = parameters.BooleanParameter(True)
 
-    def __init__(self, ctx: Context = None, conductor: Optional[Conductor] = None):
+    def __init__(self, ctx: Context = None, conductor: Optional[Conductor] = None,
+                 directory=os.path.join(os.path.expanduser('~'), 'My PROS Project')):
         super().__init__('Create a new project')
         self.conductor = conductor or Conductor()
         self.click_ctx = ctx or get_current_context()
+        self.directory = NonExistentProjectParameter(directory)
 
         cb = self.targets.on_changed(self.target_changed, asynchronous=True)
         cb(self.targets)

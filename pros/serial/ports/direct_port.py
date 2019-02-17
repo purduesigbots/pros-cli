@@ -17,7 +17,7 @@ def create_serial_port(port_name: str, timeout: Optional[float] = 1.0) -> serial
         port.inter_byte_timeout = 0.2
         return port
     except serial.SerialException as e:
-        if False and PermissionError.__name__ in str(e) and 'Access is denied' in str(e):
+        if PermissionError.__name__ in str(e) and 'Access is denied' in str(e):
             tb = sys.exc_info()[2]
             raise ConnectionRefusedException(port_name, e).with_traceback(tb)
         else:
