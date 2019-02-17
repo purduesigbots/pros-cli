@@ -207,6 +207,12 @@ class V5Device(VEXDevice, SystemDevice):
     def can_compress(self):
         return self.status['system_version'] in Spec('>=1.0.5')
 
+    @property
+    def is_wireless(self):
+        version = self.query_system_version()
+        return version.product == V5Device.SystemVersion.Product.CONTROLLER and \
+               V5Device.SystemVersion.ControllerFlags.CONNECTED in version.product_flags
+
     def generate_cold_hash(self, project: Project, extra: dict):
         keys = {k: t.version for k, t in project.templates.items()}
         keys.update(extra)
@@ -522,6 +528,9 @@ class V5Device(VEXDevice, SystemDevice):
         if compress and self.can_compress:
             file, file_len = compress_file(file, file_len)
 
+        if self.is_wireless and file_len > 0x25000:
+            confirm(f'You\'re about to upload {file_len} bytes wirelessly. This could take some time, and you should '
+                    f'consider uploading directly with a wire.', abort=True, default=False)
         crc32 = self.VEX_CRC32.compute(file.read(file_len))
         file.seek(0, 0)
         addr = kwargs.get('addr', 0x03800000)
