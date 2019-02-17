@@ -9,9 +9,9 @@ class Template(BaseTemplate):
     def __init__(self, **kwargs):
         self.system_files: List[str] = []
         self.user_files: List[str] = []
-        if 'version' in kwargs:
-            kwargs['version'] = str(Version.coerce(kwargs['version']))
         super().__init__(**kwargs)
+        if self.version:
+            self.version = str(Version.coerce(self.version))
 
     @property
     def all_files(self) -> Set[str]:
