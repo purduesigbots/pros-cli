@@ -2,11 +2,12 @@ import gzip
 import io
 import re
 import struct
+import time
 import typing
 from collections import defaultdict
 from configparser import ConfigParser
 from datetime import datetime, timedelta
-from enum import IntEnum
+from enum import IntEnum, IntFlag
 from io import BytesIO, StringIO
 from pathlib import Path
 from typing import *
@@ -43,10 +44,9 @@ def find_v5_ports(p_type: str):
     # Doesn't work on macOS or Jonathan's Dell, so we have a fallback (below)
     user_ports = [p for p in ports if filter_v5_ports(p, ['2'], ['User'])]
     system_ports = [p for p in ports if filter_v5_ports(p, ['0'], ['System', 'Communications'])]
-    joystick_ports = []  # joystick comms are very slow/unusable
-    # joystick_ports = [p for p in ports if filter_v5_ports(p, ['1'], ['Controller'])]
+    joystick_ports = [p for p in ports if filter_v5_ports(p, ['1'], ['Controller'])]
 
-    # TODO: test this code path (hard)
+    # Testing this code path is hard!
     if len(user_ports) != len(system_ports):
         if len(user_ports) > len(system_ports):
             user_ports = [p for p in user_ports if p not in system_ports]
@@ -57,7 +57,7 @@ def find_v5_ports(p_type: str):
         if p_type.lower() == 'user':
             return user_ports
         elif p_type.lower() == 'system':
-            return system_ports
+            return system_ports + joystick_ports
         else:
             raise ValueError(f'Invalid port type specified: {p_type}')
 
@@ -72,12 +72,25 @@ def find_v5_ports(p_type: str):
         if p_type.lower() == 'user':
             return [ports[1]]
         elif p_type.lower() == 'system':
-            return [ports[0]]
+            return [ports[0], *joystick_ports]
         else:
             raise ValueError(f'Invalid port type specified: {p_type}')
-    if len(joystick_ports) > 0:
+    if len(joystick_ports) > 0 and p_type.lower() == 'system':
         return joystick_ports
     return []
+
+
+def with_download_channel(f):
+    """
+    Function decorator for use inside V5Device class. Needs to be outside the class because @staticmethod prevents
+    us from making a function decorator
+    """
+
+    def wrapped(device, *args, **kwargs):
+        with V5Device.DownloadChannel(device):
+            f(device, *args, **kwargs)
+
+    return wrapped
 
 
 def compress_file(file: BinaryIO, file_len: int, label='Compressing binary') -> Tuple[BinaryIO, int]:
@@ -98,6 +111,7 @@ def compress_file(file: BinaryIO, file_len: int, label='Compressing binary') -> 
 
 class V5Device(VEXDevice, SystemDevice):
     vid_map = {'user': 1, 'system': 15, 'rms': 16, 'pros': 24, 'mw': 32}  # type: Dict[str, int]
+    channel_map = {'pit': 0, 'download': 1}  # type: Dict[str, int]
 
     class FTCompleteOptions(IntEnum):
         DONT_RUN = 0
@@ -107,9 +121,81 @@ class V5Device(VEXDevice, SystemDevice):
     VEX_CRC16 = CRC(16, 0x1021)  # CRC-16-CCIT
     VEX_CRC32 = CRC(32, 0x04C11DB7)  # CRC-32 (the one used everywhere but has no name)
 
+    class SystemVersion(object):
+        class Product(IntEnum):
+            CONTROLLER = 0x11
+            BRAIN = 0x10
+
+        class BrainFlags(IntFlag):
+            pass
+
+        class ControllerFlags(IntFlag):
+            CONNECTED = 0x02
+
+        flag_map = {Product.BRAIN: BrainFlags, Product.CONTROLLER: ControllerFlags}
+
+        def __init__(self, data: tuple):
+            from semantic_version import Version
+            self.system_version = Version('{}.{}.{}-{}.{}'.format(*data[0:5]))
+            self.product = V5Device.SystemVersion.Product(data[5])
+            self.product_flags = self.flag_map[self.product](data[6])
+
+        def __str__(self):
+            return f'System Version: {self.system_version}\n' \
+                f'       Product: {self.product.name}\n' \
+                f' Product Flags: {self.product_flags.value:x}'
+
+    class SystemStatus(object):
+        def __init__(self, data: tuple):
+            from semantic_version import Version
+            self.system_version = Version('{}.{}.{}-{}'.format(*data[0:4]))
+            self.cpu0_version = Version('{}.{}.{}-{}'.format(*data[4:8]))
+            self.cpu1_version = Version('{}.{}.{}-{}'.format(*data[8:12]))
+            self.touch_version = data[12]
+            self.system_id = data[13]
+
+        def __getitem__(self, item):
+            return self.__dict__[item]
+
     def __init__(self, port: BasePort):
         self._status = None
         super().__init__(port)
+
+    class DownloadChannel(object):
+        def __init__(self, device: 'V5Device', timeout: float = 5.):
+            self.device = device
+            self.timeout = timeout
+            self.did_switch = False
+
+        def __enter__(self):
+            version = self.device.query_system_version()
+            if version.product == V5Device.SystemVersion.Product.CONTROLLER:
+                self.device.default_timeout = 2.
+                if V5Device.SystemVersion.ControllerFlags.CONNECTED not in version.product_flags:
+                    raise VEXCommError('V5 Controller doesn\'t appear to be connected to a V5 Brain', version)
+                ui.echo('Transferring V5 to download channel')
+                self.device.ft_transfer_channel('download')
+                logger(__name__).debug('Sleeping for a while to let V5 start channel transfer')
+                time.sleep(.25)  # wait at least 250ms before starting to poll controller if it's connected yet
+                version = self.device.query_system_version()
+                start_time = time.time()
+                # ask controller every 25 ms if it's connected until it is
+                while V5Device.SystemVersion.ControllerFlags.CONNECTED not in version.product_flags and \
+                        time.time() - start_time < self.timeout:
+                    version = self.device.query_system_version()
+                    time.sleep(0.25)
+                if V5Device.SystemVersion.ControllerFlags.CONNECTED not in version.product_flags:
+                    raise VEXCommError('Could not transfer V5 Controller to download channel', version)
+                logger(__name__).info('V5 should been transferred to higher bandwidth download channel')
+                return self
+            else:
+                return self
+
+        def __exit__(self, *exc):
+            version = self.device.query_system_version()
+            if version.product == V5Device.SystemVersion.Product.CONTROLLER:
+                self.device.ft_transfer_channel('pit')
+                ui.echo('V5 has been transferred back to pit channel')
 
     @property
     def status(self):
@@ -120,6 +206,12 @@ class V5Device(VEXDevice, SystemDevice):
     @property
     def can_compress(self):
         return self.status['system_version'] in Spec('>=1.0.5')
+
+    @property
+    def is_wireless(self):
+        version = self.query_system_version()
+        return version.product == V5Device.SystemVersion.Product.CONTROLLER and \
+               V5Device.SystemVersion.ControllerFlags.CONNECTED in version.product_flags
 
     def generate_cold_hash(self, project: Project, extra: dict):
         keys = {k: t.version for k, t in project.templates.items()}
@@ -188,6 +280,7 @@ class V5Device(VEXDevice, SystemDevice):
             logger(__name__).info(f'Created ini: {ini_str.getvalue()}')
             return ini_str.getvalue()
 
+    @with_download_channel
     def write_program(self, file: typing.BinaryIO, remote_name: str = None, ini: ConfigParser = None, slot: int = 0,
                       file_len: int = -1, run_after: FTCompleteOptions = FTCompleteOptions.DONT_RUN,
                       target: str = 'flash', quirk: int = 0, linked_file: Optional[typing.BinaryIO] = None,
@@ -435,6 +528,9 @@ class V5Device(VEXDevice, SystemDevice):
         if compress and self.can_compress:
             file, file_len = compress_file(file, file_len)
 
+        if self.is_wireless and file_len > 0x25000:
+            confirm(f'You\'re about to upload {file_len} bytes wirelessly. This could take some time, and you should '
+                    f'consider uploading directly with a wire.', abort=True, default=False)
         crc32 = self.VEX_CRC32.compute(file.read(file_len))
         file.seek(0, 0)
         addr = kwargs.get('addr', 0x03800000)
@@ -463,6 +559,7 @@ class V5Device(VEXDevice, SystemDevice):
             file.close()
         self.ft_complete(options=run_after)
 
+    @with_download_channel
     def capture_screen(self) -> Tuple[List[List[int]], int, int]:
         self.sc_init()
         width, height = 512, 272
@@ -503,11 +600,21 @@ class V5Device(VEXDevice, SystemDevice):
             return None
 
     @retries
-    def query_system_version(self) -> bytearray:
-        logger(__name__).debug('Sending simple 0xA4 command')
-        ret = self._txrx_simple_packet(0xA4, 0x08)
-        logger(__name__).debug('Completed simple 0xA4 command')
-        return ret
+    def query_system_version(self) -> SystemVersion:
+        logger(__name__).debug('Sending simple 0xA408 command')
+        ret = self._txrx_simple_struct(0xA4, '>8B')
+        logger(__name__).debug('Completed simple 0xA408 command')
+        return V5Device.SystemVersion(ret)
+
+    @retries
+    def ft_transfer_channel(self, channel: int_str):
+        logger(__name__).debug(f'Transferring to {channel} channel')
+        logger(__name__).debug('Sending ext 0x10 command')
+        if isinstance(channel, str):
+            channel = self.channel_map[channel]
+        assert isinstance(channel, int) and 0 <= channel <= 1
+        self._txrx_ext_packet(0x10, struct.pack('<2B', 1, channel), rx_length=0)
+        logger(__name__).debug('Completed ext 0x10 command')
 
     @retries
     def ft_initialize(self, file_name: str, **kwargs) -> Dict[str, Any]:
@@ -704,18 +811,11 @@ class V5Device(VEXDevice, SystemDevice):
         raise NotImplementedError()
 
     @retries
-    def get_system_status(self) -> Dict[str, Any]:
+    def get_system_status(self) -> SystemStatus:
         logger(__name__).debug('Sending ext 0x22 command')
         rx = self._txrx_ext_struct(0x22, [], "<x12B3xBI12x")
         logger(__name__).debug('Completed ext 0x22 command')
-        from semantic_version import Version
-        return {
-            'system_version': Version('{}.{}.{}-{}'.format(*rx[0:4])),
-            'cpu0_version': Version('{}.{}.{}-{}'.format(*rx[4:8])),
-            'cpu1_version': Version('{}.{}.{}-{}'.format(*rx[8:12])),
-            'touch_version': rx[12],
-            'system_id': rx[13]
-        }
+        return V5Device.SystemStatus(rx)
 
     @retries
     def sc_init(self) -> None:
@@ -729,7 +829,7 @@ class V5Device(VEXDevice, SystemDevice):
 
     def _txrx_ext_struct(self, command: int, tx_data: Union[Iterable, bytes, bytearray],
                          unpack_fmt: str, check_length: bool = True, check_ack: bool = True,
-                         timeout: float = 0.1) -> Tuple:
+                         timeout: Optional[float] = None) -> Tuple:
         """
         Transmits and receives an extended command to the V5, automatically unpacking the values according to unpack_fmt
         which gets passed into struct.unpack. The size of the payload is determined from the fmt string
@@ -793,7 +893,7 @@ class V5Device(VEXDevice, SystemDevice):
 
     def _txrx_ext_packet(self, command: int, tx_data: Union[Iterable, bytes, bytearray],
                          rx_length: int, check_length: bool = True,
-                         check_ack: bool = True, timeout: float = 0.1) -> Message:
+                         check_ack: bool = True, timeout: Optional[float] = None) -> Message:
         """
         Transmits and receives an extended command to the V5.
         :param command: Extended command code
