@@ -172,5 +172,5 @@ def ls_usb(target):
 @click.pass_context
 def make_upload_terminal(ctx, **upload_kwargs):
     from .terminal import terminal
-    ctx.forward(upload, **upload_kwargs)
-    ctx.forward(terminal, request_banner=False)
+    ctx.invoke(upload, **upload_kwargs)
+    ctx.invoke(terminal, request_banner=False)
