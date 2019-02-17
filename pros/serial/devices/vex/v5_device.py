@@ -88,7 +88,7 @@ def with_download_channel(f):
 
     def wrapped(device, *args, **kwargs):
         with V5Device.DownloadChannel(device):
-            f(device, *args, **kwargs)
+            return f(device, *args, **kwargs)
 
     return wrapped
 
@@ -505,6 +505,11 @@ class V5Device(VEXDevice, SystemDevice):
         ft_meta = self.ft_initialize(remote_file, function='download', vid=vid, target=target)
         if file_len is None:
             file_len = ft_meta['file_size']
+
+        if self.is_wireless and file_len > 0x25000:
+            confirm(f'You\'re about to download {file_len} bytes wirelessly. This could take some time, and you should '
+                    f'consider downloading directly with a wire.', abort=True, default=False)
+
         max_packet_size = ft_meta['max_packet_size']
         with ui.progressbar(length=file_len, label='Downloading {}'.format(remote_file)) as progress:
             for i in range(0, file_len, max_packet_size):
