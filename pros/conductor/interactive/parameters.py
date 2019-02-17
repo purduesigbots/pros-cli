@@ -1,5 +1,6 @@
 import os.path
 import sys
+from pathlib import Path
 from typing import *
 
 from semantic_version import Spec, Version
@@ -26,6 +27,8 @@ class NonExistentProjectParameter(p.ValidatableParameter[str]):
             ])
         if any(value.startswith(d) for d in blacklisted_directories):
             return 'Cannot create project in a system directory'
+        if Path(value).samefile(os.path.expanduser('~')):
+            return 'Should not create a project in home directory'
         if not os.path.exists(value):
             parent = os.path.split(value)[0]
             while parent and not os.path.exists(parent):
