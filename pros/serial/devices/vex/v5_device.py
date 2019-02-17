@@ -471,6 +471,7 @@ class V5Device(VEXDevice, SystemDevice):
         rx_io = BytesIO()
         self.read_file(rx_io, '', vid='system', target='screen', addr=0, file_len=file_size)
         rx = rx_io.getvalue()
+        rx = struct.unpack('<{}I'.format(len(rx) // 4), rx)
 
         data = [[] for _ in range(height)]
         for y in range(height):
