@@ -657,7 +657,7 @@ class V5Device(VEXDevice, SystemDevice):
         tx_payload = struct.pack("<4B3I4s2I24s", options['function'], options['target'], options['vid'],
                                  options['options'], options['length'], options['addr'], options['crc'],
                                  options['type'], options['timestamp'], options['version'], options['name'])
-        rx = self._txrx_ext_struct(0x11, tx_payload, "<H2I")
+        rx = self._txrx_ext_struct(0x11, tx_payload, "<H2I", timeout=kwargs.get('timeout', self.default_timeout * 5))
         rx = dict(zip(['max_packet_size', 'file_size', 'crc'], rx))
         logger(__name__).debug('response: {}'.format(rx))
         logger(__name__).debug('Completed ext 0x11 command')
@@ -669,7 +669,7 @@ class V5Device(VEXDevice, SystemDevice):
         if isinstance(options, bool):
             options = self.FTCompleteOptions.RUN_IMMEDIATELY if options else self.FTCompleteOptions.DONT_RUN
         tx_payload = struct.pack("<B", options.value)
-        ret = self._txrx_ext_packet(0x12, tx_payload, 0, timeout=10.0)
+        ret = self._txrx_ext_packet(0x12, tx_payload, 0, timeout=self.default_timeout * 10)
         logger(__name__).debug('Completed ext 0x12 command')
         return ret
 
