@@ -127,7 +127,7 @@ class UploadProjectModal(application.Modal[None]):
         from click import get_current_context
         kwargs = {'path': None, 'project': self.project, 'port': self.port.value}
         if self.project.target == 'v5':
-            kwargs['name'] = self.advanced_options['name'].value
+            kwargs['remote_name'] = self.advanced_options['name'].value
             kwargs['slot'] = int(self.advanced_options['slot'].value[0])  # XXX: the first character is the slot number
             kwargs['description'] = self.advanced_options['description'].value
             kwargs['compress_bin'] = self.advanced_options['compress_bin'].value

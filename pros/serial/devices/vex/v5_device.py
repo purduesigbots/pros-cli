@@ -192,8 +192,7 @@ class V5Device(VEXDevice, SystemDevice):
                 return self
 
         def __exit__(self, *exc):
-            version = self.device.query_system_version()
-            if version.product == V5Device.SystemVersion.Product.CONTROLLER:
+            if self.did_switch:
                 self.device.ft_transfer_channel('pit')
                 ui.echo('V5 has been transferred back to pit channel')
 
@@ -315,11 +314,11 @@ class V5Device(VEXDevice, SystemDevice):
         if linked_file is not None:
             self.upload_library(linked_file, remote_name=linked_remote_name, addr=linked_file_addr,
                                 compress=compress_bin, force_upload=kwargs.pop('force_upload_linked', False))
-
+        addr = kwargs.pop('addr')
         if (quirk & 0xff) == 1:
             # WRITE BIN FILE
             self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after,
-                            linked_filename=linked_remote_name, compress=compress_bin, **kwargs)
+                            linked_filename=linked_remote_name, compress=compress_bin, addr=addr, **kwargs)
             with BytesIO(ini_file.encode(encoding='ascii')) as ini_bin:
                 # WRITE INI FILE
                 self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
@@ -331,7 +330,7 @@ class V5Device(VEXDevice, SystemDevice):
                 self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
             # WRITE BIN FILE
             self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after,
-                            linked_filename=linked_remote_name, compress=compress_bin, **kwargs)
+                            linked_filename=linked_remote_name, compress=compress_bin, addr=addr, **kwargs)
         else:
             raise ValueError(f'Unknown quirk option: {quirk}')
         ui.finalize('upload', f'{finish_string} to V5')
@@ -502,11 +501,12 @@ class V5Device(VEXDevice, SystemDevice):
         if addr is None:
             metadata = self.get_file_metadata_by_name(remote_file, vid=vid)
             addr = metadata['addr']
-        ft_meta = self.ft_initialize(remote_file, function='download', vid=vid, target=target)
+        wireless = self.is_wireless
+        ft_meta = self.ft_initialize(remote_file, function='download', vid=vid, target=target, addr=addr)
         if file_len is None:
             file_len = ft_meta['file_size']
 
-        if self.is_wireless and file_len > 0x25000:
+        if wireless and file_len > 0x25000:
             confirm(f'You\'re about to download {file_len} bytes wirelessly. This could take some time, and you should '
                     f'consider downloading directly with a wire.', abort=True, default=False)
 
@@ -691,9 +691,11 @@ class V5Device(VEXDevice, SystemDevice):
     @retries
     def ft_read(self, addr: int, n_bytes: int) -> bytearray:
         logger(__name__).debug('Sending ext 0x14 command')
-        tx_payload = struct.pack("<IH", addr, n_bytes)
-        rx_fmt = "<I{}s".format(n_bytes)
-        ret = self._txrx_ext_struct(0x14, tx_payload, rx_fmt, check_ack=False)[1]
+        actual_n_bytes = n_bytes + (0 if n_bytes % 4 == 0 else 4 - n_bytes % 4)
+        ui.logger(__name__).debug(dict(actual_n_bytes=actual_n_bytes, addr=addr))
+        tx_payload = struct.pack("<IH", addr, actual_n_bytes)
+        rx_fmt = "<I{}s".format(actual_n_bytes)
+        ret = self._txrx_ext_struct(0x14, tx_payload, rx_fmt, check_ack=False)[1][:n_bytes]
         logger(__name__).debug('Completed ext 0x14 command')
         return ret
 
@@ -753,6 +755,7 @@ class V5Device(VEXDevice, SystemDevice):
         logger(__name__).debug('Sending ext 0x19 command')
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
+        ui.logger(__name__).debug(f'Options: {dict(vid=vid, file_name=file_name)}')
         tx_payload = struct.pack("<2B24s", vid, options, file_name.encode(encoding='ascii'))
         rx = self._txrx_ext_struct(0x19, tx_payload, "<B3L4sLL24s")
         rx = dict(zip(['linked_vid', 'size', 'addr', 'crc', 'type', 'timestamp', 'version', 'linked_filename'], rx))
