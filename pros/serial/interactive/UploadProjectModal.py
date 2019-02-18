@@ -22,7 +22,7 @@ class UploadProjectModal(application.Modal[None]):
         )
 
         self.port = parameters.OptionParameter('', [''])
-
+        self.save_settings = parameters.BooleanParameter(True)
         self.advanced_options: Dict[str, parameters.Parameter] = {}
         self.advanced_options_collapsed = parameters.BooleanParameter(True)
 
@@ -126,11 +126,20 @@ class UploadProjectModal(application.Modal[None]):
         from pros.cli.upload import upload
         from click import get_current_context
         kwargs = {'path': None, 'project': self.project, 'port': self.port.value}
+        savable_kwargs = {}
         if self.project.target == 'v5':
-            kwargs['remote_name'] = self.advanced_options['name'].value
-            kwargs['slot'] = int(self.advanced_options['slot'].value[0])  # XXX: the first character is the slot number
-            kwargs['description'] = self.advanced_options['description'].value
-            kwargs['compress_bin'] = self.advanced_options['compress_bin'].value
+            savable_kwargs['remote_name'] = self.advanced_options['name'].value
+            # XXX: the first character is the slot number
+            savable_kwargs['slot'] = int(self.advanced_options['slot'].value[0])
+            savable_kwargs['description'] = self.advanced_options['description'].value
+            savable_kwargs['compress_bin'] = self.advanced_options['compress_bin'].value
+
+        if self.save_settings.value:
+            self.project.project_name = savable_kwargs['remote_name']
+            self.project.upload_options.update(savable_kwargs)
+            self.project.save()
+
+        kwargs.update(savable_kwargs)
         self.exit()
         get_current_context().invoke(upload, **kwargs)
 
@@ -150,6 +159,7 @@ class UploadProjectModal(application.Modal[None]):
 
         yield components.DirectorySelector('Project Directory', self.project_path)
         yield components.DropDownBox('Port', self.port)
+        yield components.Checkbox('Save upload settings', self.save_settings)
 
         if isinstance(self.project, Project) and self.project.target == 'v5':
             yield components.Container(
