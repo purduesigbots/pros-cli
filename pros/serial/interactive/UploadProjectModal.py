@@ -104,7 +104,7 @@ class UploadProjectModal(application.Modal[None]):
 
             if self.project.target == 'v5':
                 self.advanced_options = {
-                    'name': parameters.Parameter(self.project.name),
+                    'name': parameters.Parameter(self.project.upload_options.get('remote_name', self.project.name)),
                     'description': parameters.Parameter(
                         self.project.upload_options.get('description', 'Created with PROS')
                     ),
@@ -135,7 +135,6 @@ class UploadProjectModal(application.Modal[None]):
             savable_kwargs['compress_bin'] = self.advanced_options['compress_bin'].value
 
         if self.save_settings.value:
-            self.project.project_name = savable_kwargs['remote_name']
             self.project.upload_options.update(savable_kwargs)
             self.project.save()
 
