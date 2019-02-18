@@ -128,6 +128,26 @@ def rm_file(file_name: str, port: str, vid: int, erase_all: bool):
     device.erase_file(file_name, vid=vid, erase_all=erase_all)
 
 
+@v5.command('cat-metadata')
+@click.argument('file_name')
+@click.argument('port', required=False, default=None)
+@click.option('--vid', type=int, default=1, cls=PROSOption, hidden=True)
+@default_options
+def cat_metadata(file_name: str, port: str, vid: int):
+    """
+    Print metadata for a file
+    """
+    from pros.serial.devices.vex import V5Device
+    from pros.serial.ports import DirectPort
+    port = resolve_v5_port(port, 'system')
+    if not port:
+        return -1
+
+    ser = DirectPort(port)
+    device = V5Device(ser)
+    print(device.get_file_metadata_by_name(file_name, vid=vid))
+
+
 @v5.command('rm-all')
 @click.argument('port', required=False, default=None)
 @click.option('--vid', type=int, default=1, hidden=True, cls=PROSOption)

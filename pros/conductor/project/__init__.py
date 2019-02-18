@@ -3,6 +3,7 @@ import io
 import os.path
 import pathlib
 import sys
+from pathlib import Path
 from typing import *
 
 from pros.common import *
@@ -47,6 +48,10 @@ class Project(Config):
     @property
     def location(self) -> pathlib.Path:
         return pathlib.Path(os.path.dirname(self.save_file))
+
+    @property
+    def path(self):
+        return Path(self.location)
 
     @property
     def name(self):
@@ -96,6 +101,7 @@ class Project(Config):
                        remove_empty_directories: bool = False):
         """
         Applies a template to a project
+        :param remove_empty_directories:
         :param template:
         :param force_system:
         :param force_user:
@@ -234,12 +240,15 @@ class Project(Config):
             build_args = [*build_args, f'BINDIR={td_path}']
 
         def libscanbuild_capture(args: argparse.Namespace) -> Tuple[int, Iterable[Compilation]]:
+            """
+            Implementation of compilation database generation.
+
+            :param args:    the parsed and validated command line arguments
+            :return:        the exit status of build process.
+            """
             from libscanbuild.intercept import setup_environment, run_build, exec_trace_files, parse_exec_trace, \
                 compilations
             from libear import temporary_directory
-            """ Implementation of compilation database generation.
-            :param args:    the parsed and validated command line arguments
-            :return:        the exit status of build process. """
 
             with temporary_directory(prefix='intercept-') as tmp_dir:
                 # run the build command

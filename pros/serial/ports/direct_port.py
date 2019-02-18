@@ -3,22 +3,25 @@ from typing import *
 
 import serial
 
-from pros.common import logger
+from pros.common import logger, dont_send
 from pros.serial.ports.exceptions import ConnectionRefusedException
 from .base_port import BasePort, PortConnectionException
 
 
 def create_serial_port(port_name: str, timeout: Optional[float] = 1.0) -> serial.Serial:
     try:
+        logger(__name__).debug(f'Opening serial port {port_name}')
         port = serial.Serial(port_name, baudrate=115200, bytesize=serial.EIGHTBITS,
                              parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE)
         port.timeout = timeout
         port.inter_byte_timeout = 0.2
         return port
     except serial.SerialException as e:
-        if False and PermissionError.__name__ in str(e) and 'Access is denied' in str(e):
+        if any(msg in str(e) for msg in [
+            'Access is denied', 'Errno 16', 'Errno 13'
+        ]):
             tb = sys.exc_info()[2]
-            raise ConnectionRefusedException(port_name, e).with_traceback(tb)
+            raise dont_send(ConnectionRefusedException(port_name, e).with_traceback(tb))
         else:
             raise e
 
