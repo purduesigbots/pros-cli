@@ -15,6 +15,7 @@ from typing import BinaryIO
 
 from semantic_version import Spec
 
+from pros.common import ui
 from pros.common import *
 from pros.conductor import Project
 from pros.serial import bytes_to_str, decode_bytes_to_str
@@ -285,55 +286,56 @@ class V5Device(VEXDevice, SystemDevice):
                       target: str = 'flash', quirk: int = 0, linked_file: Optional[typing.BinaryIO] = None,
                       linked_remote_name: Optional[str] = None, linked_file_addr: Optional[int] = None,
                       compress_bin: bool = True, **kwargs):
-        action_string = f'Uploading program "{remote_name}"'
-        finish_string = f'Finished uploading "{remote_name}"'
-        if hasattr(file, 'name'):
-            action_string += f' ({Path(file.name).name})'
-            finish_string += f' ({Path(file.name).name})'
-        action_string += f' to V5 slot {slot + 1} on {self.port}'
-        if compress_bin:
-            action_string += ' (compressed)'
-        ui.echo(action_string)
+        with ui.Notification():
+            action_string = f'Uploading program "{remote_name}"'
+            finish_string = f'Finished uploading "{remote_name}"'
+            if hasattr(file, 'name'):
+                action_string += f' ({Path(file.name).name})'
+                finish_string += f' ({Path(file.name).name})'
+            action_string += f' to V5 slot {slot + 1} on {self.port}'
+            if compress_bin:
+                action_string += ' (compressed)'
+            ui.echo(action_string)
 
-        remote_base = f'slot_{slot + 1}'
-        if target == 'ddr':
-            self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin',
-                            target='ddr', run_after=run_after, linked_filename=linked_remote_name, **kwargs)
-            return
-        if not isinstance(ini, ConfigParser):
-            ini = ConfigParser()
-        if not remote_name:
-            remote_name = file.name
-        if len(remote_name) > 23:
-            logger(__name__).info('Truncating remote name to {} for length.'.format(remote_name[:20]))
-            remote_name = remote_name[:23]
+            remote_base = f'slot_{slot + 1}'
+            if target == 'ddr':
+                self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin',
+                                target='ddr', run_after=run_after, linked_filename=linked_remote_name, **kwargs)
+                return
+            if not isinstance(ini, ConfigParser):
+                ini = ConfigParser()
+            if not remote_name:
+                remote_name = file.name
+            if len(remote_name) > 23:
+                logger(__name__).info('Truncating remote name to {} for length.'.format(remote_name[:20]))
+                remote_name = remote_name[:23]
 
-        ini_file = self.generate_ini_file(remote_name=remote_name, slot=slot, ini=ini, **kwargs)
-        logger(__name__).info(f'Created ini: {ini_file}')
+            ini_file = self.generate_ini_file(remote_name=remote_name, slot=slot, ini=ini, **kwargs)
+            logger(__name__).info(f'Created ini: {ini_file}')
 
-        if linked_file is not None:
-            self.upload_library(linked_file, remote_name=linked_remote_name, addr=linked_file_addr,
-                                compress=compress_bin, force_upload=kwargs.pop('force_upload_linked', False))
-        addr = kwargs.pop('addr')
-        if (quirk & 0xff) == 1:
-            # WRITE BIN FILE
-            self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after,
-                            linked_filename=linked_remote_name, compress=compress_bin, addr=addr, **kwargs)
-            with BytesIO(ini_file.encode(encoding='ascii')) as ini_bin:
-                # WRITE INI FILE
-                self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
-        elif (quirk & 0xff) == 0:
-            # STOP PROGRAM
-            self.execute_program_file('', run=False)
-            with BytesIO(ini_file.encode(encoding='ascii')) as ini_bin:
-                # WRITE INI FILE
-                self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
-            # WRITE BIN FILE
-            self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after,
-                            linked_filename=linked_remote_name, compress=compress_bin, addr=addr, **kwargs)
-        else:
-            raise ValueError(f'Unknown quirk option: {quirk}')
-        ui.finalize('upload', f'{finish_string} to V5')
+            if linked_file is not None:
+                self.upload_library(linked_file, remote_name=linked_remote_name, addr=linked_file_addr,
+                                    compress=compress_bin, force_upload=kwargs.pop('force_upload_linked', False))
+            bin_kwargs = {k: v for k, v in kwargs.items() if v in ['addr']}
+            if (quirk & 0xff) == 1:
+                # WRITE BIN FILE
+                self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after,
+                                linked_filename=linked_remote_name, compress=compress_bin, **bin_kwargs, **kwargs)
+                with BytesIO(ini_file.encode(encoding='ascii')) as ini_bin:
+                    # WRITE INI FILE
+                    self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
+            elif (quirk & 0xff) == 0:
+                # STOP PROGRAM
+                self.execute_program_file('', run=False)
+                with BytesIO(ini_file.encode(encoding='ascii')) as ini_bin:
+                    # WRITE INI FILE
+                    self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
+                # WRITE BIN FILE
+                self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after,
+                                linked_filename=linked_remote_name, compress=compress_bin, **bin_kwargs, **kwargs)
+            else:
+                raise ValueError(f'Unknown quirk option: {quirk}')
+            ui.finalize('upload', f'{finish_string} to V5')
 
     def ensure_library_space(self, name: Optional[str] = None, vid: int_str = None,
                              target_name: Optional[str] = None):
@@ -587,11 +589,12 @@ class V5Device(VEXDevice, SystemDevice):
         return data, 480, height
 
     def used_slots(self) -> Dict[int, Optional[str]]:
-        rv = {}
-        for slot in range(1, 9):
-            ini = self.read_ini(f'slot_{slot}.ini')
-            rv[slot] = ini['program']['name'] if ini is not None else None
-        return rv
+        with ui.Notification():
+            rv = {}
+            for slot in range(1, 9):
+                ini = self.read_ini(f'slot_{slot}.ini')
+                rv[slot] = ini['program']['name'] if ini is not None else None
+            return rv
 
     def read_ini(self, remote_name: str) -> Optional[ConfigParser]:
         try:
