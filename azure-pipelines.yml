@@ -1,6 +1,6 @@
 variables:
-  python.version.linux: '3.6.5'
-  python.version.windows: '3.6.4'
+  python.version.linux: '3.6.x'
+  python.version.windows: '3.6.x'
 
 jobs:
 - job: UpdateBuildNumber
