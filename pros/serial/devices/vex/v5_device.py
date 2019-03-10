@@ -227,39 +227,23 @@ class V5Device(VEXDevice, SystemDevice):
 
     def upload_project(self, project: Project, **kwargs):
         assert project.target == 'v5'
-        monolith_path = project.location.joinpath(project.output)
-        if monolith_path.exists():
-            logger(__name__).debug(f'Monolith exists! ({monolith_path})')
-        if 'hot_output' in project.templates['kernel'].metadata and \
-                'cold_output' in project.templates['kernel'].metadata:
-            hot_path = project.location.joinpath(project.templates['kernel'].metadata['hot_output'])
-            cold_path = project.location.joinpath(project.templates['kernel'].metadata['cold_output'])
-            upload_hot_cold = False
-            if hot_path.exists() and cold_path.exists():
-                logger(__name__).debug(f'Hot and cold files exist! ({hot_path}; {cold_path})')
-                if monolith_path.exists():
-                    monolith_mtime = monolith_path.stat().st_mtime
-                    hot_mtime = hot_path.stat().st_mtime
-                    logger(__name__).debug(f'Monolith last modified: {monolith_mtime}')
-                    logger(__name__).debug(f'Hot last modified: {hot_mtime}')
-                    if hot_mtime > monolith_mtime:
-                        upload_hot_cold = True
-                        logger(__name__).debug('Hot file is newer than monolith!')
-                else:
-                    upload_hot_cold = True
-            if upload_hot_cold:
-                with hot_path.open(mode='rb') as hot:
-                    with cold_path.open(mode='rb') as cold:
-                        kwargs['linked_file'] = cold
-                        kwargs['linked_remote_name'] = self.generate_cold_hash(project, {})
-                        kwargs['linked_file_addr'] = int(
-                            project.templates['kernel'].metadata.get('cold_addr', 0x03800000))
-                        kwargs['addr'] = int(project.templates['kernel'].metadata.get('hot_addr', 0x07800000))
-                        return self.write_program(hot, **kwargs)
-        if not monolith_path.exists():
+        binaries = project.binaries
+        bin = None
+        if len(binaries) == 1:
+            if isinstance(binaries[0], tuple):
+                kwargs['addr'] = binaries[0][0]
+                bin = binaries[0][1]
+            else:
+                bin = binaries[0]
+        elif len(binaries) == 2:
+            kwargs['linked_file'] = binaries[1][1].open(mode='rb')
+            kwargs['linked_remote_name'] = self.generate_cold_hash(project, {})
+            kwargs['linked_file_addr'] = binaries[1][0]
+            kwargs['addr'] = binaries[1][0]
+            bin = binaries[0][1]
+        if bin is None or not bin.exists():
             raise ui.dont_send(Exception('No output files were found! Have you built your project?'))
-        with monolith_path.open(mode='rb') as pf:
-            return self.write_program(pf, **kwargs)
+        return self.write_program(bin.open(mode='rb'), **kwargs)
 
     def generate_ini_file(self, remote_name: str = None, slot: int = 0, ini: ConfigParser = None, **kwargs):
         project_ini = ConfigParser()
