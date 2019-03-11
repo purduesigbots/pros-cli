@@ -239,7 +239,7 @@ class V5Device(VEXDevice, SystemDevice):
             kwargs['linked_file'] = binaries[1][1].open(mode='rb')
             kwargs['linked_remote_name'] = self.generate_cold_hash(project, {})
             kwargs['linked_file_addr'] = binaries[1][0]
-            kwargs['addr'] = binaries[1][0]
+            kwargs['addr'] = binaries[0][0]
             bin = binaries[0][1]
         if bin is None or not bin.exists():
             raise ui.dont_send(Exception('No output files were found! Have you built your project?'))
