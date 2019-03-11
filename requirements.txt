@@ -13,3 +13,4 @@ rfc6266-parser
 sentry-sdk
 observable
 pypng
+pyelftools

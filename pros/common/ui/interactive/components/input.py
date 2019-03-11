@@ -28,3 +28,8 @@ class FileSelector(InputBox[P], Generic[P]):
 
 class DirectorySelector(InputBox[P], Generic[P]):
     pass
+
+
+# For a larger InputBox intended for multiline editing
+class TextEditor(InputBox[P], Generic[P]):
+    pass

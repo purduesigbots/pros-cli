@@ -261,11 +261,7 @@ class Project(Config):
         if os.environ.get('PROS_TOOLCHAIN'):
             env['PATH'] = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin') + os.pathsep + env['PATH']
 
-        # call make.exe if on Windows
-        if os.name == 'nt' and os.environ.get('PROS_TOOLCHAIN'):
-            make_cmd = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'make.exe')
-        else:
-            make_cmd = 'make'
+        make_cmd = utils.find_executable('make')
         stdout_pipe = EchoPipe()
         stderr_pipe = EchoPipe(err=True)
         process = subprocess.Popen(executable=make_cmd, args=[make_cmd, *build_args], cwd=self.directory, env=env,
@@ -327,10 +323,7 @@ class Project(Config):
                 return exit_code, iter(set(current))
 
         # call make.exe if on Windows
-        if os.name == 'nt' and os.environ.get('PROS_TOOLCHAIN'):
-            make_cmd = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'make.exe')
-        else:
-            make_cmd = 'make'
+        make_cmd = utils.find_executable('make')
         args = create_intercept_parser().parse_args(
             ['--override-compiler', '--use-cc', 'arm-none-eabi-gcc', '--use-c++', 'arm-none-eabi-g++', make_cmd,
              *build_args,
