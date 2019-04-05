@@ -1,4 +1,5 @@
 from pros.common.ui.interactive.renderers import MachineOutputRenderer
+from pros.conductor import Project
 from pros.conductor.interactive.NewProjectModal import NewProjectModal
 
 from .common import default_options, pros_root
@@ -12,7 +13,6 @@ def test_cli():
 @test_cli.command()
 @default_options
 def test():
-    app = NewProjectModal()
+    from pros.conductor.interactive.StackTraceModal import StackTraceModal
+    app = StackTraceModal()
     MachineOutputRenderer(app).run()
-
-    # ui.confirm('Hey')

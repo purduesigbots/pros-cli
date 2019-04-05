@@ -203,6 +203,57 @@ class Project(Config):
             return self.__dict__['output']
         return 'bin/output.bin'
 
+    @property
+    def binaries(self) -> List[Union[Path, Tuple[int, Path]]]:
+        if 'kernel' in self.templates:
+            if self.target == 'cortex':
+                return [Path(self.templates['kernel'].metadata['output'])]
+            elif self.target == 'v5':
+                if 'hot_output' in self.templates['kernel'].metadata and \
+                        'cold_output' in self.templates['kernel'].metadata:
+                    use_hot_cold = False
+                    monolith_path = self.location.joinpath(self.output)
+                    hot_path = self.location.joinpath(self.templates['kernel'].metadata['hot_output'])
+                    cold_path = self.location.joinpath(self.templates['kernel'].metadata['cold_output'])
+                    if hot_path.exists() and cold_path.exists():
+                        logger(__name__).debug(f'Hot and cold files exist! ({hot_path}; {cold_path})')
+                        if monolith_path.exists():
+                            monolith_mtime = monolith_path.stat().st_mtime
+                            hot_mtime = hot_path.stat().st_mtime
+                            logger(__name__).debug(f'Monolith last modified: {monolith_mtime}')
+                            logger(__name__).debug(f'Hot last modified: {hot_mtime}')
+                            if hot_mtime > monolith_mtime:
+                                use_hot_cold = True
+                                logger(__name__).debug('Hot file is newer than monolith!')
+                        else:
+                            use_hot_cold = True
+                    if use_hot_cold:
+                        return \
+                            [
+                                (
+                                    int(self.templates['kernel'].metadata['hot_addr']),
+                                    Path(self.templates['kernel'].metadata['hot_output'])
+                                ),
+                                (
+                                    int(self.templates['kernel'].metadata['cold_addr']),
+                                    Path(self.templates['kernel'].metadata['cold_output'])
+                                )
+                            ]
+                return [Path(self.templates['kernel'].metadata['output'])]
+            else:
+                raise ValueError(f'Unsupported target: "{self.target}"')
+
+    @property
+    def elfs(self) -> List[Union[Path, Tuple[int, Path]]]:
+        return \
+            [
+                b.with_suffix('.elf')
+                if isinstance(b, Path)
+                else (b[0], b[1].with_suffix('.elf'))
+                for b
+                in self.binaries
+            ]
+
     def make(self, build_args: List[str]):
         import subprocess
         env = os.environ.copy()
@@ -210,11 +261,7 @@ class Project(Config):
         if os.environ.get('PROS_TOOLCHAIN'):
             env['PATH'] = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin') + os.pathsep + env['PATH']
 
-        # call make.exe if on Windows
-        if os.name == 'nt' and os.environ.get('PROS_TOOLCHAIN'):
-            make_cmd = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'make.exe')
-        else:
-            make_cmd = 'make'
+        make_cmd = utils.find_executable('make')
         stdout_pipe = EchoPipe()
         stderr_pipe = EchoPipe(err=True)
         process = subprocess.Popen(executable=make_cmd, args=[make_cmd, *build_args], cwd=self.directory, env=env,
@@ -276,10 +323,7 @@ class Project(Config):
                 return exit_code, iter(set(current))
 
         # call make.exe if on Windows
-        if os.name == 'nt' and os.environ.get('PROS_TOOLCHAIN'):
-            make_cmd = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'make.exe')
-        else:
-            make_cmd = 'make'
+        make_cmd = utils.find_executable('make')
         args = create_intercept_parser().parse_args(
             ['--override-compiler', '--use-cc', 'arm-none-eabi-gcc', '--use-c++', 'arm-none-eabi-g++', make_cmd,
              *build_args,

@@ -3,6 +3,7 @@ import os
 import os.path
 import sys
 from functools import lru_cache, wraps
+from pathlib import Path
 from typing import *
 
 import click
@@ -145,3 +146,19 @@ def download_file(url: str, ext: Optional[str] = None, desc: Optional[str] = Non
 def dont_send(e: Exception):
     e.sentry = False
     return e
+
+
+def find_executable(file: str, suggested_locations: List[Path] = None) -> str:
+    if os.name == 'nt' and not file.endswith('.exe'):
+        file += '.exe'
+    if not suggested_locations:
+        suggested_locations = []
+        if os.environ.get('PROS_TOOLCHAIN'):
+            suggested_locations.append(Path(os.environ.get('PROS_TOOLCHAIN')).joinpath('bin'))
+    for p in suggested_locations:
+        if p.joinpath(file).exists():
+            return str(p.joinpath(file))
+    for p in os.environ.get('PATH').split(os.pathsep):
+        if Path(p).joinpath(file).exists():
+            return str(Path(p).joinpath(file))
+    return file
