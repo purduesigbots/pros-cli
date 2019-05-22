@@ -41,10 +41,11 @@ def terminal(port: str, backend: str, **kwargs):
     """
     from pros.serial.devices.vex.v5_user_device import V5UserDevice
     from pros.serial.terminal import Terminal
+    is_v5_user_joystick = False
     if port == 'default':
         project_path = c.Project.find_project(os.getcwd())
         if project_path is None:
-            v5_port = resolve_v5_port(None, 'user', quiet=True)
+            v5_port, is_v5_user_joystick = resolve_v5_port(None, 'user', quiet=True)
             cortex_port = resolve_cortex_port(None, quiet=True)
             if ((v5_port is None) ^ (cortex_port is None)) or (v5_port is not None and v5_port == cortex_port):
                 port = v5_port or cortex_port
@@ -56,7 +57,7 @@ def terminal(port: str, backend: str, **kwargs):
 
     if port == 'v5':
         port = None
-        port = resolve_v5_port(port, 'user')
+        port, is_v5_user_joystick = resolve_v5_port(port, 'user')
     elif port == 'cortex':
         port = None
         port = resolve_cortex_port(port)
@@ -66,6 +67,8 @@ def terminal(port: str, backend: str, **kwargs):
 
     if backend == 'share':
         ser = ports.SerialSharePort(port)
+    elif is_v5_user_joystick:
+        ser = ports.V5WirelessPort(port)
     else:
         ser = ports.DirectPort(port)
     if kwargs.get('raw', False):
