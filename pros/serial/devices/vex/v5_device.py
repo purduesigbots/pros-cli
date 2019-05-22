@@ -76,7 +76,8 @@ def find_v5_ports(p_type: str):
             return [ports[0], *joystick_ports]
         else:
             raise ValueError(f'Invalid port type specified: {p_type}')
-    if len(joystick_ports) > 0 and p_type.lower() == 'system':
+    # these can now also be used as user ports
+    if len(joystick_ports) > 0:  # and p_type.lower() == 'system':
         return joystick_ports
     return []
 
@@ -829,6 +830,31 @@ class V5Device(VEXDevice, SystemDevice):
         rx = self._txrx_ext_struct(0x22, [], "<x12B3xBI12x")
         logger(__name__).debug('Completed ext 0x22 command')
         return V5Device.SystemStatus(rx)
+
+    @retries
+    def user_fifo_read(self) -> bytes:
+        # read/write are the same command, behavior dictated by specifying payload
+        logger(__name__).debug('Sending ext 0x27 command (read)')
+        # minimum size payload (2 checksum bytes) signifies a "read" operation
+        tx_payload = struct.pack("<4B", 0x02, self.channel_map['download'], 0x00)
+        # expected RX length arbitrary- we won't check the payload length as spec says it's variable (and there's no way
+        # to guess)
+        ret = self._txrx_ext_packet(0x27, tx_payload, 0, check_length=False)
+        logger(__name__).debug('Completed ext 0x27 command (read)')
+        return ret
+
+    @retries
+    def user_fifo_write(self, payload: Union[Iterable, bytes, bytearray, str]):
+        logger(__name__).debug('Sending ext 0x27 command (write)')
+        max_packet_size = 224
+        pl_len = len(payload)
+        for i in range(0, pl_len, max_packet_size):
+            packet_size = max_packet_size
+            if i + max_packet_size > pl_len:
+                packet_size = pl_len - i
+            logger(__name__).debug(f'Writing {packet_size} bytes to user FIFO')
+            self._txrx_ext_packet(0x27, payload[i:packet_size], packet_size)
+        logger(__name__).debug('Completed ext 0x27 command (write)')
 
     @retries
     def sc_init(self) -> None:
