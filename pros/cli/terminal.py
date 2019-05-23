@@ -6,9 +6,10 @@ import click
 
 import pros.conductor as c
 import pros.serial.devices as devices
-import pros.serial.ports as ports
+from pros.serial.ports import DirectPort
 from pros.common.utils import logger
 from .common import default_options, resolve_v5_port, resolve_cortex_port, pros_root
+from pros.serial.ports.v5_wireless_port import V5WirelessPort
 
 
 @pros_root
@@ -65,16 +66,22 @@ def terminal(port: str, backend: str, **kwargs):
     if not port:
         return -1
 
+    # TODO: need to check whether port refers to a v5 joystick, handling the case where only a port name was specified
+
+    logger(__name__).debug(f'it is {is_v5_user_joystick} that we have a v5 joystick')
+
     if backend == 'share':
-        ser = ports.SerialSharePort(port)
+        raise NotImplementedError('Share backend is not yet implemented')
+        # ser = SerialSharePort(port)
     elif is_v5_user_joystick:
-        ser = ports.V5WirelessPort(port)
+        logger(__name__).debug("it's a v5 joystick")
+        ser = V5WirelessPort(port)
     else:
-        ser = ports.DirectPort(port)
+        ser = DirectPort(port)
     if kwargs.get('raw', False):
         device = devices.RawStreamDevice(ser)
     else:
-        device = V5UserDevice(ser)
+        device = devices.vex.V5UserDevice(ser)
     term = Terminal(device, request_banner=kwargs.pop('request_banner', True))
 
     signal.signal(signal.SIGINT, term.stop)

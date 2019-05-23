@@ -198,6 +198,7 @@ def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Tupl
     from pros.serial.devices.vex import find_v5_ports
     if not port:
         ports = find_v5_ports(type)
+        is_joystick = False
         if len(ports) == 0:
             if not quiet:
                 logger(__name__).error('No {0} ports were found! If you think you have a {0} plugged in, '
@@ -214,8 +215,9 @@ def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Tupl
                 return None, False
         else:
             port = ports[0].device
+            is_joystick = type == 'user' and  'Controller' in ports[0].description
             logger(__name__).info('Automatically selected {}'.format(port))
-    return port, type == 'user' and 'Controller' in port.description
+    return port, is_joystick
 
 
 def resolve_cortex_port(port: Optional[str], quiet: bool = False) -> Optional[str]:

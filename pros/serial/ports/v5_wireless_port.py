@@ -1,6 +1,6 @@
 from typing import *
 
-from pros.serial.devices.vex import V5Device
+from pros.serial.devices.vex.v5_device import V5Device
 from pros.serial.ports import BasePort, DirectPort
 
 
