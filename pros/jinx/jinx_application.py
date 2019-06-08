@@ -30,7 +30,7 @@ class JinxApplication(Application):
         return data
 
     def parse_value_messages(self, data: bytes) -> Iterable[Tuple[str, int, Iterable]]:
-        base_timestamp, data = struct.unpack('L', data[:4])[0], bytearray(data[4:])
+        base_timestamp, data = struct.unpack('I', data[:4])[0], bytearray(data[4:])
         keys = self.schemas.keys()
         yield ('__pros_kernel_time', base_timestamp, base_timestamp)
         while len(data) > 0:
