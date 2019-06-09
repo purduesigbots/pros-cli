@@ -1,5 +1,6 @@
 import asyncio
 import json
+# import simplejson as json
 import queue
 from typing import *
 import time
@@ -49,6 +50,13 @@ def jinx():
                 data = json.dumps(jinx_app.queue.get(timeout=0.005))
             except queue.Empty:
                 continue
+            except Exception as e:
+                print(e)
+                print(jinx_app.queue.get(timeout=0.005))
+                try:
+                    data = json.dumps(jinx_app.queue.get(timeout=0.005))
+                except Exception as e2:
+                    print(e2)
 
             print(data)
             for client in clients:
