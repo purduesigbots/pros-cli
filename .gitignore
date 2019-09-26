@@ -10,6 +10,7 @@ dist/
 
 out/
 *.zip
+*_pros_capture.png
 
 venv/
 
