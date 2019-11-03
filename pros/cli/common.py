@@ -196,9 +196,11 @@ def pros_root(f):
 
 def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Tuple[Optional[str], bool]:
     from pros.serial.devices.vex import find_v5_ports
+    # If a port is specified manually, we'll just assume it's
+    # not a joystick.
+    is_joystick = False
     if not port:
         ports = find_v5_ports(type)
-        is_joystick = False
         if len(ports) == 0:
             if not quiet:
                 logger(__name__).error('No {0} ports were found! If you think you have a {0} plugged in, '
