@@ -158,9 +158,12 @@ def project_option(arg_name='project', required: bool = True, default: str = '.'
         import pros.conductor as c
         project_path = c.Project.find_project(value)
         if project_path is None:
-            raise click.UsageError(f'{os.path.abspath(value or ".")} is not inside a PROS project. '
-                                   f'Execute this command from within a PROS project or specify it '
-                                   f'with --project project/path')
+            if allow_none:
+                return None
+            else:
+                raise click.UsageError(f'{os.path.abspath(value or ".")} is not inside a PROS project. '
+                                       f'Execute this command from within a PROS project or specify it '
+                                       f'with --project project/path')
         return c.Project(project_path)
 
     def wrapper(f: Union[click.Command, Callable]):
