@@ -258,7 +258,7 @@ def capture(file_name: str, port: str, force: bool = False):
         return -1
 
     with open(file_name, 'wb') as file_:
-        w = png.Writer(width, height)
+        w = png.Writer(width, height, greyscale=False)
         w.write(file_, i_data)
 
     print(f'Saved screen capture to {file_name}')
