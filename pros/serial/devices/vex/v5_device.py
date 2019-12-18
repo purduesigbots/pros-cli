@@ -218,7 +218,8 @@ class V5Device(VEXDevice, SystemDevice):
         keys.update(extra)
         from hashlib import md5
         from base64 import b64encode
-        name = b64encode(md5(str(keys).encode('ascii')).digest()).rstrip(b'=').decode('ascii')
+        msg = str(sorted(keys, key=lambda t: t[0])).encode('ascii')
+        name = b64encode(md5(msg).digest()).rstrip(b'=').decode('ascii')
         if Spec('<=1.0.0-27').match(self.status['cpu0_version']):
             # Bug prevents linked files from being > 18 characters long.
             # 17 characters is probably good enough for hash, so no need to fail out
