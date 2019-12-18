@@ -50,8 +50,8 @@ jobs:
     matrix:
       x64:
         buildArch: x64
-      x86:
-        buildArch: x86
+      # x86:
+      #   buildArch: x86
   pool:
     vmImage: ubuntu-16.04
   steps:
