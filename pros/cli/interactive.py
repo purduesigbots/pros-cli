@@ -10,7 +10,7 @@ def interactive_cli():
     pass
 
 
-@interactive_cli.group(cls=PROSGroup, hidden=True)
+@interactive_cli.group(cls=PROSGroup, hidden=False)
 @default_options
 def interactive():
     pass

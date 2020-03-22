@@ -38,8 +38,8 @@ def status(port: str):
 
 
 @v5.command('ls-files')
-@click.option('--vid', type=int, default=1, cls=PROSOption, hidden=True)
-@click.option('--options', type=int, default=0, cls=PROSOption, hidden=True)
+@click.option('--vid', type=int, default=1, cls=PROSOption, hidden=False)
+@click.option('--options', type=int, default=0, cls=PROSOption, hidden=False)
 @click.argument('port', required=False, default=None)
 @default_options
 def ls_files(port: str, vid: int, options: int):
@@ -59,12 +59,12 @@ def ls_files(port: str, vid: int, options: int):
         print(device.get_file_metadata_by_idx(i))
 
 
-@v5.command(hidden=True)
+@v5.command('read-file')
 @click.argument('file_name')
 @click.argument('port', required=False, default=None)
 @click.argument('outfile', required=False, default=click.get_binary_stream('stdout'), type=click.File('wb'))
-@click.option('--vid', type=int, default=1, cls=PROSOption, hidden=True)
-@click.option('--source', type=click.Choice(['ddr', 'flash']), default='flash', cls=PROSOption, hidden=True)
+@click.option('--vid', type=int, default=1, cls=PROSOption, hidden=False)
+@click.option('--source', type=click.Choice(['ddr', 'flash']), default='flash', cls=PROSOption, hidden=False)
 @default_options
 def read_file(file_name: str, port: str, vid: int, source: str):
     """
@@ -82,13 +82,13 @@ def read_file(file_name: str, port: str, vid: int, source: str):
                      vid=vid, target=source)
 
 
-@v5.command(hidden=True)
+@v5.command('write-file')
 @click.argument('file', type=click.File('rb'))
 @click.argument('port', required=False, default=None)
 @click.option('--addr', type=int, default=0x03800000, required=False)
 @click.option('--remote-file', required=False, default=None)
 @click.option('--run-after/--no-run-after', 'run_after', default=False)
-@click.option('--vid', type=int, default=1, cls=PROSOption, hidden=True)
+@click.option('--vid', type=int, default=1, cls=PROSOption, hidden=False)
 @click.option('--target', type=click.Choice(['ddr', 'flash']), default='flash')
 @default_options
 def write_file(file, port: str, remote_file: str, **kwargs):
@@ -105,13 +105,10 @@ def write_file(file, port: str, remote_file: str, **kwargs):
     device = V5Device(ser)
     device.write_file(file=file, remote_file=remote_file or os.path.basename(file.name), **kwargs)
 
-
 @v5.command('rm-file')
 @click.argument('file_name')
 @click.argument('port', required=False, default=None)
-@click.option('--vid', type=int, default=1, cls=PROSOption, hidden=True)
-@click.option('--erase-all/--erase-only', 'erase_all', default=False, show_default=True,
-              help='Erase all files matching base name.')
+@click.option('--vid', type=int, default=1, cls=PROSOption, hidden=False)
 @default_options
 def rm_file(file_name: str, port: str, vid: int, erase_all: bool):
     """
@@ -131,7 +128,7 @@ def rm_file(file_name: str, port: str, vid: int, erase_all: bool):
 @v5.command('cat-metadata')
 @click.argument('file_name')
 @click.argument('port', required=False, default=None)
-@click.option('--vid', type=int, default=1, cls=PROSOption, hidden=True)
+@click.option('--vid', type=int, default=1, cls=PROSOption, hidden=False)
 @default_options
 def cat_metadata(file_name: str, port: str, vid: int):
     """
@@ -147,10 +144,32 @@ def cat_metadata(file_name: str, port: str, vid: int):
     device = V5Device(ser)
     print(device.get_file_metadata_by_name(file_name, vid=vid))
 
+@v5.command('rm-file')
+@click.argument('file_name', required=True, default=None)
+@click.argument('port', required=False, default=None)
+@click.option('--vid', type=int, default=1, hidden=False, cls=PROSOption)
+@default_options
+def rm_file(file_name: str, port: str, vid: int):
+    """
+    Remove a file from the V5
+    """
+    from pros.serial.devices.vex import V5Device
+    from pros.serial.ports import DirectPort
+    port = resolve_v5_port(port, 'system')
+    if not port:
+        return -1
+
+    ser = DirectPort(port)
+    device = V5Device(ser)
+    c = device.get_dir_count(vid=vid)
+    if file_name != None:
+        device.erase_file(file_name, vid=vid)
+    else:
+        print('Invalid or no filename given')
 
 @v5.command('rm-all')
 @click.argument('port', required=False, default=None)
-@click.option('--vid', type=int, default=1, hidden=True, cls=PROSOption)
+@click.option('--vid', type=int, default=1, hidden=False, cls=PROSOption)
 @default_options
 def rm_all(port: str, vid: int):
     """

@@ -24,12 +24,12 @@ def upload_cli():
 @click.option('--slot', default=1, show_default=True, type=click.IntRange(min=1, max=8), help='Program slot on the GUI',
               cls=PROSOption, group='V5 Options')
 @click.option('--program-version', default=None, type=str, help='Specify version metadata for program',
-              cls=PROSOption, group='V5 Options', hidden=True)
+              cls=PROSOption, group='V5 Options', hidden=False)
 @click.option('--icon', default=None, type=str,
-              cls=PROSOption, group='V5 Options', hidden=True)
+              cls=PROSOption, group='V5 Options', hidden=False)
 @click.option('--ini-config', type=click.Path(exists=True), default=None, help='Specify a Program Configuration File',
-              cls=PROSOption, group='V5 Options', hidden=True)
-@click.option('--run-screen/--execute', 'run_screen', default=True,
+              cls=PROSOption, group='V5 Options', hidden=False)
+@click.option('--run-screen/--execute', 'run_screen', default=False,
               cls=PROSOption, group='V5 Options', help='Open "run program" screen after uploading, instead of executing'
                                                        ' program. This option may help with controller connectivity '
                                                        'reliability and prevent robots from running off tables.')
@@ -48,6 +48,7 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     """
     import pros.serial.devices.vex as vex
     from pros.serial.ports import DirectPort
+
     if path is None or os.path.isdir(path):
         if project is None:
             project_path = c.Project.find_project(path or os.getcwd())
@@ -57,17 +58,16 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
         path = os.path.join(project.location, project.output)
         if project.target == 'v5' and not kwargs['remote_name']:
             kwargs['remote_name'] = project.name
-
         # apply upload_options as a template
         options = dict(**project.upload_options)
         options.update(kwargs)
         kwargs = options
-
         kwargs['target'] = project.target  # enforce target because uploading to the wrong uC is VERY bad
         if 'program-version' in kwargs:
             kwargs['version'] = kwargs['program-version']
         if 'remote_name' not in kwargs:
             kwargs['remote_name'] = project.name
+
     if 'target' not in kwargs:
         logger(__name__).debug(f'Target not specified. Arguments provided: {kwargs}')
         raise click.UsageError('Target not specified. specify a project (using the file argument) or target manually')
@@ -107,6 +107,8 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
             device = vex.V5Device(ser)
         elif kwargs['target'] == 'cortex':
             device = vex.CortexDevice(ser).get_connected_device()
+
+        # Upload program
         if project is not None:
             device.upload_project(project, **kwargs)
         else:
@@ -159,7 +161,7 @@ def ls_usb(target):
     ui.finalize('lsusb', result)
 
 
-@upload_cli.command('upload-terminal', aliases=['ut'], hidden=True)
+@upload_cli.command('upload-terminal', aliases=['ut'], hidden=False)
 @shadow_command(upload)
 @click.pass_context
 def make_upload_terminal(ctx, **upload_kwargs):

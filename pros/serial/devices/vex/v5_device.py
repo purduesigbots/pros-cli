@@ -263,6 +263,17 @@ class V5Device(VEXDevice, SystemDevice):
             return self.write_program(pf, **kwargs)
 
     def generate_ini_file(self, remote_name: str = None, slot: int = 0, ini: ConfigParser = None, **kwargs):
+        # Read from specified ini file
+        data = ''
+        iniFileName = kwargs.get('ini_config', None)
+        if iniFileName != None:
+            with open(iniFileName, 'r') as file:
+                data = file.read()
+
+        if data != '':
+            return data
+
+        # Generate automated ini file
         project_ini = ConfigParser()
         from semantic_version import Spec
         default_icon = 'USER902x.bmp' if Spec('>=1.0.0-22').match(self.status['cpu0_version']) else 'USER999x.bmp'
@@ -274,8 +285,7 @@ class V5Device(VEXDevice, SystemDevice):
             'description': kwargs.get('description', 'Created with PROS'),
             'date': datetime.now().isoformat()
         }
-        if ini:
-            project_ini.update(ini)
+
         with StringIO() as ini_str:
             project_ini.write(ini_str)
             logger(__name__).info(f'Created ini: {ini_str.getvalue()}')
@@ -328,6 +338,7 @@ class V5Device(VEXDevice, SystemDevice):
             elif (quirk & 0xff) == 0:
                 # STOP PROGRAM
                 self.execute_program_file('', run=False)
+
                 with BytesIO(ini_file.encode(encoding='ascii')) as ini_bin:
                     # WRITE INI FILE
                     self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
