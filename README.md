@@ -9,6 +9,10 @@ This project provides all of the project management related tasks for PROS. It i
 
 This project is built in Python 3.6, and executables are built on cx_Freeze.
 
+## Changes from purduesigbots
+ - Unhide certain commands for uploading and interacting with the V5
+ - Add support for uploading custom .ini files with program
+
 ## Installing for development
 PROS CLI can be installed directly from source with the following prerequisites:
  - Python 3.5
