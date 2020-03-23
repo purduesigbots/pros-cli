@@ -153,6 +153,8 @@ def template_query(arg_name='query', required: bool = False):
 
 def project_option(arg_name='project', required: bool = True, default: str = '.', allow_none: bool = False):
     def callback(ctx: click.Context, param: click.Parameter, value: str):
+        if not required:
+            return 0
         if allow_none and value is None:
             return None
         import pros.conductor as c
