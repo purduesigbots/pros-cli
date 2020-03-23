@@ -279,15 +279,15 @@ class V5Device(VEXDevice, SystemDevice):
         from semantic_version import Spec
         default_icon = 'USER902x.bmp' if Spec('>=1.0.0-22').match(self.status['cpu0_version']) else 'USER999x.bmp'
         project_ini['project'] = {
-            'version': str(kwargs.get('ide_version', get_version()) or get_version()),
+            'version': str(kwargs.get('ide_version') or get_version()),
             'ide': str(kwargs.get('ide') or 'PROS')
         }
         project_ini['program'] = {
-            'version': kwargs.get('version') or '1.0.0',
+            'version': str(kwargs.get('program_version') or '1.0.0'),
             'name': str(kwargs.get('name') or remote_name),
             'slot': slot,
             'icon': kwargs.get('icon') or default_icon,
-            'description': kwargs.get('description', 'Created with PROS'),
+            'description': str(kwargs.get('description') or 'Created with PROS'),
             'date': str(kwargs.get('date') or datetime.now().isoformat()),
             'timezone': str(kwargs.get('timezone') or int(-time.timezone / 60 / 60))
         }
