@@ -25,6 +25,7 @@ from .crc import CRC
 from .message import Message
 from .vex_device import VEXDevice
 from ..system_device import SystemDevice
+from pros.common.utils import get_version
 
 int_str = Union[int, str]
 
@@ -277,13 +278,18 @@ class V5Device(VEXDevice, SystemDevice):
         project_ini = ConfigParser()
         from semantic_version import Spec
         default_icon = 'USER902x.bmp' if Spec('>=1.0.0-22').match(self.status['cpu0_version']) else 'USER999x.bmp'
+        project_ini['project'] = {
+            'version': str(kwargs.get('ide_version', get_version()) or get_version()),
+            'ide': str(kwargs.get('ide') or 'PROS')
+        }
         project_ini['program'] = {
-            'version': kwargs.get('version', '0.0.0') or '0.0.0',
-            'name': remote_name,
+            'version': kwargs.get('version') or '1.0.0',
+            'name': str(kwargs.get('name') or remote_name),
             'slot': slot,
-            'icon': kwargs.get('icon', default_icon) or default_icon,
+            'icon': kwargs.get('icon') or default_icon,
             'description': kwargs.get('description', 'Created with PROS'),
-            'date': datetime.now().isoformat()
+            'date': str(kwargs.get('date') or datetime.now().isoformat()),
+            'timezone': str(kwargs.get('timezone') or int(-time.timezone / 60 / 60))
         }
 
         with StringIO() as ini_str:
