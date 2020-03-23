@@ -23,12 +23,26 @@ def upload_cli():
               cls=PROSOption, group='V5 Options')
 @click.option('--slot', default=1, show_default=True, type=click.IntRange(min=1, max=8), help='Program slot on the GUI',
               cls=PROSOption, group='V5 Options')
-@click.option('--program-version', default=None, type=str, help='Specify version metadata for program',
-              cls=PROSOption, group='V5 Options', hidden=False)
+@click.option('--description', default=None, type=str,
+              cls=PROSOption, group='V5 Options', help='Change the description displayed for the program')
 @click.option('--icon', default=None, type=str,
-              cls=PROSOption, group='V5 Options', hidden=False)
-@click.option('--ini-config', type=click.Path(exists=True), default=None, help='Specify a Program Configuration File',
-              cls=PROSOption, group='V5 Options', hidden=False)
+              cls=PROSOption, group='V5 Options', help='Set the icon for the program')
+@click.option('--program-version', default=None, type=str, help='Specify version metadata for program',
+              cls=PROSOption, group='V5 Options')
+@click.option('--ide', default=None, type=str,
+              cls=PROSOption, group='V5 Options', help='Change the program type displayed on the robot')
+@click.option('--ide-version', default=None, type=str,
+              cls=PROSOption, group='V5 Options', help='Change the project version stored in the metadata')
+@click.option('--name', default=None, type=str,
+              cls=PROSOption, group='V5 Options', help='Change the name of the program')
+@click.option('--date', default=None, type=str,
+              cls=PROSOption, group='V5 Options')
+@click.option('--time', default=None, type=str,
+              cls=PROSOption, group='V5 Options', help='Change the time stored in the metadata')
+@click.option('--timezone', default=None, type=str,
+              cls=PROSOption, group='V5 Options', help='Change the timezone stored in the metadata')
+@click.option('--ini-config', type=click.Path(exists=True), default=None, help='Specify a program configuration file to use instead of auto-generating one',
+              cls=PROSOption, group='V5 Options')
 @click.option('--run-screen/--execute', 'run_screen', default=False,
               cls=PROSOption, group='V5 Options', help='Open "run program" screen after uploading, instead of executing'
                                                        ' program. This option may help with controller connectivity '
