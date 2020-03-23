@@ -49,6 +49,10 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     import pros.serial.devices.vex as vex
     from pros.serial.ports import DirectPort
 
+    fileOnly = os.path.isfile(path)
+    if fileOnly:
+        kwargs['target'] = 'v5'
+
     if path is None or os.path.isdir(path):
         if project is None:
             project_path = c.Project.find_project(path or os.getcwd())
@@ -99,8 +103,13 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
 
     logger(__name__).debug('Arguments: {}'.format(str(kwargs)))
 
+    # No project, just file
+    if fileOnly:
+        project = None
+
     # Do the actual uploading!
     try:
+        # Setup device
         ser = DirectPort(port)
         device = None
         if kwargs['target'] == 'v5':
