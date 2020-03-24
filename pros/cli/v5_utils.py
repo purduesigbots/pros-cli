@@ -78,7 +78,7 @@ def read_file(file_name: str, port: str, vid: int, source: str):
     ser = DirectPort(port)
     device = V5Device(ser)
     device.read_file(file=click.get_binary_stream('stdout'), remote_file=file_name,
-                     vid=vid, target=source)
+                     vid=vid, target=source, silent=True)
 
 
 @v5.command('write-file')
