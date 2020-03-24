@@ -62,9 +62,8 @@ def ls_files(port: str, vid: int, options: int):
 @v5.command('read-file')
 @click.argument('file_name')
 @click.argument('port', required=False, default=None)
-@click.argument('outfile', required=False, default=click.get_binary_stream('stdout'), type=click.File('wb'))
-@click.option('--vid', type=int, default=1, cls=PROSOption, hidden=False)
-@click.option('--source', type=click.Choice(['ddr', 'flash']), default='flash', cls=PROSOption, hidden=False)
+@click.option('--vid', type=int, default=1, cls=PROSOption)
+@click.option('--source', type=click.Choice(['ddr', 'flash']), default='flash', cls=PROSOption)
 @default_options
 def read_file(file_name: str, port: str, vid: int, source: str):
     """
