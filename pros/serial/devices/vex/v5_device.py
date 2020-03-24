@@ -515,7 +515,7 @@ class V5Device(VEXDevice, SystemDevice):
         self.write_file(file, remote_name, file_len, vid=vid, **kwargs)
 
     def read_file(self, file: typing.IO[bytes], remote_file: str, vid: int_str = 'user', target: int_str = 'flash',
-                  addr: Optional[int] = None, file_len: Optional[int] = None):
+                  addr: Optional[int] = None, file_len: Optional[int] = None, silent: bool = False):
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
         if addr is None:
@@ -531,14 +531,22 @@ class V5Device(VEXDevice, SystemDevice):
                     f'consider downloading directly with a wire.', abort=True, default=False)
 
         max_packet_size = ft_meta['max_packet_size']
-        with ui.progressbar(length=file_len, label='Downloading {}'.format(remote_file)) as progress:
+        if silent:
             for i in range(0, file_len, max_packet_size):
                 packet_size = max_packet_size
                 if i + max_packet_size > file_len:
                     packet_size = file_len - i
                 file.write(self.ft_read(addr + i, packet_size))
-                progress.update(packet_size)
                 logger(__name__).debug('Completed {} of {} bytes'.format(i + packet_size, file_len))
+        else:
+            with ui.progressbar(length=file_len, label='Downloading {}'.format(remote_file)) as progress:
+                for i in range(0, file_len, max_packet_size):
+                    packet_size = max_packet_size
+                    if i + max_packet_size > file_len:
+                        packet_size = file_len - i
+                    file.write(self.ft_read(addr + i, packet_size))
+                    progress.update(packet_size)
+                    logger(__name__).debug('Completed {} of {} bytes'.format(i + packet_size, file_len))
         self.ft_complete()
 
     def write_file(self, file: typing.BinaryIO, remote_file: str, file_len: int = -1,

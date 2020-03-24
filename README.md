@@ -15,6 +15,7 @@ This project is built in Python 3.6, and executables are built on cx_Freeze.
 - Unhide certain commands for uploading and interacting with the V5
 - Add support for uploading binary files without being part of a project
 - Add support for uploading custom .ini files with program
+- Add support for reading files from the V5
 
 ## Installing for development
 
