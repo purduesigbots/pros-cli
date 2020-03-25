@@ -284,7 +284,7 @@ class V5Device(VEXDevice, SystemDevice):
         }
         project_ini['program'] = {
             'version': str(kwargs.get('program_version') or '1.0.0'),
-            'name': str(kwargs.get('name') or remote_name),
+            'name': str(kwargs.get('ini_name') or remote_name),
             'slot': slot,
             'icon': kwargs.get('icon') or default_icon,
             'description': str(kwargs.get('description') or 'Created with PROS'),

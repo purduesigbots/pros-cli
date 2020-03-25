@@ -63,6 +63,12 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     import pros.serial.devices.vex as vex
     from pros.serial.ports import DirectPort
 
+    # If we set a name with --name, it breaks everything, so we change it back to nothing and store it in another argument
+    kwargs['ini_name'] = None
+    if kwargs.get('name') != None:
+        kwargs['ini_name'] = kwargs.get('name')
+        kwargs['name'] = None
+
     fileOnly = False
     if path != None:
         fileOnly = os.path.isfile(path)
