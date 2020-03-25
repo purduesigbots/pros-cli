@@ -47,6 +47,8 @@ def upload_cli():
               cls=PROSOption, group='V5 Options', help='Open "run program" screen after uploading, instead of executing'
                                                        ' program. This option may help with controller connectivity '
                                                        'reliability and prevent robots from running off tables.')
+@click.option('--no-execute/--execute', default=False,
+              cls=PROSOption, group='V5 Options', help='Don\'t do anything after uploading the program')
 @click.option('--compress-bin/--no-compress-bin', 'compress_bin', cls=PROSOption, group='V5 Options', default=True,
               help='Compress the program binary before uploading.')
 @default_options
@@ -74,6 +76,10 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
         fileOnly = os.path.isfile(path)
     if fileOnly:
         kwargs['target'] = 'v5'
+
+    if kwargs.get('no_execute'):
+        kwargs['run_after'] = None
+        kwargs['run_screen'] = None
 
     if path is None or os.path.isdir(path):
         if project is None:
