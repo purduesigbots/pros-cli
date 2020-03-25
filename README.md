@@ -16,6 +16,7 @@ This project is built in Python 3.6, and executables are built on cx_Freeze.
 - Add support for uploading binary files without being part of a project
 - Add support for uploading custom .ini files with program
 - Add support for reading files from the V5
+- Add feature to remove entire programs (not just everything at once or just one file)
 
 ## Installing for development
 
