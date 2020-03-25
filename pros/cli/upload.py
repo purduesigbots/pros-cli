@@ -192,7 +192,7 @@ def ls_usb(target):
     ui.finalize('lsusb', result)
 
 
-@upload_cli.command('upload-terminal', aliases=['ut'], hidden=False)
+@upload_cli.command('upload-terminal', aliases=['ut'])
 @shadow_command(upload)
 @click.pass_context
 def make_upload_terminal(ctx, **upload_kwargs):

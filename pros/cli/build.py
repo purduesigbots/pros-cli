@@ -27,7 +27,7 @@ def make(project: c.Project, build_args):
     return exit_code
 
 
-@build_cli.command('make-upload', aliases=['mu'], hidden=False)
+@build_cli.command('make-upload', aliases=['mu'])
 @click.option('build_args', '--make', '-m', multiple=True, help='Send arguments to make (e.g. compile target)')
 @shadow_command(upload)
 @project_option()
@@ -37,7 +37,7 @@ def make_upload(ctx, project: c.Project, build_args: List[str], **upload_args):
     ctx.invoke(upload, project=project, **upload_args)
 
 
-@build_cli.command('make-upload-terminal', aliases=['mut'], hidden=False)
+@build_cli.command('make-upload-terminal', aliases=['mut'])
 @click.option('build_args', '--make', '-m', multiple=True, help='Send arguments to make (e.g. compile target)')
 @shadow_command(upload)
 @project_option()
@@ -49,7 +49,7 @@ def make_upload_terminal(ctx, project: c.Project, build_args, **upload_args):
     ctx.invoke(terminal, port=project.target, request_banner=False)
 
 
-@build_cli.command('build-compile-commands', hidden=False)
+@build_cli.command('build-compile-commands')
 @project_option()
 @click.option('--suppress-output/--show-output', 'suppress_output', default=False, show_default=True,
               help='Suppress output')
