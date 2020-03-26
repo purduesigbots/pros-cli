@@ -128,7 +128,7 @@ def rm_file(file_name: str, port: str, vid: int, erase_all: bool):
 @click.argument('port', required=False, default=None)
 @click.option('--vid', type=int, default=1, cls=PROSOption, hidden=True)
 @default_options
-def rm_file(slot: int, port: str, vid: int):
+def rm_program(slot: int, port: str, vid: int):
     """
     Remove a program from the flash filesystem
     """
