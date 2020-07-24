@@ -166,7 +166,7 @@ class EchoPipe(threading.Thread):
         threading.Thread.__init__(self)
         self.daemon = False
         self.fdRead, self.fdWrite = os.pipe()
-        self.pipeReader = os.fdopen(self.fdRead,encoding='UTF-8')
+        self.pipeReader = os.fdopen(self.fdRead, encoding='UTF-8')
         self.start()
 
     def fileno(self):
