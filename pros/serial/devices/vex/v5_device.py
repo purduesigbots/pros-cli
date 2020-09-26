@@ -176,6 +176,7 @@ class V5Device(VEXDevice, SystemDevice):
                     raise VEXCommError('V5 Controller doesn\'t appear to be connected to a V5 Brain', version)
                 ui.echo('Transferring V5 to download channel')
                 self.device.ft_transfer_channel('download')
+                self.did_switch = True
                 logger(__name__).debug('Sleeping for a while to let V5 start channel transfer')
                 time.sleep(.25)  # wait at least 250ms before starting to poll controller if it's connected yet
                 version = self.device.query_system_version()
