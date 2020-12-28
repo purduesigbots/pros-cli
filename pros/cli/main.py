@@ -63,6 +63,12 @@ def version(ctx: click.Context, param, value):
         ui.echo('pros, version {}'.format(get_version()))
     ctx.exit(0)
 
+def install_callback(ctx, attr, value):
+    if not value or ctx.resilient_parsing:
+        return value
+    shell, path = click_completion.core.install()
+    click.echo('%s completion installed in %s' % (shell, path))
+    exit(0)
 
 @click.command('pros',
                cls=PROSCommandCollection,
@@ -70,6 +76,8 @@ def version(ctx: click.Context, param, value):
 @default_options
 @click.option('--version', help='Displays version and exits', is_flag=True, expose_value=False, is_eager=True,
               callback=version)
+@click.option('--install', help="Install completion for the current shell.", is_flag=True, expose_value=False, 
+              callback=install_callback)
 def cli():
     pros.common.sentry.register()
 
