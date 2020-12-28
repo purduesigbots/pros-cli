@@ -4,6 +4,7 @@ import os.path
 import pros.common.sentry
 
 import click
+import click_completion
 import sys
 
 import pros.common.ui as ui
@@ -45,6 +46,7 @@ def main():
         click_handler.setFormatter(formatter)
         logging.basicConfig(level=logging.WARNING, handlers=[click_handler])
         cli.main(prog_name='pros', obj=ctx_obj)
+        click_completion.init()
     except KeyboardInterrupt:
         click.echo('Aborted!')
     except Exception as e:
