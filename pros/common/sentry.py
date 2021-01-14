@@ -1,5 +1,7 @@
 from typing import *
 
+import click
+
 import pros.common.ui as ui
 
 if TYPE_CHECKING:
@@ -9,7 +11,7 @@ if TYPE_CHECKING:
 
 cli_config: 'CliConfig' = None
 
-SUPPRESSED_EXCEPTIONS = [PermissionError]
+SUPPRESSED_EXCEPTIONS = [PermissionError, click.Abort]
 
 
 def prompt_to_send(event: Dict[str, Any], hint: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
@@ -24,7 +26,8 @@ def prompt_to_send(event: Dict[str, Any], hint: Optional[Dict[str, Any]]) -> Opt
         if 'extra' in event and not event['extra'].get('sentry', True):
             ui.logger(__name__).debug('Not sending candidate event because event was tagged with extra.sentry = False')
             return
-        if 'exc_info' in hint and not getattr(hint['exc_info'][1], 'sentry', True):
+        if 'exc_info' in hint and (not getattr(hint['exc_info'][1], 'sentry', True) or
+                                   any(isinstance(hint['exc_info'][1], t) for t in SUPPRESSED_EXCEPTIONS)):
             ui.logger(__name__).debug('Not sending candidate event because exception was tagged with sentry = False')
             return
 

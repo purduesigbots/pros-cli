@@ -62,7 +62,7 @@ class UpdateProjectModal(application.Modal[None]):
 
         self.project: Optional[Project] = project
         self.project_path = ExistingProjectParameter(
-            project.location if project else os.path.join(os.path.expanduser('~'), 'My PROS Project')
+            str(project.location) if project else os.path.join(os.path.expanduser('~'), 'My PROS Project')
         )
 
         self.name = parameters.Parameter(None)

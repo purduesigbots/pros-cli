@@ -1,5 +1,6 @@
 import os.path
 import shutil
+from pathlib import Path
 from typing import *
 
 import click
@@ -212,6 +213,8 @@ class Conductor(Config):
                                     remove_empty_directories=remove_empty_directories)
 
     def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
+        if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
+            raise dont_send(ValueError('Will not create a project in user home directory'))
         proj = Project(path=path, create=True)
         if 'target' in kwargs:
             proj.target = kwargs['target']

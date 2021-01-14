@@ -18,7 +18,7 @@ def conductor():
     Conductor is PROS's project management facility. It is responsible for obtaining
     templates for which to create projects from.
 
-    Visit https://pros.cs.purdue.edu/v5/cli/conductor to learn more
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
     pass
 
@@ -38,7 +38,7 @@ def fetch(query: c.BaseTemplate):
 
     Additional parameters are available according to the depot.
 
-    Visit https://pros.cs.purdue.edu/v5/cli/conductor to learn more
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
 
     template_file = None
@@ -95,7 +95,7 @@ def apply(project: c.Project, query: c.BaseTemplate, **kwargs):
     """
     Upgrade or install a template to a PROS project
 
-    Visit https://pros.cs.purdue.edu/v5/cli/conductor to learn more
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
     return c.Conductor().apply_template(project, identifier=query, **kwargs)
 
@@ -119,7 +119,7 @@ def install(ctx: click.Context, **kwargs):
     """
     Install a library into a PROS project
 
-    Visit https://pros.cs.purdue.edu/v5/cli/conductor to learn more
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
     return ctx.invoke(apply, install_ok=True, **kwargs)
 
@@ -143,7 +143,7 @@ def upgrade(ctx: click.Context, project: c.Project, query: c.BaseTemplate, **kwa
     """
     Upgrade a PROS project or one of its libraries
 
-    Visit https://pros.cs.purdue.edu/v5/cli/conductor to learn more
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
     if not query.name:
         for template in project.templates.keys():
@@ -167,7 +167,7 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
     """
     Uninstall a template from a PROS project
 
-    Visit https://pros.cs.purdue.edu/v5/cli/conductor to learn more
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
     c.Conductor().remove_template(project, query, remove_user=remove_user,
                                   remove_empty_directories=remove_empty_directories)
@@ -197,7 +197,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
     """
     Create a new PROS project
 
-    Visit https://pros.cs.purdue.edu/v5/cli/conductor to learn more
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
     if version.lower() == 'latest' or not version:
         version = '>0'
@@ -242,7 +242,7 @@ def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_onlin
     """
     Query local and remote templates based on a spec
 
-    Visit https://pros.cs.purdue.edu/v5/cli/conductor to learn more
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
     if limit < 0:
         limit = 15
@@ -279,7 +279,7 @@ def info_project(project: c.Project, ls_upgrades):
     """
     Display information about a PROS project
 
-    Visit https://pros.cs.purdue.edu/v5/cli/conductor to learn more
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
 
     from pros.conductor.project import ProjectReport

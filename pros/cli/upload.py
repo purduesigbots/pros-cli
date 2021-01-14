@@ -1,3 +1,5 @@
+from sys import exit
+
 import pros.common.ui as ui
 import pros.conductor as c
 
@@ -17,7 +19,7 @@ def upload_cli():
 @project_option(required=False)
 @click.option('--run-after/--no-run-after', 'run_after', default=True, help='Immediately run the uploaded program')
 @click.option('-q', '--quirk', type=int, default=0)
-@click.option('--name', type=str, default=None, required=False, help='Remote program name',
+@click.option('--name', 'remote_name', type=str, default=None, required=False, help='Remote program name',
               cls=PROSOption, group='V5 Options')
 @click.option('--slot', default=1, show_default=True, type=click.IntRange(min=1, max=8), help='Program slot on the GUI',
               cls=PROSOption, group='V5 Options')
@@ -31,6 +33,8 @@ def upload_cli():
               cls=PROSOption, group='V5 Options', help='Open "run program" screen after uploading, instead of executing'
                                                        ' program. This option may help with controller connectivity '
                                                        'reliability and prevent robots from running off tables.')
+@click.option('--compress-bin/--no-compress-bin', 'compress_bin', cls=PROSOption, group='V5 Options', default=True,
+              help='Compress the program binary before uploading.')
 @default_options
 def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwargs):
     """
@@ -44,7 +48,6 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     """
     import pros.serial.devices.vex as vex
     from pros.serial.ports import DirectPort
-    args = []
     if path is None or os.path.isdir(path):
         if project is None:
             project_path = c.Project.find_project(path or os.getcwd())
@@ -52,8 +55,8 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
                 raise click.UsageError('Specify a file to upload or set the cwd inside a PROS project')
             project = c.Project(project_path)
         path = os.path.join(project.location, project.output)
-        if project.target == 'v5' and not kwargs['name']:
-            kwargs['name'] = project.name
+        if project.target == 'v5' and not kwargs['remote_name']:
+            kwargs['remote_name'] = project.name
 
         # apply upload_options as a template
         options = dict(**project.upload_options)
@@ -63,8 +66,8 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
         kwargs['target'] = project.target  # enforce target because uploading to the wrong uC is VERY bad
         if 'program-version' in kwargs:
             kwargs['version'] = kwargs['program-version']
-        if 'name' not in kwargs:
-            kwargs['name'] = project.name
+        if 'remote_name' not in kwargs:
+            kwargs['remote_name'] = project.name
     if 'target' not in kwargs:
         logger(__name__).debug(f'Target not specified. Arguments provided: {kwargs}')
         raise click.UsageError('Target not specified. specify a project (using the file argument) or target manually')
@@ -77,12 +80,12 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
         logger(__name__).debug(f"Invalid target provided: {kwargs['target']}")
         logger(__name__).debug('Target should be one of ("v5" or "cortex").')
     if not port:
-        return -1
+        raise dont_send(click.UsageError('No port provided or located. Make sure to specify --target if needed.'))
 
     if kwargs['target'] == 'v5':
-        if kwargs['name'] is None:
-            kwargs['name'] = os.path.splitext(os.path.basename(path))[0]
-        args.append(kwargs.pop('name').replace('@', '_'))
+        if kwargs['remote_name'] is None:
+            kwargs['remote_name'] = os.path.splitext(os.path.basename(path))[0]
+        kwargs['remote_name'] = kwargs['remote_name'].replace('@', '_')
         kwargs['slot'] -= 1
         if kwargs['run_after'] and kwargs['run_screen']:
             kwargs['run_after'] = vex.V5Device.FTCompleteOptions.RUN_SCREEN
@@ -90,20 +93,11 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
             kwargs['run_after'] = vex.V5Device.FTCompleteOptions.RUN_IMMEDIATELY
         else:
             kwargs['run_after'] = vex.V5Device.FTCompleteOptions.DONT_RUN
+        kwargs.pop('run_screen')
     elif kwargs['target'] == 'cortex':
         pass
 
-    # print what was decided
-    ui.echo('Uploading {} to {} device on {}'.format(path, kwargs['target'], port), nl=False)
-    if kwargs['target'] == 'v5':
-        ui.echo(f' as {args[0]} to slot {kwargs["slot"] + 1}', nl=False)
-    ui.echo('')
-
     logger(__name__).debug('Arguments: {}'.format(str(kwargs)))
-    if not os.path.isfile(path) and path is not '-':
-        logger(__name__).error(
-            '{} is not a valid file! Make sure it exists (e.g. by building your project)'.format(path))
-        return -1
 
     # Do the actual uploading!
     try:
@@ -113,13 +107,14 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
             device = vex.V5Device(ser)
         elif kwargs['target'] == 'cortex':
             device = vex.CortexDevice(ser).get_connected_device()
-        with click.open_file(path, mode='rb') as pf:
-            device.write_program(pf, *args, **kwargs)
+        if project is not None:
+            device.upload_project(project, **kwargs)
+        else:
+            with click.open_file(path, mode='rb') as pf:
+                device.write_program(pf, **kwargs)
     except Exception as e:
         logger(__name__).exception(e, exc_info=True)
         exit(1)
-
-    ui.finalize('upload', f'Finished uploading {path} to {kwargs["target"]} on {port}')
 
 
 @upload_cli.command('lsusb', aliases=['ls-usb', 'ls-devices', 'lsdev', 'list-usb', 'list-devices'])
@@ -165,8 +160,9 @@ def ls_usb(target):
 
 
 @upload_cli.command('upload-terminal', aliases=['ut'], hidden=True)
+@shadow_command(upload)
 @click.pass_context
-def make_upload_terminal(ctx):
+def make_upload_terminal(ctx, **upload_kwargs):
     from .terminal import terminal
-    ctx.forward(upload)
-    ctx.forward(terminal, request_banner=False)
+    ctx.invoke(upload, **upload_kwargs)
+    ctx.invoke(terminal, request_banner=False)

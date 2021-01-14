@@ -80,7 +80,7 @@ if os.name == 'nt':  # noqa
 
     class Console(ConsoleBase):
         def __init__(self):
-            super(ConsoleBase, self).__init__()
+            super(Console, self).__init__()
             self._saved_ocp = ctypes.windll.kernel32.GetConsoleOutputCP()
             self._saved_icp = ctypes.windll.kernel32.GetConsoleCP()
             ctypes.windll.kernel32.SetConsoleOutputCP(65001)
@@ -123,7 +123,7 @@ elif os.name == 'posix':
 
     class Console(ConsoleBase):
         def __init__(self):
-            super(ConsoleBase, self).__init__()
+            super(Console, self).__init__()
             self.fd = sys.stdin.fileno()
             # an additional pipe is used in getkey, so that the cancel method
             # can abort the waiting getkey method
@@ -275,12 +275,14 @@ class Terminal(object):
         self.no_sigint = False
 
     def start(self):
+        self.console.setup()
         self.alive.clear()
         self._start_rx()
         self._start_tx()
 
     # noinspection PyUnusedLocal
     def stop(self, *args):
+        self.console.cleanup()
         if not self.alive.is_set():
             logger(__name__).warning('Stopping terminal')
             self.alive.set()

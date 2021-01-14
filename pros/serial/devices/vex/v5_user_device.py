@@ -45,5 +45,5 @@ class V5UserDevice(StreamDevice):
             except cobs.DecodeError:
                 logger(__name__).warning(f'Could not decode bytes: {msg.hex()}')
             assert len(msg) >= 4
-            msg = msg[:4], msg[4:]
+            msg = bytes(msg[:4]), bytes(msg[4:])
         return msg
