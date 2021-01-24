@@ -6,7 +6,7 @@ jobs:
 - job: UpdateBuildNumber
   timeoutInMinutes: 5
   pool:
-    vmImage: ubuntu-16.04
+    vmImage: ubuntu-18.04
 
   steps:
     - task: UsePythonVersion@0
@@ -53,7 +53,7 @@ jobs:
       # x86:
       #   buildArch: x86
   pool:
-    vmImage: ubuntu-16.04
+    vmImage: ubuntu-18.04
   steps:
 #   Microsoft/azure-pipelines-image-generation#225
     # - bash: |
