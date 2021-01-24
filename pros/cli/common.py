@@ -217,7 +217,7 @@ def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Tupl
                 return None, False
         else:
             port = ports[0].device
-            is_joystick = type == 'user' and  'Controller' in ports[0].description
+            is_joystick = type == 'user' and 'Controller' in ports[0].description
             logger(__name__).info('Automatically selected {}'.format(port))
     return port, is_joystick
 
