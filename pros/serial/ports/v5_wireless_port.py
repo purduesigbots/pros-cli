@@ -10,7 +10,6 @@ class V5WirelessPort(BasePort):
 
         self.port_instance = DirectPort(port)
         self.device = V5Device(self.port_instance)
-        # TODO: add version check for this feature? or should that be done by the terminal?
         self.download_channel = self.device.DownloadChannel(self.device)
         self.download_channel.__enter__()
 

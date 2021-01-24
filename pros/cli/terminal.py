@@ -65,10 +65,6 @@ def terminal(port: str, backend: str, **kwargs):
     if not port:
         return -1
 
-    # TODO: need to check whether port refers to a v5 joystick, handling the case where only a port name was specified
-
-    logger(__name__).debug(f'it is {is_v5_user_joystick} that we have a v5 joystick')
-
     if backend == 'share':
         raise NotImplementedError('Share backend is not yet implemented')
         # ser = SerialSharePort(port)
@@ -76,6 +72,7 @@ def terminal(port: str, backend: str, **kwargs):
         logger(__name__).debug("it's a v5 joystick")
         ser = V5WirelessPort(port)
     else:
+        logger(__name__).debug("not a v5 joystick")
         ser = DirectPort(port)
     if kwargs.get('raw', False):
         device = devices.RawStreamDevice(ser)
