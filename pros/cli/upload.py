@@ -78,7 +78,7 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
         raise click.UsageError('Target not specified. specify a project (using the file argument) or target manually')
 
     if kwargs['target'] == 'v5':
-        port, is_joystick = resolve_v5_port(port, 'system')
+        port = resolve_v5_port(port, 'system')[0]
     elif kwargs['target'] == 'cortex':
         port = resolve_cortex_port(port)
     else:
