@@ -858,8 +858,9 @@ class V5Device(VEXDevice, SystemDevice):
 
     @retries
     def user_fifo_write(self, payload: Union[Iterable, bytes, bytearray, str]):
-        # Not currently implemented
-        return
+        raise NotImplementedError('Writing data over a wireless connection is not yet implemented')
+        
+        # pylint: disable=unreachable
         logger(__name__).debug('Sending ext 0x27 command (write)')
         max_packet_size = 224
         pl_len = len(payload)
