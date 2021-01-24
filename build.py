@@ -40,7 +40,7 @@ else:
     extension = ''
 
 setup(
-    name='pros-cli-v5',
+    name='pros-cli',
     version=open('pip_version').read().strip(),
     packages=modules,
     url='https://github.com/purduesigbots/pros-cli',
@@ -50,9 +50,10 @@ setup(
     description='Command Line Interface for managing PROS projects',
     options={"build_exe": build_exe_options, 'bdist_mac': build_mac_options},
     install_requires=install_reqs,
-    executables=[Executable('pros/cli/main.py', targetName=f'prosv5{extension}'),
-                 Executable('pros/cli/compile_commands/intercept-cc.py', targetName=f'intercept-cc{extension}'),
-                 Executable('pros/cli/compile_commands/intercept-cc.py', targetName=f'intercept-c++{extension}')]
+    executables=[Executable('pros/cli/main.py', target_name=f'pros{extension}'),
+                 Executable('pros/cli/main.py', target_name=f'prosv5{extension}'),
+                 Executable('pros/cli/compile_commands/intercept-cc.py', target_name=f'intercept-cc{extension}'),
+                 Executable('pros/cli/compile_commands/intercept-cc.py', target_name=f'intercept-c++{extension}')]
 )
 
 if sys.argv[1] == 'build_exe':
