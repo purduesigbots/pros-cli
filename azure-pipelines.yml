@@ -77,8 +77,7 @@ jobs:
   dependsOn:
     - UpdateBuildNumber
     - Linux
-    # and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.SourceBranch'], 'refs/heads/develop')))
-  condition: succeeded()
+  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.SourceBranch'], 'refs/heads/develop')))
   steps:
     - task: UsePythonVersion@0
       inputs:
