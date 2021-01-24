@@ -85,15 +85,15 @@ jobs:
         versionSpec: $(python.version.linux)
         architecture: x64
     - checkout: none
-    - script: sudo pip install --upgrade setuptools
     - task: DownloadPipelineArtifact@2
       inputs:
         artifact: 'pros_cli-$(Build.BuildNumber)-linux-x64'
         path: $(System.DefaultWorkingDirectory)
-    - script: 'sudo pip install twine'
+    - script: |
+        pip install --upgrade setuptools
+        pip install twine
     - task: TwineAuthenticate@1
       inputs:
         artifactFeed: 'pros-cli'
     - script: |
-        sudo pip install twine
         twine upload -r pros-cli --config-file $(PYPIRC_PATH) $(System.DefaultWorkingDirectory)/*.whl
