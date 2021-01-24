@@ -77,10 +77,15 @@ jobs:
   dependsOn:
     - UpdateBuildNumber
     - Linux
-  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.SourceBranch'], 'refs/heads/develop')))
+    # and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.SourceBranch'], 'refs/heads/develop')))
+  condition: succeeded()
   steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: $(python.version.linux)
+        architecture: x64
     - checkout: none
-    - script: sudo pip install --upgrade setuptools
+    # - script: sudo pip install --upgrade setuptools
     - task: DownloadPipelineArtifact@2
       inputs:
         artifact: 'pros_cli-$(Build.BuildNumber)-linux-x64'
