@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 from install_requires import install_requires as install_reqs
 
 setup(
-    name='pros-cli-v5',
+    name='pros-cli',
     version=open('pip_version').read().strip(),
     packages=find_packages(),
     url='https://github.com/purduesigbots/pros-cli',
@@ -15,6 +15,7 @@ setup(
     install_requires=install_reqs,
     entry_points="""
         [console_scripts]
+        pros=pros.cli.main:main
         prosv5=pros.cli.main:main
         """
 )
