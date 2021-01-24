@@ -195,6 +195,15 @@ def pros_root(f):
 
 
 def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Tuple[Optional[str], bool]:
+    """
+    Detect serial ports that can be used to interact with a V5.
+
+    Returns a tuple of (port?, is_joystick). port will be None if no ports are
+    found, and is_joystick is False unless type == 'user' and the port is
+    determined to be a controller. This is useful in e.g.
+    pros.cli.terminal:terminal where the communication protocol is different for
+    wireless interaction.
+    """
     from pros.serial.devices.vex import find_v5_ports
     # If a port is specified manually, we'll just assume it's
     # not a joystick.
