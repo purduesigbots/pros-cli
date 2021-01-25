@@ -6,9 +6,10 @@ import click
 
 import pros.conductor as c
 import pros.serial.devices as devices
-from pros.serial.ports import DirectPort, V5WirelessPort
+from pros.serial.ports import DirectPort
 from pros.common.utils import logger
 from .common import default_options, resolve_v5_port, resolve_cortex_port, pros_root
+from pros.serial.ports.v5_wireless_port import V5WirelessPort
 
 
 @pros_root
