@@ -907,7 +907,7 @@ class V5Device(VEXDevice, SystemDevice):
         if len(msg) < rx_length and check_length:
             raise VEXCommError("Received length is less than {} (got {})".format(rx_length, len(msg)), msg)
         elif len(msg) > rx_length and check_length:
-            ui.echo("WARNING: Recieved length is more than {} (got {}). Consider upgrading the PROS (CLI Version: {}).".format(rx_length, len(msg),self.query_system_version().system_version))
+            ui.echo("WARNING: Recieved length is more than {} (got {}). Consider upgrading the PROS (CLI Version: {}).".format(rx_length, len(msg),get_version()))
         return msg
 
     def _txrx_ext_packet(self, command: int, tx_data: Union[Iterable, bytes, bytearray],
