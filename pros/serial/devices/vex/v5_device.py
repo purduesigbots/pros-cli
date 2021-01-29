@@ -826,7 +826,11 @@ class V5Device(VEXDevice, SystemDevice):
     @retries
     def get_system_status(self) -> SystemStatus:
         logger(__name__).debug('Sending ext 0x22 command')
-        rx = self._txrx_ext_struct(0x22, [], "<x12B3xBI12x")
+        if self.query_system_version().system_version < semantic_version.Version('1.0.13'):
+            schema = '<x12B3xBI12x'
+        else:
+            schema = '<x12B3xBI12xB3x'
+        rx = self._txrx_ext_struct(0x22, [], schema)
         logger(__name__).debug('Completed ext 0x22 command')
         return V5Device.SystemStatus(rx)
 
