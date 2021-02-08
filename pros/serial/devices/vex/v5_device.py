@@ -825,6 +825,7 @@ class V5Device(VEXDevice, SystemDevice):
 
     @retries
     def get_system_status(self) -> SystemStatus:
+        from semantic_version import Version
         logger(__name__).debug('Sending ext 0x22 command')
         if self.query_system_version().system_version < Version('1.0.13-0'):
             schema = '<x12B3xBI12x'
