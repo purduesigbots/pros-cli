@@ -16,7 +16,7 @@ def upload_cli():
               help='Specify the target microcontroller. Overridden when a PROS project is specified.')
 @click.argument('path', type=click.Path(exists=True), default=None, required=False)
 @click.argument('port', type=str, default=None, required=False)
-@project_option(required=False)
+@project_option(required=False, allow_none=True)
 @click.option('--run-after/--no-run-after', 'run_after', default=True, help='Immediately run the uploaded program')
 @click.option('-q', '--quirk', type=int, default=0)
 @click.option('--name', 'remote_name', type=str, default=None, required=False, help='Remote program name',
@@ -73,7 +73,8 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
             kwargs['version'] = kwargs['program-version']
         if 'remote_name' not in kwargs:
             kwargs['remote_name'] = project.name
-    if 'target' not in kwargs:
+
+    if 'target' not in kwargs or kwargs['target'] is None:
         logger(__name__).debug(f'Target not specified. Arguments provided: {kwargs}')
         raise click.UsageError('Target not specified. specify a project (using the file argument) or target manually')
 
