@@ -12,4 +12,4 @@ scan-build==2.0.13
 rfc6266-parser
 sentry-sdk
 observable
-pypng
+pypng==0.0.20

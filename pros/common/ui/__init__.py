@@ -121,7 +121,7 @@ def finalize(method: str, data: Union[str, Dict, object, List[Union[str, Dict, o
 class _MachineOutputProgressBar(_click_ProgressBar):
     def __init__(self, *args, **kwargs):
         global _current_notify_value
-        kwargs['file'] = open(os.devnull, 'w')
+        kwargs['file'] = open(os.devnull, 'w', encoding='UTF-8')
         self.notify_value = kwargs.pop('notify_value', _current_notify_value)
         super(_MachineOutputProgressBar, self).__init__(*args, **kwargs)
 
@@ -166,7 +166,7 @@ class EchoPipe(threading.Thread):
         threading.Thread.__init__(self)
         self.daemon = False
         self.fdRead, self.fdWrite = os.pipe()
-        self.pipeReader = os.fdopen(self.fdRead)
+        self.pipeReader = os.fdopen(self.fdRead, encoding='UTF-8')
         self.start()
 
     def fileno(self):

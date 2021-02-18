@@ -112,17 +112,26 @@ class Project(Config):
         installed_user_files = set()
         for lib_name, lib in self.templates.items():
             if lib_name == template.name or lib.name == template.name:
+                logger(__name__).debug(f'{lib} is already installed')
+                logger(__name__).debug(lib.system_files)
+                logger(__name__).debug(lib.user_files)
                 transaction.extend_rm(lib.system_files)
-                installed_user_files = installed_user_files.union(template.user_files)
+                installed_user_files = installed_user_files.union(lib.user_files)
                 if force_user:
                     transaction.extend_rm(lib.user_files)
 
         # remove newly deprecated user files
-        deprecated_user_files = installed_user_files - set(template.user_files)
-        if any(deprecated_user_files) and not force_user:
-            confirm(f'The following user files have been deprecated: {deprecated_user_files}. '
-                    f'Do you want to remove them?', abort=True)
-        transaction.extend_rm(deprecated_user_files)
+        deprecated_user_files = installed_user_files.intersection(self.all_files) - set(template.user_files)
+        if any(deprecated_user_files):
+            if force_user or confirm(f'The following user files have been deprecated: {deprecated_user_files}. '
+                                     f'Do you want to remove them?'):
+                transaction.extend_rm(deprecated_user_files)
+            else:
+                logger(__name__).warning(f'Deprecated user files may cause weird quirks. See migration guidelines from '
+                                         f'{template.identifier}\'s release notes.')
+                # Carry forward deprecated user files into the template about to be applied so that user gets warned in
+                # future.
+                template.user_files.extend(deprecated_user_files)
 
         def new_user_filter(new_file: str) -> bool:
             """

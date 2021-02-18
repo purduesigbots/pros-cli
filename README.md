@@ -1,5 +1,7 @@
 # PROS CLI
 
+[![Build Status](https://dev.azure.com/purdue-acm-sigbots/CLI/_apis/build/status/purduesigbots.pros-cli?branchName=develop)](https://dev.azure.com/purdue-acm-sigbots/CLI/_build/latest?definitionId=6&branchName=develop)
+
 PROS is the only open source development environment for the VEX EDR Platform.
 
 This project provides all of the project management related tasks for PROS. It is currently responsible for:

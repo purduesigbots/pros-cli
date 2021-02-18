@@ -1,12 +1,12 @@
 variables:
-  python.version.linux: '3.6.5'
-  python.version.windows: '3.6.4'
+  python.version.linux: '3.7.x'
+  python.version.windows: '3.7.x'
 
 jobs:
 - job: UpdateBuildNumber
   timeoutInMinutes: 5
   pool:
-    vmImage: ubuntu-16.04
+    vmImage: ubuntu-18.04
 
   steps:
     - task: UsePythonVersion@0
@@ -50,22 +50,22 @@ jobs:
     matrix:
       x64:
         buildArch: x64
-      x86:
-        buildArch: x86
+      # x86:
+      #   buildArch: x86
   pool:
-    vmImage: ubuntu-16.04
+    vmImage: ubuntu-18.04
   steps:
 #   Microsoft/azure-pipelines-image-generation#225
-    - bash: |
-        sudo apt-add-repository ppa:deadsnakes/ppa
-        sudo apt-get update
-        sudo apt-get install python3.6 python3.6-dev python3-setuptools
-      displayName: Use Python 3.6
+    # - bash: |
+    #     sudo apt-add-repository ppa:deadsnakes/ppa
+    #     sudo apt-get update
+    #     sudo apt-get install python3.6 python3.6-dev python3-setuptools
+    #   displayName: Use Python 3.6
 #     Hopefully this will work soon
-#     - task: UsePythonVersion@0
-#       inputs:
-#         versionSpec: $(python.version.linux)
-#         architecture: $(buildArch)
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: $(python.version.linux)
+        architecture: $(buildArch)
     - bash: scripts/build.sh
       displayName: Build
     - task: PublishPipelineArtifact@0
@@ -77,18 +77,22 @@ jobs:
   dependsOn:
     - UpdateBuildNumber
     - Linux
-  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.SourceBranch'], 'refs/heads/develop')))
+  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.SourceBranch'], 'refs/heads/develop'), startsWith(variables['Build.SourceBranch'], 'refs/tags/')))
   steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: $(python.version.linux)
+        architecture: x64
     - checkout: none
-    - task: DownloadPipelineArtifact@0
+    - task: DownloadPipelineArtifact@2
       inputs:
-        artifactName: 'pros_cli-$(Build.BuildNumber)-linux-x64'
-        targetPath: $(System.DefaultWorkingDirectory)
-    - script: 'sudo pip install twine'
-    - task: TwineAuthenticate@0
-      inputs:
-        artifactFeeds: 'pros-cli'
+        artifact: 'pros_cli-$(Build.BuildNumber)-linux-x64'
+        path: $(System.DefaultWorkingDirectory)
     - script: |
-        sudo pip install twine
+        pip install --upgrade setuptools
+        pip install twine
+    - task: TwineAuthenticate@1
+      inputs:
+        artifactFeed: 'pros-cli'
+    - script: |
         twine upload -r pros-cli --config-file $(PYPIRC_PATH) $(System.DefaultWorkingDirectory)/*.whl
-

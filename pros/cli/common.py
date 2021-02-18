@@ -158,9 +158,12 @@ def project_option(arg_name='project', required: bool = True, default: str = '.'
         import pros.conductor as c
         project_path = c.Project.find_project(value)
         if project_path is None:
-            raise click.UsageError(f'{os.path.abspath(value or ".")} is not inside a PROS project. '
-                                   f'Execute this command from within a PROS project or specify it '
-                                   f'with --project project/path')
+            if allow_none:
+                return None
+            else:
+                raise click.UsageError(f'{os.path.abspath(value or ".")} is not inside a PROS project. '
+                                       f'Execute this command from within a PROS project or specify it '
+                                       f'with --project project/path')
         return c.Project(project_path)
 
     def wrapper(f: Union[click.Command, Callable]):
@@ -194,8 +197,20 @@ def pros_root(f):
     return decorator
 
 
-def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Optional[str]:
+def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Tuple[Optional[str], bool]:
+    """
+    Detect serial ports that can be used to interact with a V5.
+
+    Returns a tuple of (port?, is_joystick). port will be None if no ports are
+    found, and is_joystick is False unless type == 'user' and the port is
+    determined to be a controller. This is useful in e.g.
+    pros.cli.terminal:terminal where the communication protocol is different for
+    wireless interaction.
+    """
     from pros.serial.devices.vex import find_v5_ports
+    # If a port is specified manually, we'll just assume it's
+    # not a joystick.
+    is_joystick = False
     if not port:
         ports = find_v5_ports(type)
         if len(ports) == 0:
@@ -203,7 +218,7 @@ def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Opti
                 logger(__name__).error('No {0} ports were found! If you think you have a {0} plugged in, '
                                        'run this command again with the --debug flag'.format('v5'),
                                        extra={'sentry': False})
-            return None
+            return None, False
         if len(ports) > 1:
             if not quiet:
                 port = click.prompt('Multiple {} ports were found. Please choose one: '.format('v5'),
@@ -211,11 +226,12 @@ def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Opti
                                     type=click.Choice([p.device for p in ports]))
                 assert port in [p.device for p in ports]
             else:
-                return None
+                return None, False
         else:
             port = ports[0].device
+            is_joystick = type == 'user' and 'Controller' in ports[0].description
             logger(__name__).info('Automatically selected {}'.format(port))
-    return port
+    return port, is_joystick
 
 
 def resolve_cortex_port(port: Optional[str], quiet: bool = False) -> Optional[str]:
