@@ -825,8 +825,13 @@ class V5Device(VEXDevice, SystemDevice):
 
     @retries
     def get_system_status(self) -> SystemStatus:
+        from semantic_version import Version
         logger(__name__).debug('Sending ext 0x22 command')
-        rx = self._txrx_ext_struct(0x22, [], "<x12B3xBI12x")
+        if self.query_system_version().system_version < Version('1.0.13-0'):
+            schema = '<x12B3xBI12x'
+        else:
+            schema = '<x12B3xBI12xB3x'
+        rx = self._txrx_ext_struct(0x22, [], schema)
         logger(__name__).debug('Completed ext 0x22 command')
         return V5Device.SystemStatus(rx)
 
@@ -900,8 +905,10 @@ class V5Device(VEXDevice, SystemDevice):
             msg = msg[1:]
         if len(msg) > 0:
             logger(cls).debug('Set msg window to {}'.format(bytes_to_str(msg)))
-        if len(msg) != rx_length and check_length:
-            raise VEXCommError("Received length doesn't match {} (got {})".format(rx_length, len(msg)), msg)
+        if len(msg) < rx_length and check_length:
+            raise VEXCommError(f'Received length is less than {rx_length} (got {len(msg)})', msg)
+        elif len(msg) > rx_length and check_length:
+            ui.echo(f'WARNING: Recieved length is more than {rx_length} (got {len(msg)}). Consider upgrading the PROS (CLI Version: {get_version()}).')
         return msg
 
     def _txrx_ext_packet(self, command: int, tx_data: Union[Iterable, bytes, bytearray],
