@@ -17,6 +17,7 @@ from semantic_version import Spec
 
 from pros.common import ui
 from pros.common import *
+from pros.common.utils import *
 from pros.conductor import Project
 from pros.serial import bytes_to_str, decode_bytes_to_str
 from pros.serial.ports import BasePort, list_all_comports
