@@ -831,7 +831,7 @@ class V5Device(VEXDevice, SystemDevice):
         from semantic_version import Version
         logger(__name__).debug('Sending ext 0x22 command')
         sysVersion = self.query_system_version().system_version
-        if sysVersion < Version('1.0.13-0') and self.SystemVersion.Product == self.SystemVersion.Product.BRAIN or sysVersion < Version('1.0.0-0.70') and self.SystemVersion.Product.Product == self.SystemVersion.Product.CONTROLLER:
+        if self.SystemVersion.Product and sysVersion < Version('1.0.13-0') == self.SystemVersion.Product.BRAIN or self.SystemVersion.Product.Product == self.SystemVersion.Product.CONTROLLER and sysVersion < Version('1.0.0-0.70'):
             schema = '<x12B3xBI12x'
         else:
             schema = '<x12B3xBI12xB3x'
