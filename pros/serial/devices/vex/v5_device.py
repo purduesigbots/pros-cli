@@ -830,9 +830,9 @@ class V5Device(VEXDevice, SystemDevice):
     def get_system_status(self) -> SystemStatus:
         from semantic_version import Version
         logger(__name__).debug('Sending ext 0x22 command')
-        sysVersion = self.query_system_version().system_version
-        if (self.SystemVersion.Product == self.SystemVersion.Product.BRAIN and sysVersion in Spec('<1.0.13')) or \
-         (self.SystemVersion.Product == self.SystemVersion.Product.CONTROLLER and sysVersion in Spec('<1.0.0-0.70')):
+        version = self.query_system_version()
+        if (version.product == V5Device.SystemVersion.Product.BRAIN and version.system_version in Spec('<1.0.13')) or \
+         (version.product == V5Device.SystemVersion.Product.CONTROLLER and version.system_version in Spec('<1.0.0-0.70')):
             schema = '<x12B3xBI12x'
         else:
             schema = '<x12B3xBI12xB3x'
