@@ -17,6 +17,7 @@ from semantic_version import Spec
 
 from pros.common import ui
 from pros.common import *
+from pros.common.utils import *
 from pros.conductor import Project
 from pros.serial import bytes_to_str, decode_bytes_to_str
 from pros.serial.ports import BasePort, list_all_comports
@@ -829,7 +830,9 @@ class V5Device(VEXDevice, SystemDevice):
     def get_system_status(self) -> SystemStatus:
         from semantic_version import Version
         logger(__name__).debug('Sending ext 0x22 command')
-        if self.query_system_version().system_version < Version('1.0.13-0'):
+        version = self.query_system_version()
+        if (version.product == V5Device.SystemVersion.Product.BRAIN and version.system_version in Spec('<1.0.13')) or \
+         (version.product == V5Device.SystemVersion.Product.CONTROLLER and version.system_version in Spec('<1.0.0-0.70')):
             schema = '<x12B3xBI12x'
         else:
             schema = '<x12B3xBI12xB3x'
@@ -947,7 +950,7 @@ class V5Device(VEXDevice, SystemDevice):
         if len(msg) > 0:
             logger(cls).debug('Set msg window to {}'.format(bytes_to_str(msg)))
         if len(msg) < rx_length and check_length:
-            raise VEXCommError(f'Received length is less than {rx_length} (got {len(msg)})', msg)
+            raise VEXCommError(f'Received length is less than {rx_length} (got {len(msg)}).', msg)
         elif len(msg) > rx_length and check_length:
             ui.echo(f'WARNING: Recieved length is more than {rx_length} (got {len(msg)}). Consider upgrading the PROS (CLI Version: {get_version()}).')
         return msg
