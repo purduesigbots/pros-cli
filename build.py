@@ -8,8 +8,18 @@ from install_requires import install_requires as install_reqs
 
 import pros.cli.main
 
+sentry_integrations = [
+    'django', 'spark', 'aiohttp', 'argv', 'asgi', 'atexit', 'aws_lambda', 'beam',
+    'boto3', 'bottle', 'celery', 'chalice', 'dedupe', 'excepthook', 'executing',
+    'falcon', 'flask', 'gcp', 'gnu_backtrace', 'logging', 'modules', 'pure_eval',
+    'pyramid', 'redis', 'rq', 'sanic', 'serverless', 'sqlalchemy', 'stdlib',
+    'threading', 'tornado', 'trytond', 'wsgi'
+]
+
 build_exe_options = {
-    'packages': ['ssl', 'requests', 'idna'] + [f'pros.cli.{root_source}' for root_source in pros.cli.main.root_sources],
+    'packages': ['ssl', 'requests', 'idna'] +
+        [f'sentry_sdk.integrations.{integration}' for integration in sentry_integrations] +
+        [f'pros.cli.{root_source}' for root_source in pros.cli.main.root_sources],
     "include_files": [(requests.certs.where(), 'cacert.pem')],
     'excludes': ['pip', 'distutils'],  # optimization excludes
     'constants': [

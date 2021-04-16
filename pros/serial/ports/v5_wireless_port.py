@@ -14,6 +14,7 @@ class V5WirelessPort(BasePort):
         self.download_channel.__enter__()
 
     def destroy(self):
+        self.port_instance.destroy()
         self.download_channel.__exit__()
 
     def config(self, command: str, argument: Any):
