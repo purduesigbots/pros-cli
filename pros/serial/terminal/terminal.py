@@ -275,12 +275,14 @@ class Terminal(object):
         self.no_sigint = False
 
     def start(self):
+        self.console.setup()
         self.alive.clear()
         self._start_rx()
         self._start_tx()
 
     # noinspection PyUnusedLocal
     def stop(self, *args):
+        self.console.cleanup()
         if not self.alive.is_set():
             logger(__name__).warning('Stopping terminal')
             self.alive.set()

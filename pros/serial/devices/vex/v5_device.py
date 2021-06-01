@@ -17,6 +17,7 @@ from semantic_version import Spec
 
 from pros.common import ui
 from pros.common import *
+from pros.common.utils import *
 from pros.conductor import Project
 from pros.serial import bytes_to_str, decode_bytes_to_str
 from pros.serial.ports import BasePort, list_all_comports
@@ -77,7 +78,8 @@ def find_v5_ports(p_type: str):
             return [ports[0], *joystick_ports]
         else:
             raise ValueError(f'Invalid port type specified: {p_type}')
-    if len(joystick_ports) > 0 and p_type.lower() == 'system':
+    # these can now also be used as user ports
+    if len(joystick_ports) > 0:  # and p_type.lower() == 'system':
         return joystick_ports
     return []
 
@@ -161,6 +163,7 @@ class V5Device(VEXDevice, SystemDevice):
 
     def __init__(self, port: BasePort):
         self._status = None
+        self._serial_cache = b''
         super().__init__(port)
 
     class DownloadChannel(object):
@@ -177,6 +180,7 @@ class V5Device(VEXDevice, SystemDevice):
                     raise VEXCommError('V5 Controller doesn\'t appear to be connected to a V5 Brain', version)
                 ui.echo('Transferring V5 to download channel')
                 self.device.ft_transfer_channel('download')
+                self.did_switch = True
                 logger(__name__).debug('Sleeping for a while to let V5 start channel transfer')
                 time.sleep(.25)  # wait at least 250ms before starting to poll controller if it's connected yet
                 version = self.device.query_system_version()
@@ -849,10 +853,56 @@ class V5Device(VEXDevice, SystemDevice):
 
     @retries
     def get_system_status(self) -> SystemStatus:
+        from semantic_version import Version
         logger(__name__).debug('Sending ext 0x22 command')
-        rx = self._txrx_ext_struct(0x22, [], "<x12B3xBI12x")
+        version = self.query_system_version()
+        if (version.product == V5Device.SystemVersion.Product.BRAIN and version.system_version in Spec('<1.0.13')) or \
+         (version.product == V5Device.SystemVersion.Product.CONTROLLER and version.system_version in Spec('<1.0.0-0.70')):
+            schema = '<x12B3xBI12x'
+        else:
+            schema = '<x12B3xBI12xB3x'
+        rx = self._txrx_ext_struct(0x22, [], schema)
         logger(__name__).debug('Completed ext 0x22 command')
         return V5Device.SystemStatus(rx)
+
+    @retries
+    def user_fifo_read(self) -> bytes:
+        # I can't really think of a better way to only return when a full
+        # COBS message was written than to just cache the data until we hit a \x00.
+
+        # read/write are the same command, behavior dictated by specifying
+        # length-to-read as 0xFF and providing additional payload bytes to write or
+        # specifying a length-to-read and no additional data to read.
+        logger(__name__).debug('Sending ext 0x27 command (read)')
+        # specifying a length to read (0x40 bytes) with no additional payload data.
+        tx_payload = struct.pack("<2B", self.channel_map['download'], 0x40)
+        # RX length isn't always 0x40 (end of buffer reached), so don't check_length.
+        self._serial_cache += self._txrx_ext_packet(0x27, tx_payload, 0, check_length=False)[1:]
+        logger(__name__).debug('Completed ext 0x27 command (read)')
+        # if _serial_cache doesn't have a \x00, pretend we didn't read anything.
+        if b'\x00' not in self._serial_cache:
+            return b''
+        # _serial_cache has a \x00, split off the beginning part and hand it down.
+        parts = self._serial_cache.split(b'\x00')
+        ret = parts[0] + b'\x00'
+        self._serial_cache = b'\x00'.join(parts[1:])
+
+        return ret
+
+    @retries
+    def user_fifo_write(self, payload: Union[Iterable, bytes, bytearray, str]):
+        # Not currently implemented
+        return
+        logger(__name__).debug('Sending ext 0x27 command (write)')
+        max_packet_size = 224
+        pl_len = len(payload)
+        for i in range(0, pl_len, max_packet_size):
+            packet_size = max_packet_size
+            if i + max_packet_size > pl_len:
+                packet_size = pl_len - i
+            logger(__name__).debug(f'Writing {packet_size} bytes to user FIFO')
+            self._txrx_ext_packet(0x27, b'\x01\x00' + payload[i:packet_size], 0, check_length=False)[1:]
+        logger(__name__).debug('Completed ext 0x27 command (write)')
 
     @retries
     def sc_init(self) -> None:
@@ -924,8 +974,10 @@ class V5Device(VEXDevice, SystemDevice):
             msg = msg[1:]
         if len(msg) > 0:
             logger(cls).debug('Set msg window to {}'.format(bytes_to_str(msg)))
-        if len(msg) != rx_length and check_length:
-            raise VEXCommError("Received length doesn't match {} (got {})".format(rx_length, len(msg)), msg)
+        if len(msg) < rx_length and check_length:
+            raise VEXCommError(f'Received length is less than {rx_length} (got {len(msg)}).', msg)
+        elif len(msg) > rx_length and check_length:
+            ui.echo(f'WARNING: Recieved length is more than {rx_length} (got {len(msg)}). Consider upgrading the PROS (CLI Version: {get_version()}).')
         return msg
 
     def _txrx_ext_packet(self, command: int, tx_data: Union[Iterable, bytes, bytearray],

@@ -21,7 +21,7 @@ def status(port: str):
     """
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
-    port = resolve_v5_port(port, 'system')
+    port = resolve_v5_port(port, 'system')[0]
     if not port:
         return -1
 
@@ -48,7 +48,7 @@ def ls_files(port: str, vid: int, options: int):
     """
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
-    port = resolve_v5_port(port, 'system')
+    port = resolve_v5_port(port, 'system')[0]
     if not port:
         return -1
 
@@ -71,7 +71,7 @@ def read_file(file_name: str, port: str, vid: int, source: str):
     """
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
-    port = resolve_v5_port(port, 'system')
+    port = resolve_v5_port(port, 'system')[0]
     if not port:
         return -1
 
@@ -96,7 +96,7 @@ def write_file(file, port: str, remote_file: str, **kwargs):
     """
     from pros.serial.ports import DirectPort
     from pros.serial.devices.vex import V5Device
-    port = resolve_v5_port(port, 'system')
+    port = resolve_v5_port(port, 'system')[0]
     if not port:
         return -1
 
@@ -115,7 +115,7 @@ def rm_file(file_name: str, port: str, vid: int, erase_all: bool):
     """
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
-    port = resolve_v5_port(port, 'system')
+    port = resolve_v5_port(port, 'system')[0]
     if not port:
         return -1
 
@@ -155,7 +155,7 @@ def cat_metadata(file_name: str, port: str, vid: int):
     """
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
-    port = resolve_v5_port(port, 'system')
+    port = resolve_v5_port(port, 'system')[0]
     if not port:
         return -1
 
@@ -174,7 +174,7 @@ def rm_all(port: str, vid: int):
     """
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
-    port = resolve_v5_port(port, 'system')
+    port = resolve_v5_port(port, 'system')[0]
     if not port:
         return -1
 
@@ -203,7 +203,7 @@ def run(slot: str, port: str):
     if not re.match(r'[\w\.]{1,24}', file):
         logger(__name__).error('file must be a valid V5 filename')
         return 1
-    port = resolve_v5_port(port, 'system')
+    port = resolve_v5_port(port, 'system')[0]
     if not port:
         return -1
     ser = DirectPort(port)
@@ -222,7 +222,7 @@ def stop(port: str):
     """
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
-    port = resolve_v5_port(port, 'system')
+    port = resolve_v5_port(port, 'system')[0]
     if not port:
         return -1
     ser = DirectPort(port)
@@ -244,7 +244,7 @@ def capture(file_name: str, port: str, force: bool = False):
     import png
     import os
 
-    port = resolve_v5_port(port, 'system')
+    port = resolve_v5_port(port, 'system')[0]
     if not port:
         return -1
     ser = DirectPort(port)

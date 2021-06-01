@@ -16,12 +16,12 @@ def upload_cli():
               help='Specify the target microcontroller. Overridden when a PROS project is specified.')
 @click.argument('path', type=click.Path(exists=True), default=None, required=False)
 @click.argument('port', type=str, default=None, required=False)
-@project_option(required=False)
+@project_option(required=False, allow_none=True)
 @click.option('--run-after/--no-run-after', 'run_after', default=True, help='Immediately run the uploaded program')
 @click.option('-q', '--quirk', type=int, default=0)
 @click.option('--name', 'remote_name', type=str, default=None, required=False, help='Remote program name',
               cls=PROSOption, group='V5 Options')
-@click.option('--slot', default=1, show_default=True, type=click.IntRange(min=1, max=8), help='Program slot on the GUI',
+@click.option('--slot', default=None, type=click.IntRange(min=1, max=8), help='Program slot on the GUI',
               cls=PROSOption, group='V5 Options')
 @click.option('--description', default=None, type=str,
               cls=PROSOption, group='V5 Options', help='Change the description displayed for the program')
@@ -92,6 +92,11 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
             kwargs['remote_name'] = project.name
         # apply upload_options as a template
         options = dict(**project.upload_options)
+        if 'slot' in options and kwargs.get('slot', None) is None:
+            kwargs.pop('slot')
+        elif kwargs.get('slot', None) is None: 
+            kwargs['slot'] = 1
+            
         options.update(kwargs)
         kwargs = options
         kwargs['target'] = project.target  # enforce target because uploading to the wrong uC is VERY bad
@@ -100,12 +105,12 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
         if 'remote_name' not in kwargs:
             kwargs['remote_name'] = project.name
 
-    if 'target' not in kwargs:
+    if 'target' not in kwargs or kwargs['target'] is None:
         logger(__name__).debug(f'Target not specified. Arguments provided: {kwargs}')
         raise click.UsageError('Target not specified. specify a project (using the file argument) or target manually')
 
     if kwargs['target'] == 'v5':
-        port = resolve_v5_port(port, 'system')
+        port = resolve_v5_port(port, 'system')[0]
     elif kwargs['target'] == 'cortex':
         port = resolve_cortex_port(port)
     else:

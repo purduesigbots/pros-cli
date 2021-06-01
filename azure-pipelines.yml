@@ -6,7 +6,7 @@ jobs:
 - job: UpdateBuildNumber
   timeoutInMinutes: 5
   pool:
-    vmImage: ubuntu-16.04
+    vmImage: ubuntu-18.04
 
   steps:
     - task: UsePythonVersion@0
@@ -53,7 +53,7 @@ jobs:
       # x86:
       #   buildArch: x86
   pool:
-    vmImage: ubuntu-16.04
+    vmImage: ubuntu-18.04
   steps:
 #   Microsoft/azure-pipelines-image-generation#225
     # - bash: |
@@ -77,17 +77,22 @@ jobs:
   dependsOn:
     - UpdateBuildNumber
     - Linux
-  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.SourceBranch'], 'refs/heads/develop')))
+  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.SourceBranch'], 'refs/heads/develop'), startsWith(variables['Build.SourceBranch'], 'refs/tags/')))
   steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: $(python.version.linux)
+        architecture: x64
     - checkout: none
     - task: DownloadPipelineArtifact@2
       inputs:
         artifact: 'pros_cli-$(Build.BuildNumber)-linux-x64'
         path: $(System.DefaultWorkingDirectory)
-    - script: 'sudo pip install twine'
+    - script: |
+        pip install --upgrade setuptools
+        pip install twine
     - task: TwineAuthenticate@1
       inputs:
         artifactFeed: 'pros-cli'
     - script: |
-        sudo pip install twine
         twine upload -r pros-cli --config-file $(PYPIRC_PATH) $(System.DefaultWorkingDirectory)/*.whl
