@@ -1,4 +1,5 @@
 import os.path
+from itertools import groupby
 
 import pros.common.ui as ui
 import pros.conductor as c
@@ -233,7 +234,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
               help='(Dis)allow online templates in the listing')
 @click.option('--force-refresh', is_flag=True, default=False, show_default=True,
               help='Force update all remote depots, ignoring automatic update checks')
-@click.option('--limit', type=int, default=15, help='Limit displayed results.')
+@click.option('--limit', type=int, default=15, help='The maximum number of displayed results for each library')
 @template_query(required=False)
 @click.pass_context
 @default_options
@@ -247,7 +248,7 @@ def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_onlin
     if limit < 0:
         limit = 15
     templates = c.Conductor().resolve_templates(query, allow_offline=allow_offline, allow_online=allow_online,
-                                                force_refresh=force_refresh)[:limit]
+                                                force_refresh=force_refresh)
 
     render_templates = {}
     for template in templates:
@@ -264,11 +265,13 @@ def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_onlin
                 'local': isinstance(template, c.LocalTemplate)
             }
     import semantic_version as semver
-    render_templates = sorted(render_templates.values(), key=lambda k: k['local'])  # tertiary key
-    render_templates = sorted(render_templates, key=lambda k: semver.Version(k['version']),
-                              reverse=True)  # secondary key
-    render_templates = sorted(render_templates, key=lambda k: k['name'])  # primary key
-    ui.finalize('template-query', render_templates)
+    render_templates = sorted(render_templates.values(), key=lambda k: (k['name'], semver.Version(k['version']), k['local']), reverse=True)
+
+    # Impose the output limit for each library's templates
+    output_templates = []
+    for _, g in groupby(render_templates, key=lambda t: t['name'] + t['target']):
+        output_templates += list(g)[:limit]
+    ui.finalize('template-query', output_templates)
 
 
 @conductor.command('info-project')
