@@ -10,6 +10,6 @@ class ConnectionRefusedException(IOError):
         extra = ''
         if os.name == 'posix':
             extra = 'adding yourself to dialout group '
-        return f"could not open port '{self.port_name}'. Try closing any other VEX IDEs such as ROBOTC, VCS, or " \
+        return f"could not open port '{self.port_name}'. Try closing any other VEX IDEs such as VEXCode, Robot Mesh Studio, or " \
             f"firmware utilities; moving to a different USB port; {extra}or " \
             f"restarting the device."
