@@ -17,7 +17,7 @@ def upload_cli():
 @click.argument('path', type=click.Path(exists=True), default=None, required=False)
 @click.argument('port', type=str, default=None, required=False)
 @project_option(required=False, allow_none=True)
-@click.option('--run-after/--no-run-after', 'run_after', default=True, help='Immediately run the uploaded program')
+@click.option('--no-run-after/--run-after', 'run_after', default=False, help='Immediately run the uploaded program')
 @click.option('-q', '--quirk', type=int, default=0)
 @click.option('--name', 'remote_name', type=str, default=None, required=False, help='Remote program name',
               cls=PROSOption, group='V5 Options')
@@ -29,10 +29,6 @@ def upload_cli():
               cls=PROSOption, group='V5 Options', hidden=True)
 @click.option('--ini-config', type=click.Path(exists=True), default=None, help='Specify a Program Configuration File',
               cls=PROSOption, group='V5 Options', hidden=True)
-@click.option('--run-screen/--execute', 'run_screen', default=True,
-              cls=PROSOption, group='V5 Options', help='Open "run program" screen after uploading, instead of executing'
-                                                       ' program. This option may help with controller connectivity '
-                                                       'reliability and prevent robots from running off tables.')
 @click.option('--compress-bin/--no-compress-bin', 'compress_bin', cls=PROSOption, group='V5 Options', default=True,
               help='Compress the program binary before uploading.')
 @default_options
@@ -93,13 +89,10 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
             kwargs['remote_name'] = os.path.splitext(os.path.basename(path))[0]
         kwargs['remote_name'] = kwargs['remote_name'].replace('@', '_')
         kwargs['slot'] -= 1
-        if kwargs['run_after'] and kwargs['run_screen']:
-            kwargs['run_after'] = vex.V5Device.FTCompleteOptions.RUN_SCREEN
-        elif kwargs['run_after'] and not kwargs['run_screen']:
+        if kwargs['run_after']:
             kwargs['run_after'] = vex.V5Device.FTCompleteOptions.RUN_IMMEDIATELY
         else:
-            kwargs['run_after'] = vex.V5Device.FTCompleteOptions.DONT_RUN
-        kwargs.pop('run_screen')
+            kwargs['run_after'] = vex.V5Device.FTCompleteOptions.RUN_SCREEN
     elif kwargs['target'] == 'cortex':
         pass
 
