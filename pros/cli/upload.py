@@ -31,6 +31,7 @@ def upload_cli():
               cls=PROSOption, group='V5 Options', hidden=True)
 @click.option('--compress-bin/--no-compress-bin', 'compress_bin', cls=PROSOption, group='V5 Options', default=True,
               help='Compress the program binary before uploading.')
+@click.option('--run-screen/--no-run-screen', 'run_screen', default=True, help='Display run program screen on brain after upload.')
 @default_options
 def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwargs):
     """
@@ -91,8 +92,11 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
         kwargs['slot'] -= 1
         if kwargs['run_after']:
             kwargs['run_after'] = vex.V5Device.FTCompleteOptions.RUN_IMMEDIATELY
+        elif kwargs['run_screen']:
+            kwargs['run_after'] = vex.v5Device.FTCompleteOptions.RUN_SCREEN
         else:
-            kwargs['run_after'] = vex.V5Device.FTCompleteOptions.RUN_SCREEN
+            kwargs['run_after'] = vex.V5Device.FTCompleteOptions.DONT_RUN
+        kwargs.pop('run_screen')
     elif kwargs['target'] == 'cortex':
         pass
 
