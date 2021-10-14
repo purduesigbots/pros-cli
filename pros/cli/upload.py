@@ -17,7 +17,7 @@ def upload_cli():
 @click.argument('path', type=click.Path(exists=True), default=None, required=False)
 @click.argument('port', type=str, default=None, required=False)
 @project_option(required=False, allow_none=True)
-@click.option('--no-run-after/--run-after', 'run_after', default=False, help='Immediately run the uploaded program')
+@click.option('--run-after/--no-run-after', 'run_after', default=False, help='Immediately run the uploaded program')
 @click.option('-q', '--quirk', type=int, default=0)
 @click.option('--name', 'remote_name', type=str, default=None, required=False, help='Remote program name',
               cls=PROSOption, group='V5 Options')
@@ -93,7 +93,7 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
         if kwargs['run_after']:
             kwargs['run_after'] = vex.V5Device.FTCompleteOptions.RUN_IMMEDIATELY
         elif kwargs['run_screen']:
-            kwargs['run_after'] = vex.v5Device.FTCompleteOptions.RUN_SCREEN
+            kwargs['run_after'] = vex.V5Device.FTCompleteOptions.RUN_SCREEN
         else:
             kwargs['run_after'] = vex.V5Device.FTCompleteOptions.DONT_RUN
         kwargs.pop('run_screen')
