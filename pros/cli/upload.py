@@ -12,26 +12,26 @@ def upload_cli():
 
 
 @upload_cli.command(aliases=['u'])
-@click.option('--target', type=click.Choice(['v5', 'cortex']), default=None, required=False,
+@click.option('--target', '-t', type=click.Choice(['v5', 'cortex']), default=None, required=False,
               help='Specify the target microcontroller. Overridden when a PROS project is specified.')
 @click.argument('path', type=click.Path(exists=True), default=None, required=False)
 @click.argument('port', type=str, default=None, required=False)
 @project_option(required=False, allow_none=True)
-@click.option('--run-after/--no-run-after', 'run_after', default=False, help='Immediately run the uploaded program')
+@click.option('-r/-nr', '--run-after/--no-run-after', 'run_after', default=False, help='Immediately run the uploaded program.')
+@click.option('-rs/-nrs', '--run-screen/--no-run-screen', 'run_screen', default=True, help='Display run program screen on the brain after upload.')
 @click.option('-q', '--quirk', type=int, default=0)
-@click.option('--name', 'remote_name', type=str, default=None, required=False, help='Remote program name',
+@click.option('-n', '--name', 'remote_name', type=str, default=None, required=False, help='Remote program name.',
               cls=PROSOption, group='V5 Options')
-@click.option('--slot', default=None, type=click.IntRange(min=1, max=8), help='Program slot on the GUI',
+@click.option('-s', '--slot', default=None, type=click.IntRange(min=1, max=8), help='Program slot on the GUI.',
               cls=PROSOption, group='V5 Options')
-@click.option('--program-version', default=None, type=str, help='Specify version metadata for program',
+@click.option('-pv', '--program-version', default=None, type=str, help='Specify version metadata for program.',
               cls=PROSOption, group='V5 Options', hidden=True)
 @click.option('--icon', default=None, type=str,
               cls=PROSOption, group='V5 Options', hidden=True)
-@click.option('--ini-config', type=click.Path(exists=True), default=None, help='Specify a Program Configuration File',
+@click.option('-i', '--ini-config', type=click.Path(exists=True), default=None, help='Specify a program configuration file.',
               cls=PROSOption, group='V5 Options', hidden=True)
-@click.option('--compress-bin/--no-compress-bin', 'compress_bin', cls=PROSOption, group='V5 Options', default=True,
+@click.option('-cb/-ncb', '--compress-bin/--no-compress-bin', 'compress_bin', cls=PROSOption, group='V5 Options', default=True,
               help='Compress the program binary before uploading.')
-@click.option('--run-screen/--no-run-screen', 'run_screen', default=True, help='Display run program screen on brain after upload.')
 @default_options
 def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwargs):
     """
@@ -59,9 +59,8 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
         options = dict(**project.upload_options)
         if 'slot' in options and kwargs.get('slot', None) is None:
             kwargs.pop('slot')
-        elif kwargs.get('slot', None) is None: 
+        elif kwargs.get('slot', None) is None:
             kwargs['slot'] = 1
-            
         options.update(kwargs)
         kwargs = options
 
