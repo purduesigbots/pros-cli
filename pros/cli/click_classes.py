@@ -78,6 +78,20 @@ class PROSOption(click.Option):
             return
         return super().get_help_record(ctx)
 
+class PROSDeprecated(PROSOption):
+    def __init__(self, *args, hidden: bool = False, group: str = None, replacement: str = None, **kwargs):
+        super(PROSDeprecated, self).__init__(*args, hidden, group, **kwargs)
+        self.optiontype="flag" if str(self.type)=="BOOL" else "switch"
+        self.to_use = replacement
+        self.arg = args[0][len(args[0])-1]
+        self.msg="The '--{}' {} has been deprecated. Please use '--{}' instead."
+        if replacement==None:
+            self.msg = self.msg.split(".")[0]+"."
+
+    def type_cast_value(self, ctx, value):
+        if not value==self.default:
+            print("Warning! : "+self.msg.format(self.arg,self.optiontype,self.to_use)+"\n")
+        return value
 
 class PROSGroup(PROSFormatted, click.Group):
     def __init__(self, *args, **kwargs):
