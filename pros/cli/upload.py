@@ -17,9 +17,9 @@ def upload_cli():
 @click.argument('path', type=click.Path(exists=True), default=None, required=False)
 @click.argument('port', type=str, default=None, required=False)
 @project_option(required=False, allow_none=True)
-@click.option('-ra/-nr', '--run-after/--no-run-after', 'run_after', default=None, help='Immediately run the uploaded program.',
+@click.option('--run-after/--no-run-after', 'run_after', default=None, help='Immediately run the uploaded program.',
               cls=PROSDeprecated, replacement='after')
-@click.option('-rs/-ex', '--run-screen/--execute', 'run_screen', default=None, help='Display run program screen on the brain after upload.',
+@click.option('--run-screen/--execute', 'run_screen', default=None, help='Display run program screen on the brain after upload.',
               cls=PROSDeprecated, replacement='after')
 @click.option('-af', '--after', type=click.Choice(['run','screen','none']), default=None, help='Action to perform on the brain after upload.', 
               cls=PROSOption, group='V5 Options')
