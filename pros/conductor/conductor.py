@@ -97,11 +97,12 @@ class Conductor(Config):
             shutil.rmtree(template.location)
         self.save()
 
-    def resolve_templates(self, identifier: Union[str, BaseTemplate], allow_online: bool = True,
+    def resolve_templates(self, identifier: Union[str, BaseTemplate],
                           allow_offline: bool = True, force_refresh: bool = False,
                           unique: bool = True, **kwargs) -> List[BaseTemplate]:
         results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
+        allow_online = kwargs.get('allow_online', True)
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
@@ -173,7 +174,7 @@ class Conductor(Config):
         if 'kernel' in project.templates:
             # support_kernels for backwards compatibility, but kernel_version should be getting most of the exposure
             kwargs['kernel_version'] = kwargs['supported_kernels'] = project.templates['kernel'].version
-        template = self.resolve_template(identifier=identifier, allow_online=download_ok, **kwargs)
+        template = self.resolve_template(identifier=identifier, **kwargs)
         if template is None:
             raise dont_send(
                 InvalidTemplateException(f'Could not find a template satisfying {identifier} for {project.target}'))

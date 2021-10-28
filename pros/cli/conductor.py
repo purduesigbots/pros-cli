@@ -178,6 +178,8 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
 @click.argument('path', type=click.Path())
 @click.argument('target', default=c.Conductor().default_target, type=click.Choice(['v5', 'cortex']))
 @click.argument('version', default='latest')
+@click.option('--allow-online/--no-online', 'allow_online', default=True, show_default=True,
+              help='(Dis)allow use of remote templates in new projects')
 @click.option('--force-user', 'force_user', default=False, is_flag=True,
               help='Replace all user files in a template')
 @click.option('--force-system', '-f', 'force_system', default=False, is_flag=True,
@@ -206,23 +208,44 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
         logger(__name__).error('A project already exists in this location! Delete it first', extra={'sentry': False})
         ctx.exit(-1)
     try:
-        _conductor = c.Conductor()
-        if target is None:
-            target = _conductor.default_target
-        project = _conductor.new_project(path, target=target, version=version,
-                                         force_user=force_user, force_system=force_system,
-                                         no_default_libs=no_default_libs, **kwargs)
-        ui.echo('New PROS Project was created:', output_machine=False)
-        ctx.invoke(info_project, project=project)
-
-        if compile_after or build_cache:
-            with ui.Notification():
-                ui.echo('Building project...')
-                ctx.exit(project.compile([], scan_build=build_cache))
-
+        _create_project(ctx=ctx, path=path,target=target, version=version,
+                        force_user=force_user, force_system=force_system,
+                        compile_after=compile_after, build_cache=build_cache, **kwargs)
+    except ConnectionError as e: # FIXME: ConnectionError is NOT being caught here, lines 214-223 won't run
+        try:
+                logger(__name__).error('Could not connect to GitHub." + "Check your internet connection or consult a network administrator.',
+                                       extra={'sentry': False})
+                kwargs['allow_online'] = False
+                _create_project(ctx=ctx, path=path,target=target, version=version,
+                        force_user=force_user, force_system=force_system,
+                        compile_after=compile_after, build_cache=build_cache, **kwargs)
+        except Exception as _e:
+            raise _e
     except Exception as e:
         pros.common.logger(__name__).exception(e)
         ctx.exit(-1)
+
+
+def _create_project(ctx: click.Context, path: str, target: str, version: str,
+                force_user: bool = False, force_system: bool = False,
+                no_default_libs: bool = False, compile_after: bool = True, build_cache: bool = None, **kwargs):
+    """
+    Helper function for new_project
+
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
+    """
+    _conductor = c.Conductor()
+    if target is None:
+            target = _conductor.default_target
+    project = _conductor.new_project(path, target=target, version=version,
+                                         force_user=force_user, force_system=force_system,
+                                         no_default_libs=no_default_libs, **kwargs)
+    ui.echo('New PROS Project was created:', output_machine=False)
+    ctx.invoke(info_project, project=project)
+    if compile_after or build_cache:
+        with ui.Notification():
+            ui.echo('Building project...')
+    ctx.exit(project.compile([], scan_build=build_cache))
 
 
 @conductor.command('query-templates',
