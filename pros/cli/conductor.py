@@ -211,7 +211,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
         _create_project(ctx=ctx, path=path,target=target, version=version,
                         force_user=force_user, force_system=force_system,
                         compile_after=compile_after, build_cache=build_cache, **kwargs)
-    except ConnectionError as e: # FIXME: ConnectionError is NOT being caught here, lines 214-223 won't run
+    except ConnectionError as e: # BUG: ConnectionError is NOT being caught here, lines 214-223 won't run
         try:
                 logger(__name__).error('Could not connect to GitHub." + "Check your internet connection or consult a network administrator.',
                                        extra={'sentry': False})
