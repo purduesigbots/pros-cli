@@ -224,10 +224,15 @@ class Project(Config):
             make_cmd = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'make.exe')
         else:
             make_cmd = 'make'
-        stdout_pipe = EchoPipe()
-        stderr_pipe = EchoPipe(err=True)
-        process = subprocess.Popen(executable=make_cmd, args=[make_cmd, *build_args], cwd=self.directory, env=env,
+        process,stdout_pipe,stderr_pipe=(None,None,None)
+        try:
+            process = subprocess.Popen(executable=make_cmd, args=[make_cmd, *build_args], cwd=self.directory, env=env,
                                    stdout=stdout_pipe, stderr=stderr_pipe)
+            stdout_pipe=process.communicate()
+            stderr_pipe=process.communicate()
+        except Exception:
+            print("\nError | PROS Toolchain Not Found! Are you sure you installed PROS correctly?")
+            sys.exit()
         stdout_pipe.close()
         stderr_pipe.close()
         process.wait()
