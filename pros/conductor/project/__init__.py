@@ -213,7 +213,7 @@ class Project(Config):
         return 'bin/output.bin'
 
     def make(self, build_args: List[str]):
-        import subprocess
+        from .ProjectSubprocess import Subprocess
         env = os.environ.copy()
         # Add PROS toolchain to the beginning of PATH to ensure PROS binaries are preferred
         if os.environ.get('PROS_TOOLCHAIN'):
@@ -224,18 +224,7 @@ class Project(Config):
             make_cmd = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'make.exe')
         else:
             make_cmd = 'make'
-        process,stdout_pipe,stderr_pipe=(None,None,None)
-        try:
-            process = subprocess.Popen(executable=make_cmd, args=[make_cmd, *build_args], cwd=self.directory, env=env,
-                                   stdout=stdout_pipe, stderr=stderr_pipe)
-            stdout_pipe=process.communicate()
-            stderr_pipe=process.communicate()
-        except Exception:
-            print("\nError | PROS Toolchain Not Found! Are you sure you installed PROS correctly?")
-            sys.exit()
-        stdout_pipe.close()
-        stderr_pipe.close()
-        process.wait()
+        process = Subprocess(make_cmd,[make_cmd,*build_args],self.directory,env)
         return process.returncode
 
     def make_scan_build(self, build_args: Tuple[str], cdb_file: Optional[Union[str, io.IOBase]] = None,
