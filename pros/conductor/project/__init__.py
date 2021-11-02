@@ -231,9 +231,9 @@ class Project(Config):
             process = subprocess.Popen(executable=make_cmd, args=[make_cmd, *build_args], cwd=self.directory, env=env,
                                    stdout=stdout_pipe, stderr=stderr_pipe)
         except Exception as e:
-            ui.logger(__name__).warn("\nERROR WHILE CALLING \'" + make_cmd + ".exe\' WITH EXCEPTION \'"+str(e)+"\'.")
             if not os.environ.get('PROS_TOOLCHAIN'):
-                ui.logger(__name__).warn("\nPROS TOOLCHAIN NOT FOUND! PLEASE ENSURE THE TOOLCHAIN IS INSTALLED CORRECTLY")
+                ui.logger(__name__).warn("PROS toolchain not found! Please ensure the toolchain is installed correctly and your environment variables are set properly.\n")
+            ui.logger(__name__).error(f"ERROR WHILE CALLING '{make_cmd}.exe' WITH EXCEPTION: {str(e)}\n")
             stdout_pipe.close()
             stderr_pipe.close()
             sys.exit()
@@ -288,9 +288,9 @@ class Project(Config):
                 try:
                     exit_code = run_build(args.build, env=environment, stdout=pipe, stderr=pipe, cwd=self.directory)
                 except Exception as e:
-                    ui.logger(__name__).warn("\nERROR WHILE CALLING \'" + make_cmd + ".exe\' WITH EXCEPTION \'"+str(e)+"\'.")
                     if not os.environ.get('PROS_TOOLCHAIN'):
-                        ui.logger(__name__).warn("\nPROS TOOLCHAIN NOT FOUND! PLEASE ENSURE THE TOOLCHAIN IS INSTALLED CORRECTLY")
+                        ui.logger(__name__).warn("PROS toolchain not found! Please ensure the toolchain is installed correctly and your environment variables are set properly.\n")
+                    ui.logger(__name__).error(f"ERROR WHILE CALLING '{make_cmd}.exe' WITH EXCEPTION: {str(e)}\n")
                     if not suppress_output: 
                         pipe.close()
                     sys.exit()
