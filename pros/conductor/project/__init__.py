@@ -213,7 +213,7 @@ class Project(Config):
         return 'bin/output.bin'
 
     def make(self, build_args: List[str]):
-        from .ProjectSubprocess import Subprocess
+        import subprocess
         env = os.environ.copy()
         # Add PROS toolchain to the beginning of PATH to ensure PROS binaries are preferred
         if os.environ.get('PROS_TOOLCHAIN'):
@@ -224,7 +224,22 @@ class Project(Config):
             make_cmd = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'make.exe')
         else:
             make_cmd = 'make'
-        process = Subprocess(make_cmd,[make_cmd,*build_args],self.directory,env)
+        stdout_pipe = EchoPipe()
+        stderr_pipe = EchoPipe(err=True)
+        process=None
+        try:
+            process = subprocess.Popen(executable=make_cmd, args=[make_cmd, *build_args], cwd=self.directory, env=env,
+                                   stdout=stdout_pipe, stderr=stderr_pipe)
+        except Exception as e:
+            ui.logger(__name__).warn("\nERROR WHILE CALLING \'" + make_cmd + ".exe\' WITH EXCEPTION \'"+str(e)+"\'.")
+            if not os.environ.get('PROS_TOOLCHAIN'):
+                ui.logger(__name__).warn("\nPROS TOOLCHAIN NOT FOUND! PLEASE ENSURE THE TOOLCHAIN IS INSTALLED CORRECTLY")
+            stdout_pipe.close()
+            stderr_pipe.close()
+            sys.exit()
+        stdout_pipe.close()
+        stderr_pipe.close()
+        process.wait()
         return process.returncode
 
     def make_scan_build(self, build_args: Tuple[str], cdb_file: Optional[Union[str, io.IOBase]] = None,
@@ -269,7 +284,16 @@ class Project(Config):
                 else:
                     pipe = subprocess.DEVNULL
                 logger(__name__).debug(self.directory)
-                exit_code = run_build(args.build, env=environment, stdout=pipe, stderr=pipe, cwd=self.directory)
+                exit_code=None
+                try:
+                    exit_code = run_build(args.build, env=environment, stdout=pipe, stderr=pipe, cwd=self.directory)
+                except Exception as e:
+                    ui.logger(__name__).warn("\nERROR WHILE CALLING \'" + make_cmd + ".exe\' WITH EXCEPTION \'"+str(e)+"\'.")
+                    if not os.environ.get('PROS_TOOLCHAIN'):
+                        ui.logger(__name__).warn("\nPROS TOOLCHAIN NOT FOUND! PLEASE ENSURE THE TOOLCHAIN IS INSTALLED CORRECTLY")
+                    if not suppress_output: 
+                        pipe.close()
+                    sys.exit()
                 if not suppress_output:
                     pipe.close()
                 # read the intercepted exec calls
