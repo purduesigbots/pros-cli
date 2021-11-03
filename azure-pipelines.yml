@@ -89,6 +89,8 @@ jobs:
   dependsOn:
     - UpdateBuildNumber
     - Linux
+  pool:
+    vmImage: ubuntu-latest
   condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.SourceBranch'], 'refs/heads/develop'), startsWith(variables['Build.SourceBranch'], 'refs/tags/')))
   steps:
     - task: UsePythonVersion@0
