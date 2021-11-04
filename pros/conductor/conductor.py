@@ -97,12 +97,13 @@ class Conductor(Config):
             shutil.rmtree(template.location)
         self.save()
 
-    def resolve_templates(self, identifier: Union[str, BaseTemplate],
+    def resolve_templates(self, identifier: Union[str, BaseTemplate], 
                           allow_offline: bool = True, force_refresh: bool = False,
                           unique: bool = True, **kwargs) -> List[BaseTemplate]:
         results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
         allow_online = kwargs.get('allow_online', True)
+        download_ok = kwargs.get('download_ok', True)
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
@@ -113,7 +114,7 @@ class Conductor(Config):
                 results.update(offline_results)
             else:
                 results.extend(offline_results)
-        if allow_online:
+        if allow_online and download_ok:
             for depot in self.depots.values():
                 online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                         depot.get_remote_templates(force_check=force_refresh, **kwargs))

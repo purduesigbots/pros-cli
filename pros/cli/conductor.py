@@ -178,8 +178,8 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
 @click.argument('path', type=click.Path())
 @click.argument('target', default=c.Conductor().default_target, type=click.Choice(['v5', 'cortex']))
 @click.argument('version', default='latest')
-@click.option('--allow-online/--no-online', 'allow_online', default=True, show_default=True,
-              help='(Dis)allow use of remote templates in new projects')
+@click.option('--download/--no-download', 'download_ok', default=True, show_default=True,
+              help='(Dis)allow download and use of remote templates in new projects')
 @click.option('--force-user', 'force_user', default=False, is_flag=True,
               help='Replace all user files in a template')
 @click.option('--force-system', '-f', 'force_system', default=False, is_flag=True,
@@ -205,25 +205,26 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
     if version.lower() == 'latest' or not version:
         version = '>0'
     if not force_system and c.Project.find_project(path) is not None:
-        logger(__name__).error('A project already exists in this location! Delete it first', extra={'sentry': False})
+        logger(__name__).error('A project already exists in this location at ' + c.Project.find_project(path) + 
+                               '! Delete it first. Are you creating a project in an existing one?', extra={'sentry': False})
         ctx.exit(-1)
     try:
-        _create_project(ctx=ctx, path=path,target=target, version=version,
+        project = _create_project(ctx=ctx, path=path,target=target, version=version,
                         force_user=force_user, force_system=force_system,
                         compile_after=compile_after, build_cache=build_cache, **kwargs)
-    except ConnectionError as e: # BUG: ConnectionError is NOT being caught here, lines 214-223 won't run
-        try:
-                logger(__name__).error('Could not connect to GitHub." + "Check your internet connection or consult a network administrator.',
-                                       extra={'sentry': False})
-                kwargs['allow_online'] = False
-                _create_project(ctx=ctx, path=path,target=target, version=version,
-                        force_user=force_user, force_system=force_system,
-                        compile_after=compile_after, build_cache=build_cache, **kwargs)
-        except Exception as _e:
-            raise _e
+        ctx.exit(project.compile([], scan_build=build_cache))
     except Exception as e:
-        pros.common.logger(__name__).exception(e)
-        ctx.exit(-1)
+        try:
+            kwargs['allow_online'] = False
+            project = _create_project(ctx=ctx, path=path,target=target, version=version,
+                        force_user=force_user, force_system=force_system,
+                        compile_after=compile_after, build_cache=build_cache, **kwargs)
+            logger(__name__).error('Could not connect to GitHub. Check your internet connection or consult a network administrator.',
+                                       extra={'sentry': False})
+            ctx.exit(project.compile([], scan_build=build_cache))
+        except Exception as _e:
+            pros.common.logger(__name__).exception(e)
+            ctx.exit(-1)
 
 
 def _create_project(ctx: click.Context, path: str, target: str, version: str,
@@ -245,7 +246,8 @@ def _create_project(ctx: click.Context, path: str, target: str, version: str,
     if compile_after or build_cache:
         with ui.Notification():
             ui.echo('Building project...')
-    ctx.exit(project.compile([], scan_build=build_cache))
+    return project
+    
 
 
 @conductor.command('query-templates',
