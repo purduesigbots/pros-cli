@@ -111,20 +111,22 @@ def download_file(url: str, ext: Optional[str] = None, desc: Optional[str] = Non
     """
     import requests
     from pros.common.ui import progressbar
-    from rfc6266_parser import parse_requests_response
+    # from rfc6266_parser import parse_requests_response
+    import re
 
     response = requests.get(url, stream=True)
     if response.status_code == 200:
         filename: str = url.rsplit('/', 1)[-1]
         if 'Content-Disposition' in response.headers.keys():
-            try:
-                disposition = parse_requests_response(response)
-                if isinstance(ext, str):
-                    filename = disposition.filename_sanitized(ext)
-                else:
-                    filename = disposition.filename_unsafe
-            except RuntimeError:
-                pass
+            filename = re.findall("filename=(.+)", response.headers['Content-Disposition'])[0]
+            # try:
+            #     disposition = parse_requests_response(response)
+            #     if isinstance(ext, str):
+            #         filename = disposition.filename_sanitized(ext)
+            #     else:
+            #         filename = disposition.filename_unsafe
+            # except RuntimeError:
+            #     pass
         output_path = os.path.join(get_pros_dir(), 'download', filename)
 
         if os.path.exists(output_path):
