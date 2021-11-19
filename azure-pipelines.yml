@@ -1,17 +1,16 @@
 variables:
-  python.version.linux: '3.7.x'
-  python.version.windows: '3.7.x'
+  python.version: '3.9.x'
 
 jobs:
 - job: UpdateBuildNumber
   timeoutInMinutes: 5
   pool:
-    vmImage: ubuntu-18.04
+    vmImage: ubuntu-latest
 
   steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: $(python.version.linux)
+        versionSpec: $(python.version)
         architecture: x64
     - script: python version.py
     - bash: echo "##vso[build.UpdateBuildNumber]`cat version`"
@@ -27,19 +26,41 @@ jobs:
       x86:
         buildArch: x86
   pool:
-    vmImage: vs2017-win2016
+    vmImage: windows-latest
   steps:
     - powershell: choco install 7zip.install -y
       displayName: Install 7z
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: $(python.version.windows)
+        versionSpec: $(python.version)
         architecture: $(buildArch)
     - powershell: scripts/build.ps1
       displayName: Build
     - task: PublishPipelineArtifact@0
       inputs:
         artifactName: 'pros_cli-$(Build.BuildNumber)-win-$(buildArch)'
+        targetPath: 'out'
+
+- job: macOS
+  timeoutInMinutes: 30
+  dependsOn: UpdateBuildNumber
+  strategy:
+    maxParallel: 2
+    matrix:
+      x64:
+        buildArch: x64
+  pool:
+    vmImage: macos-latest
+  steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: $(python.version)
+        architecture: $(buildArch)
+    - bash: scripts/build.sh
+      displayName: Build
+    - task: PublishPipelineArtifact@0
+      inputs:
+        artifactName: 'pros_cli-$(Build.BuildNumber)-macos-$(buildArch)'
         targetPath: 'out'
 
 - job: Linux
@@ -50,21 +71,12 @@ jobs:
     matrix:
       x64:
         buildArch: x64
-      # x86:
-      #   buildArch: x86
   pool:
-    vmImage: ubuntu-18.04
+    vmImage: ubuntu-latest
   steps:
-#   Microsoft/azure-pipelines-image-generation#225
-    # - bash: |
-    #     sudo apt-add-repository ppa:deadsnakes/ppa
-    #     sudo apt-get update
-    #     sudo apt-get install python3.6 python3.6-dev python3-setuptools
-    #   displayName: Use Python 3.6
-#     Hopefully this will work soon
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: $(python.version.linux)
+        versionSpec: $(python.version)
         architecture: $(buildArch)
     - bash: scripts/build.sh
       displayName: Build
@@ -77,11 +89,13 @@ jobs:
   dependsOn:
     - UpdateBuildNumber
     - Linux
+  pool:
+    vmImage: ubuntu-latest
   condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), eq(variables['Build.SourceBranch'], 'refs/heads/develop'), startsWith(variables['Build.SourceBranch'], 'refs/tags/')))
   steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: $(python.version.linux)
+        versionSpec: $(python.version)
         architecture: x64
     - checkout: none
     - task: DownloadPipelineArtifact@2

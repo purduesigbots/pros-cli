@@ -226,8 +226,17 @@ class Project(Config):
             make_cmd = 'make'
         stdout_pipe = EchoPipe()
         stderr_pipe = EchoPipe(err=True)
-        process = subprocess.Popen(executable=make_cmd, args=[make_cmd, *build_args], cwd=self.directory, env=env,
+        process=None
+        try:
+            process = subprocess.Popen(executable=make_cmd, args=[make_cmd, *build_args], cwd=self.directory, env=env,
                                    stdout=stdout_pipe, stderr=stderr_pipe)
+        except Exception as e:
+            if not os.environ.get('PROS_TOOLCHAIN'):
+                ui.logger(__name__).warn("PROS toolchain not found! Please ensure the toolchain is installed correctly and your environment variables are set properly.\n")
+            ui.logger(__name__).error(f"ERROR WHILE CALLING '{make_cmd}.exe' WITH EXCEPTION: {str(e)}\n")
+            stdout_pipe.close()
+            stderr_pipe.close()
+            sys.exit()
         stdout_pipe.close()
         stderr_pipe.close()
         process.wait()
@@ -275,7 +284,16 @@ class Project(Config):
                 else:
                     pipe = subprocess.DEVNULL
                 logger(__name__).debug(self.directory)
-                exit_code = run_build(args.build, env=environment, stdout=pipe, stderr=pipe, cwd=self.directory)
+                exit_code=None
+                try:
+                    exit_code = run_build(args.build, env=environment, stdout=pipe, stderr=pipe, cwd=self.directory)
+                except Exception as e:
+                    if not os.environ.get('PROS_TOOLCHAIN'):
+                        ui.logger(__name__).warn("PROS toolchain not found! Please ensure the toolchain is installed correctly and your environment variables are set properly.\n")
+                    ui.logger(__name__).error(f"ERROR WHILE CALLING '{make_cmd}.exe' WITH EXCEPTION: {str(e)}\n")
+                    if not suppress_output: 
+                        pipe.close()
+                    sys.exit()
                 if not suppress_output:
                     pipe.close()
                 # read the intercepted exec calls
