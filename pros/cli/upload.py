@@ -17,22 +17,23 @@ def upload_cli():
 @click.argument('path', type=click.Path(exists=True), default=None, required=False)
 @click.argument('port', type=str, default=None, required=False)
 @project_option(required=False, allow_none=True)
-@click.option('--run-after/--no-run-after', 'run_after', default=True, help='Immediately run the uploaded program')
-@click.option('-q', '--quirk', type=int, default=0)
-@click.option('--name', 'remote_name', type=str, default=None, required=False, help='Remote program name',
+@click.option('--run-after/--no-run-after', 'run_after', default=None, help='Immediately run the uploaded program.',
+              cls=PROSDeprecated, replacement='after')
+@click.option('--run-screen/--execute', 'run_screen', default=None, help='Display run program screen on the brain after upload.',
+              cls=PROSDeprecated, replacement='after')
+@click.option('-af', '--after', type=click.Choice(['run','screen','none']), default=None, help='Action to perform on the brain after upload.', 
               cls=PROSOption, group='V5 Options')
-@click.option('--slot', default=None, type=click.IntRange(min=1, max=8), help='Program slot on the GUI',
+@click.option('--quirk', type=int, default=0)
+@click.option('--name', 'remote_name', type=str, default=None, required=False, help='Remote program name.',
               cls=PROSOption, group='V5 Options')
-@click.option('--program-version', default=None, type=str, help='Specify version metadata for program',
+@click.option('--slot', default=None, type=click.IntRange(min=1, max=8), help='Program slot on the GUI.',
+              cls=PROSOption, group='V5 Options')
+@click.option('--program-version', default=None, type=str, help='Specify version metadata for program.',
               cls=PROSOption, group='V5 Options', hidden=True)
 @click.option('--icon', default=None, type=str,
               cls=PROSOption, group='V5 Options', hidden=True)
-@click.option('--ini-config', type=click.Path(exists=True), default=None, help='Specify a Program Configuration File',
+@click.option('--ini-config', type=click.Path(exists=True), default=None, help='Specify a program configuration file.',
               cls=PROSOption, group='V5 Options', hidden=True)
-@click.option('--run-screen/--execute', 'run_screen', default=True,
-              cls=PROSOption, group='V5 Options', help='Open "run program" screen after uploading, instead of executing'
-                                                       ' program. This option may help with controller connectivity '
-                                                       'reliability and prevent robots from running off tables.')
 @click.option('--compress-bin/--no-compress-bin', 'compress_bin', cls=PROSOption, group='V5 Options', default=True,
               help='Compress the program binary before uploading.')
 @default_options
@@ -62,9 +63,8 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
         options = dict(**project.upload_options)
         if 'slot' in options and kwargs.get('slot', None) is None:
             kwargs.pop('slot')
-        elif kwargs.get('slot', None) is None: 
+        elif kwargs.get('slot', None) is None:
             kwargs['slot'] = 1
-            
         options.update(kwargs)
         kwargs = options
 
@@ -93,18 +93,27 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
             kwargs['remote_name'] = os.path.splitext(os.path.basename(path))[0]
         kwargs['remote_name'] = kwargs['remote_name'].replace('@', '_')
         kwargs['slot'] -= 1
-        if kwargs['run_after'] and kwargs['run_screen']:
-            kwargs['run_after'] = vex.V5Device.FTCompleteOptions.RUN_SCREEN
-        elif kwargs['run_after'] and not kwargs['run_screen']:
-            kwargs['run_after'] = vex.V5Device.FTCompleteOptions.RUN_IMMEDIATELY
-        else:
-            kwargs['run_after'] = vex.V5Device.FTCompleteOptions.DONT_RUN
+        
+        action_to_kwarg = {
+            'run' : vex.V5Device.FTCompleteOptions.RUN_IMMEDIATELY, 
+            'screen' : vex.V5Device.FTCompleteOptions.RUN_SCREEN, 
+            'none' : vex.V5Device.FTCompleteOptions.DONT_RUN
+            }    
+        after_upload_default = 'screen'
+        #Determine which FTCompleteOption to assign to run_after
+        if kwargs['after']==None:
+            kwargs['after']=after_upload_default
+            if kwargs['run_after']:
+                kwargs['after']='run'
+            elif kwargs['run_screen']==False and not kwargs['run_after']:
+                kwargs['after']='none'
+        kwargs['run_after'] = action_to_kwarg[kwargs['after']]
         kwargs.pop('run_screen')
+        kwargs.pop('after')
     elif kwargs['target'] == 'cortex':
         pass
 
     logger(__name__).debug('Arguments: {}'.format(str(kwargs)))
-
     # Do the actual uploading!
     try:
         ser = DirectPort(port)
@@ -121,7 +130,6 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     except Exception as e:
         logger(__name__).exception(e, exc_info=True)
         exit(1)
-
 
 @upload_cli.command('lsusb', aliases=['ls-usb', 'ls-devices', 'lsdev', 'list-usb', 'list-devices'])
 @click.option('--target', type=click.Choice(['v5', 'cortex']), default=None, required=False)
