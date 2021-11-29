@@ -214,17 +214,8 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
                         compile_after=compile_after, build_cache=build_cache, **kwargs)
         ctx.exit(project.compile([], scan_build=build_cache))
     except Exception as e:
-        try:
-            kwargs['allow_online'] = False
-            project = _create_project(ctx=ctx, path=path,target=target, version=version,
-                        force_user=force_user, force_system=force_system,
-                        compile_after=compile_after, build_cache=build_cache, **kwargs)
-            logger(__name__).error('Could not connect to GitHub. Check your internet connection or consult a network administrator.',
-                                       extra={'sentry': False})
-            ctx.exit(project.compile([], scan_build=build_cache))
-        except Exception as _e:
-            pros.common.logger(__name__).exception(e)
-            ctx.exit(-1)
+        pros.common.logger(__name__).exception(e)
+        ctx.exit(-1)
 
 
 def _create_project(ctx: click.Context, path: str, target: str, version: str,

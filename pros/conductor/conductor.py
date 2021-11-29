@@ -116,12 +116,23 @@ class Conductor(Config):
                 results.extend(offline_results)
         if allow_online and download_ok:
             for depot in self.depots.values():
-                online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
+                try:    
+                    online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                         depot.get_remote_templates(force_check=force_refresh, **kwargs))
-                if unique:
-                    results.update(online_results)
-                else:
-                    results.extend(online_results)
+                    if unique:
+                        results.update(online_results)
+                    else:
+                        results.extend(online_results)
+                except Exception as e:
+                    try:
+                        logger(__name__).error("Failed to connect to GitHub. Check your internet connection or consult a network administrator.", extra={'sentry': False})
+                        kwargs['allow_online'] = False
+                        try:
+                            resolve_templates(self, identifier, allow_offline, force_refresh, unique, **kwargs)
+                        except Exception as __e:
+                            logger(__name__).error(__e)
+                    except Exception as _e:
+                        logger(__name__).error(_e)
             logger(__name__).debug('Saving Conductor config after checking for remote updates')
             self.save()  # Save self since there may have been some updates from the depots
         return list(results)
