@@ -108,7 +108,7 @@ class Conductor(Config):
         try:
             urllib.request.urlopen(MAINLINE_URL)
         except:
-            logger(__name__).warn("Failed to connect to GitHub. Check your internet connection or consult a network administrator.")
+            logger(__name__).warn("Failed to connect to GitHub.")
             allow_online = False
             allow_offline = True
         if isinstance(identifier, str):
