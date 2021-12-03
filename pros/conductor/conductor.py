@@ -2,6 +2,7 @@ import os.path
 import shutil
 from pathlib import Path
 from typing import *
+import urllib.request
 
 import click
 from semantic_version import Spec, Version
@@ -104,6 +105,12 @@ class Conductor(Config):
         kernel_version = kwargs.get('kernel_version', None)
         allow_online = kwargs.get('allow_online', True)
         download_ok = kwargs.get('download_ok', True)
+        try:
+            urllib.request.urlopen(MAINLINE_URL)
+        except:
+            logger(__name__).warn("Failed to connect to GitHub. Check your internet connection or consult a network administrator.")
+            allow_online = False
+            allow_offline = True
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
@@ -124,15 +131,7 @@ class Conductor(Config):
                     else:
                         results.extend(online_results)
                 except Exception as e:
-                    try:
-                        logger(__name__).error("Failed to connect to GitHub. Check your internet connection or consult a network administrator.", extra={'sentry': False})
-                        kwargs['allow_online'] = False
-                        try:
-                            resolve_templates(self, identifier, allow_offline, force_refresh, unique, **kwargs)
-                        except Exception as __e:
-                            logger(__name__).error(__e)
-                    except Exception as _e:
-                        logger(__name__).error(_e)
+                    logger(__name__).error(e)
             logger(__name__).debug('Saving Conductor config after checking for remote updates')
             self.save()  # Save self since there may have been some updates from the depots
         return list(results)
