@@ -1,5 +1,7 @@
 import os.path
 import shutil
+import urllib.request
+import urllib.error
 from pathlib import Path
 from typing import *
 
@@ -97,8 +99,7 @@ class Conductor(Config):
             shutil.rmtree(template.location)
         self.save()
 
-    def resolve_templates(self, identifier: Union[str, BaseTemplate], allow_online: bool = True,
-                          allow_offline: bool = True, force_refresh: bool = False,
+    def resolve_templates(self, identifier: Union[str, BaseTemplate], force_refresh: bool = False,
                           unique: bool = True, **kwargs) -> List[BaseTemplate]:
         results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
@@ -106,13 +107,9 @@ class Conductor(Config):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
             query = identifier
-        if allow_offline:
-            offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates)
-            if unique:
-                results.update(offline_results)
-            else:
-                results.extend(offline_results)
-        if allow_online:
+
+        try:
+            urllib.request('http://216.58.192.142', timeout=1)
             for depot in self.depots.values():
                 online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                         depot.get_remote_templates(force_check=force_refresh, **kwargs))
@@ -122,6 +119,12 @@ class Conductor(Config):
                     results.extend(online_results)
             logger(__name__).debug('Saving Conductor config after checking for remote updates')
             self.save()  # Save self since there may have been some updates from the depots
+        except Exception as err:
+            offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates)
+            if unique:
+                results.update(offline_results)
+            else:
+                results.extend(offline_results)
         return list(results)
 
     def resolve_template(self, identifier: Union[str, BaseTemplate], **kwargs) -> Optional[BaseTemplate]:
@@ -166,14 +169,13 @@ class Conductor(Config):
         upgrade_ok = kwargs.get('upgrade_ok', True)
         install_ok = kwargs.get('install_ok', True)
         downgrade_ok = kwargs.get('downgrade_ok', True)
-        download_ok = kwargs.get('download_ok', True)
         force = kwargs.get('force_apply', False)
 
         kwargs['target'] = project.target
         if 'kernel' in project.templates:
             # support_kernels for backwards compatibility, but kernel_version should be getting most of the exposure
             kwargs['kernel_version'] = kwargs['supported_kernels'] = project.templates['kernel'].version
-        template = self.resolve_template(identifier=identifier, allow_online=download_ok, **kwargs)
+        template = self.resolve_template(identifier=identifier, **kwargs)
         if template is None:
             raise dont_send(
                 InvalidTemplateException(f'Could not find a template satisfying {identifier} for {project.target}'))
