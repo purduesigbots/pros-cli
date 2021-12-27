@@ -110,28 +110,26 @@ class Conductor(Config):
         else:
             query = identifier
         try:
-            urllib.request(MAINLINE_URL, timeout=1)
-            if allow_online and download_ok:
-                for depot in self.depots.values():
-                    try:    
-                        online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
-                                        depot.get_remote_templates(force_check=force_refresh, **kwargs))
-                        if unique:
-                            results.update(online_results)
-                        else:
-                            results.extend(online_results)
-                    except Exception as e:
-                        logger(__name__).error(e)
+            urllib.request('http://216.58.192.142', timeout=1)
+            for depot in self.depots.values():
+                try:    
+                    online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
+                                    depot.get_remote_templates(force_check=force_refresh, **kwargs))
+                    if unique:
+                        results.update(online_results)
+                    else:
+                        results.extend(online_results)
+                except Exception as e:
+                    logger(__name__).error(e)
             logger(__name__).debug('Saving Conductor config after checking for remote updates')
             self.save()  # Save self since there may have been some updates from the depots
         except Exception as e:
             logger(__name__).warn("Failed to connect to Github.")
-            if allow_offline:
-                offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates)
-                if unique:
-                    results.update(offline_results)
-                else:
-                    results.extend(offline_results)
+            offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates)
+            if unique:
+                results.update(offline_results)
+            else:
+                results.extend(offline_results)
         return list(results)
 
     def resolve_template(self, identifier: Union[str, BaseTemplate], **kwargs) -> Optional[BaseTemplate]:
