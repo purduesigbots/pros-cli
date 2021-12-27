@@ -98,32 +98,27 @@ class Conductor(Config):
             shutil.rmtree(template.location)
         self.save()
 
-    def resolve_templates(self, identifier: Union[str, BaseTemplate], 
-                          allow_offline: bool = True, force_refresh: bool = False,
+    def resolve_templates(self, identifier: Union[str, BaseTemplate], force_refresh: bool = False,
                           unique: bool = True, **kwargs) -> List[BaseTemplate]:
         results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
-        allow_online = kwargs.get('allow_online', True)
-        download_ok = kwargs.get('download_ok', True)
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
             query = identifier
+
         try:
             urllib.request('http://216.58.192.142', timeout=1)
             for depot in self.depots.values():
-                try:    
-                    online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
-                                    depot.get_remote_templates(force_check=force_refresh, **kwargs))
-                    if unique:
-                        results.update(online_results)
-                    else:
-                        results.extend(online_results)
-                except Exception as e:
-                    logger(__name__).error(e)
+                online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
+                                        depot.get_remote_templates(force_check=force_refresh, **kwargs))
+                if unique:
+                    results.update(online_results)
+                else:
+                    results.extend(online_results)
             logger(__name__).debug('Saving Conductor config after checking for remote updates')
             self.save()  # Save self since there may have been some updates from the depots
-        except Exception as e:
+        except Exception as err:
             logger(__name__).warn("Failed to connect to Github.")
             offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates)
             if unique:
