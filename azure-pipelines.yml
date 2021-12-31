@@ -63,7 +63,7 @@ jobs:
         artifactName: 'pros_cli-$(Build.BuildNumber)-macos-$(buildArch)'
         targetPath: 'out'
 
-- job: macOS
+- job: macOS-M1
   timeoutInMinutes: 30
   dependsOn: UpdateBuildNumber
   strategy:
