@@ -63,6 +63,28 @@ jobs:
         artifactName: 'pros_cli-$(Build.BuildNumber)-macos-$(buildArch)'
         targetPath: 'out'
 
+- job: macOS M1
+  timeoutInMinutes: 30
+  dependsOn: UpdateBuildNumber
+  strategy:
+    maxParallel: 2
+    matrix:
+      x64:
+        buildArch: x64
+  pool:
+    M1 Mac
+  steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: $(python.version)
+        architecture: $(buildArch)
+    - bash: scripts/build.sh
+      displayName: Build
+    - task: PublishPipelineArtifact@0
+      inputs:
+        artifactName: 'pros_cli-$(Build.BuildNumber)-macos-$(buildArch)'
+        targetPath: 'out'
+
 - job: Linux
   timeoutInMinutes: 30
   dependsOn: UpdateBuildNumber
