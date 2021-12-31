@@ -74,10 +74,10 @@ jobs:
   pool:
     M1 Mac
   steps:
-    # - task: UsePythonVersion@0
-    #   inputs:
-    #     versionSpec: $(python.version)
-    #     architecture: $(buildArch)
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: $(python.version)
+        architecture: $(buildArch)
     - bash: scripts/build.sh
       displayName: Build
     - task: PublishPipelineArtifact@0
