@@ -69,7 +69,7 @@ jobs:
   strategy:
     maxParallel: 2
     matrix:
-      amd64:
+      arm64:
         buildArch: arm64
   pool:
     M1 Mac
