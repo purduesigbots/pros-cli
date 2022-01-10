@@ -109,7 +109,7 @@ def add_tag(key: str, value: str):
         scope.set_tag(key, value)
 
 
-def register(force_off: True, cfg: Optional['CliConfig'] = None):
+def register(force_off, cfg: Optional['CliConfig'] = None):
     global cli_config, client, force_prompt_off
     force_prompt_off = force_off
     if cfg is None:

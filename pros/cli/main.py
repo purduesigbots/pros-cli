@@ -65,13 +65,12 @@ def version(ctx: click.Context, param, value):
 @click.command('pros',
                cls=PROSCommandCollection,
                sources=root_commands)
-@click.option('--sentry-off', help='Disables sentry reporting prompt (Made for VSCode Extension)', is_flag=True, default=False)
 @default_options
 @click.option('--version', help='Displays version and exits', is_flag=True, expose_value=False, is_eager=True,
               callback=version)
+@click.option('--sentry-off', help='Disables sentry reporting prompt (Made for VSCode Extension)',is_flag=True,default=False)
 def cli(**kwargs):
-    pros.common.sentry.register(kwargs['sentry-off'])
-
+    pros.common.sentry.register(kwargs['sentry_off'])
 
 if __name__ == '__main__':
     main()
