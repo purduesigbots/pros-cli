@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from pros.config.cli_config import CliConfig  # noqa: F401, flake8 issue, flake8 issue with "if TYPE_CHECKING"
 
 cli_config: 'CliConfig' = None
-
+global force_prompt_off
 SUPPRESSED_EXCEPTIONS = [PermissionError, click.Abort]
 
 
@@ -22,7 +22,9 @@ def prompt_to_send(event: Dict[str, Any], hint: Optional[Dict[str, Any]]) -> Opt
     with ui.Notification():
         if cli_config is None or (cli_config.offer_sentry is not None and not cli_config.offer_sentry):
             return
-
+        if force_prompt_off:
+            ui.logger(__name__).debug('Sentry prompt was forced off through click option')
+            return
         if 'extra' in event and not event['extra'].get('sentry', True):
             ui.logger(__name__).debug('Not sending candidate event because event was tagged with extra.sentry = False')
             return
@@ -107,9 +109,9 @@ def add_tag(key: str, value: str):
         scope.set_tag(key, value)
 
 
-def register(cfg: Optional['CliConfig'] = None):
-    global cli_config, client
-
+def register(force_off: True, cfg: Optional['CliConfig'] = None):
+    global cli_config, client, force_prompt_off
+    force_prompt_off = force_off
     if cfg is None:
         from pros.config.cli_config import cli_config as get_cli_config
         cli_config = get_cli_config()
