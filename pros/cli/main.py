@@ -78,8 +78,8 @@ def toggle_analytics(ctx: click.Context, param, value):
 @default_options
 @click.option('--version', help='Displays version and exits.', is_flag=True, expose_value=False, is_eager=True,
               callback=version)
-@click.option('--toggle-analytics', help='Toggle analytics on and off.', is_flag=True, default = False,
-              expose_value=False, is_eager=True, callback=toggle_analytics)
+@click.option('--toggle-analytics', help='Toggle analytics on and off.', is_flag=True, expose_value=False, 
+              is_eager=True, callback=toggle_analytics)
 def cli():
     pros.common.sentry.register()
 
