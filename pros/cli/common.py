@@ -1,6 +1,7 @@
 import click.core
 
 from pros.common.sentry import add_tag
+#from pros.cli.main import analytics
 from pros.common.utils import *
 from .click_classes import *
 
@@ -113,12 +114,40 @@ def machine_output_option(f: Union[click.Command, Callable]):
     decorator.__name__ = f.__name__
     return decorator
 
+def no_sentry_option(f: Union[click.Command, Callable]):
+    """
+    disables the sentry y/N prompt when an error/exception occurs
+    """
+    def callback(ctx: click.Context, param: click.Parameter, value: bool):
+        ctx.ensure_object(dict)
+        add_tag('no-sentry',value)
+        if value:
+            pros.common.sentry.disable_prompt()
+    decorator = click.option('--no-sentry', expose_value=False, is_flag=True, default=False, is_eager=True,
+                            help="Disable sentry reporting prompt.", callback=callback, cls=PROSOption, hidden=True)(f)
+    decorator.__name__ = f.__name__
+    return decorator
+
+def no_analytics(f: Union[click.Command, Callable]):
+    """
+    Don't use analytics for this command
+    """
+    def callback(ctx: click.Context, param: click.Parameter, value: bool):
+        ctx.ensure_object(dict)
+        add_tag('no-analytics',value)
+        if value:
+           #analytics.useAnalytics = False
+            pass 
+    decorator = click.option('--no-analytics', expose_value=False, is_flag=True, default=False, is_eager=True,
+                            help="Don't send analytics for this command.", callback=callback, cls=PROSOption, hidden=True)(f)
+    decorator.__name__ = f.__name__
+    return decorator
 
 def default_options(f: Union[click.Command, Callable]):
     """
      combines verbosity, debug, machine output options (most commonly used)
     """
-    decorator = debug_option(verbose_option(logging_option(logfile_option(machine_output_option(f)))))
+    decorator = debug_option(verbose_option(logging_option(logfile_option(machine_output_option(no_sentry_option(f))))))
     decorator.__name__ = f.__name__
     return decorator
 

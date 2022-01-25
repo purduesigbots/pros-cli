@@ -12,6 +12,9 @@ from pros.cli.click_classes import *
 from pros.cli.common import default_options, root_commands
 from pros.common.utils import get_version, logger
 
+from pros.ga.analytics import Analytics
+analytics = Analytics()
+
 root_sources = [
     'build',
     'conductor',
@@ -61,16 +64,24 @@ def version(ctx: click.Context, param, value):
         ui.echo('pros, version {}'.format(get_version()))
     ctx.exit(0)
 
+def toggle_analytics(ctx: click.Context, param, value):
+    if not value:
+        return
+    ctx.ensure_object(dict)
+    analytics.toggle_use()
+    ui.echo('Analytics set to : {}'.format(analytics.useAnalytics))
+    ctx.exit(0)
 
 @click.command('pros',
                cls=PROSCommandCollection,
                sources=root_commands)
 @default_options
-@click.option('--version', help='Displays version and exits', is_flag=True, expose_value=False, is_eager=True,
+@click.option('--version', help='Displays version and exits.', is_flag=True, expose_value=False, is_eager=True,
               callback=version)
-@click.option('--no-sentry', help='Disables sentry reporting prompt (Made for VSCode Extension)',is_flag=True,default=False)
-def cli(**kwargs):
-    pros.common.sentry.register(kwargs['no_sentry'])
+@click.option('--toggle-analytics', help='Toggle analytics on and off.', is_flag=True, default = False,
+              expose_value=False, is_eager=True, callback=toggle_analytics)
+def cli():
+    pros.common.sentry.register()
 
 if __name__ == '__main__':
     main()

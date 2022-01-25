@@ -10,9 +10,12 @@ if TYPE_CHECKING:
     from pros.config.cli_config import CliConfig  # noqa: F401, flake8 issue, flake8 issue with "if TYPE_CHECKING"
 
 cli_config: 'CliConfig' = None
-global force_prompt_off
+force_prompt_off = False
 SUPPRESSED_EXCEPTIONS = [PermissionError, click.Abort]
 
+def disable_prompt():
+    global force_prompt_off
+    force_prompt_off = True
 
 def prompt_to_send(event: Dict[str, Any], hint: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     """
@@ -109,9 +112,8 @@ def add_tag(key: str, value: str):
         scope.set_tag(key, value)
 
 
-def register(force_off, cfg: Optional['CliConfig'] = None):
-    global cli_config, client, force_prompt_off
-    force_prompt_off = force_off
+def register(cfg: Optional['CliConfig'] = None):
+    global cli_config, client
     if cfg is None:
         from pros.config.cli_config import cli_config as get_cli_config
         cli_config = get_cli_config()
