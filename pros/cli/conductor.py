@@ -5,7 +5,7 @@ import pros.common.ui as ui
 import pros.conductor as c
 from pros.cli.common import *
 from pros.conductor.templates import ExternalTemplate
-
+from pros.ga.analytics import analytics
 
 @pros_root
 def conductor_cli():
@@ -41,7 +41,7 @@ def fetch(query: c.BaseTemplate):
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
-
+    analytics.send("fetch-template")
     template_file = None
     if os.path.exists(query.identifier):
         template_file = query.identifier
@@ -98,6 +98,7 @@ def apply(project: c.Project, query: c.BaseTemplate, **kwargs):
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
+    analytics.send("apply-template")
     return c.Conductor().apply_template(project, identifier=query, **kwargs)
 
 
@@ -122,6 +123,7 @@ def install(ctx: click.Context, **kwargs):
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
+    analytics.send("install-template")
     return ctx.invoke(apply, install_ok=True, **kwargs)
 
 
@@ -146,6 +148,7 @@ def upgrade(ctx: click.Context, project: c.Project, query: c.BaseTemplate, **kwa
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
+    analytics.send("upgrade-project")
     if not query.name:
         for template in project.templates.keys():
             click.secho(f'Upgrading {template}', color='yellow')
@@ -170,6 +173,7 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
+    analytics.send("uninstall-template")
     c.Conductor().remove_template(project, query, remove_user=remove_user,
                                   remove_empty_directories=remove_empty_directories)
 
@@ -200,6 +204,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
+    analytics.send("new-project")
     if version.lower() == 'latest' or not version:
         version = '>0'
     if not force_system and c.Project.find_project(path) is not None:
@@ -246,6 +251,7 @@ def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_onlin
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
+    analytics.send("query-templates")
     if limit < 0:
         limit = 15
     templates = c.Conductor().resolve_templates(query, allow_offline=allow_offline, allow_online=allow_online,
@@ -285,7 +291,7 @@ def info_project(project: c.Project, ls_upgrades):
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
-
+    analytics.send("info-projects")    
     from pros.conductor.project import ProjectReport
     report = ProjectReport(project)
     _conductor = c.Conductor()

@@ -1,7 +1,7 @@
 import click.core
 
 from pros.common.sentry import add_tag
-#from pros.cli.main import analytics
+from pros.ga.analytics import analytics
 from pros.common.utils import *
 from .click_classes import *
 
@@ -136,7 +136,7 @@ def no_analytics(f: Union[click.Command, Callable]):
         ctx.ensure_object(dict)
         add_tag('no-analytics',value)
         if value:
-           #analytics.useAnalytics = False
+            analytics.useAnalytics = False
             pass 
     decorator = click.option('--no-analytics', expose_value=False, is_flag=True, default=False, is_eager=True,
                             help="Don't send analytics for this command.", callback=callback, cls=PROSOption, hidden=True)(f)
@@ -145,9 +145,9 @@ def no_analytics(f: Union[click.Command, Callable]):
 
 def default_options(f: Union[click.Command, Callable]):
     """
-     combines verbosity, debug, machine output options (most commonly used)
+     combines verbosity, debug, machine output, no analytics, and no sentry options
     """
-    decorator = debug_option(verbose_option(logging_option(logfile_option(machine_output_option(no_sentry_option(f))))))
+    decorator = debug_option(verbose_option(logging_option(logfile_option(machine_output_option(no_sentry_option(no_analytics(f)))))))
     decorator.__name__ = f.__name__
     return decorator
 

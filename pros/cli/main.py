@@ -1,4 +1,7 @@
 import logging
+
+# Setup analytics first because it is used by other files
+
 import os.path
 
 import pros.common.sentry
@@ -11,9 +14,8 @@ import pros.common.ui.log
 from pros.cli.click_classes import *
 from pros.cli.common import default_options, root_commands
 from pros.common.utils import get_version, logger
+from pros.ga.analytics import analytics
 
-from pros.ga.analytics import Analytics
-analytics = Analytics()
 
 root_sources = [
     'build',
@@ -64,11 +66,11 @@ def version(ctx: click.Context, param, value):
         ui.echo('pros, version {}'.format(get_version()))
     ctx.exit(0)
 
-def toggle_analytics(ctx: click.Context, param, value):
+def use_analytics(ctx: click.Context, param, value):
     if not value:
         return
     ctx.ensure_object(dict)
-    analytics.toggle_use()
+    analytics.set_use(not analytics.useAnalytics)
     ui.echo('Analytics set to : {}'.format(analytics.useAnalytics))
     ctx.exit(0)
 
@@ -78,8 +80,8 @@ def toggle_analytics(ctx: click.Context, param, value):
 @default_options
 @click.option('--version', help='Displays version and exits.', is_flag=True, expose_value=False, is_eager=True,
               callback=version)
-@click.option('--toggle-analytics', help='Toggle analytics on and off.', is_flag=True, expose_value=False, 
-              is_eager=True, callback=toggle_analytics)
+@click.option('--use-analytics', help='Set analytics usage (True/False)', is_flag=True, expose_value=False,
+              is_eager=True, callback=use_analytics)
 def cli():
     pros.common.sentry.register()
 

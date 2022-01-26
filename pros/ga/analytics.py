@@ -1,7 +1,7 @@
 import json
-from os import path
+from os import path, getcwd
 import uuid
-from pros.cli.common import logger
+
 
 """
 PORTION OF PYGAMP MODULE REQUIRED TO SEND EVENT DATA TO GOOGLE ANALYTICS
@@ -14,7 +14,6 @@ import random
 
 endpoint = 'https://www.google-analytics.com/collect'
 user_agent = 'pygamp'
-
 
 def send(payload, property_id):
     """Send a payload to Google Analytics using the Measurement Protocol API.
@@ -67,16 +66,22 @@ def event(cid,
     }
     send(payload, property_id)
 
+"""
+PROS ANALYTICS CLASS
+"""
+
 class Analytics():
     def __init__(self):
+        self.sent = False
         self.uID = str(uuid.uuid4())
-        with open(path.join("pros","ga","analytics.json"),"r") as j:
+        with open(path.join(__file__.replace(".py",".json")),"r") as j:
             data = json.load(j)
             self.gaID = data['ga_id']
             self.useAnalytics = True if data['enabled'] == "True" else False
     def send(self,action):
-        if not self.useAnalytics:
+        if not self.useAnalytics or self.sent:
             return
+        self.sent=True # Prevent Send from being called multiple times
         try:
             event(
                 cid=self.uID,
@@ -85,11 +90,12 @@ class Analytics():
                 action=action,
                 label='CLI')
         except Exception as e:
+            from pros.cli.common import logger
             logger(__name__).exception(e, extra={'sentry': False})
 
     def set_use(self, value: bool):
         self.useAnalytics = value
-        with open(path.join("pros","ga","analytics.json"),"r+") as j:
+        with open(path.join(__file__.replace(".py",".json")),"r+") as j:
             data = json.load(j)
             data['enabled'] = str(value)
             j.seek(0)
@@ -98,3 +104,5 @@ class Analytics():
 
     def toggle_use(self):
         self.set_use(not self.useAnalytics)
+
+analytics = Analytics()

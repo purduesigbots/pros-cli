@@ -10,7 +10,7 @@ from pros.serial.ports import DirectPort
 from pros.common.utils import logger
 from .common import default_options, resolve_v5_port, resolve_cortex_port, pros_root
 from pros.serial.ports.v5_wireless_port import V5WirelessPort
-
+from pros.ga.analytics import analytics
 
 @pros_root
 def terminal_cli():
@@ -40,6 +40,7 @@ def terminal(port: str, backend: str, **kwargs):
 
     Note: share backend is not yet implemented.
     """
+    analytics.send("terminal")
     from pros.serial.devices.vex.v5_user_device import V5UserDevice
     from pros.serial.terminal import Terminal
     is_v5_user_joystick = False
