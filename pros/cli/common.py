@@ -3,6 +3,7 @@ import click.core
 from pros.common.sentry import add_tag
 from pros.ga.analytics import analytics
 from pros.common.utils import *
+from pros.common.ui import echo
 from .click_classes import *
 
 
@@ -136,6 +137,7 @@ def no_analytics(f: Union[click.Command, Callable]):
         ctx.ensure_object(dict)
         add_tag('no-analytics',value)
         if value:
+            echo("Not sending analytics for this command.\n")
             analytics.useAnalytics = False
             pass 
     decorator = click.option('--no-analytics', expose_value=False, is_flag=True, default=False, is_eager=True,
