@@ -20,7 +20,6 @@ def interactive():
 @click.option('--directory', default=os.path.join(os.path.expanduser('~'), 'My PROS Project'))
 @default_options
 def new_project(directory):
-    analytics.send("interactive-new-project")
     from pros.common.ui.interactive.renderers import MachineOutputRenderer
     from pros.conductor.interactive.NewProjectModal import NewProjectModal
     app = NewProjectModal(directory=directory)
@@ -31,7 +30,6 @@ def new_project(directory):
 @project_option(required=False, default=None, allow_none=True)
 @default_options
 def update_project(project: Optional[c.Project]):
-    analytics.send("interactive-upgrade-project")
     from pros.common.ui.interactive.renderers import MachineOutputRenderer
     from pros.conductor.interactive.UpdateProjectModal import UpdateProjectModal
     app = UpdateProjectModal(project)
@@ -42,7 +40,6 @@ def update_project(project: Optional[c.Project]):
 @project_option(required=False, default=None, allow_none=True)
 @default_options
 def upload(project: Optional[c.Project]):
-    analytics.send("interactive-upload")
     from pros.common.ui.interactive.renderers import MachineOutputRenderer
     from pros.serial.interactive import UploadProjectModal
     MachineOutputRenderer(UploadProjectModal(project)).run()

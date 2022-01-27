@@ -291,7 +291,7 @@ def info_project(project: c.Project, ls_upgrades):
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
-    analytics.send("info-projects")    
+    analytics.send("info-project")    
     from pros.conductor.project import ProjectReport
     report = ProjectReport(project)
     _conductor = c.Conductor()
