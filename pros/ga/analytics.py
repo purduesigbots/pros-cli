@@ -73,11 +73,14 @@ PROS ANALYTICS CLASS
 class Analytics():
     def __init__(self):
         self.sent = False
-        self.uID = str(uuid.uuid4())
-        with open(path.join(__file__.replace(".py",".json")),"r") as j:
-            data = json.load(j)
-            self.gaID = data['ga_id']
-            self.useAnalytics = True if data['enabled'] == "True" else False
+        data = self.read_json()
+        self.gaID = data['ga_id']
+        self.useAnalytics = True if data['enabled'] == "True" else False
+        data['u_id'] = str(uuid.uuid4()) if data['u_id'] == "None" else data['u_id']
+        self.uID = data['u_id']
+        self.save_json(data)
+
+
     def send(self,action):
         if not self.useAnalytics or self.sent:
             return
@@ -88,19 +91,29 @@ class Analytics():
                 property_id=self.gaID,
                 category='action',
                 action=action,
-                label='CLI')
+                label='CLI',
+                value="1"
+                )
         except Exception as e:
             from pros.cli.common import logger
             logger(__name__).exception(e, extra={'sentry': False})
 
     def set_use(self, value: bool):
         self.useAnalytics = value
+        data = self.read_json()
+        data['enabled'] = str(value)
+        self.save_json(data)
+
+    def save_json(self, data):
         with open(path.join(__file__.replace(".py",".json")),"r+") as j:
-            data = json.load(j)
-            data['enabled'] = str(value)
             j.seek(0)
             json.dump(data,j,indent=4)
             j.truncate()
+
+    def read_json(self):
+        with open(path.join(__file__.replace(".py",".json")),"r") as j: 
+            data = json.load(j)
+            return data
 
     def toggle_use(self):
         self.set_use(not self.useAnalytics)
