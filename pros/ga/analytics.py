@@ -1,70 +1,11 @@
 import json
-from os import path, getcwd
+from os import path
 import uuid
-
-
-"""
-PORTION OF PYGAMP MODULE REQUIRED TO SEND EVENT DATA TO GOOGLE ANALYTICS
-INSTALLING PACKAGE WAS NOT WORKING SO JUST COPIED SOURCE CODE
-OBTAINED FROM https://github.com/flyandlure/pygamp
-"""
-
 import requests
 import random
 
-endpoint = 'https://www.google-analytics.com/collect'
-user_agent = 'pygamp'
-
-def send(payload, property_id):
-    """Send a payload to Google Analytics using the Measurement Protocol API.
-    :param payload: Python dictionary of URL key value pairs
-    :param property_id: Universal Analytics property ID, i.e. UA-123456-1
-    :return: HTTP response status
-    """
-
-    required_payload = {
-        'v': 1,
-        'tid': property_id,
-        'aip': 1,
-        'z': random.random()
-    }
-
-    final_payload = {**required_payload, **payload}
-    response = requests.post(url=endpoint,
-                             data=final_payload,
-                             headers={'User-Agent': user_agent},
-                             timeout=5.0)
-    print(response.request.body)
-    return response
-
-def event(cid,
-          property_id: str,
-          category: str,
-          action: str,
-          label: str = None,
-          value: int = None,
-          non_interactive: int = 0):
-    """Create a Google Analytics event using the Measurement Protocol API.
-    :param cid: Client ID
-    :param property_id: Universal Analytics property ID, i.e. UA-123456-1
-    :param category: Event category string
-    :param action: Event action string
-    :param label: Optional event label string
-    :param value: Optional event value integer
-    :param non_interactive: Specify whether the hit type is non-interactive by passing 1
-    :return: HTTP response status
-    """
-
-    payload = {
-        'cid': cid,
-        't': 'event',
-        'ec': category,
-        'ea': action,
-        'el': label,
-        'ev': str(int(value)),
-        'ni': non_interactive
-    }
-    send(payload, property_id)
+url = 'https://www.google-analytics.com/collect'
+agent = 'pros-cli'
 
 """
 PROS ANALYTICS CLASS
@@ -86,14 +27,27 @@ class Analytics():
             return
         self.sent=True # Prevent Send from being called multiple times
         try:
-            event(
-                cid=self.uID,
-                property_id=self.gaID,
-                category='action',
-                action=action,
-                label='CLI',
-                value="1"
-                )
+            payload = {
+                'v': 1,
+                'tid': self.gaID,
+                'aip': 1,
+                'z': random.random(),
+                'cid': self.uID,
+                't': 'event',
+                'ec': 'action',
+                'ea': action,
+                'el': 'CLI',
+                'ev': '1',
+                'ni': 0
+            }           
+            response = requests.post(url=url,
+                             data=payload,
+                             headers={'User-Agent': agent},
+                             timeout=5.0)
+            if not response.status_code==200:
+                print("Something went wrong while sending analytics!")
+                print(response)
+            return response
         except Exception as e:
             from pros.cli.common import logger
             logger(__name__).exception(e, extra={'sentry': False})
