@@ -29,7 +29,7 @@ def upload_cli():
               cls=PROSOption, group='V5 Options')
 @click.option('--slot', default=None, type=click.IntRange(min=1, max=8), help='Program slot on the GUI.',
               cls=PROSOption, group='V5 Options')
-@click.option('--icon', type=click.Choice(['pros','pizza','planet','alien','ufo','robot']), default='pros',
+@click.option('--icon', type=click.Choice(['pros','pizza','planet','alien','ufo','robot','clawbot','question','X','power']), default='pros',
               help="Change Program's icon on the V5 Brain", cls=PROSOption, group='V5 Options')
 @click.option('--program-version', default=None, type=str, help='Specify version metadata for program.',
               cls=PROSOption, group='V5 Options', hidden=True)
@@ -37,7 +37,7 @@ def upload_cli():
               cls=PROSOption, group='V5 Options', hidden=True)
 @click.option('--compress-bin/--no-compress-bin', 'compress_bin', cls=PROSOption, group='V5 Options', default=True,
               help='Compress the program binary before uploading.')
-@click.option('--description', default=None, type=str, cls=PROSOption, group='V5 Options', 
+@click.option('--description', default="Made with PROS", type=str, cls=PROSOption, group='V5 Options', 
               help='Change the description displayed for the program.')
 @click.option('--name', default=None, type=str, cls=PROSOption, group='V5 Options', 
               help='Change the name of the program.')
@@ -58,12 +58,16 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     kwargs['ide_version'] = project.kernel
     kwargs['ide'] = 'PROS'
     name_to_file = {
-        'pros' : 'USER902x',
-        'pizza' : 'USER003x',
-        'planet' : 'USER013x',
-        'alien' : 'USER027x',
-        'ufo' : 'USER029x',
-        'robot' : 'USER010x'
+        'pros' : 'USER902x.bmp',
+        'pizza' : 'USER003x.bmp',
+        'planet' : 'USER013x.bmp',
+        'alien' : 'USER027x.bmp',
+        'ufo' : 'USER029x.bmp',
+        'clawbot' : 'USER010x.bmp',
+        'robot' : 'USER011x.bmp',
+        'question' : 'USER002x.bmp',
+        'power' : 'USER012x.bmp',
+        'X' : 'USER001x.bmp'
     }
     kwargs['icon'] = name_to_file[kwargs['icon']]
     if path is None or os.path.isdir(path):
@@ -104,8 +108,11 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     if not port:
         raise dont_send(click.UsageError('No port provided or located. Make sure to specify --target if needed.'))
     if kwargs['target'] == 'v5':
+        kwargs['remote_name'] = kwargs['name'] if kwargs.get("name",None) else kwargs['remote_name']
+        print(kwargs['remote_name'])
         if kwargs['remote_name'] is None:
             kwargs['remote_name'] = os.path.splitext(os.path.basename(path))[0]
+        print(kwargs['remote_name'])
         kwargs['remote_name'] = kwargs['remote_name'].replace('@', '_')
         kwargs['slot'] -= 1
         
