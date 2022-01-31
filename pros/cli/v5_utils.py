@@ -147,6 +147,26 @@ def cat_metadata(file_name: str, port: str, vid: int):
     device = V5Device(ser)
     print(device.get_file_metadata_by_name(file_name, vid=vid))
 
+@v5.command('rm-program')
+@click.argument('slot')
+@click.argument('port', type=int, required=False, default=None)
+@click.option('--vid', type=int, default=1, cls=PROSOption, hidden=True)
+@default_options
+def rm_program(slot: int, port: str, vid: int):
+    """
+    Remove a program from the flash filesystem
+    """
+    from pros.serial.devices.vex import V5Device
+    from pros.serial.ports import DirectPort
+    port = resolve_v5_port(port, 'system')[0]
+    if not port:
+        return - 1
+
+    base_name = 'slot_' + str(slot)
+    ser = DirectPort(port)
+    device = V5Device(ser)
+    device.erase_file(base_name + '.ini', vid=vid)
+    device.erase_file(base_name + '.bin', vid=vid)
 
 @v5.command('rm-all')
 @click.argument('port', required=False, default=None)
