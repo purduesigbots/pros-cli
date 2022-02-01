@@ -69,8 +69,16 @@ def version(ctx: click.Context, param, value):
 def use_analytics(ctx: click.Context, param, value):
     if value==None:
         return
+    touse = not analytics.useAnalytics
+    if str(value).lower().startswith("t"):
+        touse = True
+    elif str(value).lower().startswith("f"):
+        touse = False
+    else:
+        ui.echo('Invalid argument provided for \'--use-analytics\'. Try \'--use-analytics=False\' or \'--use-analytics=True\'')
+        ctx.exit(0)
     ctx.ensure_object(dict)
-    analytics.set_use(not analytics.useAnalytics)
+    analytics.set_use(touse)
     ui.echo('Analytics set to : {}'.format(analytics.useAnalytics))
     ctx.exit(0)
 
@@ -80,7 +88,7 @@ def use_analytics(ctx: click.Context, param, value):
 @default_options
 @click.option('--version', help='Displays version and exits.', is_flag=True, expose_value=False, is_eager=True,
               callback=version)
-@click.option('--use-analytics', help='Set analytics usage (True/False).', type=bool, expose_value=False,
+@click.option('--use-analytics', help='Set analytics usage (True/False).', type=str, expose_value=False,
               is_eager=True, default=None, callback=use_analytics)
 def cli():
     pros.common.sentry.register()

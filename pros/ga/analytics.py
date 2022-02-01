@@ -13,20 +13,29 @@ PROS ANALYTICS CLASS
 
 class Analytics():
     def __init__(self):
+        from pros.config.cli_config import cli_config as get_cli_config
+        self.cli_config = get_cli_config()
+        #If GA hasn't been setup yet (first time install/update)
+        if not self.cli_config.ga:
+            #Default values for GA
+            self.cli_config.ga = {
+                "enabled": "True",
+                "ga_id": "UA-84548828-8",
+                "u_id": str(uuid.uuid4())
+            }
+        self.cli_config.save()
         self.sent = False
-        data = self.read_json()
-        self.gaID = data['ga_id']
-        self.useAnalytics = True if data['enabled'] == "True" else False
-        data['u_id'] = str(uuid.uuid4()) if data['u_id'] == "None" else data['u_id']
-        self.uID = data['u_id']
-        self.save_json(data)
-
+        #Variables that the class will use
+        self.gaID = self.cli_config.ga['ga_id']
+        self.useAnalytics = self.cli_config.ga['enabled']
+        self.uID = self.cli_config.ga['u_id']
 
     def send(self,action):
         if not self.useAnalytics or self.sent:
             return
         self.sent=True # Prevent Send from being called multiple times
         try:
+            #Payload to be sent to GA, idk what some of them are but it works
             payload = {
                 'v': 1,
                 'tid': self.gaID,
@@ -39,7 +48,9 @@ class Analytics():
                 'el': 'CLI',
                 'ev': '1',
                 'ni': 0
-            }           
+            }          
+
+            #Send payload to GA servers 
             response = requests.post(url=url,
                              data=payload,
                              headers={'User-Agent': agent},
@@ -53,23 +64,9 @@ class Analytics():
             logger(__name__).exception(e, extra={'sentry': False})
 
     def set_use(self, value: bool):
+        #Sets if GA is being used or not
         self.useAnalytics = value
-        data = self.read_json()
-        data['enabled'] = str(value)
-        self.save_json(data)
-
-    def save_json(self, data):
-        with open(path.join(__file__.replace(".py",".json")),"r+") as j:
-            j.seek(0)
-            json.dump(data,j,indent=4)
-            j.truncate()
-
-    def read_json(self):
-        with open(path.join(__file__.replace(".py",".json")),"r") as j: 
-            data = json.load(j)
-            return data
-
-    def toggle_use(self):
-        self.set_use(not self.useAnalytics)
+        self.cli_config.ga['enabled'] = self.useAnalytics
+        self.cli_config.save()
 
 analytics = Analytics()
