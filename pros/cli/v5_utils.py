@@ -162,11 +162,11 @@ def rm_program(slot: int, port: str, vid: int):
     if not port:
         return - 1
 
-    base_name = 'slot_' + str(slot)
+    base_name = f'slot_{slot}'
     ser = DirectPort(port)
     device = V5Device(ser)
-    device.erase_file(base_name + '.ini', vid=vid)
-    device.erase_file(base_name + '.bin', vid=vid)
+    device.erase_file(f'{base_name}.ini', vid=vid)
+    device.erase_file(f'{base_name}.bin', vid=vid)
 
 @v5.command('rm-all')
 @click.argument('port', required=False, default=None)
