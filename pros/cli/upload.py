@@ -55,7 +55,7 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     """
     import pros.serial.devices.vex as vex
     from pros.serial.ports import DirectPort
-    kwargs['ide_version'] = project.kernel
+    kwargs['ide_version'] = project.kernel if not project==None else "None"
     kwargs['ide'] = 'PROS'
     name_to_file = {
         'pros' : 'USER902x.bmp',
@@ -109,10 +109,8 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
         raise dont_send(click.UsageError('No port provided or located. Make sure to specify --target if needed.'))
     if kwargs['target'] == 'v5':
         kwargs['remote_name'] = kwargs['name'] if kwargs.get("name",None) else kwargs['remote_name']
-        print(kwargs['remote_name'])
         if kwargs['remote_name'] is None:
             kwargs['remote_name'] = os.path.splitext(os.path.basename(path))[0]
-        print(kwargs['remote_name'])
         kwargs['remote_name'] = kwargs['remote_name'].replace('@', '_')
         kwargs['slot'] -= 1
         

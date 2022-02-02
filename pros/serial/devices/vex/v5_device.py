@@ -305,7 +305,6 @@ class V5Device(VEXDevice, SystemDevice):
             if compress_bin:
                 action_string += ' (compressed)'
             ui.echo(action_string)
-            print(linked_remote_name)
             remote_base = f'slot_{slot + 1}'
             if target == 'ddr':
                 self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin',
