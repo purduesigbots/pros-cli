@@ -270,6 +270,10 @@ class V5Device(VEXDevice, SystemDevice):
         project_ini = ConfigParser()
         from semantic_version import Spec
         default_icon = 'USER902x.bmp' if Spec('>=1.0.0-22').match(self.status['cpu0_version']) else 'USER999x.bmp'
+        project_ini['project'] = {
+            'version': str(kwargs.get('ide_version') or get_version()),
+            'ide': str(kwargs.get('ide') or 'PROS')
+        }
         project_ini['program'] = {
             'version': kwargs.get('version', '0.0.0') or '0.0.0',
             'name': remote_name,
@@ -295,17 +299,16 @@ class V5Device(VEXDevice, SystemDevice):
             action_string = f'Uploading program "{remote_name}"'
             finish_string = f'Finished uploading "{remote_name}"'
             if hasattr(file, 'name'):
-                action_string += f' ({Path(file.name).name})'
-                finish_string += f' ({Path(file.name).name})'
+                action_string += f' ({remote_name if remote_name else Path(file.name).name})'
+                finish_string += f' ({remote_name if remote_name else Path(file.name).name})'
             action_string += f' to V5 slot {slot + 1} on {self.port}'
             if compress_bin:
                 action_string += ' (compressed)'
             ui.echo(action_string)
-
             remote_base = f'slot_{slot + 1}'
             if target == 'ddr':
                 self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin',
-                                target='ddr', run_after=run_after, linked_filename=linked_remote_name, **kwargs)
+                                target='ddr', run_after=run_after, linked_filename=remote_name, **kwargs)
                 return
             if not isinstance(ini, ConfigParser):
                 ini = ConfigParser()
@@ -319,7 +322,7 @@ class V5Device(VEXDevice, SystemDevice):
             logger(__name__).info(f'Created ini: {ini_file}')
 
             if linked_file is not None:
-                self.upload_library(linked_file, remote_name=linked_remote_name, addr=linked_file_addr,
+                self.upload_library(linked_file, remote_name=remote_name, addr=linked_file_addr,
                                     compress=compress_bin, force_upload=kwargs.pop('force_upload_linked', False))
             bin_kwargs = {k: v for k, v in kwargs.items() if v in ['addr']}
             if (quirk & 0xff) == 1:
