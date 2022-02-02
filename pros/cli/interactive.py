@@ -3,7 +3,7 @@ from typing import *
 import click
 import pros.conductor as c
 from .common import PROSGroup, default_options, project_option, pros_root
-
+from pros.ga.analytics import analytics
 
 @pros_root
 def interactive_cli():

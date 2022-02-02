@@ -3,6 +3,7 @@ from typing import *
 import click
 
 import pros.conductor as c
+from pros.ga.analytics import analytics
 from pros.cli.common import default_options, logger, project_option, pros_root, shadow_command
 from .upload import upload
 
@@ -20,6 +21,7 @@ def make(project: c.Project, build_args):
     """
     Build current PROS project or cwd
     """
+    analytics.send("make")
     exit_code = project.compile(build_args)
     if exit_code != 0:
         logger(__name__).error(f'Failed to make project: Exit Code {exit_code}', extra={'sentry': False})
@@ -33,6 +35,7 @@ def make(project: c.Project, build_args):
 @project_option()
 @click.pass_context
 def make_upload(ctx, project: c.Project, build_args: List[str], **upload_args):
+    analytics.send("make-upload")
     ctx.invoke(make, project=project, build_args=build_args)
     ctx.invoke(upload, project=project, **upload_args)
 
@@ -43,6 +46,7 @@ def make_upload(ctx, project: c.Project, build_args: List[str], **upload_args):
 @project_option()
 @click.pass_context
 def make_upload_terminal(ctx, project: c.Project, build_args, **upload_args):
+    analytics.send("make-upload-terminal")
     from .terminal import terminal
     ctx.invoke(make, project=project, build_args=build_args)
     ctx.invoke(upload, project=project, **upload_args)
@@ -63,6 +67,7 @@ def build_compile_commands(project: c.Project, suppress_output: bool, compile_co
     Build a compile_commands.json compatible with cquery
     :return:
     """
+    analytics.send("build-compile-commands")
     exit_code = project.make_scan_build(build_args, cdb_file=compile_commands, suppress_output=suppress_output,
                                         sandbox=sandbox)
     if exit_code != 0:

@@ -4,7 +4,7 @@ import pros.common.ui as ui
 import pros.conductor as c
 
 from .common import *
-
+from pros.ga.analytics import analytics
 
 @pros_root
 def upload_cli():
@@ -47,6 +47,7 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     [PORT] may be any valid communication port file, such as COM1 or /dev/ttyACM0. If left blank, then a port is
     automatically detected based on the target (or as supplied by the PROS project)
     """
+    analytics.send("upload")
     import pros.serial.devices.vex as vex
     from pros.serial.ports import DirectPort
     if path is None or os.path.isdir(path):
@@ -138,6 +139,7 @@ def ls_usb(target):
     """
     List plugged in VEX Devices
     """
+    analytics.send("ls-usb")
     from pros.serial.devices.vex import find_v5_ports, find_cortex_ports
 
     class PortReport(object):
@@ -177,6 +179,7 @@ def ls_usb(target):
 @shadow_command(upload)
 @click.pass_context
 def make_upload_terminal(ctx, **upload_kwargs):
+    analytics.send("upload-terminal")
     from .terminal import terminal
     ctx.invoke(upload, **upload_kwargs)
     ctx.invoke(terminal, request_banner=False)

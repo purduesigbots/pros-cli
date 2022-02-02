@@ -10,7 +10,7 @@ import pros.common.ui as ui
 import pros.conductor as c
 from pros.common.utils import logger
 from pros.conductor.templates import ExternalTemplate
-
+from pros.ga.analytics import analytics
 from .common import default_options, template_query
 from .conductor import conductor
 
@@ -55,6 +55,7 @@ def create_template(ctx, path: str, destination: str, do_zip: bool, **kwargs):
 
     pros conduct create-template . libblrs 2.0.1 --system "firmware/*.a" --system "include/*.h"
     """
+    analytics.send("create-template")
     project = c.Project.find_project(path, recurse_times=1)
     if project:
         project = c.Project(project)
@@ -151,6 +152,7 @@ def create_template(ctx, path: str, destination: str, do_zip: bool, **kwargs):
 @template_query(required=False)
 @default_options
 def purge_template(query: c.BaseTemplate, force):
+    analytics.send("purge-template")
     if not query:
         force = click.confirm('Are you sure you want to remove all cached templates? This action is non-reversable!',
                               abort=True)
