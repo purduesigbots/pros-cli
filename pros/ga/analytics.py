@@ -61,7 +61,7 @@ class Analytics():
             return response
         except Exception as e:
             from pros.cli.common import logger
-            logger(__name__).exception(e, extra={'sentry': False})
+            logger(__name__).warning("Unable to send analytics. Do you have a stable internet connection?", extra={'sentry': False})
 
     def set_use(self, value: bool):
         #Sets if GA is being used or not
