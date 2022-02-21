@@ -20,7 +20,7 @@ class CliConfig(Config):
         self.update_frequency: timedelta = timedelta(hours=1)
         self.override_use_build_compile_commands: Optional[bool] = None
         self.offer_sentry: Optional[bool] = None
-
+        self.ga: Optional[dict] = None
         super(CliConfig, self).__init__(file)
 
     def needs_online_fetch(self, last_fetch: datetime) -> bool:

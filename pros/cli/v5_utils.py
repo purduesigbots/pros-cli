@@ -1,5 +1,5 @@
 from .common import *
-
+from pros.ga.analytics import analytics
 
 @pros_root
 def v5_utils_cli():
@@ -19,6 +19,7 @@ def status(port: str):
     """
     Print system information for the V5
     """
+    analytics.send("status")
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
     port = resolve_v5_port(port, 'system')[0]
@@ -46,6 +47,7 @@ def ls_files(port: str, vid: int, options: int):
     """
     List files on the flash filesystem
     """
+    analytics.send("ls-files")
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
     port = resolve_v5_port(port, 'system')[0]
@@ -70,6 +72,7 @@ def read_file(file_name: str, port: str, vid: int, source: str):
     """
     Read file on the flash filesystem to stdout
     """
+    analytics.send("read-file")
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
     port = resolve_v5_port(port, 'system')[0]
@@ -95,6 +98,7 @@ def write_file(file, port: str, remote_file: str, **kwargs):
     """
     Write a file to the V5.
     """
+    analytics.send("write-file")
     from pros.serial.ports import DirectPort
     from pros.serial.devices.vex import V5Device
     port = resolve_v5_port(port, 'system')[0]
@@ -117,6 +121,7 @@ def rm_file(file_name: str, port: str, vid: int, erase_all: bool):
     """
     Remove a file from the flash filesystem
     """
+    analytics.send("rm-file")
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
     port = resolve_v5_port(port, 'system')[0]
@@ -137,6 +142,7 @@ def cat_metadata(file_name: str, port: str, vid: int):
     """
     Print metadata for a file
     """
+    analytics.send("cat-metadata")
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
     port = resolve_v5_port(port, 'system')[0]
@@ -147,6 +153,26 @@ def cat_metadata(file_name: str, port: str, vid: int):
     device = V5Device(ser)
     print(device.get_file_metadata_by_name(file_name, vid=vid))
 
+@v5.command('rm-program')
+@click.argument('slot')
+@click.argument('port', type=int, required=False, default=None)
+@click.option('--vid', type=int, default=1, cls=PROSOption, hidden=True)
+@default_options
+def rm_program(slot: int, port: str, vid: int):
+    """
+    Remove a program from the flash filesystem
+    """
+    from pros.serial.devices.vex import V5Device
+    from pros.serial.ports import DirectPort
+    port = resolve_v5_port(port, 'system')[0]
+    if not port:
+        return - 1
+
+    base_name = f'slot_{slot}'
+    ser = DirectPort(port)
+    device = V5Device(ser)
+    device.erase_file(f'{base_name}.ini', vid=vid)
+    device.erase_file(f'{base_name}.bin', vid=vid)
 
 @v5.command('rm-all')
 @click.argument('port', required=False, default=None)
@@ -156,6 +182,7 @@ def rm_all(port: str, vid: int):
     """
     Remove all user programs from the V5
     """
+    analytics.send("rm-all")
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
     port = resolve_v5_port(port, 'system')[0]
@@ -180,6 +207,7 @@ def run(slot: str, port: str):
     """
     Run a V5 program
     """
+    analytics.send("run")
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
     file = f'slot_{slot}.bin'

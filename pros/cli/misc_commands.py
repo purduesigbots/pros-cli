@@ -1,6 +1,6 @@
 import pros.common.ui as ui
 from pros.cli.common import *
-
+from pros.ga.analytics import analytics
 
 @pros_root
 def misc_commands_cli():
@@ -17,6 +17,7 @@ def upgrade(force_check, no_install):
     """
     Check for updates to the PROS CLI
     """
+    analytics.send("upgrade")
     from pros.upgrade import UpgradeManager
     manager = UpgradeManager()
     manifest = manager.get_manifest(force_check)
