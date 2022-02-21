@@ -58,19 +58,6 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     from pros.serial.ports import DirectPort
     kwargs['ide_version'] = project.kernel if not project==None else "None"
     kwargs['ide'] = 'PROS'
-    name_to_file = {
-        'pros' : 'USER902x.bmp',
-        'pizza' : 'USER003x.bmp',
-        'planet' : 'USER013x.bmp',
-        'alien' : 'USER027x.bmp',
-        'ufo' : 'USER029x.bmp',
-        'clawbot' : 'USER010x.bmp',
-        'robot' : 'USER011x.bmp',
-        'question' : 'USER002x.bmp',
-        'power' : 'USER012x.bmp',
-        'X' : 'USER001x.bmp'
-    }
-    kwargs['icon'] = name_to_file[kwargs['icon']]
     if path is None or os.path.isdir(path):
         if project is None:
             project_path = c.Project.find_project(path or os.getcwd())
@@ -87,15 +74,31 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
             kwargs.pop('slot')
         elif kwargs.get('slot', None) is None:
             kwargs['slot'] = 1
+        if 'icon' in options and kwargs.get('icon','pros') == 'pros':
+            kwargs.pop('icon')
+        if 'after' in options and kwargs.get('after','screen') is None:
+            kwargs.pop('after')
+
         options.update(kwargs)
         kwargs = options
-
         kwargs['target'] = project.target  # enforce target because uploading to the wrong uC is VERY bad
         if 'program-version' in kwargs:
             kwargs['version'] = kwargs['program-version']
         if 'remote_name' not in kwargs:
             kwargs['remote_name'] = project.name
-
+    name_to_file = {
+        'pros' : 'USER902x.bmp',
+        'pizza' : 'USER003x.bmp',
+        'planet' : 'USER013x.bmp',
+        'alien' : 'USER027x.bmp',
+        'ufo' : 'USER029x.bmp',
+        'clawbot' : 'USER010x.bmp',
+        'robot' : 'USER011x.bmp',
+        'question' : 'USER002x.bmp',
+        'power' : 'USER012x.bmp',
+        'X' : 'USER001x.bmp'
+    }
+    kwargs['icon'] = name_to_file[kwargs['icon']]
     if 'target' not in kwargs or kwargs['target'] is None:
         logger(__name__).debug(f'Target not specified. Arguments provided: {kwargs}')
         raise click.UsageError('Target not specified. specify a project (using the file argument) or target manually')
