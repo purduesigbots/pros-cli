@@ -131,4 +131,4 @@ jobs:
       inputs:
         artifactFeed: 'pros-cli'
     - script: |
-        twine upload -r pros-cli --config-file $(PYPIRC_PATH) $(System.DefaultWorkingDirectory)/*.whl
+        twine upload -r pros-cli --config-file $(PYPIRC_PATH) $(System.DefaultWorkingDirectory)/*.whl --verbose
