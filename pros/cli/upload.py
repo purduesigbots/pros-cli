@@ -1,5 +1,4 @@
 from sys import exit
-from unicodedata import name
 
 import pros.common.ui as ui
 import pros.conductor as c
@@ -39,8 +38,6 @@ def upload_cli():
               help='Compress the program binary before uploading.')
 @click.option('--description', default="Made with PROS", type=str, cls=PROSOption, group='V5 Options', 
               help='Change the description displayed for the program.')
-@click.option('--name', default=None, type=str, cls=PROSOption, group='V5 Options', 
-              help='Change the name of the program.')
 
 @default_options
 def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwargs):
@@ -112,7 +109,6 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     if not port:
         raise dont_send(click.UsageError('No port provided or located. Make sure to specify --target if needed.'))
     if kwargs['target'] == 'v5':
-        kwargs['remote_name'] = kwargs['name'] if kwargs.get("name",None) else kwargs['remote_name']
         if kwargs['remote_name'] is None:
             kwargs['remote_name'] = os.path.splitext(os.path.basename(path))[0]
         kwargs['remote_name'] = kwargs['remote_name'].replace('@', '_')

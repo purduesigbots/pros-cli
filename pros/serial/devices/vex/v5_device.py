@@ -299,8 +299,8 @@ class V5Device(VEXDevice, SystemDevice):
             action_string = f'Uploading program "{remote_name}"'
             finish_string = f'Finished uploading "{remote_name}"'
             if hasattr(file, 'name'):
-                action_string += f' ({remote_name if remote_name else Path(file.name).name})'
-                finish_string += f' ({remote_name if remote_name else Path(file.name).name})'
+                action_string += f' ({Path(file.name).name})'
+                finish_string += f' ({Path(file.name).name})'
             action_string += f' to V5 slot {slot + 1} on {self.port}'
             if compress_bin:
                 action_string += ' (compressed)'
