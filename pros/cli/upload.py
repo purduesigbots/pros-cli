@@ -38,6 +38,8 @@ def upload_cli():
               help='Compress the program binary before uploading.')
 @click.option('--description', default="Made with PROS", type=str, cls=PROSOption, group='V5 Options', 
               help='Change the description displayed for the program.')
+# Github copilot wrote the line below O_o, including the face in this comment....
+@click.option('--apply', is_flag=True, default=False, help='Apply the changes to the V5 Brain.') 
 
 @default_options
 def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwargs):
@@ -65,8 +67,14 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
         if project.target == 'v5' and not kwargs['remote_name']:
             kwargs['remote_name'] = project.name
 
+        update_project_pros_file = kwargs['apply']
+        kwargs.pop('apply')
+
         # apply upload_options as a template
         options = dict(**project.upload_options)
+
+        # Which usable options are currently working as intended?
+        usable_upload_options = ['slot', 'icon', 'after', 'remote_name', 'description']
         if 'slot' in options and kwargs.get('slot', None) is None:
             kwargs.pop('slot')
         elif kwargs.get('slot', None) is None:
@@ -77,6 +85,15 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
             kwargs.pop('after')
 
         options.update(kwargs)
+        # Save our upload options if the user wants to apply them
+        if update_project_pros_file:
+            applied_options = {}
+            for o in usable_upload_options:
+                if o in options:
+                    applied_options[o] = options[o]
+            project.upload_options = applied_options
+            project.save()
+
         kwargs = options
         kwargs['target'] = project.target  # enforce target because uploading to the wrong uC is VERY bad
         if 'program-version' in kwargs:
