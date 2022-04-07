@@ -892,6 +892,29 @@ class V5Device(VEXDevice, SystemDevice):
         self._txrx_ext_struct(0x28, [], '')
         logger(__name__).debug('Completed ext 0x28 command')
 
+    @retries
+    def kv_read(self, kv: str) -> bytearray:
+        logger(__name__).debug('Sending ext 0x2e command')
+        encoded_kv = f'{kv}\0'.encode(encoding='ascii')
+        tx_payload = struct.pack(f'<{len(encoded_kv)}s', encoded_kv)
+        rx_fmt = "<I{}s".format(255)
+        ret = self._txrx_ext_struct(0x2e, tx_payload, rx_fmt, check_ack=False)[1]
+        logger(__name__).debug('Completed ext 0x2e command')
+        return ret
+
+    @retries
+    def kv_write(self, kv: str, payload: Union[Iterable, bytes, bytearray, str]):
+        logger(__name__).debug('Sending ext 0x2f command')
+        encoded_kv = f'{kv}\0'.encode(encoding='ascii')
+        if isinstance(payload, str):
+            payload = payload.encode(encoding='ascii')
+        trimmed_payload = payload[:255]
+        tx_fmt =f'<{len(encoded_kv)}s{len(trimmed_payload)}s'
+        tx_payload = struct.pack(tx_fmt, encoded_kv, trimmed_payload)
+        ret = self._txrx_ext_packet(0x2f, tx_payload, 0)
+        logger(__name__).debug('Completed ext 0x2f command')
+        return ret
+
     def _txrx_ext_struct(self, command: int, tx_data: Union[Iterable, bytes, bytearray],
                          unpack_fmt: str, check_length: bool = True, check_ack: bool = True,
                          timeout: Optional[float] = None) -> Tuple:
