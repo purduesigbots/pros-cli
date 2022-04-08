@@ -65,7 +65,6 @@ def read_variable(variable):
     if port == None:
         return
     device = vex.V5Device(DirectPort(port))
-    value = device.kv_read(variable)
-    print(value)
-    ui.finalize('readVariable', f'{variable}\'s read value is {value}')
+    value = device.kv_read(variable).decode()
+    ui.finalize('readVariable', f'Value of \'{variable}\' : {value}')
     
