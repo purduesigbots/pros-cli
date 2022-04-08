@@ -290,3 +290,35 @@ def capture(file_name: str, port: str, force: bool = False):
         w.write(file_, i_data)
 
     print(f'Saved screen capture to {file_name}')
+
+@v5.command(aliases=['sv'], short_help='Set a kernel variable on a connected V5 device')
+@click.argument('variable', type=click.Choice(['teamnumber', 'robotname']), required=True)
+@click.argument('value', required=True, type=click.STRING, nargs=1)
+@default_options
+def set_variable(variable, value):
+    import pros.serial.devices.vex as vex
+    from pros.serial.ports import DirectPort
+
+    # Get the connected v5 device
+    port = resolve_v5_port(None, 'system')[0]
+    if port == None:
+        return
+    device = vex.V5Device(DirectPort(port))
+    device.kv_write(variable, value)
+    print(f'{variable} set to {value[:253]}')
+
+@v5.command(aliases=['rv'], short_help='Read a kernel variable from a connected V5 device')
+@click.argument('variable', type=click.Choice(['teamnumber', 'robotname']), required=True)
+@default_options
+def read_variable(variable):
+    import pros.serial.devices.vex as vex
+    from pros.serial.ports import DirectPort
+
+    # Get the connected v5 device
+    port = resolve_v5_port(None, 'system')[0]
+    if port == None:
+        return
+    device = vex.V5Device(DirectPort(port))
+    value = device.kv_read(variable).decode()
+    print(f'Value of \'{variable}\' : {value}')
+    
