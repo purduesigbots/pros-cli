@@ -2,13 +2,6 @@ import pros.common.ui as ui
 from pros.cli.common import *
 from pros.ga.analytics import analytics
 
-@pros_root
-def set_variable():
-    pass
-
-@pros_root
-def read_variable():
-    pass
 
 @pros_root
 def misc_commands_cli():
@@ -44,7 +37,7 @@ def upgrade(force_check, no_install):
                 return -3
             ui.finalize('upgradeComplete', manager.perform_upgrade())
 
-@set_variable.command(aliases=['sv'])
+@misc_commands_cli.command(aliases=['sv'], short_help='Set a kernel variable on a connected V5 device')
 @default_options
 @click.argument('variable', type=click.Choice(['teamnumber', 'robotname']), required=True)
 @click.argument('value', required=True, type=click.STRING, nargs=1)
@@ -60,7 +53,7 @@ def set_variable(variable, value):
     device.kv_write(variable, value)
     ui.finalize('setVariable', f'{variable} set to {value}')
 
-@read_variable.command(aliases=['rv'])
+@misc_commands_cli.command(aliases=['rv'], short_help='Read a kernel variable from a connected V5 device')
 @default_options
 @click.argument('variable', type=click.Choice(['teamnumber', 'robotname']), required=True)
 def read_variable(variable):
