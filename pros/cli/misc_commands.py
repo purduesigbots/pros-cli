@@ -51,7 +51,7 @@ def set_variable(variable, value):
         return
     device = vex.V5Device(DirectPort(port))
     device.kv_write(variable, value)
-    ui.finalize('setVariable', f'{variable} set to {value}')
+    ui.finalize('setVariable', f'{variable} set to {value[:255]}')
 
 @misc_commands_cli.command(aliases=['rv'], short_help='Read a kernel variable from a connected V5 device')
 @default_options
