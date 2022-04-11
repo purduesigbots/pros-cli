@@ -906,13 +906,19 @@ class V5Device(VEXDevice, SystemDevice):
     def kv_write(self, kv: str, payload: Union[Iterable, bytes, bytearray, str]):
         logger(__name__).debug('Sending ext 0x2f command')
         encoded_kv = f'{kv}\0'.encode(encoding='ascii')
+        kv_to_max_bytes = {
+            'teamnumber': 7,
+            'robotname': 16
+        }
+        if len(kv) > kv_to_max_bytes.get(kv, 254):
+            logger(__name__).info(f'{kv} is longer than the maximum supported length {kv_to_max_bytes[kv]}, truncating.')
         # Trim down size of payload to fit within the 255 byte limit and add null terminator.
-        payload = payload[:253] + "\0"
+        payload = payload[:kv_to_max_bytes.get(kv, 254)] + "\0"
         if isinstance(payload, str):
             payload = payload.encode(encoding='ascii')
         tx_fmt =f'<{len(encoded_kv)}s{len(payload)}s'
         tx_payload = struct.pack(tx_fmt, encoded_kv, payload)
-        ret = self._txrx_ext_packet(0x2f, tx_payload, 0)
+        ret = self._txrx_ext_packet(0x2f, tx_payload, None, check_length=False, check_ack=True)
         logger(__name__).debug('Completed ext 0x2f command')
         return ret
 
