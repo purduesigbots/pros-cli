@@ -291,7 +291,7 @@ def capture(file_name: str, port: str, force: bool = False):
 
     print(f'Saved screen capture to {file_name}')
 
-@v5.command(aliases=['sv'], short_help='Set a kernel variable on a connected V5 device')
+@v5.command(aliases=['sv', 'set'], short_help='Set a kernel variable on a connected V5 device')
 @click.argument('variable', type=click.Choice(['teamnumber', 'robotname']), required=True)
 @click.argument('value', required=True, type=click.STRING, nargs=1)
 @default_options
@@ -307,7 +307,7 @@ def set_variable(variable, value):
     device.kv_write(variable, value)
     print(f'{variable} set to {value[:253]}')
 
-@v5.command(aliases=['rv'], short_help='Read a kernel variable from a connected V5 device')
+@v5.command(aliases=['rv', 'get'], short_help='Read a kernel variable from a connected V5 device')
 @click.argument('variable', type=click.Choice(['teamnumber', 'robotname']), required=True)
 @default_options
 def read_variable(variable):
