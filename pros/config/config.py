@@ -83,7 +83,7 @@ class Config(object):
 
     def __str__(self):
         jsonpickle.set_encoder_options('json', sort_keys=True)
-        return jsonpickle.encode(self)
+        return jsonpickle.encode(self, make_refs=False)
 
     def delete(self):
         if os.path.isfile(self.save_file):
@@ -96,7 +96,7 @@ class Config(object):
         if os.path.dirname(file):
             os.makedirs(os.path.dirname(file), exist_ok=True)
         with open(file, 'w') as f:
-            f.write(jsonpickle.encode(self))
+            f.write(jsonpickle.encode(self, make_refs=False))
             logger(__name__).debug('Saved {}'.format(file))
 
     def migrate(self, migration):
