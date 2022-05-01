@@ -14,8 +14,19 @@ from .depots import Depot, HttpDepot
 from .project import Project
 from .templates import BaseTemplate, ExternalTemplate, LocalTemplate, Template
 
-MAINLINE_NAME = 'pros-mainline'
-MAINLINE_URL = 'https://purduesigbots.github.io/pros-mainline/pros-mainline.json'
+# MAINLINE_NAME = 'pros-mainline'
+# MAINLINE_URL = 'https://purduesigbots.github.io/pros-mainline/pros-mainline.json'
+
+DEFAULT_DEPOTS = {
+    'pros-mainline': HttpDepot(
+        name='pros-mainline',
+        location='https://purduesigbots.github.io/pros-mainline/pros-mainline.json'
+    ),
+    'pros-branchline': HttpDepot(
+        name='pros-branchline',
+        location='https://purduesigbots.github.io/pros-branchline/pros-branchline.json'
+    ),
+}
 
 
 class Conductor(Config):
@@ -32,11 +43,20 @@ class Conductor(Config):
         self.default_libraries: Dict[str, List[str]] = None
         super(Conductor, self).__init__(file)
         needs_saving = False
-        if MAINLINE_NAME not in self.depots or \
-                not isinstance(self.depots[MAINLINE_NAME], HttpDepot) or \
-                self.depots[MAINLINE_NAME].location != MAINLINE_URL:
-            self.depots[MAINLINE_NAME] = HttpDepot(MAINLINE_NAME, MAINLINE_URL)
-            needs_saving = True
+
+        for name, obj in DEFAULT_DEPOTS.items():
+            if name not in self.depots or \
+                    not isinstance(self.depots[name], HttpDepot) or \
+                    self.depots[name].location != obj.location:
+
+                self.depots[name] = obj
+                needs_saving = True
+
+        # if MAINLINE_NAME not in self.depots or \
+        #         not isinstance(self.depots[MAINLINE_NAME], HttpDepot) or \
+        #         self.depots[MAINLINE_NAME].location != MAINLINE_URL:
+        #     self.depots[MAINLINE_NAME] = HttpDepot(MAINLINE_NAME, MAINLINE_URL)
+        #     needs_saving = True
         if self.default_target is None:
             self.default_target = 'v5'
             needs_saving = True
