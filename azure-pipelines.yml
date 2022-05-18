@@ -51,6 +51,9 @@ jobs:
       arm64:
         poolName: M1 Mac
         vmImage:
+  pool:
+    name: $(poolName)
+    vmImage: $(vmImage)
   steps:
     - task: UsePythonVersion@0
       inputs:
