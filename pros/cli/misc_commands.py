@@ -2,6 +2,7 @@ import pros.common.ui as ui
 from pros.cli.common import *
 from pros.ga.analytics import analytics
 
+
 @pros_root
 def misc_commands_cli():
     pass
