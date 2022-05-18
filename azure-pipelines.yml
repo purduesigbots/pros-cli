@@ -85,7 +85,7 @@ jobs:
     - task: UsePythonVersion@0
       inputs:
         versionSpec: $(python.version)
-        architecture: $(buildArch)
+        # architecture: $(buildArch)
     - bash: scripts/build.sh
       displayName: Build
     - task: PublishPipelineArtifact@0
