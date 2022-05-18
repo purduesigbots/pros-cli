@@ -48,9 +48,11 @@ jobs:
       x64:
         poolName: Azure Pipelines
         vmImage: macos-latest
+        buildArch: x64
       arm64:
         poolName: M1 Mac
         vmImage:
+        buildArch: arm64
   pool:
     name: $(poolName)
     vmImage: $(vmImage)
@@ -58,7 +60,7 @@ jobs:
     - task: UsePythonVersion@0
       inputs:
         versionSpec: $(python.version)
-        # architecture: $(buildArch)
+        architecture: $(buildArch)
     - bash: scripts/build.sh
       displayName: Build
     - task: PublishPipelineArtifact@0
