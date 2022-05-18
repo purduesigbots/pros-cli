@@ -46,11 +46,11 @@ jobs:
     maxParallel: 2
     matrix:
       x64:
-        buildArch: x64
+        poolName: x64
+        vmImage: macos-latest
       arm64:
-        buildArch: arm64
-  pool:
-    M1 Mac
+        poolName: M1 Mac
+        vmImage:
   steps:
     - task: UsePythonVersion@0
       inputs:
@@ -63,27 +63,6 @@ jobs:
         artifactName: 'pros_cli-$(Build.BuildNumber)-macos-$(buildArch)'
         targetPath: 'out'
 
-# - job: macOSM1
-#   timeoutInMinutes: 30
-#   dependsOn: UpdateBuildNumber
-#   strategy:
-#     maxParallel: 2
-#     matrix:
-#       arm64:
-#         buildArch: arm64
-#   pool:
-#     M1 Mac
-#   steps:
-#     - task: UsePythonVersion@0
-#       inputs:
-#         versionSpec: $(python.version)
-#         architecture: $(buildArch)
-#     - bash: scripts/build.sh
-#       displayName: Build
-#     - task: PublishPipelineArtifact@0
-#       inputs:
-#         artifactName: 'pros_cli-$(Build.BuildNumber)-macos-$(buildArch)'
-#         targetPath: 'out'
 
 - job: Linux
   timeoutInMinutes: 30
