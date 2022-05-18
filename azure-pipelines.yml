@@ -46,7 +46,7 @@ jobs:
     maxParallel: 2
     matrix:
       x64:
-        poolName: x64
+        poolName: Azure Pipelines
         vmImage: macos-latest
       arm64:
         poolName: M1 Mac
