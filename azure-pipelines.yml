@@ -17,12 +17,12 @@ jobs:
 
 - job: Windows
   dependsOn: UpdateBuildNumber
-  timeoutInMinutes: 30
-  strategy:
-    maxParallel: 2
-    matrix:
-      x64:
-        buildArch: x64
+  timeoutInMinutes: 20
+  # strategy:
+  #   maxParallel: 2
+  #   matrix:
+  #     x64:
+  #       buildArch: x64
   pool:
     vmImage: windows-latest
   steps:
@@ -31,7 +31,7 @@ jobs:
     - task: UsePythonVersion@0
       inputs:
         versionSpec: $(python.version)
-        architecture: $(buildArch)
+        # architecture: $(buildArch)
     - powershell: scripts/build.ps1
       displayName: Build
     - task: PublishPipelineArtifact@0
@@ -40,7 +40,7 @@ jobs:
         targetPath: 'out'
 
 - job: macOS
-  timeoutInMinutes: 30
+  timeoutInMinutes: 20
   dependsOn: UpdateBuildNumber
   strategy:
     maxParallel: 2
