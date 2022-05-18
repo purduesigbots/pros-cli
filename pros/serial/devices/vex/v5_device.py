@@ -892,6 +892,36 @@ class V5Device(VEXDevice, SystemDevice):
         self._txrx_ext_struct(0x28, [], '')
         logger(__name__).debug('Completed ext 0x28 command')
 
+    @retries
+    def kv_read(self, kv: str) -> bytearray:
+        logger(__name__).debug('Sending ext 0x2e command')
+        encoded_kv = f'{kv}\0'.encode(encoding='ascii')
+        tx_payload = struct.pack(f'<{len(encoded_kv)}s', encoded_kv)
+        # Because the length of the kernel variables is not known, use None to indicate we are recieving an unknown length.
+        ret = self._txrx_ext_struct(0x2e, tx_payload, None, check_length=False, check_ack=True)[0]   
+        logger(__name__).debug('Completed ext 0x2e command')
+        return ret
+
+    @retries
+    def kv_write(self, kv: str, payload: Union[Iterable, bytes, bytearray, str]):
+        logger(__name__).debug('Sending ext 0x2f command')
+        encoded_kv = f'{kv}\0'.encode(encoding='ascii')
+        kv_to_max_bytes = {
+            'teamnumber': 7,
+            'robotname': 16
+        }
+        if len(kv) > kv_to_max_bytes.get(kv, 254):
+            logger(__name__).info(f'{kv} is longer than the maximum supported length {kv_to_max_bytes[kv]}, truncating.')
+        # Trim down size of payload to fit within the 255 byte limit and add null terminator.
+        payload = payload[:kv_to_max_bytes.get(kv, 254)] + "\0"
+        if isinstance(payload, str):
+            payload = payload.encode(encoding='ascii')
+        tx_fmt =f'<{len(encoded_kv)}s{len(payload)}s'
+        tx_payload = struct.pack(tx_fmt, encoded_kv, payload)
+        ret = self._txrx_ext_packet(0x2f, tx_payload, None, check_length=False, check_ack=True)
+        logger(__name__).debug('Completed ext 0x2f command')
+        return ret
+
     def _txrx_ext_struct(self, command: int, tx_data: Union[Iterable, bytes, bytearray],
                          unpack_fmt: str, check_length: bool = True, check_ack: bool = True,
                          timeout: Optional[float] = None) -> Tuple:
@@ -906,10 +936,14 @@ class V5Device(VEXDevice, SystemDevice):
         :param check_ack: If true, then checks the first byte of the extended payload as an AK byte
         :return: A tuple unpacked according to the unpack_fmt
         """
-        rx = self._txrx_ext_packet(command, tx_data, struct.calcsize(unpack_fmt),
+        # Calculate the size of unpack_fmt if it is not None
+        calculated_size = struct.calcsize(unpack_fmt) if unpack_fmt else None
+        rx = self._txrx_ext_packet(command, tx_data, calculated_size,
                                    check_length=check_length, check_ack=check_ack, timeout=timeout)
         logger(__name__).debug('Unpacking with format: {}'.format(unpack_fmt))
-        return struct.unpack(unpack_fmt, rx)
+        # Use the provided unpack_fmt if it was not None, otherwise use the recieved size
+        recieve_format = unpack_fmt if unpack_fmt else '<{}s'.format(len(rx))
+        return struct.unpack(recieve_format, rx)
 
     @classmethod
     def _rx_ext_packet(cls, msg: Message, command: int, rx_length: int, check_ack: bool = True,
@@ -972,7 +1006,8 @@ class V5Device(VEXDevice, SystemDevice):
         """
         tx_payload = self._form_extended_payload(command, tx_data)
         rx = self._txrx_packet(0x56, tx_data=tx_payload, timeout=timeout)
-
+        # Use rx_length if it was provided, otherwise use the length of the received data
+        rx_length = rx_length if rx_length else len(rx)
         return self._rx_ext_packet(rx, command, rx_length, check_ack=check_ack, check_length=check_length)
 
     @classmethod
