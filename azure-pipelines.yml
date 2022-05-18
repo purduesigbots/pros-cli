@@ -23,8 +23,6 @@ jobs:
     matrix:
       x64:
         buildArch: x64
-      x86:
-        buildArch: x86
   pool:
     vmImage: windows-latest
   steps:
@@ -95,6 +93,8 @@ jobs:
     matrix:
       x64:
         buildArch: x64
+      arm64:
+        buildArch: arm64
   pool:
     vmImage: ubuntu-latest
   steps:
