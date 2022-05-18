@@ -1,5 +1,5 @@
 variables:
-  python.version: '3.9.x'
+  python.version: '3.7.x'
 
 jobs:
 - job: UpdateBuildNumber
@@ -85,7 +85,7 @@ jobs:
     - task: UsePythonVersion@0
       inputs:
         versionSpec: $(python.version)
-        # architecture: $(buildArch)
+        architecture: $(buildArch)
     - bash: scripts/build.sh
       displayName: Build
     - task: PublishPipelineArtifact@0
