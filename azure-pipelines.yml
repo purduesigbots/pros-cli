@@ -58,6 +58,7 @@ jobs:
         architecture: $(buildArch)
     - bash: |
         brew
+      displayName: Homebrew
     - bash: scripts/build.sh
       displayName: Build
     - task: PublishPipelineArtifact@0
