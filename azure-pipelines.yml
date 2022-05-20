@@ -52,13 +52,13 @@ jobs:
   pool:
     vmImage: macos-latest
   steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: $(python.version)
-        architecture: $(buildArch)
-    - bash: |
-        brew
-      displayName: Homebrew
+    # - task: UsePythonVersion@0
+    #   inputs:
+    #     versionSpec: $(python.version)
+    #     architecture: $(buildArch)
+    # - bash: |
+    #     brew
+    #   displayName: Homebrew
     - bash: scripts/build.sh
       displayName: Build
     - task: PublishPipelineArtifact@0
