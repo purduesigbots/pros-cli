@@ -17,14 +17,12 @@ jobs:
 
 - job: Windows
   dependsOn: UpdateBuildNumber
-  timeoutInMinutes: 30
+  timeoutInMinutes: 20
   strategy:
     maxParallel: 2
     matrix:
       x64:
         buildArch: x64
-      x86:
-        buildArch: x86
   pool:
     vmImage: windows-latest
   steps:
@@ -33,7 +31,7 @@ jobs:
     - task: UsePythonVersion@0
       inputs:
         versionSpec: $(python.version)
-        architecture: $(buildArch)
+        # architecture: $(buildArch)
     - powershell: scripts/build.ps1
       displayName: Build
     - task: PublishPipelineArtifact@0
@@ -42,37 +40,22 @@ jobs:
         targetPath: 'out'
 
 - job: macOS
-  timeoutInMinutes: 30
+  timeoutInMinutes: 20
   dependsOn: UpdateBuildNumber
   strategy:
     maxParallel: 2
     matrix:
       x64:
+        poolName: Azure Pipelines
+        vmImage: macos-latest
         buildArch: x64
-  pool:
-    vmImage: macos-latest
-  steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: $(python.version)
-        architecture: $(buildArch)
-    - bash: scripts/build.sh
-      displayName: Build
-    - task: PublishPipelineArtifact@0
-      inputs:
-        artifactName: 'pros_cli-$(Build.BuildNumber)-macos-$(buildArch)'
-        targetPath: 'out'
-
-- job: macOSM1
-  timeoutInMinutes: 30
-  dependsOn: UpdateBuildNumber
-  strategy:
-    maxParallel: 2
-    matrix:
       arm64:
+        poolName: M1 Mac
+        vmImage:
         buildArch: arm64
   pool:
-    M1 Mac
+    name: $(poolName)
+    vmImage: $(vmImage)
   steps:
     - task: UsePythonVersion@0
       inputs:
@@ -85,21 +68,24 @@ jobs:
         artifactName: 'pros_cli-$(Build.BuildNumber)-macos-$(buildArch)'
         targetPath: 'out'
 
+
 - job: Linux
-  timeoutInMinutes: 30
+  timeoutInMinutes: 20
   dependsOn: UpdateBuildNumber
   strategy:
     maxParallel: 2
     matrix:
       x64:
         buildArch: x64
+      arm64:
+        buildArch: arm64
   pool:
     vmImage: ubuntu-latest
   steps:
     - task: UsePythonVersion@0
       inputs:
         versionSpec: $(python.version)
-        architecture: $(buildArch)
+        # architecture: $(buildArch)
     - bash: scripts/build.sh
       displayName: Build
     - task: PublishPipelineArtifact@0
