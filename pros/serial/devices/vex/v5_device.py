@@ -920,7 +920,7 @@ class V5Device(VEXDevice, SystemDevice):
         tx_payload = struct.pack(tx_fmt, encoded_kv, payload)
         ret = self._txrx_ext_packet(0x2f, tx_payload, 1, check_length=False, check_ack=True)
         logger(__name__).debug('Completed ext 0x2f command')
-        return ret
+        return payload
 
     def _txrx_ext_struct(self, command: int, tx_data: Union[Iterable, bytes, bytearray],
                          unpack_fmt: str, check_length: bool = True, check_ack: bool = True,
