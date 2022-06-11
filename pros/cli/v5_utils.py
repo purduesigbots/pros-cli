@@ -304,8 +304,8 @@ def set_variable(variable, value):
     if port == None:
         return
     device = vex.V5Device(DirectPort(port))
-    device.kv_write(variable, value)
-    print(f'{variable} set to {value[:253]}')
+    actual_value = device.kv_write(variable, value).decode()
+    print(f'Value of \'{variable}\' set to : {actual_value}')
 
 @v5.command(aliases=['rv', 'get'], short_help='Read a kernel variable from a connected V5 device')
 @click.argument('variable', type=click.Choice(['teamnumber', 'robotname']), required=True)
@@ -320,4 +320,4 @@ def read_variable(variable):
         return
     device = vex.V5Device(DirectPort(port))
     value = device.kv_read(variable).decode()
-    print(f'Value of \'{variable}\' : {value}')
+    print(f'Value of \'{variable}\' is : {value}')

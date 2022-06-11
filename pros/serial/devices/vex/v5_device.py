@@ -898,7 +898,7 @@ class V5Device(VEXDevice, SystemDevice):
         encoded_kv = f'{kv}\0'.encode(encoding='ascii')
         tx_payload = struct.pack(f'<{len(encoded_kv)}s', encoded_kv)
         # Because the length of the kernel variables is not known, use None to indicate we are recieving an unknown length.
-        ret = self._txrx_ext_struct(0x2e, tx_payload, None, check_length=False, check_ack=True)[0]   
+        ret = self._txrx_ext_packet(0x2e, tx_payload, 1, check_length=False, check_ack=True)
         logger(__name__).debug('Completed ext 0x2e command')
         return ret
 
@@ -910,15 +910,15 @@ class V5Device(VEXDevice, SystemDevice):
             'teamnumber': 7,
             'robotname': 16
         }
-        if len(kv) > kv_to_max_bytes.get(kv, 254):
-            logger(__name__).info(f'{kv} is longer than the maximum supported length {kv_to_max_bytes[kv]}, truncating.')
+        if len(payload) > kv_to_max_bytes.get(kv, 254):
+            print(f'Truncating input to meet maximum value length ({kv_to_max_bytes[kv]} characters).')
         # Trim down size of payload to fit within the 255 byte limit and add null terminator.
         payload = payload[:kv_to_max_bytes.get(kv, 254)] + "\0"
         if isinstance(payload, str):
             payload = payload.encode(encoding='ascii')
         tx_fmt =f'<{len(encoded_kv)}s{len(payload)}s'
         tx_payload = struct.pack(tx_fmt, encoded_kv, payload)
-        ret = self._txrx_ext_packet(0x2f, tx_payload, None, check_length=False, check_ack=True)
+        ret = self._txrx_ext_packet(0x2f, tx_payload, 1, check_length=False, check_ack=True)
         logger(__name__).debug('Completed ext 0x2f command')
         return ret
 
