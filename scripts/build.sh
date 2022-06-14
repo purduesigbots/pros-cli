@@ -11,8 +11,11 @@ pipinstall="pip install --user"
 echo Upgrading pip
 $python -m $pipinstall --upgrade pip
 
-echo Installing wheel and cx_Freeze
-$python -m $pipinstall wheel cx_Freeze
+# echo Installing wheel and cx_Freeze
+# $python -m $pipinstall wheel cx_Freeze
+
+echo Installing wheel and pyinstaller
+$python -m $pipinstall wheel pyinstaller
 
 echo Updating version
 $python version.py
@@ -24,7 +27,9 @@ echo Building Wheel
 $python setup.py bdist_wheel
 
 echo Building Binary
-$python build.py build_exe
+pyinstaller --target-arch universal2 pros/cli/main.py
+pyinstaller --target-arch universal2 --onefile pros/cli/compile_commands/intercept-cc.py
+
 
 echo Moving artifacts to ./out
 mkdir -p ./out
