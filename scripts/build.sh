@@ -8,6 +8,7 @@ then
     python=python3.9
 fi
 pipinstall="pip install --user"
+pipunistall="pip uninstall --user"
 echo Upgrading pip
 $python -m $pipinstall --upgrade pip
 
@@ -27,10 +28,9 @@ echo Building Wheel
 $python setup.py bdist_wheel
 
 echo Building Binary
-$python -m $pipinstall uninstall typing
+$python -m $pipunistall uninstall typing
 pyinstaller --target-arch universal2 pros/cli/main.py
 pyinstaller --target-arch universal2 --onefile pros/cli/compile_commands/intercept-cc.py
-
 
 echo Moving artifacts to ./out
 mkdir -p ./out
