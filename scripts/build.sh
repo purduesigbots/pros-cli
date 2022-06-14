@@ -8,7 +8,7 @@ then
     python=python3.9
 fi
 pipinstall="pip install --user"
-pipunistall="pip uninstall --user"
+pipunistall="pip uninstall"
 echo Upgrading pip
 $python -m $pipinstall --upgrade pip
 
