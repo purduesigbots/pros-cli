@@ -30,7 +30,7 @@ def terminal_cli():
               help='Specify 2 ports for the "share" backend. The default option deterministically selects ports '
                    'based on the serial port name')
 @click.option('--banner/--no-banner', 'request_banner', default=True)
-@click.option('--output',is_eager = True, help='Redirect terminal output to a file', default=None)
+@click.option('--output', nargs = 1, type=str, is_eager = True, help='Redirect terminal output to a file', default=None)
 
 def terminal(port: str, backend: str, **kwargs):
     """
@@ -43,10 +43,6 @@ def terminal(port: str, backend: str, **kwargs):
 
     Note: share backend is not yet implemented.
     """
-    def redirect_file_option(f: Union[click.Command, Callable]): 
-        def callback(ctx: click.Context, param: click.core.Parameter, value: Any):
-            if value is None or value[0] is None:
-                return None
             
     analytics.send("terminal")
     from pros.serial.devices.vex.v5_user_device import V5UserDevice
@@ -91,9 +87,10 @@ def terminal(port: str, backend: str, **kwargs):
         device = devices.vex.V5UserDevice(ser)
     term = Terminal(device, request_banner=kwargs.pop('request_banner', True))
 
-    #if kwargs.get('output', None):
-       # return None
-    #else:
+    if kwargs.get('output', None):
+        print(f"arguments in argument dictionary: {kwargs}")
+        output_file = kwargs['output']
+        print(f'Redirecting Terminal Output to File: {output_file}')
 
 
 
