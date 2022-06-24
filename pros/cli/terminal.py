@@ -11,6 +11,7 @@ from pros.common.utils import logger
 from .common import default_options, resolve_v5_port, resolve_cortex_port, pros_root
 from pros.serial.ports.v5_wireless_port import V5WirelessPort
 from pros.ga.analytics import analytics
+from pros.common.utils import *
 
 @pros_root
 def terminal_cli():
@@ -29,6 +30,8 @@ def terminal_cli():
               help='Specify 2 ports for the "share" backend. The default option deterministically selects ports '
                    'based on the serial port name')
 @click.option('--banner/--no-banner', 'request_banner', default=True)
+@click.option('--output',is_eager = True, help='Redirect terminal output to a file', default=None)
+
 def terminal(port: str, backend: str, **kwargs):
     """
     Open a terminal to a serial port
@@ -40,9 +43,15 @@ def terminal(port: str, backend: str, **kwargs):
 
     Note: share backend is not yet implemented.
     """
+    def redirect_file_option(f: Union[click.Command, Callable]): 
+        def callback(ctx: click.Context, param: click.core.Parameter, value: Any):
+            if value is None or value[0] is None:
+                return None
+            
     analytics.send("terminal")
     from pros.serial.devices.vex.v5_user_device import V5UserDevice
     from pros.serial.terminal import Terminal
+    
     is_v5_user_joystick = False
     if port == 'default':
         project_path = c.Project.find_project(os.getcwd())
@@ -81,6 +90,12 @@ def terminal(port: str, backend: str, **kwargs):
     else:
         device = devices.vex.V5UserDevice(ser)
     term = Terminal(device, request_banner=kwargs.pop('request_banner', True))
+
+    if kwargs.get('output', None):
+        return None
+    else:
+
+
 
     signal.signal(signal.SIGINT, term.stop)
     term.start()
