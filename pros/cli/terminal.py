@@ -47,6 +47,7 @@ def terminal(port: str, backend: str, **kwargs):
     analytics.send("terminal")
     from pros.serial.devices.vex.v5_user_device import V5UserDevice
     from pros.serial.terminal import Terminal
+
     
     is_v5_user_joystick = False
     if port == 'default':
@@ -91,8 +92,8 @@ def terminal(port: str, backend: str, **kwargs):
         print(f"arguments in argument dictionary: {kwargs}")
         output_file = kwargs['output']
         print(f'Redirecting Terminal Output to File: {output_file}')
-
-
+        with open(f'{output_file}', 'a') as file:
+            sys.stdout = file
 
     signal.signal(signal.SIGINT, term.stop)
     term.start()
