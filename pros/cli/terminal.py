@@ -88,12 +88,23 @@ def terminal(port: str, backend: str, **kwargs):
         device = devices.vex.V5UserDevice(ser)
     term = Terminal(device, request_banner=kwargs.pop('request_banner', True))
 
+    class TerminalOutput(object):
+        def __init__(self, file):
+            self.terminal = sys.stdout
+            self.log = open(file, "a")
+        def write(self, data):
+            self.terminal.write(data)
+            self.log.write(data) 
+        def flush(self):
+            pass
+
     if kwargs.get('output', None):
         print(f"arguments in argument dictionary: {kwargs}")
         output_file = kwargs['output']
         print(f'Redirecting Terminal Output to File: {output_file}')
-        with open(f'{output_file}', 'a') as file:
-            sys.stdout = file
+        sys.stdout = TerminalOutput(f'{output_file}')§
+    else:
+        sys.stdout = sys.__stdout__
 
     signal.signal(signal.SIGINT, term.stop)
     term.start()
