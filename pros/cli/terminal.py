@@ -96,7 +96,6 @@ def terminal(port: str, backend: str, **kwargs):
             pass
 
     if kwargs.get('output', None):
-        print(f"arguments in argument dictionary: {kwargs}")
         output_file = kwargs['output']
         print(f'Redirecting Terminal Output to File: {output_file}')
         sys.stdout = TerminalOutput(f'{output_file}')
