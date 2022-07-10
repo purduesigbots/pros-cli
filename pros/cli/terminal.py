@@ -88,17 +88,22 @@ def terminal(port: str, backend: str, **kwargs):
     class TerminalOutput(object):
         def __init__(self, file):
             self.terminal = sys.stdout
-            self.log = open(file, "a")
+            self.log = open(file, 'a')
         def write(self, data):
             self.terminal.write(data)
             self.log.write(data) 
         def flush(self):
             pass
+        def end(self):
+            self.log.close()
 
+    output = None
     if kwargs.get('output', None):
         output_file = kwargs['output']
+        output = TerminalOutput(f'{output_file}')
+        term.console.output = output
+        sys.stdout = output
         print(f'Redirecting Terminal Output to File: {output_file}')
-        sys.stdout = TerminalOutput(f'{output_file}')
     else:
         sys.stdout = sys.__stdout__
 
@@ -106,5 +111,8 @@ def terminal(port: str, backend: str, **kwargs):
     term.start()
     while not term.alive.is_set():
         time.sleep(0.005)
+    sys.stdout = sys.__stdout__
+    if output:
+        output.end()
     term.join()
     logger(__name__).info('CLI Main Thread Dying')
