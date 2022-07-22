@@ -103,7 +103,7 @@ def terminal(port: str, backend: str, **kwargs):
         output = TerminalOutput(f'{output_file}')
         term.console.output = output
         sys.stdout = output
-       logger(__name__).info(f'Redirecting Terminal Output to File: {output_file}')
+        logger(__name__).info(f'Redirecting Terminal Output to File: {output_file}')
     else:
         sys.stdout = sys.__stdout__
 
