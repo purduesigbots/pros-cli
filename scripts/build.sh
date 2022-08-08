@@ -28,7 +28,6 @@ echo Building Wheel
 $python setup.py bdist_wheel
 
 echo Building Binary
-$python -m $pipunistall uninstall typing
 pyinstaller --target-arch universal2 pros/cli/main.py
 pyinstaller --target-arch universal2 --onefile pros/cli/compile_commands/intercept-cc.py
 
