@@ -2,13 +2,14 @@
 
 python=python
 echo Testing python executable version
-$python -c "import sys; exit(0 if sys.version_info > (3,9) else 1)"
-if [ $? -ne 0 ]
-then
-    python=python3.9
-fi
+# $python -c "import sys; exit(0 if sys.version_info > (3,9) else 1)"
+# if [ $? -ne 0 ]
+# then
+#     python=python3.9
+# fi
 pipinstall="pip install --user"
 pipunistall="pip uninstall"
+$cd /
 echo Upgrading pip
 $python -m $pipinstall --upgrade pip
 
