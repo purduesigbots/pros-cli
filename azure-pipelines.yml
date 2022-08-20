@@ -23,5 +23,5 @@ jobs:
     
     - task: PublishPipelineArtifact@0
       inputs:
-        artifactName: 'pros_cli-$(Build.BuildNumber)-macos-$(buildArch)'
-        targetPath: 'out'
+        artifactName: 'windows-demo'
+        targetPath: 'dist.zip'
