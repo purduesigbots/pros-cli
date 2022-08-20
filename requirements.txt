@@ -21,7 +21,6 @@ requests
 django
 spark
 aiohttp
-atexit
 aws_lambda
 beam
 boto3
@@ -29,14 +28,10 @@ bottle
 celery
 chalice
 dedupe
-excepthook
 executing
 falcon
 flask
 gcp
-gnu_backtrace
-logging
-modules
 pure_eval
 pyramid
 redis
