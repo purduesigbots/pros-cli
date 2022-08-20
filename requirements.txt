@@ -21,7 +21,6 @@ requests
 django
 spark
 aiohttp
-asgi
 atexit
 aws_lambda
 beam
