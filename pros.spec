@@ -10,7 +10,7 @@ from PyInstaller.building.osx import BUNDLE
 block_cipher = None
 
 # noinspection PyUnresolvedReferences
-a = Analysis(['cli/main.py'],
+a = Analysis(['pros/cli/main.py'],
              pathex=[os.path.abspath(SPECPATH)],
              binaries=[],
              datas=[],
