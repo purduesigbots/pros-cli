@@ -18,9 +18,16 @@ jobs:
 - job: Windows
   dependsOn: UpdateBuildNumber
   timeoutInMinutes: 15
+  strategy:
+    maxParallel: 2
+    matrix:
+      x64:
+        poolName: Azure Pipelines
+        vmImage: windows-latest
+        buildArch: x64
   pool:
-    vmImage: windows-latest
-    buildArch: x64
+    name: $(poolName)
+    vmImage: $(vmImage)
   steps:
     - template: cross-platform-build.yml
 
