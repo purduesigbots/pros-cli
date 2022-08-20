@@ -18,8 +18,8 @@ jobs:
 - job: Windows
   pool:
     vmImage: windows-latest
-    steps:
-      - template: cross-platform-build.yml
+  steps:
+    - template: cross-platform-build.yml
 
 - job: MacOS
   pool:

@@ -9,6 +9,12 @@ steps:
     - script: |
         pyinstaller -y pros.spec
       displayName: 'Build pyInstaller Application'
+    #   condition: eq( variables['Agent.OS'], 'Windows_NT' )
+    
+    # - script: |
+    #     pyinstaller --target-arch universal2 -y pros.spec 
+    #   displayName: 'Build pyInstaller Application'
+    #   condition: eq( variables['Agent.OS'], 'Darwin' )
     
     - task: ArchiveFiles@2
       inputs:
