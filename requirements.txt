@@ -40,4 +40,3 @@ sanic
 sqlalchemy
 tornado
 trytond
-wsgi
