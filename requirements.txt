@@ -37,10 +37,7 @@ pyramid
 redis
 rq
 sanic
-serverless
 sqlalchemy
-stdlib
-threading
 tornado
 trytond
 wsgi
