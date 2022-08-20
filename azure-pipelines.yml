@@ -1,53 +1,28 @@
+variables:
+  python.version: '3.9'
 
 jobs:
-- job: Windows
+- job: UpdateBuildNumber
+  timeoutInMinutes: 5
   pool:
-    vmImage: windows-latest
+    vmImage: ubuntu-latest
+
   steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.9'
-        architecture: 'x64'
+        versionSpec: $(python.version)
+        architecture: x64
+    - script: python version.py
+    - bash: echo "##vso[build.UpdateBuildNumber]`cat version`"
 
-    - script: python -m pip install --upgrade pip && pip install -r requirements.txt && pip uninstall -y typing
-      displayName: 'Install dependencies'
-    
-    - script: |
-        pyinstaller -y pros.spec
-      displayName: 'Build pyInstaller Application'
-    
-    - task: ArchiveFiles@2
-      inputs:
-        rootFolderOrFile: '$(Build.SourcesDirectory)/dist'
-        archiveFile: '$(Build.SourcesDirectory)/dist.zip'
-    
-    - task: PublishPipelineArtifact@0
-      inputs:
-        artifactName: 'windows-demo'
-        targetPath: 'dist.zip'
+- job: Windows
+  pool:
+    vmImage: windows-latest
+    steps:
+      - template: cross-platform-build.yml
 
 - job: MacOS
   pool:
     vmImage: macos-latest
   steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.9'
-        architecture: 'x64'
-
-    - script: python -m pip install --upgrade pip && pip install -r requirements.txt && pip uninstall -y typing
-      displayName: 'Install dependencies'
-    
-    - script: |
-        pyinstaller -y pros.spec
-      displayName: 'Build pyInstaller Application'
-    
-    - task: ArchiveFiles@2
-      inputs:
-        rootFolderOrFile: '$(Build.SourcesDirectory)/dist'
-        archiveFile: '$(Build.SourcesDirectory)/dist.zip'
-    
-    - task: PublishPipelineArtifact@0
-      inputs:
-        artifactName: 'macos-demo'
-        targetPath: 'dist.zip'
+    - template: cross-platform-build.yml

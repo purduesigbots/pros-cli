@@ -1,0 +1,21 @@
+steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: $(python.version)
+
+    - script: python -m pip install --upgrade pip && pip install -r requirements.txt && pip uninstall -y typing
+      displayName: 'Install dependencies'
+    
+    - script: |
+        pyinstaller -y pros.spec
+      displayName: 'Build pyInstaller Application'
+    
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: '$(Build.SourcesDirectory)/dist'
+        archiveFile: '$(Build.SourcesDirectory)/dist.zip'
+    
+    - task: PublishPipelineArtifact@0
+      inputs:
+        artifactName: 'windows-demo'
+        targetPath: 'dist.zip'
