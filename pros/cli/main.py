@@ -16,6 +16,8 @@ from pros.cli.common import default_options, root_commands
 from pros.common.utils import get_version, logger
 from pros.ga.analytics import analytics
 
+from django import *
+
 
 root_sources = [
     'build',
