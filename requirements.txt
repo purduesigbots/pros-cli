@@ -16,4 +16,4 @@ pyinstaller
 django
 flask
 resource
-OpenSSL
+pyOpenSSL
