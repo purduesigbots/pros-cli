@@ -16,13 +16,29 @@ jobs:
     - bash: echo "##vso[build.UpdateBuildNumber]`cat version`"
 
 - job: Windows
+  dependsOn: UpdateBuildNumber
+  timeoutInMinutes: 15
   pool:
     vmImage: windows-latest
   steps:
     - template: cross-platform-build.yml
 
 - job: MacOS
+  timeoutInMinutes: 15
+  dependsOn: UpdateBuildNumber
+  strategy:
+    maxParallel: 2
+    matrix:
+      x64:
+        poolName: Azure Pipelines
+        vmImage: macos-latest
+        buildArch: x64
+      arm64:
+        poolName: M1 Mac
+        vmImage:
+        buildArch: arm64
   pool:
-    vmImage: macos-latest
+    name: $(poolName)
+    vmImage: $(vmImage)
   steps:
     - template: cross-platform-build.yml
