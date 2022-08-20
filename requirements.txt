@@ -21,9 +21,7 @@ requests
 django
 spark
 aiohttp
-aws_lambda
 beam
-boto3
 bottle
 celery
 chalice
