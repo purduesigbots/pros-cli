@@ -13,7 +13,7 @@ jobs:
       displayName: 'Install dependencies'
     
     - script: |
-        pyinstaller -y ../pros.spec
+        pyinstaller -y pros.spec
       displayName: 'Build pyInstaller Application'
     
     - task: ArchiveFiles@2
