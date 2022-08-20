@@ -39,8 +39,9 @@ class UpgradeManifestV2(UpgradeManifestV1):
         if self._platform is not None:
             return self._platform
         if getattr(sys, 'frozen', False):
-            import BUILD_CONSTANTS
-            frozen_platform = getattr(BUILD_CONSTANTS, 'FROZEN_PLATFORM_V1', None)
+            # import BUILD_CONSTANTS
+            # frozen_platform = getattr(BUILD_CONSTANTS, 'FROZEN_PLATFORM_V1', None)
+            frozen_platform = 'Windows'
             if isinstance(frozen_platform, str):
                 if frozen_platform.startswith('Windows86'):
                     self._platform = PlatformsV2.Windows86

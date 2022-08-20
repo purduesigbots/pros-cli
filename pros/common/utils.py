@@ -20,8 +20,9 @@ def get_version():
         pass
     try:
         if getattr(sys, 'frozen', False):
-            import BUILD_CONSTANTS
-            ver = BUILD_CONSTANTS.CLI_VERSION
+            # import BUILD_CONSTANTS
+            # ver = BUILD_CONSTANTS.CLI_VERSION
+            ver = '9.9.9'
             if ver is not None:
                 return ver
     except:

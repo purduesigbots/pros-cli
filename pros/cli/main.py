@@ -18,6 +18,15 @@ from pros.ga.analytics import analytics
 
 from django import *
 
+import pros.cli.build
+import pros.cli.conductor
+import pros.cli.conductor_utils
+import pros.cli.terminal
+import pros.cli.upload
+import pros.cli.v5_utils
+import pros.cli.misc_commands
+import pros.cli.interactive
+import pros.cli.user_script
 
 root_sources = [
     'build',
