@@ -6,7 +6,33 @@ jobs:
   steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.8'
+        versionSpec: '3.9'
+        architecture: 'x64'
+
+    - script: python -m pip install --upgrade pip && pip install -r requirements.txt && pip uninstall -y typing
+      displayName: 'Install dependencies'
+    
+    - script: |
+        pyinstaller -y pros.spec
+      displayName: 'Build pyInstaller Application'
+    
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: '$(Build.SourcesDirectory)/build'
+        archiveFile: '$(Build.SourcesDirectory)/build.zip'
+    
+    - task: PublishPipelineArtifact@0
+      inputs:
+        artifactName: 'windows-demo'
+        targetPath: 'build.zip'
+
+- job: MacOS
+  pool:
+    vmImage: macos-latest
+  steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.9'
         architecture: 'x64'
 
     - script: python -m pip install --upgrade pip && pip install -r requirements.txt && pip uninstall -y typing
@@ -23,5 +49,5 @@ jobs:
     
     - task: PublishPipelineArtifact@0
       inputs:
-        artifactName: 'windows-demo'
+        artifactName: 'macos-demo'
         targetPath: 'dist.zip'
