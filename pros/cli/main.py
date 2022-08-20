@@ -16,8 +16,6 @@ from pros.cli.common import default_options, root_commands
 from pros.common.utils import get_version, logger
 from pros.ga.analytics import analytics
 
-from django import *
-
 import pros.cli.build
 import pros.cli.conductor
 import pros.cli.conductor_utils

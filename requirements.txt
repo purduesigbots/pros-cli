@@ -13,3 +13,9 @@ sentry-sdk
 observable
 pypng==0.0.20
 pyinstaller
+multiprocessing
+django
+termios
+flask
+resource
+OpenSSL
