@@ -14,7 +14,6 @@ observable
 pypng==0.0.20
 pyinstaller
 django
-termios
 flask
 resource
 OpenSSL
