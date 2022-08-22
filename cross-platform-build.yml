@@ -18,5 +18,5 @@ steps:
     
     - task: PublishPipelineArtifact@0
       inputs:
-        artifactName: 'windows-demo'
+        artifactName: '$(Build.BuildNumber)-demo-$(buildArch)'
         targetPath: 'dist.zip'
