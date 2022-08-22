@@ -3,6 +3,7 @@ import signal
 import time
 
 import click
+import sys
 
 import pros.conductor as c
 import pros.serial.devices as devices
@@ -29,6 +30,8 @@ def terminal_cli():
               help='Specify 2 ports for the "share" backend. The default option deterministically selects ports '
                    'based on the serial port name')
 @click.option('--banner/--no-banner', 'request_banner', default=True)
+@click.option('--output', nargs = 1, type=str, is_eager = True, help='Redirect terminal output to a file', default=None)
+
 def terminal(port: str, backend: str, **kwargs):
     """
     Open a terminal to a serial port
@@ -39,7 +42,7 @@ def terminal(port: str, backend: str, **kwargs):
     may be preferred when "share" doesn't perform adequately.
 
     Note: share backend is not yet implemented.
-    """
+    """       
     analytics.send("terminal")
     from pros.serial.devices.vex.v5_user_device import V5UserDevice
     from pros.serial.terminal import Terminal
@@ -82,9 +85,34 @@ def terminal(port: str, backend: str, **kwargs):
         device = devices.vex.V5UserDevice(ser)
     term = Terminal(device, request_banner=kwargs.pop('request_banner', True))
 
+    class TerminalOutput(object):
+        def __init__(self, file):
+            self.terminal = sys.stdout
+            self.log = open(file, 'a')
+        def write(self, data):
+            self.terminal.write(data)
+            self.log.write(data) 
+        def flush(self):
+            pass
+        def end(self):
+            self.log.close()
+
+    output = None
+    if kwargs.get('output', None):
+        output_file = kwargs['output']
+        output = TerminalOutput(f'{output_file}')
+        term.console.output = output
+        sys.stdout = output
+        logger(__name__).info(f'Redirecting Terminal Output to File: {output_file}')
+    else:
+        sys.stdout = sys.__stdout__
+
     signal.signal(signal.SIGINT, term.stop)
     term.start()
     while not term.alive.is_set():
         time.sleep(0.005)
+    sys.stdout = sys.__stdout__
+    if output:
+        output.end()
     term.join()
     logger(__name__).info('CLI Main Thread Dying')
