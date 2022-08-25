@@ -40,7 +40,7 @@ def upload_cli():
 @click.option('--description', default="Made with PROS", type=str, cls=PROSOption, group='V5 Options', 
               help='Change the description displayed for the program.')
 @click.option('--name', default=None, type=str, cls=PROSOption, group='V5 Options', 
-              help='Change the name of the program.')
+              help='Change the remote name of the program.')
 
 @default_options
 def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwargs):
@@ -78,14 +78,20 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
             kwargs.pop('icon')
         if 'after' in options and kwargs.get('after','screen') is None:
             kwargs.pop('after')
+        if 'port' in options and kwargs.get('port', None) is None:
+            kwargs.pop('port')
+        if 'remote_name' in options and kwargs.get('remote_name', None) is None:
+            kwargs.pop('remote_name')
+        elif project.name:
+            kwargs['remote_name'] = project.name
 
+        if 'program_version' in options and kwargs.get('program-version', None) is None:
+            kwargs.pop('program_version')
+        elif 'program-version' in kwargs:
+            kwargs['version'] = kwargs.pop('program_version')
         options.update(kwargs)
         kwargs = options
         kwargs['target'] = project.target  # enforce target because uploading to the wrong uC is VERY bad
-        if 'program-version' in kwargs:
-            kwargs['version'] = kwargs['program-version']
-        if 'remote_name' not in kwargs:
-            kwargs['remote_name'] = project.name
     name_to_file = {
         'pros' : 'USER902x.bmp',
         'pizza' : 'USER003x.bmp',
