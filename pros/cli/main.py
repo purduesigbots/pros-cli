@@ -46,7 +46,8 @@ def main():
         ctx_obj = {}
         click_handler = pros.common.ui.log.PROSLogHandler(ctx_obj=ctx_obj)
         ctx_obj['click_handler'] = click_handler
-        formatter = pros.common.ui.log.PROSLogFormatter('%(levelname)s - %(name)s:%(funcName)s - %(message)s', ctx_obj)
+        formatter = pros.common.ui.log.PROSLogFormatter('%(levelname)s - %(name)s:%(funcName)s - %(message)s - pros-cli version:{version}'
+            .format(version = get_version()), ctx_obj)
         click_handler.setFormatter(formatter)
         logging.basicConfig(level=logging.WARNING, handlers=[click_handler])
         cli.main(prog_name='pros', obj=ctx_obj)
