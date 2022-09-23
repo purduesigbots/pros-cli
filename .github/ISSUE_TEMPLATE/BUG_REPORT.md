@@ -1,3 +1,11 @@
+---
+name: Bug Report template
+about: Default template for bug reports
+title: "🐛"
+labels: ''
+assignees: ''
+---
+
 #### Expected Behavior:
 <!-- Describe what you expected to happen -->
 
