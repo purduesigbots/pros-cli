@@ -1,0 +1,10 @@
+    0x7800184 : 5apple5faultEv at main.cpp:27 : ?? : ??
+    0x381a484 : ?? : ouch_bits_update_released at llemu.c:49 : vmap at lv_draw_vbasic.c:431
+    0x382ae60 : ?? : btn_signal at lv_btn.c:616 : ??
+    0x381bbe4 : ?? : ev_proc_release at lv_indev.c:722 : _init at lv_theme_alien.c:165
+    0x381c240 : ?? : ev_button_proc at lv_indev.c:571 : endar_init at lv_theme_alien.c:438
+    0x3828718 : ?? : task_exec at lv_task.c:332 : ??
+    0x38288d8 : ?? : task_handler at lv_task.c:135 : ??
+    0x381a098 : ?? : p_daemon at display.c:25 (discriminator 1) : vletter at lv_draw_vbasic.c:312
+    0x384b8cc : ?? : k_fn_wrapper at cpp_support.cpp:26 : ??
+    0x3845d5c : ?? : k_clean_up at port.c:219 : ??

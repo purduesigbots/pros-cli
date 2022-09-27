@@ -30,6 +30,7 @@ def terminal_cli():
               help='Specify 2 ports for the "share" backend. The default option deterministically selects ports '
                    'based on the serial port name')
 @click.option('--banner/--no-banner', 'request_banner', default=True)
+@click.option('--auto_stack_trace', default=True)
 @click.option('--output', nargs = 1, type=str, is_eager = True, help='Redirect terminal output to a file', default=None)
 
 def terminal(port: str, backend: str, **kwargs):
@@ -83,7 +84,7 @@ def terminal(port: str, backend: str, **kwargs):
         device = devices.RawStreamDevice(ser)
     else:
         device = devices.vex.V5UserDevice(ser)
-    term = Terminal(device, request_banner=kwargs.pop('request_banner', True))
+    term = Terminal(device, request_banner=kwargs.pop('request_banner', True), request_banner=kwargs.pop('auto_stack_trace', True))
 
     class TerminalOutput(object):
         def __init__(self, file):

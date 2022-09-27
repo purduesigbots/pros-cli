@@ -1,6 +1,7 @@
 import codecs
 import os
 import signal
+import subprocess
 import sys
 import threading
 
@@ -165,12 +166,11 @@ else:
         'Sorry no implementation for your platform ({})'
         ' available.'.format(sys.platform))
 
-
 class Terminal(object):
     """This class is loosely based off of the pyserial miniterm"""
 
     def __init__(self, port_instance: StreamDevice, transformations=(),
-                 output_raw: bool = False, request_banner: bool = True):
+                 output_raw: bool = False, request_banner: bool = True, auto_stack_trace: bool = True):
         self.device = port_instance
         self.device.subscribe(b'sout')
         self.device.subscribe(b'serr')
@@ -210,6 +210,32 @@ class Terminal(object):
         self._transmitter_alive = False
         self.transmitter_thread.join()
 
+    def formatAndSaveStackTrace(self, text):
+        if (self.auto_stack_trace):
+            start = text.find("BEGIN STACK TRACE") + 18
+            end = text.find("END OF TRACE")
+            addrArray = text[start: end].split()
+            out = ''
+            for i, s in enumerate(addrArray):
+                out += "    " + s
+
+                def getTrace(s, path):
+                    temp = subprocess.Popen(['addr2line', '-faps', '-e', path, s],
+                        stdout=subprocess.PIPE).communicate()[0].decode('utf-8')
+                    if (temp.find('?') != -1):
+                        return ' : ??'
+                    else:
+                        return ' : ' + temp[15: len(temp)-2]
+
+                out += getTrace(s, "..\..\..\\test-project2\\bin\hot.package.elf")
+                out += getTrace(s, "..\..\..\\test-project2\\bin\cold.package.elf")
+                out += getTrace(s, "..\..\..\\test-project2\\bin\monolith.elf") + '\n'    
+            text = text[:start] + out + text[end:]
+            print(text)
+            file = open("stack_trace.txt", "w")
+            file.write(out)
+            file.close()
+
     def reader(self):
         if self.request_banner:
             try:
@@ -225,10 +251,12 @@ class Terminal(object):
                     text = decode_bytes_to_str(data[1])
                 elif data[0] == b'serr':
                     text = '{}{}{}'.format(colorama.Fore.RED, decode_bytes_to_str(data[1]), colorama.Style.RESET_ALL)
+                    
                 elif data[0] == b'kdbg':
                     text = '{}\n\nKERNEL DEBUG:\t{}{}\n'.format(colorama.Back.GREEN + colorama.Style.BRIGHT,
                                                                 decode_bytes_to_str(data[1]),
                                                                 colorama.Style.RESET_ALL)
+                    formatAndSaveStackTrace(text)
                 elif data[0] != b'':
                     text = '{}{}'.format(decode_bytes_to_str(data[0]), decode_bytes_to_str(data[1]))
                 else:
