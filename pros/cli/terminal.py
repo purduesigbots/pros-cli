@@ -84,7 +84,7 @@ def terminal(port: str, backend: str, **kwargs):
         device = devices.RawStreamDevice(ser)
     else:
         device = devices.vex.V5UserDevice(ser)
-    term = Terminal(device, request_banner=kwargs.pop('request_banner', True), request_banner=kwargs.pop('auto_stack_trace', True))
+    term = Terminal(device, request_banner=kwargs.pop('request_banner', True), auto_stack_trace=kwargs.pop('auto_stack_trace', True))
 
     class TerminalOutput(object):
         def __init__(self, file):
