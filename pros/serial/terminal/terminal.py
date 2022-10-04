@@ -208,7 +208,7 @@ class Terminal(object):
     def _stop_tx(self):
         self.console.cancel()
         self._transmitter_alive = False
-        self.transmitter_thread.join()   
+        self.transmitter_thread.join()
 
     def reader(self):
         if self.request_banner:
