@@ -208,7 +208,32 @@ class Terminal(object):
     def _stop_tx(self):
         self.console.cancel()
         self._transmitter_alive = False
-        self.transmitter_thread.join()
+        self.transmitter_thread.join()   
+
+    def generate_stack_trace(self, text):
+        if (self.auto_stack_trace):
+            start = text.find("BEGIN STACK TRACE") + 18
+            end = text.find("END OF TRACE")
+            addrArray = text[start: end].split()
+            out = ''
+            for i, s in enumerate(addrArray):
+                def getTrace(s, path):
+                    if not os.path.exists(path):
+                        return ""
+                    temp = subprocess.Popen(['addr2line', '-faps', '-e', path, s],
+                        stdout=subprocess.PIPE).communicate()[0].decode('utf-8')
+                    if (temp.find('?') != -1):
+                        return ' : ??'
+                    else:
+                        return ' : ' + temp[15: len(temp)-2]
+                out += "    " + s + getTrace(s, "bin/hot.package.elf")
+                out += getTrace(s, "bin/cold.package.elf")
+                out += getTrace(s, "bin/monolith.elf") + '\n'    
+            text = text[:start] + out + text[end:]
+            print(text)
+            file = open("stack_trace.txt", "w")
+            file.write(out)
+            file.close()
 
     def reader(self):
         if self.request_banner:
@@ -225,32 +250,11 @@ class Terminal(object):
                     text = decode_bytes_to_str(data[1])
                 elif data[0] == b'serr':
                     text = '{}{}{}'.format(colorama.Fore.RED, decode_bytes_to_str(data[1]), colorama.Style.RESET_ALL)
-                    
+                    self.generate_stack_trace(text)
                 elif data[0] == b'kdbg':
                     text = '{}\n\nKERNEL DEBUG:\t{}{}\n'.format(colorama.Back.GREEN + colorama.Style.BRIGHT,
                                                                 decode_bytes_to_str(data[1]),
                                                                 colorama.Style.RESET_ALL)
-                    if (self.auto_stack_trace):
-                        start = text.find("BEGIN STACK TRACE") + 18
-                        end = text.find("END OF TRACE")
-                        addrArray = text[start: end].split()
-                        out = ''
-                        for i, s in enumerate(addrArray):
-                            def getTrace(s, path):
-                                temp = subprocess.Popen(['addr2line', '-faps', '-e', path, s],
-                                    stdout=subprocess.PIPE).communicate()[0].decode('utf-8')
-                                if (temp.find('?') != -1):
-                                    return ' : ??'
-                                else:
-                                    return ' : ' + temp[15: len(temp)-2]
-                            out += "    " + s + getTrace(s, "../../../test-project2/bin/hot.package.elf")
-                            out += getTrace(s, "../../../test-project2/bin/cold.package.elf")
-                            out += getTrace(s, "../../../test-project2/bin/monolith.elf") + '\n'    
-                        text = text[:start] + out + text[end:]
-                        print(text)
-                        file = open("stack_trace.txt", "w")
-                        file.write(out)
-                        file.close()
                 elif data[0] != b'':
                     text = '{}{}'.format(decode_bytes_to_str(data[0]), decode_bytes_to_str(data[1]))
                 else:
