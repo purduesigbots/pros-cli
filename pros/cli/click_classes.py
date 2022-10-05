@@ -3,6 +3,7 @@ from typing import *
 
 import click.decorators
 from click import ClickException
+from pros.conductor.project import Project as p
 from pros.common.utils import get_version
 
 
@@ -157,4 +158,8 @@ class PROSCommandCollection(PROSFormatted, click.CommandCollection):
             super(PROSCommandCollection, self).invoke(*args, **kwargs)
         except ClickException as e:
             click.echo("PROS-CLI Version:  {}".format(get_version()))
+            isProject = p.find_project("")
+            if (isProject): #check if there is a project
+                curr_proj = p()
+                click.echo("PROS-Kernel Version: {}".format(curr_proj.kernel))
             raise e
