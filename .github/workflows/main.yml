@@ -49,6 +49,7 @@ jobs:
       run: |
             ls
             pwd
+            cd dist/
             mv intercept-cc.pkg pros/
             mv intercept-cc++.pkg pros/
       if: matrix.os == 'macos-latest'
