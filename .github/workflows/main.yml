@@ -47,8 +47,8 @@ jobs:
     - name: Package Everything Up
       shell: bash
       run: |
-            mv intercept-cc pros
-            mv intercept-cc++ pros
+            mv intercept-cc pros/
+            mv intercept-cc++ pros/
       if: matrix.os == ('macos-latest' || 'ubuntu-latest')
 
     - name: Upload Artifact
