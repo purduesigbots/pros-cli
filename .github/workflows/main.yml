@@ -13,11 +13,19 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    
     - name: Setup Python
+      uses: actions/setup-python@v4.2.0
+      with:
+        python-version: 3.9.2
+      if: ${{ maxtrix.os != 'macos-latest' }}
+    
+    - name: Setup Python MacOS
       run: |
             wget https://www.python.org/ftp/python/3.9.2/python-3.9.2-macos11.pkg
             sudo installer -verbose -pkg ./python-3.9.2-macos11.pkg -target /
             echo "/Library/Frameworks/Python.framework/Versions/3.9/bin" >> $GITHUB_PATH
+      if: ${{ maxtrix.os == 'macos-latest' }}
         
     - name: Check Python install
       run: |
