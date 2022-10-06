@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
     - uses: actions/checkout@v2
@@ -44,6 +44,13 @@ jobs:
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-c++ --target-arch=universal2
       if: matrix.os == 'macos-latest'
       
+    - name: Package Everything Up
+      shell: bash
+      run: |
+            mv intercept-cc pros
+            mv intercept-cc++ pros
+      if: matrix.os == ('macos-latest' || 'ubuntu-latest)
+
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
