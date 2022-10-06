@@ -16,8 +16,8 @@ jobs:
     - name: Setup Python
       run: |
             wget https://www.python.org/ftp/python/3.9.5/python-3.9.5-macos11.pkg
-            sudo installer -verbose -pkg ./python-3.10.6-macos11.pkg -target /
-            echo "/Library/Frameworks/Python.framework/Versions/3.10/bin" >> $GITHUB_PATH
+            sudo installer -verbose -pkg ./python-3.9.5-macos11.pkg -target /
+            echo "/Library/Frameworks/Python.framework/Versions/3.9/bin" >> $GITHUB_PATH
         
     - name: Check Python install
       run: |
