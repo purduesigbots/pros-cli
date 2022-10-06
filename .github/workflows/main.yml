@@ -43,16 +43,6 @@ jobs:
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-cc --target-arch=universal2
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-c++ --target-arch=universal2
       if: matrix.os == 'macos-latest'
-      
-    - name: Package Everything Up
-      shell: bash
-      run: |
-            ls
-            pwd
-            cd dist/
-            mv intercept-cc.pkg pros/
-            mv intercept-cc++.pkg pros/
-      if: matrix.os == 'macos-latest'
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
