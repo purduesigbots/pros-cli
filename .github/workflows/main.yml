@@ -16,9 +16,15 @@ jobs:
     - uses: actions/setup-python@v2
       with:
         python-version: 3.9
-
-    - run: python -m pip install --upgrade pip && pip install -r requirements.txt && pip uninstall -y typing
+        
+    - name: Install Requirements
+      run: python -m pip install --upgrade pip && pip install -r requirements.txt && pip uninstall -y typing
+    - name: Run Pyinstaller
     - run: pyinstaller -y pros.spec
+      if: ${{ maxtrix.os == 'macos-latest' }}
+    - run: pyinstaller -y pros.spec
+    - name: Upload Artifact
     - uses: actions/upload-artifact@v2
       with:
+        name: ${{ matrix.os }}
         path: dist/*
