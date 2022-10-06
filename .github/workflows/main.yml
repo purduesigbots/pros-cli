@@ -15,8 +15,8 @@ jobs:
     - uses: actions/checkout@v2
     - name: Setup Python
       run: |
-            wget https://www.python.org/ftp/python/3.9.5/python-3.9.5-macos11.pkg
-            sudo installer -verbose -pkg ./python-3.9.5-macos11.pkg -target /
+            wget https://www.python.org/ftp/python/3.9.2/python-3.9.2-macos11.pkg
+            sudo installer -verbose -pkg ./python-3.9.2-macos11.pkg -target /
             echo "/Library/Frameworks/Python.framework/Versions/3.9/bin" >> $GITHUB_PATH
         
     - name: Check Python install
@@ -30,7 +30,7 @@ jobs:
       run: python3 -m pip install --upgrade pip && pip3 install -r requirements.txt && pip3 uninstall -y typing
       
     - name: Run Pyinstaller
-      run: pyinstaller -y pros.spec
+      run: pyinstaller pros/cli/main.py --name=pros --target-arch=universal2
 #     run: pyinstaller -y pros.spec
 #     if: ${{ maxtrix.os == 'macos-latest' }}
       
