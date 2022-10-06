@@ -18,14 +18,14 @@ jobs:
       uses: actions/setup-python@v4.2.0
       with:
         python-version: 3.9.2
-      if: maxtrix.os != 'macos-latest'
+      if: matrix.os != 'macos-latest'
     
     - name: Setup Python MacOS
       run: |
             wget https://www.python.org/ftp/python/3.9.2/python-3.9.2-macos11.pkg
             sudo installer -verbose -pkg ./python-3.9.2-macos11.pkg -target /
             echo "/Library/Frameworks/Python.framework/Versions/3.9/bin" >> $GITHUB_PATH
-      if: maxtrix.os == 'macos-latest'
+      if: matrix.os == 'macos-latest'
         
     - name: Check Python install
       run: |
@@ -40,7 +40,7 @@ jobs:
     - name: Run Pyinstaller
       run: pyinstaller pros/cli/main.py --name=pros --target-arch=universal2
 #     run: pyinstaller -y pros.spec
-#     if: ${{ maxtrix.os == 'macos-latest' }}
+#     if: matrix.os == 'macos-latest'
       
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
