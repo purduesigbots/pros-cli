@@ -16,6 +16,8 @@ jobs:
         run: |
               python3 version.py
               echo "::set-output name=test::$(cat version)"
+              ls
+              pwd
 
   build:
     needs: update_build_number
