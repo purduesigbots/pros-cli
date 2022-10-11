@@ -62,6 +62,7 @@ jobs:
     - name: Package Everything Up
       shell: bash
       run: |
+            cd dist/
             mv intercept-cc dist/pros/
             mv intercept-cc++ dist/pros/
 
