@@ -11,14 +11,13 @@ jobs:
       output1: ${{ steps.step1.outputs.test }}
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: Update Build Number
         id: step1
         run: |
-              git fetch --tags
               python3 version.py
               echo "::set-output name=test::$(cat version)"
-              ls
-              pwd
 
   build:
     needs: update_build_number
