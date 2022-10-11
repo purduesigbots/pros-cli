@@ -16,9 +16,8 @@ jobs:
         run: |
               python3 version.py
               VER=$(cat version)
-              echo "version=$VER" >> $GITHUB_ENV
-              echo "::set-output name=test::1.1.1"
-              
+              echo "::set-output name=test::helloworld"
+              echo "version=$VER" >> $GITHUB_ENV              
 
   build:
     needs: update_build_number
@@ -65,5 +64,5 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: ${{ matrix.os }}-${{needs.job1.outputs.output1}}
+        name: ${{ matrix.os }}-${{needs.update_build_number.outputs.output1}}
         path: dist/*
