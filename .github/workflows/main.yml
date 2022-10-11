@@ -66,8 +66,9 @@ jobs:
       run: |
             cd dist/
             ls
-            mv intercept-cc dist/pros/
-            mv intercept-cc++ dist/pros/
+            mv intercept-cc pros
+            mv intercept-cc++ pros
+            cd pros
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
