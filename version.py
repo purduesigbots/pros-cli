@@ -29,5 +29,6 @@ try:
     with open('win_version', 'w') as f:
         print('Windows version is ' + winver)
         f.write(winver)
-except subprocess.CalledProcessError as e:
+except Exception as e:
     print('Error calling git')
+    print(e)
