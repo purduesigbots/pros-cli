@@ -28,7 +28,10 @@ jobs:
       if: matrix.os == 'macos-latest'
       
     - name: Update Build Number
-      run: python3 version.py
+      run: |
+            python3 version.py
+            VER=$(cat VERSION)
+            echo "VERSION=$VER" >> $GITHUB_ENV
         
     - name: Install Requirements
       run: python3 -m pip install --upgrade pip && pip3 install -r requirements.txt && pip3 uninstall -y typing
@@ -50,5 +53,5 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: ${{ matrix.os }}
+        name: ${{ matrix.os }}-${{ env.VERSION }}
         path: dist/*
