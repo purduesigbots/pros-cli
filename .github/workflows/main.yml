@@ -67,7 +67,7 @@ jobs:
             cd dist/
             ls
             mv intercept-cc pros
-            mv intercept-cc++ pros
+            mv intercept-c++ pros
             cd pros
 
     - name: Upload Artifact
