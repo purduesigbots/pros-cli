@@ -17,7 +17,7 @@ jobs:
               python3 version.py
               VER=$(cat version)
               echo "version=$VER" >> $GITHUB_ENV
-              echo "::set-output name=test::${{ env.VERSION }}"
+              echo "::set-output name=test::1.1.1"
               
 
   build:
