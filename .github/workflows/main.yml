@@ -37,8 +37,7 @@ jobs:
         cache: 'pip'
       if: matrix.os != 'macos-latest'
     
-    - name: Setup Python MacOS
-      run: |
+    - run: |
             wget https://www.python.org/ftp/python/3.9.2/python-3.9.2-macos11.pkg
             sudo installer -verbose -pkg ./python-3.9.2-macos11.pkg -target /
             echo "/Library/Frameworks/Python.framework/Versions/3.9/bin" >> $GITHUB_PATH
@@ -54,8 +53,7 @@ jobs:
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-c++
       if: matrix.os != 'macos-latest'
 
-    - name: Run Pyinstaller MacOS
-      run: |
+    - run: |
             pyinstaller pros/cli/main.py --name=pros --target-arch=universal2
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-cc --target-arch=universal2
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-c++ --target-arch=universal2
@@ -64,12 +62,8 @@ jobs:
     - name: Package Everything Up
       shell: bash
       run: |
-            ls
-            cd dist/
-            ls
-            mv intercept-cc.pkg pros/
-            mv intercept-cc++.pkg pros/
-      if: matrix.os == 'macos-latest'
+            mv intercept-cc dist/pros/
+            mv intercept-cc++ dist/pros/
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
