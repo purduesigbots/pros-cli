@@ -10,7 +10,7 @@ jobs:
     outputs:
       output1: ${{ steps.step1.outputs.test }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3.1.0
         with:
           fetch-depth: 0
       - name: Update Build Number
@@ -28,7 +28,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3.1.0
     
     - name: Setup Python
       uses: actions/setup-python@v4.2.0
@@ -65,10 +65,8 @@ jobs:
       shell: bash
       run: |
             cd dist/
-            ls
             mv intercept-cc pros
             mv intercept-c++ pros
-            cd pros
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
