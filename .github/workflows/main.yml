@@ -2,8 +2,21 @@ name: Build PROS CLI
 
 on:
   push:
+  pull_request:
 
 jobs:
+  updatebuildnumber:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Update Build Number
+        run: |
+              python3 version.py
+              VER=$(cat version)
+              echo "version=$VER" >> $GITHUB_ENV
+
   build:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -26,12 +39,6 @@ jobs:
             sudo installer -verbose -pkg ./python-3.9.2-macos11.pkg -target /
             echo "/Library/Frameworks/Python.framework/Versions/3.9/bin" >> $GITHUB_PATH
       if: matrix.os == 'macos-latest'
-      
-    - name: Update Build Number
-      run: |
-            python3 version.py
-            VER=$(cat version)
-            echo "version=$VER" >> $GITHUB_ENV
         
     - name: Install Requirements
       run: python3 -m pip install --upgrade pip && pip3 install -r requirements.txt && pip3 uninstall -y typing
