@@ -37,7 +37,8 @@ jobs:
         cache: 'pip'
       if: matrix.os != 'macos-latest'
     
-    - run: |
+    - name: Setup Python MacOS
+      run: |
             wget https://www.python.org/ftp/python/3.9.2/python-3.9.2-macos11.pkg
             sudo installer -verbose -pkg ./python-3.9.2-macos11.pkg -target /
             echo "/Library/Frameworks/Python.framework/Versions/3.9/bin" >> $GITHUB_PATH
@@ -53,7 +54,8 @@ jobs:
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-c++
       if: matrix.os != 'macos-latest'
 
-    - run: |
+    - name: Run Pyinstaller MacOS
+      run: |
             pyinstaller pros/cli/main.py --name=pros --target-arch=universal2
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-cc --target-arch=universal2
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-c++ --target-arch=universal2
@@ -63,6 +65,7 @@ jobs:
       shell: bash
       run: |
             cd dist/
+            ls
             mv intercept-cc dist/pros/
             mv intercept-cc++ dist/pros/
 
