@@ -14,6 +14,7 @@ jobs:
       - name: Update Build Number
         id: step1
         run: |
+              git fetch --tags
               python3 version.py
               echo "::set-output name=test::$(cat version)"
               ls
