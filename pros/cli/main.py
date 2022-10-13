@@ -16,6 +16,16 @@ from pros.cli.common import default_options, root_commands
 from pros.common.utils import get_version, logger
 from pros.ga.analytics import analytics
 
+import jsonpickle
+import pros.cli.build
+import pros.cli.conductor
+import pros.cli.conductor_utils
+import pros.cli.terminal
+import pros.cli.upload
+import pros.cli.v5_utils
+import pros.cli.misc_commands
+import pros.cli.interactive
+import pros.cli.user_script
 
 root_sources = [
     'build',
@@ -36,6 +46,9 @@ else:
 
 if os.path.exists(os.path.join(os.path.dirname(exe_file), os.pardir, os.pardir, '.git')):
     root_sources.append('test')
+
+if os.path.exists(os.path.join(os.path.dirname(exe_file), os.pardir, os.pardir, '.git')):
+    import pros.cli.test
 
 for root_source in root_sources:
     __import__(f'pros.cli.{root_source}')
@@ -66,8 +79,9 @@ def version(ctx: click.Context, param, value):
         ui.echo('pros, version {}'.format(get_version()))
     ctx.exit(0)
 
+
 def use_analytics(ctx: click.Context, param, value):
-    if value==None:
+    if value == None:
         return
     touse = not analytics.useAnalytics
     if str(value).lower().startswith("t"):
@@ -82,6 +96,7 @@ def use_analytics(ctx: click.Context, param, value):
     ui.echo('Analytics set to : {}'.format(analytics.useAnalytics))
     ctx.exit(0)
 
+
 @click.command('pros',
                cls=PROSCommandCollection,
                sources=root_commands)
@@ -92,6 +107,7 @@ def use_analytics(ctx: click.Context, param, value):
               is_eager=True, default=None, callback=use_analytics)
 def cli():
     pros.common.sentry.register()
+
 
 if __name__ == '__main__':
     main()
