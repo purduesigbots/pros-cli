@@ -1,15 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 # Write version info into _constants.py resource file
-            
+
 from distutils.util import get_platform
 
-
 with open('_constants.py', 'w') as f:
-    f.write(f'{key}=\'{value}\'' for key, value in {
-            'CLI_VERSION': open('version').read().strip(),
-            'FROZEN_PLATFORM_V1': 'Windows64' if get_platform() == 'win-amd64' else 'Windows86'
-        }.items())
+    f.write("CLI_VERSION = \"{}\"\n".format(open('version').read().strip()))
+    f.write("FROZEN_PLATFORM_V1 = \"{}\"\n".format("Windows64" if get_platform() == "win-amd64" else "Windows86"))
 
 block_cipher = None
 
