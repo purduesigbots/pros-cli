@@ -13,4 +13,3 @@ sentry-sdk
 observable
 pypng==0.0.20
 pyinstaller
-wheel
