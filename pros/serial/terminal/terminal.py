@@ -243,9 +243,9 @@ class Terminal(object):
                                     return ' : ??'
                                 else:
                                     return ' : ' + temp[15: len(temp)-2]
-                            out += "    " + s + getTrace(s, "../../../test-project2/bin/hot.package.elf")
-                            out += getTrace(s, "../../../test-project2/bin/cold.package.elf")
-                            out += getTrace(s, "../../../test-project2/bin/monolith.elf") + '\n'    
+                            out += "    " + s + getTrace(s, "bin/hot.package.elf")
+                            out += getTrace(s, "bin/cold.package.elf")
+                            out += getTrace(s, "bin/monolith.elf") + '\n'    
                         text = text[:start] + out + text[end:]
                         print(text)
                         file = open("stack_trace.txt", "w")
