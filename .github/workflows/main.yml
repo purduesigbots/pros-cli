@@ -46,6 +46,17 @@ jobs:
         
     - name: Install Requirements
       run: python3 -m pip install --upgrade pip && pip3 install wheel && pip3 install -r requirements.txt && pip3 uninstall -y typing
+    
+    - name: Build Wheel
+      run: python3 setup.py bdist_wheel
+      if: matrix.os == 'ubuntu-latest'
+
+    - name: Upload Wheel
+      uses: actions/upload-artifact@v3.1.0
+      with:
+        name: ${{ matrix.os }}-${{needs.update_build_number.outputs.output1}}
+        path: dist/*
+      if: matrix.os == 'ubuntu-latest'
       
     - name: Run Pyinstaller
       run: |
