@@ -60,6 +60,7 @@ jobs:
       
     - name: Run Pyinstaller
       run: |
+            python3 version.py
             pyinstaller pros.spec
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-cc
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-c++
@@ -67,6 +68,7 @@ jobs:
 
     - name: Run Pyinstaller MacOS
       run: |
+            python3 version.py
             pyinstaller pros-macos.spec
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-cc --target-arch=universal2
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-c++ --target-arch=universal2
