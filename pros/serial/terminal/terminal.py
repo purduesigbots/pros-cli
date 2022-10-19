@@ -6,6 +6,7 @@ import sys
 import threading
 
 import colorama
+from sqlalchemy import null
 
 from pros.common.utils import logger
 from pros.serial import decode_bytes_to_str
@@ -168,6 +169,8 @@ else:
 
 class Terminal(object):
     """This class is loosely based off of the pyserial miniterm"""
+    beginStackTrace = False
+    stackTraceFile = null
 
     def __init__(self, port_instance: StreamDevice, transformations=(),
                  output_raw: bool = False, request_banner: bool = True, auto_stack_trace: bool = True):
@@ -224,33 +227,39 @@ class Terminal(object):
                 if data[0] == b'sout':
                     text = decode_bytes_to_str(data[1])
                 elif data[0] == b'serr':
-                    text = '{}{}{}'.format(colorama.Fore.RED, decode_bytes_to_str(data[1]), colorama.Style.RESET_ALL)
+                    #print(len(text))
+                    addr = "0x" + decode_bytes_to_str(data[1])[:7]
+                    if self.beginStackTrace and addr.isalnum() and addr[3] != 'x':
+                        def getTrace(s, path):
+                            if not os.path.exists(path):
+                                return ' : ??'
+                            temp = subprocess.Popen(['addr2line', '-faps', '-e', path, s],
+                                stdout=subprocess.PIPE).communicate()[0].decode('utf-8')
+                            if (temp.find('?') != -1):
+                                return ' : ??'
+                            else:
+                                return ' : ' + temp[12: len(temp) - 2]
+                        trace = getTrace(addr, "bin/hot.package.elf")
+                        trace += getTrace(addr, "bin/cold.package.elf")
+                        trace += getTrace(addr, "bin/monolith.elf")
+                        text = '{}{}{}'.format(colorama.Fore.RED, decode_bytes_to_str(data[1]) + trace, colorama.Style.RESET_ALL)
+                        file.write(addr + trace + '\n')
+                    else:
+                        text = '{}{}{}'.format(colorama.Fore.RED, decode_bytes_to_str(data[1]), colorama.Style.RESET_ALL)
+                    
+                    if "BEGIN STACK TRACE" in text:
+                        file = open("stack_trace.txt", "w")
+                        self.beginStackTrace = True
+
+                    if "END OF TRACE" in text:
+                        file.close()
+                        file = null
+                        self.beginStackTrace = False
                     
                 elif data[0] == b'kdbg':
                     text = '{}\n\nKERNEL DEBUG:\t{}{}\n'.format(colorama.Back.GREEN + colorama.Style.BRIGHT,
                                                                 decode_bytes_to_str(data[1]),
                                                                 colorama.Style.RESET_ALL)
-                    if (self.auto_stack_trace):
-                        start = text.find("BEGIN STACK TRACE") + 18
-                        end = text.find("END OF TRACE")
-                        addrArray = text[start: end].split()
-                        out = ''
-                        for i, s in enumerate(addrArray):
-                            def getTrace(s, path):
-                                temp = subprocess.Popen(['addr2line', '-faps', '-e', path, s],
-                                    stdout=subprocess.PIPE).communicate()[0].decode('utf-8')
-                                if (temp.find('?') != -1):
-                                    return ' : ??'
-                                else:
-                                    return ' : ' + temp[15: len(temp)-2]
-                            out += "    " + s + getTrace(s, "bin/hot.package.elf")
-                            out += getTrace(s, "bin/cold.package.elf")
-                            out += getTrace(s, "bin/monolith.elf") + '\n'    
-                        text = text[:start] + out + text[end:]
-                        print(text)
-                        file = open("stack_trace.txt", "w")
-                        file.write(out)
-                        file.close()
                 elif data[0] != b'':
                     text = '{}{}'.format(decode_bytes_to_str(data[0]), decode_bytes_to_str(data[1]))
                 else:
