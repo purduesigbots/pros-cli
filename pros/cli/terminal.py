@@ -109,6 +109,28 @@ def terminal(port: str, backend: str, **kwargs):
     else:
         sys.stdout = sys.__stdout__
 
+    class TerminalOutput(object):
+        def __init__(self, file):
+            self.terminal = sys.stdout
+            self.log = open(file, 'a')
+        def write(self, data):
+            self.terminal.write(data)
+            self.log.write(data) 
+        def flush(self):
+            pass
+        def end(self):
+            self.log.close()
+
+    output = None
+    if kwargs.get('output', None):
+        output_file = kwargs['output']
+        output = TerminalOutput(f'{output_file}')
+        term.console.output = output
+        sys.stdout = output
+        logger(__name__).info(f'Redirecting Terminal Output to File: {output_file}')
+    else:
+        sys.stdout = sys.__stdout__
+
     signal.signal(signal.SIGINT, term.stop)
     term.start()
     while not term.alive.is_set():
