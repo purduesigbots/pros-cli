@@ -176,6 +176,9 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
     analytics.send("uninstall-template")
     c.Conductor().remove_template(project, query, remove_user=remove_user,
                                   remove_empty_directories=remove_empty_directories)
+    # make clean
+    with ui.Notification():
+        project.compile(["clean"])
 
 
 @conductor.command('new-project', aliases=['new', 'create-project'])
