@@ -170,11 +170,12 @@ def upgrade(ctx: click.Context, project: c.Project, query: c.BaseTemplate, **kwa
 @click.option('--remove-user', is_flag=True, default=False, help='Also remove user files')
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
-@click.option('--no-make-clean', is_flag=True, default=False, help='Do not run make clean after removing')
+@click.option('--no-make-clean', is_flag=True, default=True, help='Do not run make clean after removing')
 @project_option()
 @template_query()
 @default_options
 def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: bool,
+                       remove_empty_directories: bool = False, no_make_clean: bool = False):
                        remove_empty_directories: bool = False, no_make_clean: bool = False):
     """
     Uninstall a template from a PROS project
@@ -184,7 +185,7 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
     analytics.send("uninstall-template")
     c.Conductor().remove_template(project, query, remove_user=remove_user,
                                   remove_empty_directories=remove_empty_directories)
-    if not no_make_clean:
+    if no_make_clean:
         with ui.Notification():
             project.compile(["clean"])
 
