@@ -245,6 +245,15 @@ class Conductor(Config):
                 template = self.fetch_template(self.get_depot(template.metadata['origin']), template, **kwargs)
         assert isinstance(template, LocalTemplate)
 
+        if (isProject):
+            curr_proj = Project()
+            if str(curr_proj.kernel)[0] == '4':
+                confirm = ui.confirm(f'Warning! Upgrading project to PROS 4 will cause breaking changes.'
+                                     f'Do you still want to upgrade?')
+                if not confirm:
+                    raise dont_send(
+                        InvalidTemplateException(f'Not upgrading'))
+
         logger(__name__).info(str(project))
         valid_action = project.get_template_actions(template)
         if valid_action == TemplateAction.NotApplicable:
@@ -255,6 +264,8 @@ class Conductor(Config):
                 or (valid_action == TemplateAction.Upgradable and upgrade_ok) \
                 or (valid_action == TemplateAction.Installable and install_ok) \
                 or (valid_action == TemplateAction.Downgradable and downgrade_ok):
+            isProject = Project.find_project("")
+                
             project.apply_template(template, force_system=kwargs.pop('force_system', False),
                                    force_user=kwargs.pop('force_user', False),
                                    remove_empty_directories=kwargs.pop('remove_empty_directories', False))
