@@ -12,6 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3.1.0
         with:
+          ref: ${GITHUB_REF_NAME}
           fetch-depth: 0
       - name: Update Build Number
         id: step1
@@ -30,6 +31,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3.1.0
       with:
+        ref: ${GITHUB_REF_NAME}
         fetch-depth: 0
     
     - name: Setup Python
