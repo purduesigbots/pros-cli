@@ -173,7 +173,6 @@ class Conductor(Config):
         if 'kernel' in project.templates:
             # support_kernels for backwards compatibility, but kernel_version should be getting most of the exposure
             kwargs['kernel_version'] = kwargs['supported_kernels'] = project.templates['kernel'].version      
-        
         template = self.resolve_template(identifier=identifier, allow_online=download_ok, **kwargs)
         if template is None:
             raise dont_send(
@@ -213,7 +212,6 @@ class Conductor(Config):
                 or (valid_action == TemplateAction.Upgradable and upgrade_ok) \
                 or (valid_action == TemplateAction.Installable and install_ok) \
                 or (valid_action == TemplateAction.Downgradable and downgrade_ok):
-                
             project.apply_template(template, force_system=kwargs.pop('force_system', False),
                                    force_user=kwargs.pop('force_user', False),
                                    remove_empty_directories=kwargs.pop('remove_empty_directories', False))
