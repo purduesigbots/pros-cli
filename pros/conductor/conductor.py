@@ -172,25 +172,36 @@ class Conductor(Config):
         kwargs['target'] = project.target
         if 'kernel' in project.templates:
             # support_kernels for backwards compatibility, but kernel_version should be getting most of the exposure
-            kwargs['kernel_version'] = kwargs['supported_kernels'] = project.templates['kernel'].version
+            kwargs['kernel_version'] = kwargs['supported_kernels'] = project.templates['kernel'].version      
+        
         template = self.resolve_template(identifier=identifier, allow_online=download_ok, **kwargs)
         if template is None:
             raise dont_send(
                 InvalidTemplateException(f'Could not find a template satisfying {identifier} for {project.target}'))
 
+        # warn and prompt user if upgrading to PROS 4 or downgrading to PROS 3
+        if template.name == 'kernel':
+            isProject = Project.find_project("")
+            if isProject:
+                curr_proj = Project()
+                if curr_proj.kernel:
+                    if template.version[0] == '4' and curr_proj.kernel[0] == '3':
+                        confirm = ui.confirm(f'Warning! Upgrading project to PROS 4 will cause breaking changes. '
+                                             f'Do you still want to upgrade?')
+                        if not confirm:
+                            raise dont_send(
+                                InvalidTemplateException(f'Not upgrading'))
+                    if template.version[0] == '3' and curr_proj.kernel[0] == '4':
+                        confirm = ui.confirm(f'Warning! Downgrading project to PROS 3 will cause breaking changes. '
+                                             f'Do you still want to downgrade?')
+                        if not confirm:
+                            raise dont_send(
+                                InvalidTemplateException(f'Not downgrading'))
+
         if not isinstance(template, LocalTemplate):
             with ui.Notification():
                 template = self.fetch_template(self.get_depot(template.metadata['origin']), template, **kwargs)
         assert isinstance(template, LocalTemplate)
-
-        if (isProject):
-            curr_proj = Project()
-            if str(curr_proj.kernel)[0] == '4':
-                confirm = ui.confirm(f'Warning! Upgrading project to PROS 4 will cause breaking changes.'
-                                     f'Do you still want to upgrade?')
-                if not confirm:
-                    raise dont_send(
-                        InvalidTemplateException(f'Not upgrading'))
 
         logger(__name__).info(str(project))
         valid_action = project.get_template_actions(template)
@@ -202,7 +213,6 @@ class Conductor(Config):
                 or (valid_action == TemplateAction.Upgradable and upgrade_ok) \
                 or (valid_action == TemplateAction.Installable and install_ok) \
                 or (valid_action == TemplateAction.Downgradable and downgrade_ok):
-            isProject = Project.find_project("")
                 
             project.apply_template(template, force_system=kwargs.pop('force_system', False),
                                    force_user=kwargs.pop('force_user', False),
