@@ -116,6 +116,7 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
         if kwargs['remote_name'] is None:
             kwargs['remote_name'] = os.path.splitext(os.path.basename(path))[0]
         kwargs['remote_name'] = kwargs['remote_name'].replace('@', '_')
+        kwargs['slot'] = kwargs['slot'] or 1
         kwargs['slot'] -= 1
         
         action_to_kwarg = {
@@ -204,5 +205,6 @@ def ls_usb(target):
 def make_upload_terminal(ctx, **upload_kwargs):
     analytics.send("upload-terminal")
     from .terminal import terminal
+    # the code below does not take in a path argument
     ctx.invoke(upload, **upload_kwargs)
     ctx.invoke(terminal, request_banner=False)
