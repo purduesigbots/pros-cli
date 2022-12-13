@@ -74,6 +74,10 @@ def find_v5_ports(p_type: str):
         if p_type.lower() == 'user':
             return [ports[1]]
         elif p_type.lower() == 'system':
+            # check if ports contain the word Brain in the description and return that port
+            for port in ports:
+                if "Brain" in port.description:
+                    return [port]
             return [ports[0], *joystick_ports]
         else:
             raise ValueError(f'Invalid port type specified: {p_type}')
@@ -215,7 +219,7 @@ class V5Device(VEXDevice, SystemDevice):
     def is_wireless(self):
         version = self.query_system_version()
         return version.product == V5Device.SystemVersion.Product.CONTROLLER and \
-               V5Device.SystemVersion.ControllerFlags.CONNECTED in version.product_flags
+            V5Device.SystemVersion.ControllerFlags.CONNECTED in version.product_flags
 
     def generate_cold_hash(self, project: Project, extra: dict):
         keys = {k: t.version for k, t in project.templates.items()}
@@ -835,7 +839,7 @@ class V5Device(VEXDevice, SystemDevice):
         logger(__name__).debug('Sending ext 0x22 command')
         version = self.query_system_version()
         if (version.product == V5Device.SystemVersion.Product.BRAIN and version.system_version in Spec('<1.0.13')) or \
-         (version.product == V5Device.SystemVersion.Product.CONTROLLER and version.system_version in Spec('<1.0.0-0.70')):
+                (version.product == V5Device.SystemVersion.Product.CONTROLLER and version.system_version in Spec('<1.0.0-0.70')):
             schema = '<x12B3xBI12x'
         else:
             schema = '<x12B3xBI12xB3x'
@@ -916,7 +920,7 @@ class V5Device(VEXDevice, SystemDevice):
         payload = payload[:kv_to_max_bytes.get(kv, 254)] + "\0"
         if isinstance(payload, str):
             payload = payload.encode(encoding='ascii')
-        tx_fmt =f'<{len(encoded_kv)}s{len(payload)}s'
+        tx_fmt = f'<{len(encoded_kv)}s{len(payload)}s'
         tx_payload = struct.pack(tx_fmt, encoded_kv, payload)
         ret = self._txrx_ext_packet(0x2f, tx_payload, 1, check_length=False, check_ack=True)
         logger(__name__).debug('Completed ext 0x2f command')
@@ -985,7 +989,8 @@ class V5Device(VEXDevice, SystemDevice):
         if len(msg) < rx_length and check_length:
             raise VEXCommError(f'Received length is less than {rx_length} (got {len(msg)}).', msg)
         elif len(msg) > rx_length and check_length:
-            ui.echo(f'WARNING: Recieved length is more than {rx_length} (got {len(msg)}). Consider upgrading the PROS (CLI Version: {get_version()}).')
+            ui.echo(
+                f'WARNING: Recieved length is more than {rx_length} (got {len(msg)}). Consider upgrading the PROS (CLI Version: {get_version()}).')
         return msg
 
     def _txrx_ext_packet(self, command: int, tx_data: Union[Iterable, bytes, bytearray],
