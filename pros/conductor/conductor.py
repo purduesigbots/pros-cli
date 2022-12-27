@@ -288,13 +288,7 @@ class Conductor(Config):
             proj.project_name = kwargs['project_name']
         else:
             proj.project_name = os.path.basename(os.path.normpath(os.path.abspath(path)))
-        if 'pros-4' in kwargs:
-            if kwargs['pros-4']:
-                kwargs['version'] = '>=4.0.0'
-            else:
-                kwargs['version'] = '<4.0.0'
-            self.apply_template(proj, identifier='kernel', **kwargs)
-        elif 'version' in kwargs:
+        if 'version' in kwargs:
             if kwargs['version'] == 'latest':
                 kwargs['version'] = '>=0'
             self.apply_template(proj, identifier='kernel', **kwargs)
