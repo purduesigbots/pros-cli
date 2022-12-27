@@ -16,6 +16,8 @@ from .templates import BaseTemplate, ExternalTemplate, LocalTemplate, Template
 
 MAINLINE_NAME = 'pros-mainline'
 MAINLINE_URL = 'https://purduesigbots.github.io/pros-mainline/pros-mainline.json'
+BETA_NAME = 'pros-4-beta'
+BETA_URL = 'https://purduesigbots.github.io/pros-mainline/pros-4-beta.json'
 
 
 class Conductor(Config):
@@ -30,6 +32,7 @@ class Conductor(Config):
         self.depots: Dict[str, Depot] = {}
         self.default_target: str = 'v5'
         self.default_libraries: Dict[str, List[str]] = None
+        self.beta_depot = HttpDepot(MAINLINE_NAME, MAINLINE_URL)
         super(Conductor, self).__init__(file)
         needs_saving = False
         if MAINLINE_NAME not in self.depots or \
@@ -102,6 +105,7 @@ class Conductor(Config):
                           unique: bool = True, **kwargs) -> List[BaseTemplate]:
         results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
+        pros_4 = kwargs.get('pros_4', False)
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
@@ -116,6 +120,13 @@ class Conductor(Config):
             for depot in self.depots.values():
                 online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                         depot.get_remote_templates(force_check=force_refresh, **kwargs))
+                if unique:
+                    results.update(online_results)
+                else:
+                    results.extend(online_results)
+            if pros_4: # if pros 4 beta flag enabled, then use the beta depot
+                online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
+                                        self.beta_depot.get_remote_templates(force_check=force_refresh, **kwargs))
                 if unique:
                     results.update(online_results)
                 else:
@@ -241,13 +252,7 @@ class Conductor(Config):
             proj.project_name = kwargs['project_name']
         else:
             proj.project_name = os.path.basename(os.path.normpath(os.path.abspath(path)))
-        if 'pros-4' in kwargs:
-            if kwargs['pros-4']:
-                kwargs['version'] = '>=4.0.0'
-            else:
-                kwargs['version'] = '<4.0.0'
-            self.apply_template(proj, identifier='kernel', **kwargs)
-        elif 'version' in kwargs:
+        if 'version' in kwargs:
             if kwargs['version'] == 'latest':
                 kwargs['version'] = '>=0'
             self.apply_template(proj, identifier='kernel', **kwargs)
