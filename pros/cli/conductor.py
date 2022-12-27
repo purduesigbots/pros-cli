@@ -138,6 +138,8 @@ def install(ctx: click.Context, **kwargs):
               help="Force apply the template, disregarding if the template is already installed.")
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
+@click.option('--pros-4', is_flag=True, default=False, show_default=True,
+              help='Allow for upgrading to PROS 4 kernel templates')
 @project_option()
 @template_query(required=False)
 @default_options
