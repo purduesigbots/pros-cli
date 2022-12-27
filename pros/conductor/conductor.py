@@ -109,7 +109,7 @@ class Conductor(Config):
                           unique: bool = True, **kwargs) -> List[BaseTemplate]:
         results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
-        pros_4 = kwargs.get('pros_4', False)
+        beta = kwargs.get('beta', False)
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
@@ -122,7 +122,7 @@ class Conductor(Config):
                 results.extend(offline_results)
         if allow_online:
             for depot in self.depots.values():
-                if depot.name != BETA_NAME or (depot.name == BETA_NAME and pros_4):
+                if depot.name != BETA_NAME or (depot.name == BETA_NAME and beta):
                     online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                         depot.get_remote_templates(force_check=force_refresh, **kwargs))
                     if unique:
