@@ -113,6 +113,8 @@ def apply(project: c.Project, query: c.BaseTemplate, **kwargs):
               help="Force apply the template, disregarding if the template is already installed.")
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
+@click.option('--beta', is_flag=True, default=False, show_default=True,
+              help='Allow for applying beta templates')
 @project_option()
 @template_query(required=True)
 @default_options
@@ -138,8 +140,8 @@ def install(ctx: click.Context, **kwargs):
               help="Force apply the template, disregarding if the template is already installed.")
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
-@click.option('--pros-4', is_flag=True, default=False, show_default=True,
-              help='Allow for upgrading to PROS 4 kernel templates')
+@click.option('--beta', is_flag=True, default=False, show_default=True,
+              help='Allow for upgrading to beta templates')
 @project_option()
 @template_query(required=False)
 @default_options
@@ -200,8 +202,8 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
               help='Compile the project after creation')
 @click.option('--build-cache', is_flag=True, default=None, show_default=False,
               help='Build compile commands cache after creation. Overrides --compile-after if both are specified.')
-@click.option('--pros-4', is_flag=True, default=False, show_default=True,
-              help='Create a PROS 4 project instead of a PROS 3 project')
+@click.option('--beta', is_flag=True, default=False, show_default=True,
+              help='Create a project with a beta template')
 @click.pass_context
 @default_options
 def new_project(ctx: click.Context, path: str, target: str, version: str,
@@ -250,8 +252,8 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
               help='Force update all remote depots, ignoring automatic update checks')
 @click.option('--limit', type=int, default=15,
               help='The maximum number of displayed results for each library')
-@click.option('--pros-4', is_flag=True, default=False, show_default=True,
-              help='View PROS 4 beta templates in the listing')
+@click.option('--beta', is_flag=True, default=False, show_default=True,
+              help='View beta templates in the listing')
 @template_query(required=False)
 @click.pass_context
 @default_options
