@@ -198,6 +198,8 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
               help='Compile the project after creation')
 @click.option('--build-cache', is_flag=True, default=None, show_default=False,
               help='Build compile commands cache after creation. Overrides --compile-after if both are specified.')
+@click.option('--pros-4', is_flag=True, default=False, show_default=True,
+              help='Create a PROS 4 project instead of a PROS 3 project')
 @click.pass_context
 @default_options
 def new_project(ctx: click.Context, path: str, target: str, version: str,
