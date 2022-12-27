@@ -248,12 +248,15 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
               help='(Dis)allow online templates in the listing')
 @click.option('--force-refresh', is_flag=True, default=False, show_default=True,
               help='Force update all remote depots, ignoring automatic update checks')
-@click.option('--limit', type=int, default=15, help='The maximum number of displayed results for each library')
+@click.option('--limit', type=int, default=15,
+              help='The maximum number of displayed results for each library')
+@click.option('--pros-4', is_flag=True, default=False, show_default=True,
+              help='View PROS 4 beta templates in the listing')
 @template_query(required=False)
 @click.pass_context
 @default_options
 def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_online: bool, force_refresh: bool,
-                    limit: int):
+                    limit: int, pros_4: bool):
     """
     Query local and remote templates based on a spec
 
@@ -263,7 +266,7 @@ def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_onlin
     if limit < 0:
         limit = 15
     templates = c.Conductor().resolve_templates(query, allow_offline=allow_offline, allow_online=allow_online,
-                                                force_refresh=force_refresh)
+                                                force_refresh=force_refresh, pros_4=pros_4)
 
     render_templates = {}
     for template in templates:

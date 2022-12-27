@@ -32,13 +32,17 @@ class Conductor(Config):
         self.depots: Dict[str, Depot] = {}
         self.default_target: str = 'v5'
         self.default_libraries: Dict[str, List[str]] = None
-        self.beta_depot = HttpDepot(MAINLINE_NAME, MAINLINE_URL)
         super(Conductor, self).__init__(file)
         needs_saving = False
         if MAINLINE_NAME not in self.depots or \
                 not isinstance(self.depots[MAINLINE_NAME], HttpDepot) or \
                 self.depots[MAINLINE_NAME].location != MAINLINE_URL:
             self.depots[MAINLINE_NAME] = HttpDepot(MAINLINE_NAME, MAINLINE_URL)
+            needs_saving = True
+        if BETA_NAME not in self.depots or \
+                not isinstance(self.depots[BETA_NAME], HttpDepot) or \
+                self.depots[BETA_NAME].location != BETA_URL:
+            self.depots[BETA_NAME] = HttpDepot(BETA_NAME, BETA_URL)
             needs_saving = True
         if self.default_target is None:
             self.default_target = 'v5'
@@ -118,21 +122,16 @@ class Conductor(Config):
                 results.extend(offline_results)
         if allow_online:
             for depot in self.depots.values():
-                online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
+                if depot.name != BETA_NAME or (depot.name == BETA_NAME and pros_4):
+                    online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                         depot.get_remote_templates(force_check=force_refresh, **kwargs))
-                if unique:
-                    results.update(online_results)
-                else:
-                    results.extend(online_results)
-            if pros_4: # if pros 4 beta flag enabled, then use the beta depot
-                online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
-                                        self.beta_depot.get_remote_templates(force_check=force_refresh, **kwargs))
-                if unique:
-                    results.update(online_results)
-                else:
-                    results.extend(online_results)
+                    if unique:
+                        results.update(online_results)
+                    else:
+                        results.extend(online_results)
             logger(__name__).debug('Saving Conductor config after checking for remote updates')
             self.save()  # Save self since there may have been some updates from the depots
+            
         return list(results)
 
     def resolve_template(self, identifier: Union[str, BaseTemplate], **kwargs) -> Optional[BaseTemplate]:
