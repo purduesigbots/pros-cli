@@ -18,7 +18,6 @@ class UpgradeManifestV1(object):
         """
         :return: True if the current CLI version is less than the upgrade manifest
         """
-        self.version = Version(str(self.version)) # it breaks without this recast
         return self.version > Version(get_version())
 
     def describe_update(self) -> str:
