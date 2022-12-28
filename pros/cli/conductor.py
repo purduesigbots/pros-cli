@@ -258,7 +258,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
 @click.pass_context
 @default_options
 def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_online: bool, force_refresh: bool,
-                    limit: int, pros_4: bool):
+                    limit: int, beta: bool):
     """
     Query local and remote templates based on a spec
 
@@ -268,7 +268,7 @@ def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_onlin
     if limit < 0:
         limit = 15
     templates = c.Conductor().resolve_templates(query, allow_offline=allow_offline, allow_online=allow_online,
-                                                force_refresh=force_refresh, pros_4=pros_4)
+                                                force_refresh=force_refresh, beta=beta)
 
     render_templates = {}
     for template in templates:

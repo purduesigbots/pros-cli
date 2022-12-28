@@ -1,5 +1,6 @@
 import os.path
 import shutil
+from enum import Enum
 from pathlib import Path
 from typing import *
 
@@ -20,18 +21,24 @@ BETA_NAME = 'pros-4-beta'
 BETA_URL = 'https://purduesigbots.github.io/pros-mainline/pros-4-beta.json'
 
 
+class ReleaseChannel(Enum):
+    Stable = 'stable'
+    Beta = 'beta'
+
 class Conductor(Config):
     """
     Provides entrances for all conductor-related tasks (fetching, applying, creating new projects)
     """
-
     def __init__(self, file=None):
+        print("INITIALIZING CONDUCTOR")
         if not file:
             file = os.path.join(click.get_app_dir('PROS'), 'conductor.pros')
         self.local_templates: Set[LocalTemplate] = set()
         self.depots: Dict[str, Depot] = {}
         self.default_target: str = 'v5'
         self.default_libraries: Dict[str, List[str]] = None
+        self.release_channel: ReleaseChannel = ReleaseChannel.Stable
+        print(self.release_channel.value)
         super(Conductor, self).__init__(file)
         needs_saving = False
         if MAINLINE_NAME not in self.depots or \
@@ -61,7 +68,6 @@ class Conductor(Config):
             needs_saving = True
         if needs_saving:
             self.save()
-
         from pros.common.sentry import add_context
         add_context(self)
 
@@ -109,7 +115,8 @@ class Conductor(Config):
                           unique: bool = True, **kwargs) -> List[BaseTemplate]:
         results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
-        beta = kwargs.get('beta', False)
+        if kwargs.get('beta', False):
+            self.release_channel = ReleaseChannel.Beta
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
@@ -122,7 +129,7 @@ class Conductor(Config):
                 results.extend(offline_results)
         if allow_online:
             for depot in self.depots.values():
-                if depot.name != BETA_NAME or (depot.name == BETA_NAME and beta):
+                if depot.name != BETA_NAME or (depot.name == BETA_NAME and self.release_channel.value == 'beta'):
                     online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                         depot.get_remote_templates(force_check=force_refresh, **kwargs))
                     if unique:
