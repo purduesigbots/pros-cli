@@ -4,6 +4,7 @@ import re
 import struct
 import time
 import typing
+import platform
 from collections import defaultdict
 from configparser import ConfigParser
 from datetime import datetime, timedelta
@@ -40,20 +41,28 @@ def find_v5_ports(p_type: str):
                (p.name is not None and any([n in p.name for n in names])) or \
                (p.description is not None and any([n in p.description for n in names]))
 
+    def filter_v5_ports_mac(p, device):
+        return (p.device is not None and p.device.endswith(device))
+
     ports = [p for p in list_all_comports() if filter_vex_ports(p)]
 
     # Initially try filtering based off of location or the name of the device.
-    # Doesn't work on macOS or Jonathan's Dell, so we have a fallback (below)
-    user_ports = [p for p in ports if filter_v5_ports(p, ['2'], ['User'])]
-    system_ports = [p for p in ports if filter_v5_ports(p, ['0'], ['System', 'Communications'])]
-    joystick_ports = [p for p in ports if filter_v5_ports(p, ['1'], ['Controller'])]
+    # Special logic for macOS
+    if platform.system() == 'Darwin':
+        user_ports = [p for p in ports if filter_v5_ports_mac(p, '3')]
+        system_ports = [p for p in ports if filter_v5_ports_mac(p, '1')]
+        joystick_ports = [p for p in ports if filter_v5_ports_mac(p, '2')]
+    else:
+        user_ports = [p for p in ports if filter_v5_ports(p, ['2'], ['User'])]
+        system_ports = [p for p in ports if filter_v5_ports(p, ['0'], ['System', 'Communications'])]
+        joystick_ports = [p for p in ports if filter_v5_ports(p, ['1'], ['Controller'])]
 
-    # Testing this code path is hard!
+    # Fallback for when a brain port's location is not detected properly
     if len(user_ports) != len(system_ports):
         if len(user_ports) > len(system_ports):
-            user_ports = [p for p in user_ports if p not in system_ports]
+            system_ports = [p for p in ports if p not in user_ports and p not in joystick_ports]
         else:
-            system_ports = [p for p in system_ports if p not in user_ports]
+            user_ports = [p for p in ports if p not in system_ports and p not in joystick_ports]
 
     if len(user_ports) == len(system_ports) and len(user_ports) > 0:
         if p_type.lower() == 'user':
