@@ -7,7 +7,7 @@ def misc_commands_cli():
     pass
 
 
-@misc_commands_cli.command()
+@misc_commands_cli.command(short_help='Upgrade the CLI')
 @click.option('--force-check', default=False, is_flag=True,
               help='Force check for updates, disregarding auto-check frequency')
 @click.option('--no-install', default=False, is_flag=True,

@@ -12,7 +12,7 @@ def conductor_cli():
     pass
 
 
-@conductor_cli.group(cls=PROSGroup, aliases=['cond', 'c', 'conduct'], short_help='Perform project management for PROS')
+@conductor_cli.group(cls=PROSGroup, aliases=['cond', 'c', 'conduct'], help='Conductor is PROS\'s project management facility. It is responsible for obtaining templates for which to create projects from.', short_help='Perform project management for PROS')
 @default_options
 def conductor():
     """
@@ -76,7 +76,7 @@ def fetch(query: c.BaseTemplate):
     c.Conductor().fetch_template(depot, template, **query.metadata)
 
 
-@conductor.command(context_settings={'ignore_unknown_options': True})
+@conductor.command(context_settings={'ignore_unknown_options': True}, short_help='Upgrade or install a template to a PROS project')
 @click.option('--upgrade/--no-upgrade', 'upgrade_ok', default=True, help='Allow upgrading templates in a project')
 @click.option('--install/--no-install', 'install_ok', default=True, help='Allow installing templates in a project')
 @click.option('--download/--no-download', 'download_ok', default=True,
@@ -102,7 +102,7 @@ def apply(project: c.Project, query: c.BaseTemplate, **kwargs):
     return c.Conductor().apply_template(project, identifier=query, **kwargs)
 
 
-@conductor.command(aliases=['i', 'in'], context_settings={'ignore_unknown_options': True})
+@conductor.command(aliases=['i', 'in'], context_settings={'ignore_unknown_options': True}, short_help='Install a library into a PROS project')
 @click.option('--upgrade/--no-upgrade', 'upgrade_ok', default=False)
 @click.option('--download/--no-download', 'download_ok', default=True)
 @click.option('--force-user', 'force_user', default=False, is_flag=True,
@@ -127,7 +127,7 @@ def install(ctx: click.Context, **kwargs):
     return ctx.invoke(apply, install_ok=True, **kwargs)
 
 
-@conductor.command(context_settings={'ignore_unknown_options': True}, aliases=['u'])
+@conductor.command(context_settings={'ignore_unknown_options': True}, aliases=['u'], short_help='Upgrade a PROS project or one of its libraries')
 @click.option('--install/--no-install', 'install_ok', default=False)
 @click.option('--download/--no-download', 'download_ok', default=True)
 @click.option('--force-user', 'force_user', default=False, is_flag=True,
@@ -159,7 +159,7 @@ def upgrade(ctx: click.Context, project: c.Project, query: c.BaseTemplate, **kwa
         ctx.invoke(apply, project=project, query=query, upgrade_ok=True, **kwargs)
 
 
-@conductor.command('uninstall')
+@conductor.command('uninstall', short_help='Uninstall a template from a PROS project')
 @click.option('--remove-user', is_flag=True, default=False, help='Also remove user files')
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
@@ -178,7 +178,7 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
                                   remove_empty_directories=remove_empty_directories)
 
 
-@conductor.command('new-project', aliases=['new', 'create-project'])
+@conductor.command('new-project', aliases=['new', 'create-project'], short_help='Create a new PROS project')
 @click.argument('path', type=click.Path())
 @click.argument('target', default=c.Conductor().default_target, type=click.Choice(['v5', 'cortex']))
 @click.argument('version', default='latest')
@@ -233,7 +233,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
 
 @conductor.command('query-templates',
                    aliases=['search-templates', 'ls-templates', 'lstemplates', 'querytemplates', 'searchtemplates'],
-                   context_settings={'ignore_unknown_options': True})
+                   context_settings={'ignore_unknown_options': True},short_help='Query local and remote templates based on a spec')
 @click.option('--allow-offline/--no-offline', 'allow_offline', default=True, show_default=True,
               help='(Dis)allow offline templates in the listing')
 @click.option('--allow-online/--no-online', 'allow_online', default=True, show_default=True,
@@ -281,7 +281,7 @@ def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_onlin
     ui.finalize('template-query', output_templates)
 
 
-@conductor.command('info-project')
+@conductor.command('info-project', short_help='Display information about a PROS project')
 @click.option('--ls-upgrades/--no-ls-upgrades', 'ls_upgrades', default=False)
 @project_option()
 @default_options
