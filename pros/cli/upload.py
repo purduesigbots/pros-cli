@@ -12,7 +12,7 @@ def upload_cli():
     pass
 
 
-@upload_cli.command(aliases=['u'])
+@upload_cli.command(aliases=['u'], short_help='Upload a binary to a microcontroller.')
 @click.option('--target', type=click.Choice(['v5', 'cortex']), default=None, required=False,
               help='Specify the target microcontroller. Overridden when a PROS project is specified.')
 @click.argument('path', type=click.Path(exists=True), default=None, required=False)
@@ -155,7 +155,7 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
         logger(__name__).exception(e, exc_info=True)
         exit(1)
 
-@upload_cli.command('lsusb', aliases=['ls-usb', 'ls-devices', 'lsdev', 'list-usb', 'list-devices'])
+@upload_cli.command('lsusb', aliases=['ls-usb', 'ls-devices', 'lsdev', 'list-usb', 'list-devices'], short_help='List plugged in VEX Devices')
 @click.option('--target', type=click.Choice(['v5', 'cortex']), default=None, required=False)
 @default_options
 def ls_usb(target):

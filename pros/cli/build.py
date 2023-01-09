@@ -13,7 +13,7 @@ def build_cli():
     pass
 
 
-@build_cli.command(aliases=['build','m'])
+@build_cli.command(aliases=['build','m'], short_help = 'Build current PROS project or cwd')
 @project_option()
 @click.argument('build-args', nargs=-1)
 @default_options

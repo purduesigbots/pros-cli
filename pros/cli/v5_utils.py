@@ -6,13 +6,13 @@ def v5_utils_cli():
     pass
 
 
-@v5_utils_cli.group(cls=PROSGroup, help='Utilities for managing the VEX V5')
+@v5_utils_cli.group(cls=PROSGroup, help='Utilities for managing the VEX V5', short_help='Utilities for managing the VEX V5')
 @default_options
 def v5():
     pass
 
 
-@v5.command()
+@v5.command(short_help='Print system information for the V5')
 @click.argument('port', required=False, default=None)
 @default_options
 def status(port: str):
@@ -38,7 +38,7 @@ def status(port: str):
         print('System ID: 0x{:x}'.format(device.status['system_id']))
 
 
-@v5.command('ls-files')
+@v5.command('ls-files', short_help='List files on the flash filesystem')
 @click.option('--vid', type=int, default=1, cls=PROSOption, hidden=True)
 @click.option('--options', type=int, default=0, cls=PROSOption, hidden=True)
 @click.argument('port', required=False, default=None)
@@ -61,7 +61,7 @@ def ls_files(port: str, vid: int, options: int):
         print(device.get_file_metadata_by_idx(i))
 
 
-@v5.command(hidden=True)
+@v5.command(hidden=True, short_help='Read file on the flash filesystem to stdout')
 @click.argument('file_name')
 @click.argument('port', required=False, default=None)
 @click.argument('outfile', required=False, default=click.get_binary_stream('stdout'), type=click.File('wb'))
@@ -85,7 +85,7 @@ def read_file(file_name: str, port: str, vid: int, source: str):
                      vid=vid, target=source)
 
 
-@v5.command(hidden=True)
+@v5.command(hidden=True, short_help='Write a file to the V5.')
 @click.argument('file', type=click.File('rb'))
 @click.argument('port', required=False, default=None)
 @click.option('--addr', type=int, default=0x03800000, required=False)
@@ -110,7 +110,7 @@ def write_file(file, port: str, remote_file: str, **kwargs):
     device.write_file(file=file, remote_file=remote_file or os.path.basename(file.name), **kwargs)
 
 
-@v5.command('rm-file')
+@v5.command('rm-file', short_help='Remove a file from the flash filesystem')
 @click.argument('file_name')
 @click.argument('port', required=False, default=None)
 @click.option('--vid', type=int, default=1, cls=PROSOption, hidden=True)
@@ -133,7 +133,7 @@ def rm_file(file_name: str, port: str, vid: int, erase_all: bool):
     device.erase_file(file_name, vid=vid, erase_all=erase_all)
 
 
-@v5.command('cat-metadata')
+@v5.command('cat-metadata',short_help='Print metadata for a file')
 @click.argument('file_name')
 @click.argument('port', required=False, default=None)
 @click.option('--vid', type=int, default=1, cls=PROSOption, hidden=True)
@@ -153,7 +153,7 @@ def cat_metadata(file_name: str, port: str, vid: int):
     device = V5Device(ser)
     print(device.get_file_metadata_by_name(file_name, vid=vid))
 
-@v5.command('rm-program')
+@v5.command('rm-program', short_help='Remove a program from the flash filesystem')
 @click.argument('slot')
 @click.argument('port', type=int, required=False, default=None)
 @click.option('--vid', type=int, default=1, cls=PROSOption, hidden=True)
@@ -174,7 +174,7 @@ def rm_program(slot: int, port: str, vid: int):
     device.erase_file(f'{base_name}.ini', vid=vid)
     device.erase_file(f'{base_name}.bin', vid=vid)
 
-@v5.command('rm-all')
+@v5.command('rm-all', short_help='Remove all user programs from the V5')
 @click.argument('port', required=False, default=None)
 @click.option('--vid', type=int, default=1, hidden=True, cls=PROSOption)
 @default_options
@@ -228,7 +228,7 @@ def run(slot: str, port: str):
 @default_options
 def stop(port: str):
     """
-    Stops a V5 program
+    Stop a V5 program
 
     If FILE is unspecified or is a directory, then attempts to find the correct filename based on the PROS project
     """

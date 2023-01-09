@@ -15,7 +15,7 @@ from .common import default_options, template_query
 from .conductor import conductor
 
 
-@conductor.command('create-template', context_settings={'allow_extra_args': True, 'ignore_unknown_options': True})
+@conductor.command('create-template', context_settings={'allow_extra_args': True, 'ignore_unknown_options': True}, short_help='Create a template to be used in other projects')
 @click.argument('path', type=click.Path(exists=True))
 @click.argument('name')
 @click.argument('version')
@@ -147,7 +147,7 @@ def create_template(ctx, path: str, destination: str, do_zip: bool, **kwargs):
 
 
 @conductor.command('purge-template', help='Purge template(s) from the local cache',
-                   context_settings={'ignore_unknown_options': True})
+                   context_settings={'ignore_unknown_options': True}, short_help='Purge template(s) from the local cache')
 @click.option('-f', '--force', is_flag=True, default=False, help='Do not prompt for removal of multiple templates')
 @template_query(required=False)
 @default_options

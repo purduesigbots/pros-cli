@@ -18,7 +18,7 @@ def terminal_cli():
     pass
 
 
-@terminal_cli.command()
+@terminal_cli.command(short_help='Open a terminal to a serial port')
 @default_options
 @click.argument('port', default='default')
 @click.option('--backend', type=click.Choice(['share', 'solo']), default='solo',
