@@ -36,7 +36,6 @@ class Conductor(Config):
     Provides entrances for all conductor-related tasks (fetching, applying, creating new projects)
     """
     def __init__(self, file=None):
-        print("INITIALIZING CONDUCTOR")
         if not file:
             file = os.path.join(click.get_app_dir('PROS'), 'conductor.pros')
         self.local_templates: Set[LocalTemplate] = set()
