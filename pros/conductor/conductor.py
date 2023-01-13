@@ -20,7 +20,7 @@ MAINLINE_URL = 'https://purduesigbots.github.io/pros-mainline/pros-mainline.json
 BETA_NAME = 'pros-4-beta'
 BETA_URL = 'https://purduesigbots.github.io/pros-mainline/pros-4-beta.json'
 
-
+# this enum is the same as the one implemented in upgrade manifest
 class ReleaseChannel(Enum):
     Stable = 'stable'
     Beta = 'beta'
@@ -30,7 +30,6 @@ class Conductor(Config):
     Provides entrances for all conductor-related tasks (fetching, applying, creating new projects)
     """
     def __init__(self, file=None):
-        print("INITIALIZING CONDUCTOR")
         if not file:
             file = os.path.join(click.get_app_dir('PROS'), 'conductor.pros')
         self.local_templates: Set[LocalTemplate] = set()
@@ -38,7 +37,6 @@ class Conductor(Config):
         self.default_target: str = 'v5'
         self.default_libraries: Dict[str, List[str]] = None
         self.release_channel: ReleaseChannel = ReleaseChannel.Stable
-        print(self.release_channel.value)
         super(Conductor, self).__init__(file)
         needs_saving = False
         if MAINLINE_NAME not in self.depots or \
@@ -46,6 +44,7 @@ class Conductor(Config):
                 self.depots[MAINLINE_NAME].location != MAINLINE_URL:
             self.depots[MAINLINE_NAME] = HttpDepot(MAINLINE_NAME, MAINLINE_URL)
             needs_saving = True
+        # add beta depot as another remote depot
         if BETA_NAME not in self.depots or \
                 not isinstance(self.depots[BETA_NAME], HttpDepot) or \
                 self.depots[BETA_NAME].location != BETA_URL:
@@ -129,6 +128,7 @@ class Conductor(Config):
                 results.extend(offline_results)
         if allow_online:
             for depot in self.depots.values():
+                # beta depot will only be accessed when the --beta flag is true
                 if depot.name != BETA_NAME or (depot.name == BETA_NAME and self.release_channel.value == 'beta'):
                     online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                         depot.get_remote_templates(force_check=force_refresh, **kwargs))
