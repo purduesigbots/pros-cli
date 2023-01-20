@@ -184,7 +184,7 @@ class V5Device(VEXDevice, SystemDevice):
                 time.sleep(.25)  # wait at least 250ms before starting to poll controller if it's connected yet
                 version = self.device.query_system_version()
                 start_time = time.time()
-                # ask controller every 250 ms if it's connected until it is
+                # ask controller every 25 ms if it's connected until it is
                 while V5Device.SystemVersion.ControllerFlags.CONNECTED not in version.product_flags and \
                         time.time() - start_time < self.timeout:
                     version = self.device.query_system_version()
