@@ -60,7 +60,6 @@ class Analytics():
                              data=payload,
                              headers={'User-Agent': agent},
                              timeout=5.0)
-                             
             self.pendingRequests.append(future)
             # if not response.status_code==200:
             #     print("Something went wrong while sending analytics!")
@@ -81,15 +80,16 @@ class Analytics():
         for future in as_completed(self.pendingRequests):
             try:
                 response = future.result()
+                
+                if not response.status_code==200:
+                    print("Something went wrong while sending analytics!")
+                    print(response)
+
+                responses.append(response)
+
             except Exception:
                 print("Something went wrong while sending analytics!")
-                print(response)
 
-            if not response.status_code==200:
-                print("Something went wrong while sending analytics!")
-                print(response)
-
-            responses.append(response)
 
         self.pendingRequests.clear()
         return responses
