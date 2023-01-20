@@ -60,8 +60,7 @@ class Analytics():
                              data=payload,
                              headers={'User-Agent': agent},
                              timeout=5.0)
-            print("made future")
-            print(future)
+                             
             self.pendingRequests.append(future)
             # if not response.status_code==200:
             #     print("Something went wrong while sending analytics!")
