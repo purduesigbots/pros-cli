@@ -78,22 +78,19 @@ class Analytics():
         self.cli_config.save()
     
     def process_requests(self):
-        print("processing futures")
         responses = []
         for future in as_completed(self.pendingRequests):
             try:
                 response = future.result()
             except Exception:
-                if not response.status_code==200:
-                    print("Something went wrong while sending analytics!")
-                    print(response)
-                    responses.append(response)
-            print("response")
-            print(response)
+                print("Something went wrong while sending analytics!")
+                print(response)
+
             if not response.status_code==200:
                 print("Something went wrong while sending analytics!")
                 print(response)
-                responses.append(response)
+
+            responses.append(response)
 
         self.pendingRequests.clear()
         return responses
