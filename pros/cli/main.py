@@ -101,14 +101,20 @@ def use_analytics(ctx: click.Context, param, value):
 @click.command('pros',
                cls=PROSCommandCollection,
                sources=root_commands)
+@click.pass_context
 @default_options
 @click.option('--version', help='Displays version and exits.', is_flag=True, expose_value=False, is_eager=True,
               callback=version)
 @click.option('--use-analytics', help='Set analytics usage (True/False).', type=str, expose_value=False,
               is_eager=True, default=None, callback=use_analytics)
-def cli():
+def cli(ctx):
+    click.echo("before command")
     pros.common.sentry.register()
+    ctx.call_on_close(after_command)
 
+def after_command():
+    print("after command")
+    analytics.process_requests()
 
 if __name__ == '__main__':
     main()
