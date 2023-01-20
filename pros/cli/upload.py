@@ -147,11 +147,11 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
             device = vex.V5Device(ser)
         elif kwargs['target'] == 'cortex':
             device = vex.CortexDevice(ser).get_connected_device()
-        if project is not None:
-            device.upload_project(project, **kwargs)
-        else:
+        if os.path.isfile(path):
             with click.open_file(path, mode='rb') as pf:
                 device.write_program(pf, **kwargs)
+        else:
+            device.upload_project(project, **kwargs)
     except Exception as e:
         logger(__name__).exception(e, exc_info=True)
         exit(1)
