@@ -61,10 +61,7 @@ class Analytics():
                              headers={'User-Agent': agent},
                              timeout=5.0)
             self.pendingRequests.append(future)
-            # if not response.status_code==200:
-            #     print("Something went wrong while sending analytics!")
-            #     print(response)
-            # return response
+
         except Exception as e:
             from pros.cli.common import logger
             logger(__name__).warning("Unable to send analytics. Do you have a stable internet connection?", extra={'sentry': False})
