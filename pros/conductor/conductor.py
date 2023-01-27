@@ -215,9 +215,6 @@ class Conductor(Config):
     def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
             raise dont_send(ValueError('Will not create a project in user home directory'))
-        for char in str(Path(path)):
-            if not char.isalnum() and not char in ['_', '-', '.', '\\', '/']:
-                raise dont_send(ValueError('Invalid character found in directory name:', char))
         proj = Project(path=path, create=True)
         if 'target' in kwargs:
             proj.target = kwargs['target']
