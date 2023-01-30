@@ -17,7 +17,7 @@ from .templates import BaseTemplate, ExternalTemplate, LocalTemplate, Template
 
 MAINLINE_NAME = 'pros-mainline'
 MAINLINE_URL = 'https://purduesigbots.github.io/pros-mainline/pros-mainline.json'
-BETA_NAME = 'pros-4-beta'
+BETA_NAME = 'kernel-beta-mainline'
 BETA_URL = 'https://purduesigbots.github.io/pros-mainline/beta/kernel-beta-mainline.json'
 
 # this enum is the same as the one implemented in upgrade manifest
