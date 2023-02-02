@@ -20,10 +20,12 @@ MAINLINE_URL = 'https://purduesigbots.github.io/pros-mainline/pros-mainline.json
 BETA_NAME = 'kernel-beta-mainline'
 BETA_URL = 'https://purduesigbots.github.io/pros-mainline/beta/kernel-beta-mainline.json'
 
-# this enum is the same as the one implemented in upgrade manifest
+"""
+#this breaks branches which arent backmerged so dont use, use beta bool instead
 class ReleaseChannel(Enum):
     Stable = 'stable'
     Beta = 'beta'
+"""
 
 class Conductor(Config):
     """
@@ -37,7 +39,7 @@ class Conductor(Config):
         self.default_target: str = 'v5'
         self.default_libraries: Dict[str, List[str]] = None
         self.beta_libraries: Dict[str, List[str]] = None
-        self.release_channel: ReleaseChannel = ReleaseChannel.Stable
+        self.is_beta = False
         super(Conductor, self).__init__(file)
         needs_saving = False
         if MAINLINE_NAME not in self.depots or \
@@ -127,10 +129,7 @@ class Conductor(Config):
                           unique: bool = True, **kwargs) -> List[BaseTemplate]:
         results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
-        if kwargs.get('beta', False):
-            self.release_channel = ReleaseChannel.Beta
-        else:
-            self.release_channel = ReleaseChannel.Stable
+        self.is_beta = kwargs.get('beta', False)
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
@@ -144,7 +143,7 @@ class Conductor(Config):
         if allow_online:
             for depot in self.depots.values():
                 # beta depot will only be accessed when the --beta flag is true
-                if depot.name != BETA_NAME or (depot.name == BETA_NAME and self.release_channel.value == 'beta'):
+                if depot.name != BETA_NAME or (depot.name == BETA_NAME and self.is_beta):
                     online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                         depot.get_remote_templates(force_check=force_refresh, **kwargs))
                     if unique:
@@ -281,7 +280,7 @@ class Conductor(Config):
         proj.save()
 
         if not no_default_libs:
-            libraries = self.beta_libraries if self.release_channel.value == 'beta' else self.default_libraries
+            libraries = self.beta_libraries if self.is_beta else self.default_libraries
             for library in libraries[proj.target]:
                 try:
                     # remove kernel version so that latest template satisfying query is correctly selected
