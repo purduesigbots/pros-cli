@@ -27,10 +27,6 @@ class ReleaseChannel(Enum):
     Beta = 'beta'
 """
 
-class ReleaseChannel(Enum):
-    Stable = 'stable'
-    Beta = 'beta'
-
 class Conductor(Config):
     """
     Provides entrances for all conductor-related tasks (fetching, applying, creating new projects)
