@@ -36,6 +36,7 @@ class Conductor(Config):
         self.depots: Dict[str, Depot] = {}
         self.default_target: str = 'v5'
         self.default_libraries: Dict[str, List[str]] = None
+        self.beta_libraries: Dict[str, List[str]] = None
         self.release_channel: ReleaseChannel = ReleaseChannel.Stable
         super(Conductor, self).__init__(file)
         needs_saving = False
@@ -59,11 +60,23 @@ class Conductor(Config):
                 'cortex': []
             }
             needs_saving = True
+        if self.beta_libraries is None:
+            self.beta_libraries = {
+                'v5': ['liblvgl'],
+                'cortex': []
+            }
+            needs_saving = True
         if 'v5' not in self.default_libraries:
             self.default_libraries['v5'] = []
             needs_saving = True
         if 'cortex' not in self.default_libraries:
             self.default_libraries['cortex'] = []
+            needs_saving = True
+        if 'v5' not in self.beta_libraries:
+            self.beta_libraries['v5'] = []
+            needs_saving = True
+        if 'cortex' not in self.beta_libraries:
+            self.beta_libraries['cortex'] = []
             needs_saving = True
         if needs_saving:
             self.save()
@@ -116,6 +129,8 @@ class Conductor(Config):
         kernel_version = kwargs.get('kernel_version', None)
         if kwargs.get('beta', False):
             self.release_channel = ReleaseChannel.Beta
+        else:
+            self.release_channel = ReleaseChannel.Stable
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
@@ -191,6 +206,7 @@ class Conductor(Config):
             # support_kernels for backwards compatibility, but kernel_version should be getting most of the exposure
             kwargs['kernel_version'] = kwargs['supported_kernels'] = project.templates['kernel'].version
         template = self.resolve_template(identifier=identifier, allow_online=download_ok, **kwargs)
+        print("TEMPlATE",template)
         if template is None:
             raise dont_send(
                 InvalidTemplateException(f'Could not find a template satisfying {identifier} for {project.target}'))
@@ -265,7 +281,8 @@ class Conductor(Config):
         proj.save()
 
         if not no_default_libs:
-            for library in self.default_libraries[proj.target]:
+            libraries = self.beta_libraries if self.release_channel.value == 'beta' else self.default_libraries
+            for library in libraries[proj.target]:
                 try:
                     # remove kernel version so that latest template satisfying query is correctly selected
                     if 'version' in kwargs:
