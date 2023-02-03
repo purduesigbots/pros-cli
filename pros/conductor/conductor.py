@@ -227,7 +227,6 @@ class Conductor(Config):
                         if not confirm:
                             raise dont_send(
                                 InvalidTemplateException(f'Not downgrading'))
-
         if not isinstance(template, LocalTemplate):
             with ui.Notification():
                 template = self.fetch_template(self.get_depot(template.metadata['origin']), template, **kwargs)
@@ -263,6 +262,7 @@ class Conductor(Config):
                                     remove_empty_directories=remove_empty_directories)
 
     def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
+        self.is_beta = kwargs.get('beta', False)
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
             raise dont_send(ValueError('Will not create a project in user home directory'))
         proj = Project(path=path, create=True)
