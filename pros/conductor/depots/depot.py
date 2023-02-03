@@ -30,7 +30,6 @@ class Depot(object):
             auto_check_freq = getattr(self, 'update_frequency', cli_config().update_frequency)
         logger(__name__).info(f'Last check of {self.name} was {self.last_remote_update} '
                               f'({datetime.now() - self.last_remote_update} vs {auto_check_freq}).')
-        print("auto_check_freq: ", auto_check_freq)
         if force_check or datetime.now() - self.last_remote_update > auto_check_freq:
             with ui.Notification():
                 ui.echo(f'Updating {self.name}... ', nl=False)
