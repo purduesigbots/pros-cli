@@ -240,7 +240,6 @@ class Conductor(Config):
                         if not confirm:
                             raise dont_send(
                                 InvalidTemplateException(f'Not downgrading'))
-
         if not isinstance(template, LocalTemplate):
             with ui.Notification():
                 template = self.fetch_template(self.get_depot(template.metadata['origin']), template, **kwargs)
