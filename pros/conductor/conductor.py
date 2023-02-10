@@ -35,6 +35,7 @@ class Conductor(Config):
         if not file:
             file = os.path.join(click.get_app_dir('PROS'), 'conductor.pros')
         self.local_templates: Set[LocalTemplate] = set()
+        self.beta_local_templates: Set[LocalTemplate] = set()
         self.depots: Dict[str, Depot] = {}
         self.default_target: str = 'v5'
         self.default_libraries: Dict[str, List[str]] = None
@@ -105,7 +106,10 @@ class Conductor(Config):
         local_template = LocalTemplate(orig=template, location=destination)
         local_template.metadata['origin'] = depot.name
         click.echo(f'Adding {local_template.identifier} to registry...', nl=False)
-        self.local_templates.add(local_template)
+        if depot.name == BETA_NAME: # check for beta
+            self.beta_local_templates.add(local_template)
+        else:
+            self.local_templates.add(local_template)
         self.save()
         if isinstance(template, ExternalTemplate) and template.directory == destination:
             template.delete()
@@ -113,10 +117,16 @@ class Conductor(Config):
         return local_template
 
     def purge_template(self, template: LocalTemplate):
-        if template not in self.local_templates:
-            logger(__name__).info(f"{template.identifier} was not in the Conductor's local templates cache.")
+        if template.metadata['origin'] == BETA_NAME:
+            if template not in self.beta_local_templates:
+                logger(__name__).info(f"{template.identifier} was not in the Conductor's local beta templates cache.")
+            else:
+                self.beta_local_templates.remove(template)
         else:
-            self.local_templates.remove(template)
+            if template not in self.local_templates:
+                logger(__name__).info(f"{template.identifier} was not in the Conductor's local templates cache.")
+            else:
+                self.local_templates.remove(template)
 
         if os.path.abspath(template.location).startswith(
                 os.path.abspath(os.path.join(self.directory, 'templates'))) \
@@ -135,7 +145,10 @@ class Conductor(Config):
         else:
             query = identifier
         if allow_offline:
-            offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates)
+            if self.is_beta:
+                offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.beta_local_templates)
+            else:
+                offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates)
             if unique:
                 results.update(offline_results)
             else:
