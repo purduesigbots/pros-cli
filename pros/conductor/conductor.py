@@ -142,7 +142,6 @@ class Conductor(Config):
                 results.extend(offline_results)
         if allow_online:
             for depot in self.depots.values():
-                print("DEPOTS - ", self.depots)
                 # beta depot will only be accessed when the --beta flag is true
                 if depot.name != BETA_NAME or (depot.name == BETA_NAME and self.is_beta):
                     online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
@@ -206,7 +205,6 @@ class Conductor(Config):
             # support_kernels for backwards compatibility, but kernel_version should be getting most of the exposure
             kwargs['kernel_version'] = kwargs['supported_kernels'] = project.templates['kernel'].version
         template = self.resolve_template(identifier=identifier, allow_online=download_ok, **kwargs)
-        print("TEMPlATE - ",template)
         if template is None:
             raise dont_send(
                 InvalidTemplateException(f'Could not find a template satisfying {identifier} for {project.target}'))
