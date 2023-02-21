@@ -78,6 +78,7 @@ def fetch(query: c.BaseTemplate):
 
 @conductor.command(context_settings={'ignore_unknown_options': True})
 @click.option('--upgrade/--no-upgrade', 'upgrade_ok', default=True, help='Allow upgrading templates in a project')
+
 @click.option('--install/--no-install', 'install_ok', default=True, help='Allow installing templates in a project')
 @click.option('--download/--no-download', 'download_ok', default=True,
               help='Allow downloading templates or only allow local templates')
@@ -89,6 +90,8 @@ def fetch(query: c.BaseTemplate):
               help="Force apply the template, disregarding if the template is already installed.")
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
+@click.option('--beta', is_flag=True, default=False, show_default=True,
+              help='Allow applying beta templates')
 @project_option()
 @template_query(required=True)
 @default_options
@@ -114,7 +117,7 @@ def apply(project: c.Project, query: c.BaseTemplate, **kwargs):
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
 @click.option('--beta', is_flag=True, default=False, show_default=True,
-              help='Allow for applying beta templates')
+              help='Allow applying beta templates')
 @project_option()
 @template_query(required=True)
 @default_options
@@ -141,7 +144,7 @@ def install(ctx: click.Context, **kwargs):
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
 @click.option('--beta', is_flag=True, default=False, show_default=True,
-              help='Allow for upgrading to beta templates')
+              help='Allow upgrading to beta templates')
 @project_option()
 @template_query(required=False)
 @default_options
