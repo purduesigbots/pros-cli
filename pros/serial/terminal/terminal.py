@@ -237,7 +237,7 @@ class Terminal(object):
                             if not os.path.exists(path):
                                 return ''
                             temp = subprocess.Popen(['addr2line', '-faps', '-e', path, s],
-                                stdout=subprocess.PIPE).communicate()[0].decode('utf-8')
+                                stdout=subprocess.PIPE,shell=True).communicate()[0].decode('utf-8')
                             if (temp.find('?') != -1):
                                 return ''
                             else:
