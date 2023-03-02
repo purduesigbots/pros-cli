@@ -47,7 +47,7 @@ jobs:
       if: matrix.os == 'macos-latest'
         
     - name: Install Requirements
-      run: python3 -m pip install --upgrade pip && pip3 install wheel && pip3 install -r requirements.txt && pip3 uninstall -y typing
+      run: python3 -m pip install --upgrade pip && pip3 install wheel && pip3 install -r requirements.txt && pip3 uninstall -y typing && pip3 uninstall -y charset_normalizer
     
     - name: Build Wheel
       run: python3 setup.py bdist_wheel
