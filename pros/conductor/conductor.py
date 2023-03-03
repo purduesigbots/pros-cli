@@ -238,3 +238,10 @@ class Conductor(Config):
                 except Exception as e:
                     logger(__name__).exception(e)
         return proj
+    def add_template(self, name: str, url: str):
+        if name not in self.depots or \
+                not isinstance(self.depots[name], HttpDepot) or \
+                self.depots[name].location != url:
+            self.depots[name] = HttpDepot(name, url)
+            needs_saving = Trues
+            self.save()
