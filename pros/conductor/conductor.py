@@ -21,7 +21,7 @@ BETA_NAME = 'kernel-beta-mainline'
 BETA_URL = 'https://purduesigbots.github.io/pros-mainline/beta/kernel-beta-mainline.json'
 
 """
-#this breaks branches which arent backmerged so dont use, use beta bool instead
+# TBD? Currently, beta value is stored in config file
 class ReleaseChannel(Enum):
     Stable = 'stable'
     Beta = 'beta'
@@ -269,6 +269,8 @@ class Conductor(Config):
     def remove_template(project: Project, identifier: Union[str, BaseTemplate], remove_user: bool = True,
                         remove_empty_directories: bool = True):
         ui.logger(__name__).debug(f'Uninstalling templates matching {identifier}')
+        if not project.resolve_template(identifier):
+            ui.echo(f"{identifier} is not an applicable template")
         for template in project.resolve_template(identifier):
             ui.echo(f'Uninstalling {template.identifier}')
             project.remove_template(template, remove_user=remove_user,
