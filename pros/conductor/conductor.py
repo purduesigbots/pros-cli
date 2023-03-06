@@ -111,7 +111,8 @@ class Conductor(Config):
 
             template_exists = len(list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))) != 0
             if not template_exists and list(filter(lambda t: t.satisfies(query, kernel_version=None), self.local_templates)):
-                raise KernelMismatchException()
+                raise dont_send(
+                    InvalidTemplateException(f'Could not find a template satisfying {identifier} for {kwargs["target"]}'))
             
             if unique:
                 results.update(offline_results)
@@ -184,13 +185,6 @@ class Conductor(Config):
         if 'kernel' in project.templates:
             # support_kernels for backwards compatibility, but kernel_version should be getting most of the exposure
             kwargs['kernel_version'] = kwargs['supported_kernels'] = project.templates['kernel'].version
-        template = None
-        try:
-            template = self.resolve_template(identifier=identifier, allow_online=download_ok, **kwargs)
-            click.echo(template)
-        except KernelMismatchException:
-            raise dont_send(
-                InvalidTemplateException(f'Kernel Version mismatch between {identifier} and {project.target}'))
         template = self.resolve_template(identifier=identifier, allow_online=download_ok, **kwargs)
         if template is None:
             raise dont_send(
