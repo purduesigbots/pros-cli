@@ -8,7 +8,7 @@ from semantic_version import Spec, Version
 
 from pros.common import *
 from pros.conductor.project import TemplateAction
-from pros.conductor.project.template_resolution import InvalidTemplateException
+from pros.conductor.project.template_resolution import InvalidTemplateException, KernelMismatchException
 from pros.config import Config
 from .depots import Depot, HttpDepot
 from .project import Project
@@ -108,6 +108,8 @@ class Conductor(Config):
             query = identifier
         if allow_offline:
             offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates)
+            if list(offline_results) is None and not filter(lambda t: t.satisfies(query, kernel_version=None), self.local_templates) is None:
+                raise KernelMismatchException()
             if unique:
                 results.update(offline_results)
             else:
@@ -116,6 +118,8 @@ class Conductor(Config):
             for depot in self.depots.values():
                 online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                         depot.get_remote_templates(force_check=force_refresh, **kwargs))
+                if list(online_results) is None and not filter(lambda t: t.satisfies(query, kernel_version=None), self.local_templates) is None:
+                    raise KernelMismatchException()
                 if unique:
                     results.update(online_results)
                 else:
@@ -173,7 +177,12 @@ class Conductor(Config):
         if 'kernel' in project.templates:
             # support_kernels for backwards compatibility, but kernel_version should be getting most of the exposure
             kwargs['kernel_version'] = kwargs['supported_kernels'] = project.templates['kernel'].version
-        template = self.resolve_template(identifier=identifier, allow_online=download_ok, **kwargs)
+        template = None
+        try:
+            template = self.resolve_template(identifier=identifier, allow_online=download_ok, **kwargs)
+        except KernelMismatchException:
+            raise dont_send(
+                InvalidTemplateException(f'Kernel Version mismatch between {identifier} and {project.target}'))
         if template is None:
             raise dont_send(
                 InvalidTemplateException(f'Could not find a template satisfying {identifier} for {project.target}'))

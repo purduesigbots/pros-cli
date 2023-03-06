@@ -36,7 +36,8 @@ root_sources = [
     'v5_utils',
     'misc_commands',  # misc_commands must be after upload so that "pros u" is an alias for upload, not upgrade
     'interactive',
-    'user_script'
+    'user_script',
+    'hello_world'
 ]
 
 if getattr(sys, 'frozen', False):
@@ -116,3 +117,7 @@ def after_command():
 
 if __name__ == '__main__':
     main()
+
+@click.command("hello_world")
+def hello_world():
+    print("My name is Craig")
