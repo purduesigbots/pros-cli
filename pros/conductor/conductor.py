@@ -108,8 +108,11 @@ class Conductor(Config):
             query = identifier
         if allow_offline:
             offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates)
-            if list(offline_results) is None and not filter(lambda t: t.satisfies(query, kernel_version=None), self.local_templates) is None:
+
+            template_exists = len(list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))) != 0
+            if not template_exists and list(filter(lambda t: t.satisfies(query, kernel_version=None), self.local_templates)):
                 raise KernelMismatchException()
+            
             if unique:
                 results.update(offline_results)
             else:
@@ -118,8 +121,12 @@ class Conductor(Config):
             for depot in self.depots.values():
                 online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                         depot.get_remote_templates(force_check=force_refresh, **kwargs))
-                if list(online_results) is None and not filter(lambda t: t.satisfies(query, kernel_version=None), self.local_templates) is None:
+                
+                template_exists = len(list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
+                                        depot.get_remote_templates(force_check=force_refresh, **kwargs)))) != 0             
+                if not template_exists and list(filter(lambda t: t.satisfies(query, kernel_version=None), self.local_templates)):
                     raise KernelMismatchException()
+                
                 if unique:
                     results.update(online_results)
                 else:
@@ -180,9 +187,11 @@ class Conductor(Config):
         template = None
         try:
             template = self.resolve_template(identifier=identifier, allow_online=download_ok, **kwargs)
+            click.echo(template)
         except KernelMismatchException:
             raise dont_send(
                 InvalidTemplateException(f'Kernel Version mismatch between {identifier} and {project.target}'))
+        template = self.resolve_template(identifier=identifier, allow_online=download_ok, **kwargs)
         if template is None:
             raise dont_send(
                 InvalidTemplateException(f'Could not find a template satisfying {identifier} for {project.target}'))
