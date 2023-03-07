@@ -7,7 +7,6 @@ class TemplateAction(Flag):
     Upgradable = auto()
     AlreadyInstalled = auto()
     Downgradable = auto()
-    KernelMismatch = auto()
 
     UnforcedApplicable = Installable | Upgradable | Downgradable
     ForcedApplicable = UnforcedApplicable | AlreadyInstalled
