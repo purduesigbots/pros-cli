@@ -116,7 +116,3 @@ def after_command():
 
 if __name__ == '__main__':
     main()
-
-@click.command("hello_world")
-def hello_world():
-    print("My name is Craig")
