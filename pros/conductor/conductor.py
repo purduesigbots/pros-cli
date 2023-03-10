@@ -8,7 +8,7 @@ from semantic_version import Spec, Version
 
 from pros.common import *
 from pros.conductor.project import TemplateAction
-from pros.conductor.project.template_resolution import InvalidTemplateException, KernelMismatchException
+from pros.conductor.project.template_resolution import InvalidTemplateException
 from pros.config import Config
 from .depots import Depot, HttpDepot
 from .project import Project
@@ -107,10 +107,9 @@ class Conductor(Config):
         else:
             query = identifier
         if allow_offline:
-            offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates)
-
-            results_empty = len(list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))) == 0            
-            if results_empty and kernel_version and list(filter(lambda t: t.satisfies(query, kernel_version=None), self.local_templates)):
+            offline_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))
+            
+            if len(offline_results) == 0 and kernel_version and list(filter(lambda t: t.satisfies(query, kernel_version=None), self.local_templates)):
                 raise dont_send(
                     InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}'))
             
@@ -121,12 +120,10 @@ class Conductor(Config):
         if allow_online:
             for depot in self.depots.values():
                 remote_templates = depot.get_remote_templates(force_check=force_refresh, **kwargs)
-                online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
-                                        remote_templates)
-                
-                results_empty = len(list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
-                                        remote_templates))) == 0             
-                if results_empty and kernel_version and list(filter(lambda t: t.satisfies(query, kernel_version=None),
+                online_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
+                                        remote_templates))
+             
+                if len(online_results) == 0 and kernel_version and list(filter(lambda t: t.satisfies(query, kernel_version=None),
                                         remote_templates)):
                     raise dont_send(
                         InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}'))
