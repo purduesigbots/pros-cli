@@ -238,10 +238,19 @@ class Conductor(Config):
                 except Exception as e:
                     logger(__name__).exception(e)
         return proj
-    def add_template(self, name: str, url: str):
+    
+    def add_depot(self, name: str, url: str):
         if name not in self.depots or \
                 not isinstance(self.depots[name], HttpDepot) or \
                 self.depots[name].location != url:
             self.depots[name] = HttpDepot(name, url)
-            needs_saving = Trues
             self.save()
+    
+    def remove_depot(self, name):
+        if name == "MAINLINE":
+            # ADD CODE FOR ALERTING USER THAT MAINLINE IS PERMANENT
+            raise ValueError("MAINLINE Depot is not Deletable. Nice Try.")
+        else:
+            self.depots.pop(name)
+            self.save()
+

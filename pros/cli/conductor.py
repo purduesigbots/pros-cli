@@ -308,3 +308,17 @@ def info_project(project: c.Project, ls_upgrades):
             template["upgrades"] = sorted({t.version for t in templates}, key=lambda v: semver.Version(v), reverse=True)
 
     ui.finalize('project-report', report)
+
+# new functions
+# TODO: ADD CLICK DECORATORS
+# TODO: ADD COMMAND CALLS
+@click.command()
+@click.option("--name", help = "Name of Template to Add")
+@click.option("--url", help = "Url to Template JSON")
+def add_depot(name: str, url: str):
+    c.Conductor().add_depot(name, url)
+
+@click.command()
+@click.option("--name", help = "Name of Template to Remove")
+def remove_depot(name: str, url: str):
+   c.Conductor().remove_depot(name,url)
