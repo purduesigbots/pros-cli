@@ -216,7 +216,10 @@ class Conductor(Config):
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
             raise dont_send(ValueError('Will not create a project in user home directory'))
         for char in str(Path(path)):
-            if not char.isalnum() and not char in ['_', '-', '.', '\\', '/']:
+            if char in ['/', '?', '<', '>', '\\', ':', '*', '|', '^', '#', '%', '&', '$', '+', '!', '`', '\'', '=',
+                        '@', '\'', '{', '}', '[', ']', '~', '¢', '•', '¡', '™', '£', '∞', '§', '¶', 'ª', 'º', '≠',
+                        '«', '≤', '≥', '÷', '˚', 'œ', '∑', '´', '®', '†', '¥', '¨', 'ˆ', 'ø', 'π', 'å', 'ß', '∂',
+                        'ƒ', '©', '˙', '∆', '¬', 'Ω', '≈', 'ç', '√', '∫', '˜', 'µ']:
                 raise dont_send(ValueError('Invalid character found in directory name:', char))
         proj = Project(path=path, create=True)
         if 'target' in kwargs:
