@@ -32,4 +32,4 @@ Here's a quick breakdown of the packages involved in this project:
 - `pros.serial`: package for all serial communication with VEX Microcontrollers
 - `pros.upgrade`: package for upgrading the PROS CLI, including downloading and executing installation sequence
 
-See https://pros.cs.purdue.edu/v5/cli for end user documentation and developer notes.
+See https://pros.cs.purdue.edu/v5/cli for end user documentation and developer notes
