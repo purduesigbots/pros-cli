@@ -312,13 +312,17 @@ def info_project(project: c.Project, ls_upgrades):
 # new functions
 # TODO: ADD CLICK DECORATORS
 # TODO: ADD COMMAND CALLS
-@click.command()
-@click.option("--name", help = "Name of Template to Add")
-@click.option("--url", help = "Url to Template JSON")
+@conductor.command("add-depot")
+@click.argument("name")
+@click.argument("url")
 def add_depot(name: str, url: str):
+    """Adds Custom Depot to CLI"""
     c.Conductor().add_depot(name, url)
+    print(name, url)
 
-@click.command()
-@click.option("--name", help = "Name of Template to Remove")
-def remove_depot(name: str, url: str):
-   c.Conductor().remove_depot(name,url)
+@conductor.command("remove-depot")
+@click.argument("name")
+def remove_depot(name: str):
+   """Remove Custom Depot to CLI"""
+   c.Conductor().remove_depot(name)
+   print(name)

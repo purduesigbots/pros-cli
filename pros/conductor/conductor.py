@@ -239,18 +239,36 @@ class Conductor(Config):
                     logger(__name__).exception(e)
         return proj
     
+    #Depot url needs to start with https:// 
     def add_depot(self, name: str, url: str):
+        if not (url.endswith('.json') and url.startswith("https://")):
+            if not url.endswith('.json'):
+                raise ValueError("Url does not link to a json file")
+            if not url.startswith("https://"):
+                raise ValueError("Url does not begin with https://")
+        
         if name not in self.depots or \
                 not isinstance(self.depots[name], HttpDepot) or \
                 self.depots[name].location != url:
             self.depots[name] = HttpDepot(name, url)
             self.save()
+        
+    
+        print(self.depots.keys())
+        print(self.depots.items())
     
     def remove_depot(self, name):
-        if name == "MAINLINE":
+        if name == MAINLINE_NAME:
             # ADD CODE FOR ALERTING USER THAT MAINLINE IS PERMANENT
-            raise ValueError("MAINLINE Depot is not Deletable. Nice Try.")
+            raise ValueError("Mainline Depot is not Deletable. Nice Try.")
         else:
-            self.depots.pop(name)
-            self.save()
+            if name in self.depots.keys():
+                self.depots.pop(name)
+                self.save()
+            else:
+                raise ValueError("Name is not in cli depots")
+        print(self.depots.keys())
+        print(self.depots.items())
+
+            
 
