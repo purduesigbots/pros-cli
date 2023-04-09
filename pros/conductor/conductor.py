@@ -18,7 +18,7 @@ from .templates import BaseTemplate, ExternalTemplate, LocalTemplate, Template
 MAINLINE_NAME = 'pros-mainline'
 MAINLINE_URL = 'https://purduesigbots.github.io/pros-mainline/pros-mainline.json'
 BETA_NAME = 'kernel-beta-mainline'
-BETA_URL = 'https://github.com/purduesigbots/pros-mainline/blob/master/beta/kernel-beta-mainline.json'
+BETA_URL = 'https://raw.githubusercontent.com/purduesigbots/pros-mainline/master/beta/kernel-beta-mainline.json'
 
 """
 # TBD? Currently, beta value is stored in config file
