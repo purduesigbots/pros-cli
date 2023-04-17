@@ -184,7 +184,7 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
     analytics.send("uninstall-template")
     c.Conductor().remove_template(project, query, remove_user=remove_user,
                                   remove_empty_directories=remove_empty_directories)
-    if not no_make_clean:
+    if no_make_clean:
         with ui.Notification():
             project.compile(["clean"])
 
