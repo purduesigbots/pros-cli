@@ -4,7 +4,7 @@ from typing import *
 import serial
 
 from pros.common import logger, dont_send
-from pros.serial.ports.exceptions import ConnectionRefusedException
+from pros.serial.ports.exceptions import ConnectionRefusedException, PortNotFoundException
 from .base_port import BasePort, PortConnectionException
 
 
@@ -23,7 +23,8 @@ def create_serial_port(port_name: str, timeout: Optional[float] = 1.0) -> serial
             tb = sys.exc_info()[2]
             raise dont_send(ConnectionRefusedException(port_name, e).with_traceback(tb))
         else:
-            raise e
+            raise dont_send(PortNotFoundException(port_name, e))
+
 
 
 class DirectPort(BasePort):
