@@ -175,7 +175,6 @@ def upgrade(ctx: click.Context, project: c.Project, query: c.BaseTemplate, **kwa
 @default_options
 def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: bool,
                        remove_empty_directories: bool = False, no_make_clean: bool = False):
-                       remove_empty_directories: bool = False, no_make_clean: bool = False):
     """
     Uninstall a template from a PROS project
 
