@@ -170,6 +170,7 @@ def upgrade(ctx: click.Context, project: c.Project, query: c.BaseTemplate, **kwa
 @click.option('--remove-user', is_flag=True, default=False, help='Also remove user files')
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
+@click.option('--no-make-clean', is_flag=True, default=True, help='Do not run make clean after removing')
 @project_option()
 @template_query()
 @default_options
