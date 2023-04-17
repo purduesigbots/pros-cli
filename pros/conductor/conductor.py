@@ -230,6 +230,8 @@ class Conductor(Config):
                 if curr_proj.kernel:
                     if template.version[0] == '4' and curr_proj.kernel[0] == '3':
                         confirm = ui.confirm(f'Warning! Upgrading project to PROS 4 will cause breaking changes. '
+                                             f'For PROS 4 LLEMU/LVGL to function, the library liblvgl is required. '
+                                             f'Run \'pros conductor apply liblvgl --beta\' in the project directory. '
                                              f'Do you still want to upgrade?')
                         if not confirm:
                             raise dont_send(
