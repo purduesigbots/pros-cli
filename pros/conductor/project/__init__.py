@@ -70,6 +70,8 @@ class Project(Config):
             return TemplateAction.NotApplicable
         from semantic_version import Spec, Version
         if template.name != 'kernel' and Version(self.kernel) not in Spec(template.supported_kernels or '>0'):
+            if template.name in self.templates.keys():
+                return TemplateAction.AlreadyInstalled
             return TemplateAction.NotApplicable
         for current in self.templates.values():
             if template.name != current.name:
