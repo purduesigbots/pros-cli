@@ -41,9 +41,9 @@ jobs:
     
     - name: Setup Python MacOS
       run: |
-            wget https://www.python.org/ftp/python/3.9.2/python-3.9.2-macos11.pkg
-            sudo installer -verbose -pkg ./python-3.9.2-macos11.pkg -target /
-            echo "/Library/Frameworks/Python.framework/Versions/3.9/bin" >> $GITHUB_PATH
+            wget https://www.python.org/ftp/python/3.10.11/python-3.10.11-macos11.pkg
+            sudo installer -verbose -pkg ./python-3.10.11-macos11.pkg -target /
+            echo "/Library/Frameworks/Python.framework/Versions/3.10/bin" >> $GITHUB_PATH
       if: matrix.os == 'macos-latest'
         
     - name: Install Requirements
