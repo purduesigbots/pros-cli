@@ -70,7 +70,7 @@ jobs:
 
     - name: Run Pyinstaller MacOS
       run: |
-            pip3 uninstall charset_normalizer
+            pip3 uninstall -y charset_normalizer
             git clone https://github.com/Ousret/charset_normalizer.git
             pip3 install -e -y charset_normalizer
             python3 version.py
