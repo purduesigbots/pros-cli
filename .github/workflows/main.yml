@@ -62,6 +62,9 @@ jobs:
       
     - name: Run Pyinstaller
       run: |
+            pip3 uninstall charset_normalizer
+            git clone https://github.com/Ousret/charset_normalizer.git
+            pip3 install -e charset_normalizer
             python3 version.py
             pyinstaller pros.spec
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-cc
