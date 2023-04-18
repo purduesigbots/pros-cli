@@ -158,12 +158,17 @@ def purge_template(query: c.BaseTemplate, force):
                               abort=True)
     cond = c.Conductor()
     templates = cond.resolve_templates(query, allow_online=False)
+    beta_templates = cond.resolve_templates(query, allow_online=False, beta=True)
     if len(templates) == 0:
         click.echo('No matching templates were found matching the spec.')
         return 0
-    click.echo(f'The following template(s) will be removed {[t.identifier for t in templates]}')
+    t_list = [t.identifier for t in templates] + [t.identifier for t in beta_templates]
+    click.echo(f'The following template(s) will be removed {t_list}')
     if len(templates) > 1 and not force:
         click.confirm(f'Are you sure you want to remove multiple templates?', abort=True)
     for template in templates:
+        if isinstance(template, c.LocalTemplate):
+            cond.purge_template(template)
+    for template in beta_templates:
         if isinstance(template, c.LocalTemplate):
             cond.purge_template(template)
