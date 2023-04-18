@@ -11,10 +11,8 @@ jobs:
       output1: ${{ steps.step1.outputs.test }}
     steps:
       - uses: actions/checkout@v3.1.0
-      - run: |
-              git fetch --tags -f
-              git fetch --prune --unshallow --tags
-              
+        with:
+          fetch-depth: 0
       - name: Update Build Number
         id: step1
         run: |
@@ -31,9 +29,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3.1.0
-    - run: |
-            git fetch --tags -f
-            git fetch --prune --unshallow --tags
+      with:
+        fetch-depth: 0
     
     - name: Setup Python
       uses: actions/setup-python@v4.3.0
@@ -50,7 +47,7 @@ jobs:
       if: matrix.os == 'macos-latest'
         
     - name: Install Requirements
-      run: python3 -m pip install --upgrade pip && pip3 install wheel && pip3 install -r requirements.txt && pip3 uninstall -y typing
+      run: python3 -m pip install --upgrade pip && pip3 install wheel && pip3 install -r requirements.txt && pip3 uninstall -y typing && pip3 uninstall -y charset_normalizer
     
     - name: Build Wheel
       run: python3 setup.py bdist_wheel

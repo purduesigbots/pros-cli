@@ -2,7 +2,9 @@ import json
 from os import path
 import uuid
 import requests
+from requests_futures.sessions import FuturesSession
 import random
+from concurrent.futures import as_completed
 
 url = 'https://www.google-analytics.com/collect'
 agent = 'pros-cli'
@@ -29,6 +31,7 @@ class Analytics():
         self.gaID = self.cli_config.ga['ga_id']
         self.useAnalytics = self.cli_config.ga['enabled']
         self.uID = self.cli_config.ga['u_id']
+        self.pendingRequests = []
 
     def send(self,action):
         if not self.useAnalytics or self.sent:
@@ -48,17 +51,17 @@ class Analytics():
                 'el': 'CLI',
                 'ev': '1',
                 'ni': 0
-            }          
+            }
+
+            session = FuturesSession()          
 
             #Send payload to GA servers 
-            response = requests.post(url=url,
+            future = session.post(url=url,
                              data=payload,
                              headers={'User-Agent': agent},
                              timeout=5.0)
-            if not response.status_code==200:
-                print("Something went wrong while sending analytics!")
-                print(response)
-            return response
+            self.pendingRequests.append(future)
+
         except Exception as e:
             from pros.cli.common import logger
             logger(__name__).warning("Unable to send analytics. Do you have a stable internet connection?", extra={'sentry': False})
@@ -68,5 +71,25 @@ class Analytics():
         self.useAnalytics = value
         self.cli_config.ga['enabled'] = self.useAnalytics
         self.cli_config.save()
+    
+    def process_requests(self):
+        responses = []
+        for future in as_completed(self.pendingRequests):
+            try:
+                response = future.result()
+                
+                if not response.status_code==200:
+                    print("Something went wrong while sending analytics!")
+                    print(response)
+
+                responses.append(response)
+
+            except Exception:
+                print("Something went wrong while sending analytics!")
+
+
+        self.pendingRequests.clear()
+        return responses
+
 
 analytics = Analytics()
