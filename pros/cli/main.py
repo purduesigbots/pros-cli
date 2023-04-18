@@ -114,5 +114,6 @@ def cli(ctx):
 def after_command():
     analytics.process_requests()
 
+
 if __name__ == '__main__':
     main()
