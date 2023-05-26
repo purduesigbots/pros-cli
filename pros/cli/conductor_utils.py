@@ -55,7 +55,7 @@ def create_template(ctx, path: str, destination: str, do_zip: bool, **kwargs):
 
     pros conduct create-template . libblrs 2.0.1 --system "firmware/*.a" --system "include/*.h"
     """
-    analytics.send("create-template")
+    analytics.send("create_template")
     project = c.Project.find_project(path, recurse_times=1)
     if project:
         project = c.Project(project)
@@ -152,7 +152,7 @@ def create_template(ctx, path: str, destination: str, do_zip: bool, **kwargs):
 @template_query(required=False)
 @default_options
 def purge_template(query: c.BaseTemplate, force):
-    analytics.send("purge-template")
+    analytics.send("purge_template")
     if not query:
         force = click.confirm('Are you sure you want to remove all cached templates? This action is non-reversable!',
                               abort=True)
