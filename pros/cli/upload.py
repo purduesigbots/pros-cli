@@ -162,7 +162,7 @@ def ls_usb(target):
     """
     List plugged in VEX Devices
     """
-    analytics.send("ls_usb")
+    analytics.send("ls-usb")
     from pros.serial.devices.vex import find_v5_ports, find_cortex_ports
 
     class PortReport(object):
@@ -202,7 +202,7 @@ def ls_usb(target):
 @shadow_command(upload)
 @click.pass_context
 def make_upload_terminal(ctx, **upload_kwargs):
-    analytics.send("upload_terminal")
+    analytics.send("upload-terminal")
     from .terminal import terminal
     ctx.invoke(upload, **upload_kwargs)
     ctx.invoke(terminal, request_banner=False)

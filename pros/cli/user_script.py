@@ -16,7 +16,7 @@ def user_script(script_file):
     """
     Run a script file with the PROS CLI package
     """
-    analytics.send("user_script")
+    analytics.send("user-script")
     import os.path
     import importlib.util
     package_name = os.path.splitext(os.path.split(script_file)[0])[0]
