@@ -53,7 +53,7 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     [PORT] may be any valid communication port file, such as COM1 or /dev/ttyACM0. If left blank, then a port is
     automatically detected based on the target (or as supplied by the PROS project)
     """
-    analytics.send("upload")
+    analytics.send("upload", kwargs)
     import pros.serial.devices.vex as vex
     from pros.serial.ports import DirectPort
     kwargs['ide_version'] = project.kernel if not project==None else "None"

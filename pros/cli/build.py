@@ -21,7 +21,7 @@ def make(project: c.Project, build_args):
     """
     Build current PROS project or cwd
     """
-    analytics.send("make")
+    analytics.send("make", dict.fromkeys(build_args))
     exit_code = project.compile(build_args)
     if exit_code != 0:
         logger(__name__).error(f'Failed to make project: Exit Code {exit_code}', extra={'sentry': False})
@@ -35,7 +35,7 @@ def make(project: c.Project, build_args):
 @project_option()
 @click.pass_context
 def make_upload(ctx, project: c.Project, build_args: List[str], **upload_args):
-    analytics.send("make_upload")
+    analytics.send("make_upload", dict.fromkeys(build_args).update(upload_args))
     ctx.invoke(make, project=project, build_args=build_args)
     ctx.invoke(upload, project=project, **upload_args)
 
@@ -67,7 +67,7 @@ def build_compile_commands(project: c.Project, suppress_output: bool, compile_co
     Build a compile_commands.json compatible with cquery
     :return:
     """
-    analytics.send("build_compile_commands")
+    analytics.send("build_compile_commands", dict.fromkeys(build_args).update({'suppress_output': suppress_output, 'sandbox': sandbox}))
     exit_code = project.make_scan_build(build_args, cdb_file=compile_commands, suppress_output=suppress_output,
                                         sandbox=sandbox)
     if exit_code != 0:

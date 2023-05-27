@@ -18,7 +18,6 @@ class Analytics():
         #If GA hasn't been setup yet (first time install/update)
         if not self.cli_config.ga or not self.cli_config.ga.get("api_secret", None) or not self.cli_config.ga.get("unix_timestamp", None):
             #Default values for GA
-            print("helooooo2222222")
             # generate a unix timestamp
             self.cli_config.ga = {
                 "enabled": "True",
@@ -35,18 +34,25 @@ class Analytics():
         self.user_timestamp = self.cli_config.ga['unix_timestamp']
         self.useAnalytics = self.cli_config.ga['enabled']
         self.uID = self.cli_config.ga['u_id']
-        print(f'Analytics config: enabled={self.useAnalytics} | ga_id={self.gaID} | api_secret={self.apiSecret} | u_id={self.uID}')
         self.pendingRequests = []
 
-    def send(self, action, kwargs = {}):
+    def send(self, action, kw):
+        #Send analytics to GA
         if not self.useAnalytics or self.sent:
             #print("not sending")
             return
         #print("sending")
         self.sent=True # Prevent Send from being called multiple times
         try:
+            #copy kw to prevent modifying the original
+            kwargs = kw.copy()
             kwargs["engagement_time_msec"] = 1
             
+            for key, val in kwargs.items():
+                # checking for required value
+                if val is None:
+                    kwargs[key] = 0
+
             url = f'https://www.google-analytics.com/mp/collect?measurement_id=G-PXK9EBVY1Y&api_secret={self.apiSecret}'
             payload = {
                 "client_id": f'CLI.{self.user_timestamp}',
@@ -59,16 +65,18 @@ class Analytics():
                     }
                 ]
             }
-            #print(payload)
+            #print("payload : ")
+            # print(payload)
             #print(url)
 
             #r = requests.post(url,data=json.dumps(payload),verify=True)
             #print(r.status_code)
             session = FuturesSession()          
 
+
             #Send payload to GA servers 
             future = session.post(url=url,
-                             data=str(payload).replace("False","false").replace("True","true"),
+                             data=str(payload).replace("False","false").replace("True","true").replace("Null","0"),
                              timeout=5.0,
                              verify = True)
             self.pendingRequests.append(future)
@@ -88,6 +96,8 @@ class Analytics():
         for future in as_completed(self.pendingRequests):
             try:
                 response = future.result()
+                #print(response)
+                #print(vars(response))
                 if not response.status_code==204:
                     print("Something went wrong while sending analytics!")
                     print(response)
