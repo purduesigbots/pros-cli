@@ -54,8 +54,8 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     automatically detected based on the target (or as supplied by the PROS project)
     """
     # send analytics with target, after, slot, and icon
-    analytics.send_analytics('upload', {"target": kwargs.get('target', None), "after": kwargs.get('after', None), "slot": kwargs.get('slot', None), "icon": kwargs.get('icon', None)})
-    
+    analytics.send('upload', {"target": kwargs.get('target', None), "after": kwargs.get('after', None), "slot": kwargs.get('slot', None), "icon": kwargs.get('icon', None)})
+
     import pros.serial.devices.vex as vex
     from pros.serial.ports import DirectPort
     kwargs['ide_version'] = project.kernel if not project==None else "None"

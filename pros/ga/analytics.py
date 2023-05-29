@@ -16,7 +16,7 @@ class Analytics():
         from pros.config.cli_config import cli_config as get_cli_config
         self.cli_config = get_cli_config()
         #If GA hasn't been setup yet (first time install/update)
-        if True or not self.cli_config.ga or not self.cli_config.ga.get("unix_timestamp", None):
+        if not self.cli_config.ga or not self.cli_config.ga.get("unix_timestamp", None):
             
             '''
                 We need to ask the user if they want to opt in to analytics. If they do, we generate a UUID for them and a unix timestamp of when they opted in.
@@ -68,7 +68,7 @@ class Analytics():
             for key, val in kwargs.items():
                 # checking for required value
                 if val is None:
-                    kwargs[key] = 0
+                    kwargs[key] = "Unspecified_Default"
 
             url = f'https://www.google-analytics.com/mp/collect?measurement_id=G-PXK9EBVY1Y&api_secret=acF_xZUITjG4MDLlNJqdFw'
             payload = {
@@ -87,7 +87,7 @@ class Analytics():
 
             #Send payload to GA servers 
             future = session.post(url=url,
-                             data=str(payload).replace("False","false").replace("True","true").replace("Null","Unspecified_Default"),
+                             data=str(payload).replace("False","false").replace("True","true").replace("Null","null"),
                              timeout=5.0,
                              verify = True)
             self.pendingRequests.append(future)
@@ -107,8 +107,8 @@ class Analytics():
         for future in as_completed(self.pendingRequests):
             try:
                 response = future.result()
-                print(response)
-                print(vars(response))
+                #print(response)
+                #print(vars(response))
                 if not response.status_code==204:
                     print("Something went wrong while sending analytics!")
                     print(response)
