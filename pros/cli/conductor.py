@@ -41,7 +41,16 @@ def fetch(query: c.BaseTemplate):
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
-    analytics.send("fetch_template")
+    
+
+    # query identifier can be a path to a local template, or just the template name@version. we want to check if it's a path, and if it is, extract the name@version from the full path
+    # we do this so that we don't send user's full paths to analytics, as that's a bit of a privacy concern (could contain username, etc.)
+    name_version = query.identifier
+    if os.path.exists(query.identifier):
+        name_version = os.path.basename(query.identifier)
+    analytics.send("fetch_template", {'template': name_version.replace("@", "_")})
+
+
     template_file = None
     if os.path.exists(query.identifier):
         template_file = query.identifier
@@ -101,7 +110,12 @@ def apply(project: c.Project, query: c.BaseTemplate, **kwargs):
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
-    analytics.send("apply_template")
+    # query identifier can be a path to a local template, or just the template name@version. we want to check if it's a path, and if it is, extract the name@version from the full path
+    # we do this so that we don't send user's full paths to analytics, as that's a bit of a privacy concern (could contain username, etc.)
+    name_version = query.identifier
+    if os.path.exists(query.identifier):
+        name_version = os.path.basename(query.identifier)
+    analytics.send("apply_template", {'template': name_version.replace("@", "_"), "beta": beta, "upgrade_ok": upgrade_ok, "install_ok": install_ok})
     return c.Conductor().apply_template(project, identifier=query, **kwargs)
 
 
@@ -128,6 +142,8 @@ def install(ctx: click.Context, **kwargs):
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
+    # im gonna have analytics on this for now, just to prove that this command is not used. all it is is a wrapper for apply with install_ok=True,
+    # however, install_ok is True by default, so this command is literally useless
     analytics.send("install_template")
     return ctx.invoke(apply, install_ok=True, **kwargs)
 
@@ -155,7 +171,8 @@ def upgrade(ctx: click.Context, project: c.Project, query: c.BaseTemplate, **kwa
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
-    analytics.send("upgrade_project")
+    templatename = query.name if query.name else "All"
+    analytics.send("upgrade_template", {"template_name": templatename, "beta": beta, "download_ok": download_ok, "install_ok": install_ok})
     if not query.name:
         for template in project.templates.keys():
             click.secho(f'Upgrading {template}', color='yellow')
@@ -181,7 +198,9 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
-    analytics.send("uninstall_template")
+    templatename = query.name if query.name else "All"
+    analytics.send("uninstall_template", {"template_name": templatename, "remove_user": remove_user, "remove_empty_dirs": remove_empty_directories, "no_make_clean": no_make_clean})
+    
     c.Conductor().remove_template(project, query, remove_user=remove_user,
                                   remove_empty_directories=remove_empty_directories)
     if no_make_clean:
@@ -217,7 +236,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
-    analytics.send("new_project")
+    analytics.send("new_project", {"version": version, "no_default_libs": no_default_libs, "compile_after": compile_after, "build_cache": build_cache, "beta": beta})
     if version.lower() == 'latest' or not version:
         version = '>0'
     if not force_system and c.Project.find_project(path) is not None:
@@ -267,7 +286,7 @@ def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_onlin
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
-    analytics.send("query_templates")
+    analytics.send("query_templates", {"allow_offline": allow_offline, "allow_online": allow_online, "force_refresh": force_refresh, "limit": limit, "beta": beta})
     if limit < 0:
         limit = 15
     templates = c.Conductor().resolve_templates(query, allow_offline=allow_offline, allow_online=allow_online,

@@ -17,7 +17,7 @@ def upgrade(force_check, no_install):
     """
     Check for updates to the PROS CLI
     """
-    analytics.send("upgrade")
+    analytics.send("upgrade", {"force_check": force_check, "no_install": no_install})
     from pros.upgrade import UpgradeManager
     manager = UpgradeManager()
     manifest = manager.get_manifest(force_check)

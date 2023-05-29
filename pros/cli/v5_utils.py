@@ -207,7 +207,7 @@ def run(slot: str, port: str):
     """
     Run a V5 program
     """
-    analytics.send("run")
+    analytics.send("run", {"slot": slot})
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
     file = f'slot_{slot}.bin'
@@ -252,7 +252,7 @@ def capture(file_name: str, port: str, force: bool = False):
     """
     Take a screen capture of the display
     """
-    analytics.send("capture_screen")
+    analytics.send("capture_screen", {"force": force})
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
     import png
@@ -299,7 +299,7 @@ def capture(file_name: str, port: str, force: bool = False):
 @click.argument('port', type=str, default=None, required=False)
 @default_options
 def set_variable(variable, value, port):
-    analytics.send("set_variable")
+    analytics.send("set_variable", {"variable": value})
     import pros.serial.devices.vex as vex
     from pros.serial.ports import DirectPort
 
@@ -316,7 +316,7 @@ def set_variable(variable, value, port):
 @click.argument('port', type=str, default=None, required=False)
 @default_options
 def read_variable(variable, port):
-    analytics.send("read_variable")
+    analytics.send("read_variable", {"variable": variable})
     import pros.serial.devices.vex as vex
     from pros.serial.ports import DirectPort
 

@@ -53,7 +53,9 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     [PORT] may be any valid communication port file, such as COM1 or /dev/ttyACM0. If left blank, then a port is
     automatically detected based on the target (or as supplied by the PROS project)
     """
-    analytics.send("upload", kwargs)
+    # send analytics with target, after, slot, and icon
+    analytics.send_analytics('upload', {"target": kwargs.get('target', None), "after": kwargs.get('after', None), "slot": kwargs.get('slot', None), "icon": kwargs.get('icon', None)})
+    
     import pros.serial.devices.vex as vex
     from pros.serial.ports import DirectPort
     kwargs['ide_version'] = project.kernel if not project==None else "None"
@@ -202,7 +204,9 @@ def ls_usb(target):
 @shadow_command(upload)
 @click.pass_context
 def make_upload_terminal(ctx, **upload_kwargs):
-    analytics.send("upload_terminal")
+    # send analytics with target, after, slot, and icon
+    analytics.send_analytics('upload_terminal', {"target": upload_kwargs.get('target', None), "after": upload_kwargs.get('after', None), "slot": upload_kwargs.get('slot', None), "icon": upload_kwargs.get('icon', None)})
+    
     from .terminal import terminal
     ctx.invoke(upload, **upload_kwargs)
     ctx.invoke(terminal, request_banner=False)
