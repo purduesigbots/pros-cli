@@ -1,4 +1,5 @@
 from os import path
+from configparser import ConfigParser
 import uuid
 import time
 from requests_futures.sessions import FuturesSession
@@ -6,6 +7,10 @@ import random
 from concurrent.futures import as_completed
 
 agent = 'pros-cli'
+
+config = ConfigParser()
+config.read('config.ini')
+print(config['analytics']['api_key'])
 
 """
 PROS ANALYTICS CLASS

@@ -1,0 +1,2 @@
+CLI_VERSION = "3.4.2-dirty+7264d71"
+FROZEN_PLATFORM_V1 = "Windows86"
