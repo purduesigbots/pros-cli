@@ -2,8 +2,8 @@ name: Build PROS CLI
 
 on:
   push:
-  tags:
-    - '*'
+    tags:
+      - '*'
 
 jobs:
   update_build_number:
