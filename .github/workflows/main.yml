@@ -1,9 +1,12 @@
 name: Build PROS CLI
 
 on:
+  # make github actions run on every push and every tag
   push:
     tags:
       - '*'
+    branches:
+      - '**'
 
 jobs:
   update_build_number:
