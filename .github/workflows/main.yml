@@ -2,7 +2,7 @@ name: Build PROS CLI
 
 on:
   push:
-  tag:
+  tags:
     - '*'
 
 jobs:
