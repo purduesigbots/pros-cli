@@ -1,8 +1,10 @@
 name: Build PROS CLI
 
+# Controls when the action will run. Triggers the workflow on push or tag
 on:
   push:
-  pull_request:
+  tag:
+    - '*'
 
 jobs:
   update_build_number:
