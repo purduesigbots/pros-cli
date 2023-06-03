@@ -23,17 +23,8 @@ jobs:
               python3 version.py
               echo "test=$(cat version)" >> $GITHUB_OUTPUT
         if: github.ref_type != 'tag'
-
-  update_build_number_tag:
-    runs-on: ubuntu-latest
-    outputs:
-      output1: ${{ steps.step1.outputs.test }}
-    steps:
-      - uses: actions/checkout@v3.1.0
-        with:
-          fetch-depth: 0
       - name: Update Build Number
-        id: step1
+        id: step2
         run: |
               echo "test=$(cat version)" >> $GITHUB_OUTPUT
         if: github.ref_type == 'tag'
