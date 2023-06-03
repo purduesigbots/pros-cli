@@ -91,6 +91,7 @@ jobs:
             mv intercept-c++ pros
 
     - name: Set Artifact Name
+        id: set_artifact_name  
         run: echo ::set-output name=artifact_name::${{ startsWith(github.ref, 'refs/tags/') && matrix.os + '-' + github.ref || matrix.os + '-commit' }}
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'push'
 
