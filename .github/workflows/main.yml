@@ -26,9 +26,8 @@ jobs:
       - name: Update Build Number (Tag Only)
         id: step2
         run: |
-              steps.step1.outputs.test = github.ref
+              echo "test=${{ github.ref }}" >> $GITHUB_ENV
         if: github.ref_type == 'tag'
-
   build:
     needs: update_build_number
     runs-on: ${{ matrix.os }}
