@@ -90,8 +90,12 @@ jobs:
             mv intercept-cc pros
             mv intercept-c++ pros
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v3.1.0
-      with:
-        name: ${{ matrix.os }}-${{needs.update_build_number.outputs.output1}}
-        path: dist/*
+    - name: Set Artifact Name
+        run: echo ::set-output name=artifact_name::${{ startsWith(github.ref, 'refs/tags/') && matrix.os + '-' + github.ref || matrix.os + '-commit' }}
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'push'
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3.1.0
+        with:
+          name: ${{ steps.set_artifact_name.outputs.artifact_name }}
+          path: dist/*
