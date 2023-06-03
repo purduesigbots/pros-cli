@@ -12,7 +12,7 @@ def conductor_cli():
     pass
 
 
-@conductor_cli.group(cls=PROSGroup, aliases=['cond', 'c', 'conduct'], short_help='Perform project management for PROS')
+@conductor_cli.group(cls=PROSGroup, aliases=['cond', 'c', 'conduct'], short_help='aniket')
 @default_options
 def conductor():
     """
