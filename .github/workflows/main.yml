@@ -21,8 +21,13 @@ jobs:
         id: step1
         run: |
               python3 version.py
-              echo "test=$(cat version)" >> $GITHUB_OUTPUT
-        
+              echo "::set-output name=test::$(cat version)"
+        if: github.ref_type != 'tag'
+      - name: Update Build Number (Tag Only)
+        id: step2
+        run: |
+              # echo "::set-output name=test::$(github.ref)"
+        if: github.ref_type == 'tag'
 
   build:
     needs: update_build_number
