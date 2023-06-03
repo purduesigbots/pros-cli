@@ -21,7 +21,7 @@ jobs:
         id: step1
         run: |
               python3 version.py
-              echo "::set-output name=test::$(cat version)"
+              echo "test=$(cat version)" >> $GITHUB_ENV
         if: github.ref_type != 'tag'
 
   build:
