@@ -27,6 +27,7 @@ jobs:
         id: step2
         run: |
               echo "test=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+              echo $GITHUB_OUTPUT
         if: github.ref_type == 'tag'
 
   build:
