@@ -22,6 +22,7 @@ jobs:
         run: |
               python3 version.py
               echo "::set-output name=test::$(cat version)"
+        if: github.ref_type != 'tag'
 
   build:
     needs: update_build_number
@@ -93,5 +94,5 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v3.1.0
       with:
-        name: ${{ matrix.os }}-${{needs.update_build_number.outputs.output1}}${{ github.ref_type == 'tag' && github.sha != github.ref ? '' : '-commit+' + github.sha }}
+        name: ${{ matrix.os }}-${{needs.update_build_number.outputs.output1}}
         path: dist/*
