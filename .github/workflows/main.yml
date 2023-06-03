@@ -28,6 +28,7 @@ jobs:
         run: |
               echo "test=${{ github.ref }}" >> $GITHUB_ENV
         if: github.ref_type == 'tag'
+        
   build:
     needs: update_build_number
     runs-on: ${{ matrix.os }}
