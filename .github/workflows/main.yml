@@ -26,7 +26,8 @@ jobs:
       - name: Update Build Number (Tag Only)
         id: step2
         run: |
-              echo "test=${{ github.ref }}" >> $GITHUB_OUTPUT
+              ${{ github.ref }} > version
+              echo "test=$(cat version)" >> $GITHUB_OUTPUT
         if: github.ref_type == 'tag'
 
   build:
