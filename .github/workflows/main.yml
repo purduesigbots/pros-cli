@@ -23,12 +23,6 @@ jobs:
               python3 version.py
               echo "test=$(cat version)" >> $GITHUB_OUTPUT
         if: github.ref_type != 'tag'
-      - name: Update Build Number (Tag Only)
-        id: step2
-        run: |
-              echo "test=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-              echo $GITHUB_OUTPUT
-        if: github.ref_type == 'tag'
 
   build:
     needs: update_build_number
@@ -102,3 +96,10 @@ jobs:
       with:
         name: ${{ matrix.os }}-${{needs.update_build_number.outputs.output1}}
         path: dist/*
+      if: matrix.os != 'macos-latest'
+    - name: Upload Artifact (Tagged Version Naming)
+      uses: actions/upload-artifact@v3.1.0
+      with:
+        name: ${{ matrix.os }}-${{github.ref_name}}
+        path: dist/*
+      if: github.ref_type == 'tag'
