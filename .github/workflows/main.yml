@@ -17,6 +17,7 @@ jobs:
         id: step1
         run: |
               git describe --tags
+              git clean -f
               python3 version.py
               echo "::set-output name=test::$(cat version)"
 
