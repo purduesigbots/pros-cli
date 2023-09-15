@@ -90,8 +90,8 @@ def fetch(query: c.BaseTemplate):
               help="Force apply the template, disregarding if the template is already installed.")
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
-@click.option('--beta', is_flag=True, default=False, show_default=True,
-              help='Allow applying beta templates')
+@click.option('--modern', is_flag=True, default=False, show_default=True,
+              help='Allow applying PROS v4 templates')
 @project_option()
 @template_query(required=True)
 @default_options
@@ -116,8 +116,8 @@ def apply(project: c.Project, query: c.BaseTemplate, **kwargs):
               help="Force apply the template, disregarding if the template is already installed.")
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
-@click.option('--beta', is_flag=True, default=False, show_default=True,
-              help='Allow applying beta templates')
+@click.option('--modern', is_flag=True, default=False, show_default=True,
+              help='Allow applying PROS v4 templates')
 @project_option()
 @template_query(required=True)
 @default_options
@@ -143,8 +143,8 @@ def install(ctx: click.Context, **kwargs):
               help="Force apply the template, disregarding if the template is already installed.")
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
-@click.option('--beta', is_flag=True, default=False, show_default=True,
-              help='Allow upgrading to beta templates')
+@click.option('--modern', is_flag=True, default=False, show_default=True,
+              help='Allow upgrading to PROS v4 templates')
 @project_option()
 @template_query(required=False)
 @default_options
@@ -205,8 +205,8 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
               help='Compile the project after creation')
 @click.option('--build-cache', is_flag=True, default=None, show_default=False,
               help='Build compile commands cache after creation. Overrides --compile-after if both are specified.')
-@click.option('--beta', is_flag=True, default=False, show_default=True,
-              help='Create a project with a beta template')
+@click.option('--modern', is_flag=True, default=False, show_default=True,
+              help='Create a project with a PROS v4 template')
 @click.pass_context
 @default_options
 def new_project(ctx: click.Context, path: str, target: str, version: str,
@@ -255,13 +255,13 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
               help='Force update all remote depots, ignoring automatic update checks')
 @click.option('--limit', type=int, default=15,
               help='The maximum number of displayed results for each library')
-@click.option('--beta', is_flag=True, default=False, show_default=True,
-              help='View beta templates in the listing')
+@click.option('--modern', is_flag=True, default=False, show_default=True,
+              help='View PROS v4 templates in the listing')
 @template_query(required=False)
 @click.pass_context
 @default_options
 def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_online: bool, force_refresh: bool,
-                    limit: int, beta: bool):
+                    limit: int, modern: bool):
     """
     Query local and remote templates based on a spec
 
@@ -271,10 +271,10 @@ def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_onlin
     if limit < 0:
         limit = 15
     templates = c.Conductor().resolve_templates(query, allow_offline=allow_offline, allow_online=allow_online,
-                                                force_refresh=force_refresh, beta=beta)
-    if beta:
+                                                force_refresh=force_refresh, modern=modern)
+    if modern:
         templates += c.Conductor().resolve_templates(query, allow_offline=allow_offline, allow_online=allow_online,
-                                                force_refresh=force_refresh, beta=False)
+                                                force_refresh=force_refresh, modern=False)
 
     render_templates = {}
     for template in templates:

@@ -18,11 +18,11 @@ from .templates import BaseTemplate, ExternalTemplate, LocalTemplate, Template
 
 MAINLINE_NAME = 'pros-mainline'
 MAINLINE_URL = 'https://purduesigbots.github.io/pros-mainline/pros-mainline.json'
-BETA_NAME = 'kernel-beta-mainline'
-BETA_URL = 'https://raw.githubusercontent.com/purduesigbots/pros-mainline/master/beta/kernel-beta-mainline.json'
+V4_NAME = 'kernel-v4-mainline'
+V4_URL = 'https://raw.githubusercontent.com/purduesigbots/pros-mainline/master/beta/kernel-beta-mainline.json'
 
 """
-# TBD? Currently, beta value is stored in config file
+# TBD? Currently, v4 value is stored in config file
 class ReleaseChannel(Enum):
     Stable = 'stable'
     Beta = 'beta'
@@ -36,12 +36,12 @@ class Conductor(Config):
         if not file:
             file = os.path.join(click.get_app_dir('PROS'), 'conductor.pros')
         self.local_templates: Set[LocalTemplate] = set()
-        self.beta_local_templates: Set[LocalTemplate] = set()
+        self.v4_local_templates: Set[LocalTemplate] = set()
         self.depots: Dict[str, Depot] = {}
         self.default_target: str = 'v5'
         self.default_libraries: Dict[str, List[str]] = None
-        self.beta_libraries: Dict[str, List[str]] = None
-        self.is_beta = False
+        self.v4_libraries: Dict[str, List[str]] = None
+        self.is_v4 = False
         super(Conductor, self).__init__(file)
         needs_saving = False
         if MAINLINE_NAME not in self.depots or \
@@ -49,11 +49,11 @@ class Conductor(Config):
                 self.depots[MAINLINE_NAME].location != MAINLINE_URL:
             self.depots[MAINLINE_NAME] = HttpDepot(MAINLINE_NAME, MAINLINE_URL)
             needs_saving = True
-        # add beta depot as another remote depot
-        if BETA_NAME not in self.depots or \
-                not isinstance(self.depots[BETA_NAME], HttpDepot) or \
-                self.depots[BETA_NAME].location != BETA_URL:
-            self.depots[BETA_NAME] = HttpDepot(BETA_NAME, BETA_URL)
+        # add v4 depot as another remote depot
+        if V4_NAME not in self.depots or \
+                not isinstance(self.depots[V4_NAME], HttpDepot) or \
+                self.depots[V4_NAME].location != V4_URL:
+            self.depots[V4_NAME] = HttpDepot(V4_NAME, V4_URL)
             needs_saving = True
         if self.default_target is None:
             self.default_target = 'v5'
@@ -64,8 +64,8 @@ class Conductor(Config):
                 'cortex': []
             }
             needs_saving = True
-        if self.beta_libraries is None or len(self.beta_libraries['v5']) != 2:
-            self.beta_libraries = {
+        if self.v4_libraries is None or len(self.v4_libraries['v5']) != 2:
+            self.v4_libraries = {
                 'v5': ['liblvgl', 'okapilib'],
                 'cortex': []
             }
@@ -76,11 +76,11 @@ class Conductor(Config):
         if 'cortex' not in self.default_libraries:
             self.default_libraries['cortex'] = []
             needs_saving = True
-        if 'v5' not in self.beta_libraries:
-            self.beta_libraries['v5'] = []
+        if 'v5' not in self.v4_libraries:
+            self.v4_libraries['v5'] = []
             needs_saving = True
-        if 'cortex' not in self.beta_libraries:
-            self.beta_libraries['cortex'] = []
+        if 'cortex' not in self.v4_libraries:
+            self.v4_libraries['cortex'] = []
             needs_saving = True
         if needs_saving:
             self.save()
@@ -107,8 +107,8 @@ class Conductor(Config):
         local_template = LocalTemplate(orig=template, location=destination)
         local_template.metadata['origin'] = depot.name
         click.echo(f'Adding {local_template.identifier} to registry...', nl=False)
-        if depot.name == BETA_NAME: # check for beta
-            self.beta_local_templates.add(local_template)
+        if depot.name == V4_NAME: # check for v4
+            self.v4_local_templates.add(local_template)
         else:
             self.local_templates.add(local_template)
         self.save()
@@ -118,11 +118,11 @@ class Conductor(Config):
         return local_template
 
     def purge_template(self, template: LocalTemplate):
-        if template.metadata['origin'] == BETA_NAME:
-            if template not in self.beta_local_templates:
-                logger(__name__).info(f"{template.identifier} was not in the Conductor's local beta templates cache.")
+        if template.metadata['origin'] == V4_NAME:
+            if template not in self.v4_local_templates:
+                logger(__name__).info(f"{template.identifier} was not in the Conductor's local v4 templates cache.")
             else:
-                self.beta_local_templates.remove(template)
+                self.v4_local_templates.remove(template)
         else:
             if template not in self.local_templates:
                 logger(__name__).info(f"{template.identifier} was not in the Conductor's local templates cache.")
@@ -140,14 +140,14 @@ class Conductor(Config):
                           unique: bool = True, **kwargs) -> List[BaseTemplate]:
         results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
-        self.is_beta = kwargs.get('beta', False)
+        self.is_v4 = kwargs.get('modern', False)
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
             query = identifier
         if allow_offline:
-            if self.is_beta:
-                offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.beta_local_templates)
+            if self.is_v4:
+                offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.v4_local_templates)
             else:
                 offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates)
             if unique:
@@ -156,8 +156,8 @@ class Conductor(Config):
                 results.extend(offline_results)
         if allow_online:
             for depot in self.depots.values():
-                # beta depot will only be accessed when the --beta flag is true
-                if depot.name != BETA_NAME or (depot.name == BETA_NAME and self.is_beta):
+                # v4 depot will only be accessed when the --v4 flag is true
+                if depot.name != V4_NAME or (depot.name == V4_NAME and self.is_v4):
                     online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                         depot.get_remote_templates(force_check=force_refresh, **kwargs))
                     if unique:
@@ -278,7 +278,7 @@ class Conductor(Config):
                                     remove_empty_directories=remove_empty_directories)
 
     def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
-        self.is_beta = kwargs.get('beta', False)
+        self.is_v4 = kwargs.get('modern', False)
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
             raise dont_send(ValueError('Will not create a project in user home directory'))
         if re.match(r'^[\w\-. /]+$', str(Path(path))) is None:
@@ -297,7 +297,7 @@ class Conductor(Config):
         proj.save()
 
         if not no_default_libs:
-            libraries = self.beta_libraries if self.is_beta else self.default_libraries
+            libraries = self.v4_libraries if self.is_v4 else self.default_libraries
             for library in libraries[proj.target]:
                 try:
                     # remove kernel version so that latest template satisfying query is correctly selected
