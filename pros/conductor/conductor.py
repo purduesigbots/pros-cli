@@ -3,6 +3,7 @@ import shutil
 from enum import Enum
 from pathlib import Path
 from typing import *
+import re
 
 import click
 from semantic_version import Spec, Version
@@ -230,8 +231,6 @@ class Conductor(Config):
                 if curr_proj.kernel:
                     if template.version[0] == '4' and curr_proj.kernel[0] == '3':
                         confirm = ui.confirm(f'Warning! Upgrading project to PROS 4 will cause breaking changes. '
-                                             f'For PROS 4 LLEMU/LVGL to function, the library liblvgl is required. '
-                                             f'Run \'pros conductor apply liblvgl --beta\' in the project directory. '
                                              f'Do you still want to upgrade?')
                         if not confirm:
                             raise dont_send(
@@ -282,10 +281,8 @@ class Conductor(Config):
         self.is_beta = kwargs.get('beta', False)
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
             raise dont_send(ValueError('Will not create a project in user home directory'))
-        for char in str(Path(path)):
-            if char in ['?', '<', '>', '*', '|', '^', '#', '%', '&', '$', '+', '!', '`', '\'', '=',
-                        '@', '\'', '{', '}', '[', ']', '(', ')', '~'] or ord(char) > 127:
-                raise dont_send(ValueError(f'Invalid character found in directory name: \'{char}\''))
+        if re.match(r'^[\w\-. /]+$', str(Path(path))) is None:
+            raise dont_send(ValueError('Invalid characters found in path'))
         proj = Project(path=path, create=True)
         if 'target' in kwargs:
             proj.target = kwargs['target']
@@ -300,23 +297,13 @@ class Conductor(Config):
         proj.save()
 
         if not no_default_libs:
-            if self.is_beta:
-                #libraries = self.beta_libraries if self.is_beta else self.default_libraries
-                for library in self.beta_libraries[proj.target]:
-                    try:
-                        # remove kernel version so that latest template satisfying query is correctly selected
-                        if 'version' in kwargs:
-                            kwargs.pop('version')
-                        self.apply_template(proj, library, **kwargs)
-                    except Exception as e:
-                        logger(__name__).exception(e)
-            else:
-                for library in self.default_libraries[proj.target]:
-                    try:
-                        # remove kernel version so that latest template satisfying query is correctly selected
-                        if 'version' in kwargs:
-                            kwargs.pop('version')
-                        self.apply_template(proj, library, **kwargs)
-                    except Exception as e:
-                        logger(__name__).exception(e)
+            libraries = self.beta_libraries if self.is_beta else self.default_libraries
+            for library in libraries[proj.target]:
+                try:
+                    # remove kernel version so that latest template satisfying query is correctly selected
+                    if 'version' in kwargs:
+                        kwargs.pop('version')
+                    self.apply_template(proj, library, **kwargs)
+                except Exception as e:
+                    logger(__name__).exception(e)
         return proj
