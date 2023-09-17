@@ -41,7 +41,8 @@ class Conductor(Config):
         self.default_target: str = 'v5'
         self.default_libraries: Dict[str, List[str]] = None
         self.v4_libraries: Dict[str, List[str]] = None
-        self.is_v4 = False
+        self.use_v4 = False
+        self.warned_v3_deprecated = False
         super(Conductor, self).__init__(file)
         needs_saving = False
         if MAINLINE_NAME not in self.depots or \
@@ -140,13 +141,13 @@ class Conductor(Config):
                           unique: bool = True, **kwargs) -> List[BaseTemplate]:
         results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
-        self.is_v4 = kwargs.get('modern', False)
+        self.use_v4 = kwargs.get('modern', False)
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
             query = identifier
         if allow_offline:
-            if self.is_v4:
+            if self.use_v4:
                 offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.v4_local_templates)
             else:
                 offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates)
@@ -156,8 +157,8 @@ class Conductor(Config):
                 results.extend(offline_results)
         if allow_online:
             for depot in self.depots.values():
-                # v4 depot will only be accessed when the --v4 flag is true
-                if depot.name != V4_NAME or (depot.name == V4_NAME and self.is_v4):
+                # v4 depot will only be accessed when the --modern flag is true
+                if depot.name != V4_NAME or (depot.name == V4_NAME and self.use_v4):
                     online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                         depot.get_remote_templates(force_check=force_refresh, **kwargs))
                     if unique:
@@ -236,11 +237,20 @@ class Conductor(Config):
                             raise dont_send(
                                 InvalidTemplateException(f'Not upgrading'))
                     if template.version[0] == '3' and curr_proj.kernel[0] == '4':
-                        confirm = ui.confirm(f'Warning! Downgrading project to PROS 3 will cause breaking changes. '
+                        confirm = ui.confirm(f'PROS 3 is now deprecated. Downgrading project to PROS 3 will also cause breaking changes. '
                                              f'Do you still want to downgrade?')
                         if not confirm:
                             raise dont_send(
                                 InvalidTemplateException(f'Not downgrading'))
+            elif template.version[0] == '3' and not self.warned_v3_deprecated:
+                confirm = ui.confirm(f'PROS 3 is now deprecated. PROS 4 is now the latest version. '
+                                     f'Do you still want to use PROS 3?\n'
+                                     f'To use PROS 4, please use the --modern flag. We will remember your choice.')
+                self.warned_v3_deprecated = True
+                self.save()
+                if not confirm:
+                    raise dont_send(
+                        InvalidTemplateException(f'Not using PROS 3'))
         if not isinstance(template, LocalTemplate):
             with ui.Notification():
                 template = self.fetch_template(self.get_depot(template.metadata['origin']), template, **kwargs)
@@ -278,7 +288,7 @@ class Conductor(Config):
                                     remove_empty_directories=remove_empty_directories)
 
     def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
-        self.is_v4 = kwargs.get('modern', False)
+        self.use_v4 = kwargs.get('modern', False)
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
             raise dont_send(ValueError('Will not create a project in user home directory'))
         if re.match(r'^[\w\-. /]+$', str(Path(path))) is None:
@@ -297,7 +307,7 @@ class Conductor(Config):
         proj.save()
 
         if not no_default_libs:
-            libraries = self.v4_libraries if self.is_v4 else self.default_libraries
+            libraries = self.v4_libraries if self.use_v4 else self.default_libraries
             for library in libraries[proj.target]:
                 try:
                     # remove kernel version so that latest template satisfying query is correctly selected
