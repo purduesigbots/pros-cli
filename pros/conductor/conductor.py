@@ -19,7 +19,7 @@ from .templates import BaseTemplate, ExternalTemplate, LocalTemplate, Template
 MAINLINE_NAME = 'pros-mainline'
 MAINLINE_URL = 'https://purduesigbots.github.io/pros-mainline/pros-mainline.json'
 PROS4_NAME = 'kernel-4-mainline'
-PROS4_URL = 'https://raw.githubusercontent.com/purduesigbots/pros-mainline/master/beta/kernel-beta-mainline.json'
+PROS4_URL = 'https://purduesigbots.github.io/pros-mainline/beta/kernel-beta-mainline.json'
 
 """
 # TBD? Currently, PROS 4 value is stored in config file
@@ -242,11 +242,11 @@ class Conductor(Config):
                         if not confirm:
                             raise dont_send(
                                 InvalidTemplateException(f'Not downgrading'))
-            elif template.version[0] == '3' and not self.warned_v3_deprecated:
+            elif template.version[0] == '3' and not self.warned_pros3_deprecated:
                 confirm = ui.confirm(f'PROS 3 is now deprecated. PROS 4 is now the latest version. '
                                      f'Do you still want to use PROS 3?\n'
                                      f'To use PROS 4, please use the --modern flag. We will remember your choice.')
-                self.warned_v3_deprecated = True
+                self.warned_pros3_deprecated = True
                 self.save()
                 if not confirm:
                     raise dont_send(
@@ -289,6 +289,10 @@ class Conductor(Config):
 
     def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
         self.use_pros4 = kwargs.get('modern', False)
+        if not self.use_pros4 and self.warned_pros3_deprecated:
+            ui.echo(f"PROS 3 is deprecated. PROS 4 is now the latest version. "
+                    f"To use PROS 4 use the --modern flag.")
+
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
             raise dont_send(ValueError('Will not create a project in user home directory'))
         if re.match(r'^[\w\-. /]+$', str(Path(path))) is None:
