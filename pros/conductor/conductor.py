@@ -18,11 +18,11 @@ from .templates import BaseTemplate, ExternalTemplate, LocalTemplate, Template
 
 MAINLINE_NAME = 'pros-mainline'
 MAINLINE_URL = 'https://purduesigbots.github.io/pros-mainline/pros-mainline.json'
-PROS4_NAME = 'kernel-4-mainline'
-PROS4_URL = 'https://purduesigbots.github.io/pros-mainline/beta/kernel-beta-mainline.json'
+EARLY_ACCESS_NAME = 'kernel-4-mainline'
+EARLY_ACCESS_URL = 'https://purduesigbots.github.io/pros-mainline/beta/kernel-beta-mainline.json'
 
 """
-# TBD? Currently, PROS 4 value is stored in config file
+# TBD? Currently, EarlyAccess value is stored in config file
 class ReleaseChannel(Enum):
     Stable = 'stable'
     Beta = 'beta'
@@ -36,13 +36,13 @@ class Conductor(Config):
         if not file:
             file = os.path.join(click.get_app_dir('PROS'), 'conductor.pros')
         self.local_templates: Set[LocalTemplate] = set()
-        self.pros4_local_templates: Set[LocalTemplate] = set()
+        self.early_access_local_templates: Set[LocalTemplate] = set()
         self.depots: Dict[str, Depot] = {}
         self.default_target: str = 'v5'
         self.default_libraries: Dict[str, List[str]] = None
-        self.pros4_libraries: Dict[str, List[str]] = None
-        self.use_pros4 = False
-        self.warned_pros3_deprecated = False
+        self.early_access_libraries: Dict[str, List[str]] = None
+        self.use_early_access = False
+        self.warn_early_access = False
         super(Conductor, self).__init__(file)
         needs_saving = False
         if MAINLINE_NAME not in self.depots or \
@@ -51,10 +51,10 @@ class Conductor(Config):
             self.depots[MAINLINE_NAME] = HttpDepot(MAINLINE_NAME, MAINLINE_URL)
             needs_saving = True
         # add PROS 4 depot as another remote depot
-        if PROS4_NAME not in self.depots or \
-                not isinstance(self.depots[PROS4_NAME], HttpDepot) or \
-                self.depots[PROS4_NAME].location != PROS4_URL:
-            self.depots[PROS4_NAME] = HttpDepot(PROS4_NAME, PROS4_URL)
+        if EARLY_ACCESS_NAME not in self.depots or \
+                not isinstance(self.depots[EARLY_ACCESS_NAME], HttpDepot) or \
+                self.depots[EARLY_ACCESS_NAME].location != EARLY_ACCESS_URL:
+            self.depots[EARLY_ACCESS_NAME] = HttpDepot(EARLY_ACCESS_NAME, EARLY_ACCESS_URL)
             needs_saving = True
         if self.default_target is None:
             self.default_target = 'v5'
@@ -65,8 +65,8 @@ class Conductor(Config):
                 'cortex': []
             }
             needs_saving = True
-        if self.pros4_libraries is None or len(self.pros4_libraries['v5']) != 2:
-            self.pros4_libraries = {
+        if self.early_access_libraries is None or len(self.early_access_libraries['v5']) != 2:
+            self.early_access_libraries = {
                 'v5': ['liblvgl', 'okapilib'],
                 'cortex': []
             }
@@ -77,11 +77,11 @@ class Conductor(Config):
         if 'cortex' not in self.default_libraries:
             self.default_libraries['cortex'] = []
             needs_saving = True
-        if 'v5' not in self.pros4_libraries:
-            self.pros4_libraries['v5'] = []
+        if 'v5' not in self.early_access_libraries:
+            self.early_access_libraries['v5'] = []
             needs_saving = True
-        if 'cortex' not in self.pros4_libraries:
-            self.pros4_libraries['cortex'] = []
+        if 'cortex' not in self.early_access_libraries:
+            self.early_access_libraries['cortex'] = []
             needs_saving = True
         if needs_saving:
             self.save()
@@ -108,8 +108,8 @@ class Conductor(Config):
         local_template = LocalTemplate(orig=template, location=destination)
         local_template.metadata['origin'] = depot.name
         click.echo(f'Adding {local_template.identifier} to registry...', nl=False)
-        if depot.name == PROS4_NAME: # check for PROS 4
-            self.pros4_local_templates.add(local_template)
+        if depot.name == EARLY_ACCESS_NAME: # check for PROS 4
+            self.early_access_local_templates.add(local_template)
         else:
             self.local_templates.add(local_template)
         self.save()
@@ -119,11 +119,11 @@ class Conductor(Config):
         return local_template
 
     def purge_template(self, template: LocalTemplate):
-        if template.metadata['origin'] == PROS4_NAME:
-            if template not in self.pros4_local_templates:
+        if template.metadata['origin'] == EARLY_ACCESS_NAME:
+            if template not in self.early_access_local_templates:
                 logger(__name__).info(f"{template.identifier} was not in the Conductor's local PROS 4 templates cache.")
             else:
-                self.pros4_local_templates.remove(template)
+                self.early_access_local_templates.remove(template)
         else:
             if template not in self.local_templates:
                 logger(__name__).info(f"{template.identifier} was not in the Conductor's local templates cache.")
@@ -141,14 +141,14 @@ class Conductor(Config):
                           unique: bool = True, **kwargs) -> List[BaseTemplate]:
         results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
-        self.use_pros4 = kwargs.get('modern', False)
+        self.use_early_access = kwargs.get('early_access', False)
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
             query = identifier
         if allow_offline:
-            if self.use_pros4:
-                offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.pros4_local_templates)
+            if self.use_early_access:
+                offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.early_access_local_templates)
             else:
                 offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates)
             if unique:
@@ -157,8 +157,8 @@ class Conductor(Config):
                 results.extend(offline_results)
         if allow_online:
             for depot in self.depots.values():
-                # PROS 4 depot will only be accessed when the --modern flag is true
-                if depot.name != PROS4_NAME or (depot.name == PROS4_NAME and self.use_pros4):
+                # EarlyAccess depot will only be accessed when the --early-access flag is true
+                if depot.name != EARLY_ACCESS_NAME or (depot.name == EARLY_ACCESS_NAME and self.use_early_access):
                     online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                         depot.get_remote_templates(force_check=force_refresh, **kwargs))
                     if unique:
@@ -237,16 +237,16 @@ class Conductor(Config):
                             raise dont_send(
                                 InvalidTemplateException(f'Not upgrading'))
                     if template.version[0] == '3' and curr_proj.kernel[0] == '4':
-                        confirm = ui.confirm(f'PROS 3 is now deprecated. Downgrading project to PROS 3 will also cause breaking changes. '
+                        confirm = ui.confirm(f'Warning! Downgrading project to PROS 3 will cause breaking changes. '
                                              f'Do you still want to downgrade?')
                         if not confirm:
                             raise dont_send(
                                 InvalidTemplateException(f'Not downgrading'))
-            elif template.version[0] == '3' and not self.warned_pros3_deprecated:
-                confirm = ui.confirm(f'PROS 3 is now deprecated. PROS 4 is now the latest version. '
-                                     f'Do you still want to use PROS 3?\n'
-                                     f'To use PROS 4, please use the --modern flag. We will remember your choice.')
-                self.warned_pros3_deprecated = True
+            elif template.version[0] == '3' and not self.warn_early_access:
+                confirm = ui.confirm(f'PROS 4 is now in early access. '
+                                     f'Please use the --early-access flag if you would like to use it.\n'
+                                     f'Do you still want to use PROS 3?')
+                self.warn_early_access = True
                 self.save()
                 if not confirm:
                     raise dont_send(
@@ -288,10 +288,10 @@ class Conductor(Config):
                                     remove_empty_directories=remove_empty_directories)
 
     def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
-        self.use_pros4 = kwargs.get('modern', False)
-        if not self.use_pros4 and self.warned_pros3_deprecated:
-            ui.echo(f"PROS 3 is deprecated. PROS 4 is now the latest version. "
-                    f"To use PROS 4 use the --modern flag.")
+        self.use_early_access = kwargs.get('early_access', False)
+        if not self.use_early_access and self.warn_early_access:
+            ui.echo(f"PROS 4 is now in early access."
+                    f"If you would like to use it, use the --early-access flag.")
 
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
             raise dont_send(ValueError('Will not create a project in user home directory'))
@@ -311,7 +311,7 @@ class Conductor(Config):
         proj.save()
 
         if not no_default_libs:
-            libraries = self.pros4_libraries if self.use_pros4 else self.default_libraries
+            libraries = self.early_access_libraries if self.use_early_access else self.default_libraries
             for library in libraries[proj.target]:
                 try:
                     # remove kernel version so that latest template satisfying query is correctly selected
