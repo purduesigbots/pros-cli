@@ -17,9 +17,9 @@ from .project import Project
 from .templates import BaseTemplate, ExternalTemplate, LocalTemplate, Template
 
 MAINLINE_NAME = 'pros-mainline'
-MAINLINE_URL = 'https://purduesigbots.github.io/pros-mainline/pros-mainline.json'
+MAINLINE_URL = 'https://pros.cs.purdue.edu/v5/_static/releases/pros-mainline.json'
 EARLY_ACCESS_NAME = 'kernel-4-mainline'
-EARLY_ACCESS_URL = 'https://purduesigbots.github.io/pros-mainline/beta/kernel-beta-mainline.json'
+EARLY_ACCESS_URL = 'https://pros.cs.purdue.edu/v5/_static/beta/beta-pros-mainline.json'
 
 """
 # TBD? Currently, EarlyAccess value is stored in config file
