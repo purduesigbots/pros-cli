@@ -323,3 +323,11 @@ def info_project(project: c.Project, ls_upgrades):
             template["upgrades"] = sorted({t.version for t in templates}, key=lambda v: semver.Version(v), reverse=True)
 
     ui.finalize('project-report', report)
+
+@conductor.command('add-depot')
+@click.option('--name')
+@click.option('--url')
+@default_options
+def add_depot(name: str, url: str):
+    _conductor = c.Conductor()
+    _conductor.add_depot(name, url)

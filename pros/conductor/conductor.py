@@ -320,3 +320,7 @@ class Conductor(Config):
                     except Exception as e:
                         logger(__name__).exception(e)
         return proj
+
+    def add_depot(self, name: str, url: str):
+        self.depots[name] = Depot(name, url)
+        self.save()
