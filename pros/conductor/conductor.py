@@ -324,3 +324,11 @@ class Conductor(Config):
     def add_depot(self, name: str, url: str):
         self.depots[name] = Depot(name, url)
         self.save()
+
+    def remove_depot(self, name: str):
+        del self.depots[name]
+        self.save()
+    
+    def query_depots(self, url: bool):
+        for depot in self.depots.keys():
+            print(depot + ('\n\t\t' + self.depots[depot].location) if url else '')

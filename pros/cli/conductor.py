@@ -331,3 +331,17 @@ def info_project(project: c.Project, ls_upgrades):
 def add_depot(name: str, url: str):
     _conductor = c.Conductor()
     _conductor.add_depot(name, url)
+
+@conductor.command('remove-depot')
+@click.option('--name')
+@default_options
+def remove_depot(name: str):
+    _conductor = c.Conductor()
+    _conductor.remove_depot(name)
+
+@conductor.comand('query-depot')
+@click.option('--url', default=False)
+@default_options
+def query_depot(url: bool):
+    _conductor = c.Conductor()
+    _conductor.query_depots(url)
