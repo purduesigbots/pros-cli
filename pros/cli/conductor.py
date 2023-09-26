@@ -330,6 +330,11 @@ def info_project(project: c.Project, ls_upgrades):
 @click.option('--url')
 @default_options
 def add_depot(name: str, url: str):
+    """
+    Add a depot
+
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
+    """
     _conductor = c.Conductor()
     _conductor.add_depot(name, url)
 
@@ -337,6 +342,11 @@ def add_depot(name: str, url: str):
 @click.option('--name')
 @default_options
 def remove_depot(name: str):
+    """
+    Remove a depot
+
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
+    """
     _conductor = c.Conductor()
     _conductor.remove_depot(name)
 
@@ -344,5 +354,11 @@ def remove_depot(name: str):
 @click.option('--url', default=False)
 @default_options
 def query_depots(url: bool):
+    """
+    Gets all the stored depots
+
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
+    """
     _conductor = c.Conductor()
     ui.echo('\n'.join(_conductor.query_depots(url)))
+    
