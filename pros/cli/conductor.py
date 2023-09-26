@@ -7,6 +7,7 @@ from pros.cli.common import *
 from pros.conductor.templates import ExternalTemplate
 from pros.ga.analytics import analytics
 
+
 @pros_root
 def conductor_cli():
     pass
@@ -339,7 +340,7 @@ def remove_depot(name: str):
     _conductor = c.Conductor()
     _conductor.remove_depot(name)
 
-@conductor.comand('query-depot')
+@conductor.command('query-depot')
 @click.option('--url', default=False)
 @default_options
 def query_depot(url: bool):
