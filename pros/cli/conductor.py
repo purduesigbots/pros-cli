@@ -340,9 +340,9 @@ def remove_depot(name: str):
     _conductor = c.Conductor()
     _conductor.remove_depot(name)
 
-@conductor.command('query-depot')
+@conductor.command('query-depots')
 @click.option('--url', default=False)
 @default_options
-def query_depot(url: bool):
+def query_depots(url: bool):
     _conductor = c.Conductor()
-    _conductor.query_depots(url)
+    ui.echo('\n'.join(_conductor.query_depots(url)))

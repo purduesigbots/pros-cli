@@ -11,6 +11,7 @@ from pros.common import *
 from pros.conductor.project import TemplateAction
 from pros.conductor.project.template_resolution import InvalidTemplateException
 from pros.config import Config
+
 from .depots import Depot, HttpDepot
 from .project import Project
 from .templates import BaseTemplate, ExternalTemplate, LocalTemplate, Template
@@ -330,5 +331,4 @@ class Conductor(Config):
         self.save()
     
     def query_depots(self, url: bool):
-        for depot in self.depots.keys():
-            print(depot + ('\n\t\t' + self.depots[depot].location) if url else '')
+        return [name + ('\n\t\t' + depot.location) if url else '' for name, depot in self.depots.items()]
