@@ -3,6 +3,7 @@ import shutil
 from enum import Enum
 from pathlib import Path
 from typing import *
+import re
 
 import click
 from semantic_version import Spec, Version
@@ -282,10 +283,9 @@ class Conductor(Config):
         self.is_beta = kwargs.get('beta', False)
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
             raise dont_send(ValueError('Will not create a project in user home directory'))
-        for char in str(Path(path)):
-            if char in ['?', '<', '>', '*', '|', '^', '#', '%', '&', '$', '+', '!', '`', '\'', '=',
-                        '@', '\'', '{', '}', '[', ']', '(', ')', '~'] or ord(char) > 127:
-                raise dont_send(ValueError(f'Invalid character found in directory name: \'{char}\''))
+        if re.match(r'^[\w\-. /]+$', str(Path(path))) is None:
+            raise dont_send(ValueError('Invalid characters found in path'))
+        
         proj = Project(path=path, create=True)
         if 'target' in kwargs:
             proj.target = kwargs['target']
