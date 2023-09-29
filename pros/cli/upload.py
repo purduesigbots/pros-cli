@@ -70,6 +70,8 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
 
         # apply upload_options as a template
         options = dict(**project.upload_options)
+        if 'port' in options and port is None:
+            port = options.get('port', None)
         if 'slot' in options and kwargs.get('slot', None) is None:
             kwargs.pop('slot')
         elif kwargs.get('slot', None) is None:
