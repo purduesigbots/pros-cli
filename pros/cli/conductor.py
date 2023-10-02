@@ -338,6 +338,8 @@ def add_depot(name: str, url: str):
     _conductor = c.Conductor()
     _conductor.add_depot(name, url)
 
+    ui.echo(f"Added depot {name} from {url}")
+
 @conductor.command('remove-depot')
 @click.option('--name')
 @default_options
@@ -350,6 +352,8 @@ def remove_depot(name: str):
     _conductor = c.Conductor()
     _conductor.remove_depot(name)
 
+    ui.echo(f"Removed depot {name}")
+
 @conductor.command('query-depots')
 @click.option('--url', default=False)
 @default_options
@@ -360,5 +364,5 @@ def query_depots(url: bool):
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
     _conductor = c.Conductor()
-    ui.echo('\n'.join(_conductor.query_depots(url)))
+    ui.echo('\n\n'.join(_conductor.query_depots(url)))
     

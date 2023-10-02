@@ -331,4 +331,4 @@ class Conductor(Config):
         self.save()
     
     def query_depots(self, url: bool):
-        return [name + ('\n\t\t' + depot.location) if url else '' for name, depot in self.depots.items()]
+        return [name + (('\n\t' + depot.location) if url else '') for name, depot in self.depots.items()]
