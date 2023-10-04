@@ -326,8 +326,8 @@ def info_project(project: c.Project, ls_upgrades):
     ui.finalize('project-report', report)
 
 @conductor.command('add-depot')
-@click.option('--name')
-@click.option('--url')
+@click.argument('name')
+@click.argument('url')
 @default_options
 def add_depot(name: str, url: str):
     """
@@ -341,7 +341,7 @@ def add_depot(name: str, url: str):
     ui.echo(f"Added depot {name} from {url}")
 
 @conductor.command('remove-depot')
-@click.option('--name')
+@click.argument('name')
 @default_options
 def remove_depot(name: str):
     """
@@ -355,7 +355,7 @@ def remove_depot(name: str):
     ui.echo(f"Removed depot {name}")
 
 @conductor.command('query-depots')
-@click.option('--url', default=False)
+@click.option('--url', is_flag=True)
 @default_options
 def query_depots(url: bool):
     """
@@ -364,5 +364,6 @@ def query_depots(url: bool):
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
     _conductor = c.Conductor()
-    ui.echo('\n\n'.join(_conductor.query_depots(url)))
+    ui.echo(f"Available Depots{' (Add --url for the url)' if not url else ''}:\n")
+    ui.echo('\n'.join(_conductor.query_depots(url))+"\n")
     
