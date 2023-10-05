@@ -65,7 +65,7 @@ class Conductor(Config):
             needs_saving = True
         if self.beta_libraries is None or len(self.beta_libraries['v5']) != 2:
             self.beta_libraries = {
-                'v5': ['liblvgl', 'okapilib'],
+                'v5': ['liblvgl'],
                 'cortex': []
             }
             needs_saving = True
