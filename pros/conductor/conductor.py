@@ -325,3 +325,14 @@ class Conductor(Config):
                 except Exception as e:
                     logger(__name__).exception(e)
         return proj
+
+    def add_depot(self, name: str, url: str):
+        self.depots[name] = HttpDepot(name, url)
+        self.save()
+
+    def remove_depot(self, name: str):
+        del self.depots[name]
+        self.save()
+    
+    def query_depots(self, url: bool):
+        return [name + ((' -- ' + depot.location) if url else '') for name, depot in self.depots.items()]
