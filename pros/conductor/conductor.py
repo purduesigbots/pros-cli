@@ -254,7 +254,6 @@ class Conductor(Config):
                             raise dont_send(
                                 InvalidTemplateException(f'Not downgrading'))
             elif not self.use_early_access and template.version[0] == '3' and not self.warn_early_access:
-                print('SELF USE EARLY ACCESS', self.use_early_access)
                 confirm = ui.confirm(f'PROS 4 is now in early access. '
                                      f'Please use the --early-access flag if you would like to use it.\n'
                                      f'Do you still want to use PROS 3?')
