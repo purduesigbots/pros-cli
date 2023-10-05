@@ -10,12 +10,14 @@ jobs:
     outputs:
       output1: ${{ steps.step1.outputs.test }}
     steps:
-      - uses: actions/checkout@v3.1.0
+      - uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 0
       - name: Update Build Number
         id: step1
         run: |
+              git describe --tags
+              git clean -f
               python3 version.py
               echo "::set-output name=test::$(cat version)"
 
@@ -41,9 +43,9 @@ jobs:
     
     - name: Setup Python MacOS
       run: |
-            wget https://www.python.org/ftp/python/3.9.2/python-3.9.2-macos11.pkg
-            sudo installer -verbose -pkg ./python-3.9.2-macos11.pkg -target /
-            echo "/Library/Frameworks/Python.framework/Versions/3.9/bin" >> $GITHUB_PATH
+            wget https://www.python.org/ftp/python/3.10.11/python-3.10.11-macos11.pkg
+            sudo installer -verbose -pkg ./python-3.10.11-macos11.pkg -target /
+            echo "/Library/Frameworks/Python.framework/Versions/3.10/bin" >> $GITHUB_PATH
       if: matrix.os == 'macos-latest'
         
     - name: Install Requirements
@@ -70,6 +72,9 @@ jobs:
 
     - name: Run Pyinstaller MacOS
       run: |
+            pip3 uninstall -y charset_normalizer
+            git clone https://github.com/Ousret/charset_normalizer.git
+            pip3 install -e ./charset_normalizer
             python3 version.py
             pyinstaller pros-macos.spec
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-cc --target-arch=universal2

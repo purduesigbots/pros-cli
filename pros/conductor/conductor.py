@@ -1,5 +1,6 @@
 import os.path
 import shutil
+from enum import Enum
 from pathlib import Path
 from typing import *
 
@@ -16,26 +17,42 @@ from .templates import BaseTemplate, ExternalTemplate, LocalTemplate, Template
 
 MAINLINE_NAME = 'pros-mainline'
 MAINLINE_URL = 'https://purduesigbots.github.io/pros-mainline/pros-mainline.json'
+BETA_NAME = 'kernel-beta-mainline'
+BETA_URL = 'https://raw.githubusercontent.com/purduesigbots/pros-mainline/master/beta/kernel-beta-mainline.json'
 
+"""
+# TBD? Currently, beta value is stored in config file
+class ReleaseChannel(Enum):
+    Stable = 'stable'
+    Beta = 'beta'
+"""
 
 class Conductor(Config):
     """
     Provides entrances for all conductor-related tasks (fetching, applying, creating new projects)
     """
-
     def __init__(self, file=None):
         if not file:
             file = os.path.join(click.get_app_dir('PROS'), 'conductor.pros')
         self.local_templates: Set[LocalTemplate] = set()
+        self.beta_local_templates: Set[LocalTemplate] = set()
         self.depots: Dict[str, Depot] = {}
         self.default_target: str = 'v5'
         self.default_libraries: Dict[str, List[str]] = None
+        self.beta_libraries: Dict[str, List[str]] = None
+        self.is_beta = False
         super(Conductor, self).__init__(file)
         needs_saving = False
         if MAINLINE_NAME not in self.depots or \
                 not isinstance(self.depots[MAINLINE_NAME], HttpDepot) or \
                 self.depots[MAINLINE_NAME].location != MAINLINE_URL:
             self.depots[MAINLINE_NAME] = HttpDepot(MAINLINE_NAME, MAINLINE_URL)
+            needs_saving = True
+        # add beta depot as another remote depot
+        if BETA_NAME not in self.depots or \
+                not isinstance(self.depots[BETA_NAME], HttpDepot) or \
+                self.depots[BETA_NAME].location != BETA_URL:
+            self.depots[BETA_NAME] = HttpDepot(BETA_NAME, BETA_URL)
             needs_saving = True
         if self.default_target is None:
             self.default_target = 'v5'
@@ -46,15 +63,26 @@ class Conductor(Config):
                 'cortex': []
             }
             needs_saving = True
+        if self.beta_libraries is None or len(self.beta_libraries['v5']) != 2:
+            self.beta_libraries = {
+                'v5': ['liblvgl', 'okapilib'],
+                'cortex': []
+            }
+            needs_saving = True
         if 'v5' not in self.default_libraries:
             self.default_libraries['v5'] = []
             needs_saving = True
         if 'cortex' not in self.default_libraries:
             self.default_libraries['cortex'] = []
             needs_saving = True
+        if 'v5' not in self.beta_libraries:
+            self.beta_libraries['v5'] = []
+            needs_saving = True
+        if 'cortex' not in self.beta_libraries:
+            self.beta_libraries['cortex'] = []
+            needs_saving = True
         if needs_saving:
             self.save()
-
         from pros.common.sentry import add_context
         add_context(self)
 
@@ -78,7 +106,10 @@ class Conductor(Config):
         local_template = LocalTemplate(orig=template, location=destination)
         local_template.metadata['origin'] = depot.name
         click.echo(f'Adding {local_template.identifier} to registry...', nl=False)
-        self.local_templates.add(local_template)
+        if depot.name == BETA_NAME: # check for beta
+            self.beta_local_templates.add(local_template)
+        else:
+            self.local_templates.add(local_template)
         self.save()
         if isinstance(template, ExternalTemplate) and template.directory == destination:
             template.delete()
@@ -86,10 +117,16 @@ class Conductor(Config):
         return local_template
 
     def purge_template(self, template: LocalTemplate):
-        if template not in self.local_templates:
-            logger(__name__).info(f"{template.identifier} was not in the Conductor's local templates cache.")
+        if template.metadata['origin'] == BETA_NAME:
+            if template not in self.beta_local_templates:
+                logger(__name__).info(f"{template.identifier} was not in the Conductor's local beta templates cache.")
+            else:
+                self.beta_local_templates.remove(template)
         else:
-            self.local_templates.remove(template)
+            if template not in self.local_templates:
+                logger(__name__).info(f"{template.identifier} was not in the Conductor's local templates cache.")
+            else:
+                self.local_templates.remove(template)
 
         if os.path.abspath(template.location).startswith(
                 os.path.abspath(os.path.join(self.directory, 'templates'))) \
@@ -102,38 +139,45 @@ class Conductor(Config):
                           unique: bool = True, **kwargs) -> List[BaseTemplate]:
         results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
+        self.is_beta = kwargs.get('beta', False)
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
             query = identifier
         if allow_offline:
-            offline_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))
-            
+            if self.is_beta:
+                offline_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.beta_local_templates))
+            else:
+                offline_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))
+
             if len(offline_results) == 0 and kernel_version and list(filter(lambda t: t.satisfies(query, kernel_version=None), self.local_templates)):
                 raise dont_send(
                     InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}'))
-            
+
             if unique:
                 results.update(offline_results)
             else:
                 results.extend(offline_results)
         if allow_online:
             for depot in self.depots.values():
-                remote_templates = depot.get_remote_templates(force_check=force_refresh, **kwargs)
-                online_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
-                                        remote_templates))
-             
-                if len(online_results) == 0 and kernel_version and list(filter(lambda t: t.satisfies(query, kernel_version=None),
-                                        remote_templates)):
-                    raise dont_send(
-                        InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}'))
-                
-                if unique:
-                    results.update(online_results)
-                else:
-                    results.extend(online_results)
+                # beta depot will only be accessed when the --beta flag is true
+                if depot.name != BETA_NAME or (depot.name == BETA_NAME and self.is_beta):
+                    remote_templates = depot.get_remote_templates(force_check=force_refresh, **kwargs)
+                    online_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
+                                            remote_templates))
+
+                    if len(online_results) == 0 and kernel_version and list(filter(lambda t: t.satisfies(query, kernel_version=None),
+                                            remote_templates)):
+                        raise dont_send(
+                            InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}'))
+
+                    if unique:
+                        results.update(online_results)
+                    else:
+                        results.extend(online_results)
             logger(__name__).debug('Saving Conductor config after checking for remote updates')
             self.save()  # Save self since there may have been some updates from the depots
+            
         return list(results)
 
     def resolve_template(self, identifier: Union[str, BaseTemplate], **kwargs) -> Optional[BaseTemplate]:
@@ -190,6 +234,26 @@ class Conductor(Config):
             raise dont_send(
                 InvalidTemplateException(f'Could not find a template satisfying {identifier} for {project.target}'))
 
+        # warn and prompt user if upgrading to PROS 4 or downgrading to PROS 3
+        if template.name == 'kernel':
+            isProject = Project.find_project("")
+            if isProject:
+                curr_proj = Project()
+                if curr_proj.kernel:
+                    if template.version[0] == '4' and curr_proj.kernel[0] == '3':
+                        confirm = ui.confirm(f'Warning! Upgrading project to PROS 4 will cause breaking changes. '
+                                             f'For PROS 4 LLEMU/LVGL to function, the library liblvgl is required. '
+                                             f'Run \'pros conductor apply liblvgl --beta\' in the project directory. '
+                                             f'Do you still want to upgrade?')
+                        if not confirm:
+                            raise dont_send(
+                                InvalidTemplateException(f'Not upgrading'))
+                    if template.version[0] == '3' and curr_proj.kernel[0] == '4':
+                        confirm = ui.confirm(f'Warning! Downgrading project to PROS 3 will cause breaking changes. '
+                                             f'Do you still want to downgrade?')
+                        if not confirm:
+                            raise dont_send(
+                                InvalidTemplateException(f'Not downgrading'))
         if not isinstance(template, LocalTemplate):
             with ui.Notification():
                 template = self.fetch_template(self.get_depot(template.metadata['origin']), template, **kwargs)
@@ -219,14 +283,21 @@ class Conductor(Config):
     def remove_template(project: Project, identifier: Union[str, BaseTemplate], remove_user: bool = True,
                         remove_empty_directories: bool = True):
         ui.logger(__name__).debug(f'Uninstalling templates matching {identifier}')
+        if not project.resolve_template(identifier):
+            ui.echo(f"{identifier} is not an applicable template")
         for template in project.resolve_template(identifier):
             ui.echo(f'Uninstalling {template.identifier}')
             project.remove_template(template, remove_user=remove_user,
                                     remove_empty_directories=remove_empty_directories)
 
     def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
+        self.is_beta = kwargs.get('beta', False)
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
             raise dont_send(ValueError('Will not create a project in user home directory'))
+        for char in str(Path(path)):
+            if char in ['?', '<', '>', '*', '|', '^', '#', '%', '&', '$', '+', '!', '`', '\'', '=',
+                        '@', '\'', '{', '}', '[', ']', '(', ')', '~'] or ord(char) > 127:
+                raise dont_send(ValueError(f'Invalid character found in directory name: \'{char}\''))
         proj = Project(path=path, create=True)
         if 'target' in kwargs:
             proj.target = kwargs['target']
@@ -241,12 +312,23 @@ class Conductor(Config):
         proj.save()
 
         if not no_default_libs:
-            for library in self.default_libraries[proj.target]:
-                try:
-                    # remove kernel version so that latest template satisfying query is correctly selected
-                    if 'version' in kwargs:
-                        kwargs.pop('version')
-                    self.apply_template(proj, library, **kwargs)
-                except Exception as e:
-                    logger(__name__).exception(e)
+            if self.is_beta:
+                #libraries = self.beta_libraries if self.is_beta else self.default_libraries
+                for library in self.beta_libraries[proj.target]:
+                    try:
+                        # remove kernel version so that latest template satisfying query is correctly selected
+                        if 'version' in kwargs:
+                            kwargs.pop('version')
+                        self.apply_template(proj, library, **kwargs)
+                    except Exception as e:
+                        logger(__name__).exception(e)
+            else:
+                for library in self.default_libraries[proj.target]:
+                    try:
+                        # remove kernel version so that latest template satisfying query is correctly selected
+                        if 'version' in kwargs:
+                            kwargs.pop('version')
+                        self.apply_template(proj, library, **kwargs)
+                    except Exception as e:
+                        logger(__name__).exception(e)
         return proj
