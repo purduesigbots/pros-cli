@@ -146,9 +146,14 @@ class Conductor(Config):
             query = identifier
         if allow_offline:
             if self.is_beta:
-                offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.beta_local_templates)
+                offline_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.beta_local_templates))
             else:
-                offline_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates)
+                offline_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))
+
+            if len(offline_results) == 0 and kernel_version and list(filter(lambda t: t.satisfies(query, kernel_version=None), self.local_templates)):
+                raise dont_send(
+                    InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}'))
+
             if unique:
                 results.update(offline_results)
             else:
@@ -157,8 +162,15 @@ class Conductor(Config):
             for depot in self.depots.values():
                 # beta depot will only be accessed when the --beta flag is true
                 if depot.name != BETA_NAME or (depot.name == BETA_NAME and self.is_beta):
-                    online_results = filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
-                                        depot.get_remote_templates(force_check=force_refresh, **kwargs))
+                    remote_templates = depot.get_remote_templates(force_check=force_refresh, **kwargs)
+                    online_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
+                                            remote_templates))
+
+                    if len(online_results) == 0 and kernel_version and list(filter(lambda t: t.satisfies(query, kernel_version=None),
+                                            remote_templates)):
+                        raise dont_send(
+                            InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}'))
+
                     if unique:
                         results.update(online_results)
                     else:
