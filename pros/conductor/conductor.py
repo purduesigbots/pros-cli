@@ -301,7 +301,6 @@ class Conductor(Config):
 
     def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
         self.use_early_access = kwargs.get('early_access', False) or self.use_early_access
-
         if not self.use_early_access and self.warn_early_access:
             ui.echo(f"PROS 4 is now in early access. "
                     f"If you would like to use it, use the --early-access flag.")
