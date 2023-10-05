@@ -17,7 +17,7 @@ from .templates import BaseTemplate, ExternalTemplate, LocalTemplate, Template
 
 MAINLINE_NAME = 'pros-mainline'
 MAINLINE_URL = 'https://pros.cs.purdue.edu/v5/_static/releases/pros-mainline.json'
-EARLY_ACCESS_NAME = 'kernel-4-mainline'
+EARLY_ACCESS_NAME = 'kernel-early-access-mainline'
 EARLY_ACCESS_URL = 'https://pros.cs.purdue.edu/v5/_static/beta/beta-pros-mainline.json'
 
 """
@@ -49,7 +49,7 @@ class Conductor(Config):
                 self.depots[MAINLINE_NAME].location != MAINLINE_URL:
             self.depots[MAINLINE_NAME] = HttpDepot(MAINLINE_NAME, MAINLINE_URL)
             needs_saving = True
-        # add PROS 4 depot as another remote depot
+        # add early access depot as another remote depot
         if EARLY_ACCESS_NAME not in self.depots or \
                 not isinstance(self.depots[EARLY_ACCESS_NAME], HttpDepot) or \
                 self.depots[EARLY_ACCESS_NAME].location != EARLY_ACCESS_URL:
@@ -107,7 +107,7 @@ class Conductor(Config):
         local_template = LocalTemplate(orig=template, location=destination)
         local_template.metadata['origin'] = depot.name
         click.echo(f'Adding {local_template.identifier} to registry...', nl=False)
-        if depot.name == EARLY_ACCESS_NAME: # check for PROS 4
+        if depot.name == EARLY_ACCESS_NAME: # check for early access
             self.early_access_local_templates.add(local_template)
         else:
             self.local_templates.add(local_template)
@@ -120,7 +120,7 @@ class Conductor(Config):
     def purge_template(self, template: LocalTemplate):
         if template.metadata['origin'] == EARLY_ACCESS_NAME:
             if template not in self.early_access_local_templates:
-                logger(__name__).info(f"{template.identifier} was not in the Conductor's local PROS 4 templates cache.")
+                logger(__name__).info(f"{template.identifier} was not in the Conductor's local early access templates cache.")
             else:
                 self.early_access_local_templates.remove(template)
         else:
@@ -289,7 +289,7 @@ class Conductor(Config):
     def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
         self.use_early_access = kwargs.get('early_access', False)
         if not self.use_early_access and self.warn_early_access:
-            ui.echo(f"PROS 4 is now in early access."
+            ui.echo(f"PROS 4 is now in early access. "
                     f"If you would like to use it, use the --early-access flag.")
 
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
