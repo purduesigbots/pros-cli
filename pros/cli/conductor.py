@@ -201,7 +201,7 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
 @click.option('--build-cache', is_flag=True, default=None, show_default=False,
               help='Build compile commands cache after creation. Overrides --compile-after if both are specified.')
 @click.option('--early-access', '--early', '-ea', 'early_access', '--beta', is_flag=True, default=False, show_default=True,
-              help='Create a project with a PROS v4 template')
+              help='Create a project using the PROS 4 kernel')
 @click.pass_context
 @default_options
 def new_project(ctx: click.Context, path: str, target: str, version: str,
@@ -251,7 +251,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
 @click.option('--limit', type=int, default=15,
               help='The maximum number of displayed results for each library')
 @click.option('--early-access', '--early', '-ea', '--beta', 'early_access', is_flag=True, default=False, show_default=True,
-              help='View PROS v4 templates in the listing')
+              help='View a list of early access templates')
 @template_query(required=False)
 @click.pass_context
 @default_options
