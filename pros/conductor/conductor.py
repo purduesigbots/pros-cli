@@ -140,13 +140,13 @@ class Conductor(Config):
                           unique: bool = True, **kwargs) -> List[BaseTemplate]:
         results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
-        self.use_early_access = kwargs.get('early_access', False)
+        self.use_early_access = kwargs.get('early_access', False) or self.use_early_access
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
             query = identifier
         if allow_offline:
-            if self.is_beta:
+            if self.use_early_access:
                 offline_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.early_access_local_templates))
             else:
                 offline_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))
@@ -253,7 +253,8 @@ class Conductor(Config):
                         if not confirm:
                             raise dont_send(
                                 InvalidTemplateException(f'Not downgrading'))
-            elif template.version[0] == '3' and not self.warn_early_access:
+            elif not self.use_early_access and template.version[0] == '3' and not self.warn_early_access:
+                print('SELF USE EARLY ACCESS', self.use_early_access)
                 confirm = ui.confirm(f'PROS 4 is now in early access. '
                                      f'Please use the --early-access flag if you would like to use it.\n'
                                      f'Do you still want to use PROS 3?')
@@ -300,6 +301,7 @@ class Conductor(Config):
 
     def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
         self.use_early_access = kwargs.get('early_access', False) or self.use_early_access
+
         if not self.use_early_access and self.warn_early_access:
             ui.echo(f"PROS 4 is now in early access. "
                     f"If you would like to use it, use the --early-access flag.")
