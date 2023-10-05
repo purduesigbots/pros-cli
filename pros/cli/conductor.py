@@ -7,6 +7,7 @@ from pros.cli.common import *
 from pros.conductor.templates import ExternalTemplate
 from pros.ga.analytics import analytics
 
+
 @pros_root
 def conductor_cli():
     pass
@@ -323,3 +324,46 @@ def info_project(project: c.Project, ls_upgrades):
             template["upgrades"] = sorted({t.version for t in templates}, key=lambda v: semver.Version(v), reverse=True)
 
     ui.finalize('project-report', report)
+
+@conductor.command('add-depot')
+@click.argument('name')
+@click.argument('url')
+@default_options
+def add_depot(name: str, url: str):
+    """
+    Add a depot
+
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
+    """
+    _conductor = c.Conductor()
+    _conductor.add_depot(name, url)
+
+    ui.echo(f"Added depot {name} from {url}")
+
+@conductor.command('remove-depot')
+@click.argument('name')
+@default_options
+def remove_depot(name: str):
+    """
+    Remove a depot
+
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
+    """
+    _conductor = c.Conductor()
+    _conductor.remove_depot(name)
+
+    ui.echo(f"Removed depot {name}")
+
+@conductor.command('query-depots')
+@click.option('--url', is_flag=True)
+@default_options
+def query_depots(url: bool):
+    """
+    Gets all the stored depots
+
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
+    """
+    _conductor = c.Conductor()
+    ui.echo(f"Available Depots{' (Add --url for the url)' if not url else ''}:\n")
+    ui.echo('\n'.join(_conductor.query_depots(url))+"\n")
+    
