@@ -1,10 +1,10 @@
-from os import path
 from configparser import ConfigParser
+import sys
 import uuid
 import time
 from requests_futures.sessions import FuturesSession
-import random
 from concurrent.futures import as_completed
+from pros.common.utils import get_version
 
 agent = 'pros-cli'
 
@@ -60,22 +60,24 @@ class Analytics():
         self.pendingRequests = []
 
     def send(self, action, kw={}):
-        #Send analytics to GA
+        # Send analytics to GA
         if not self.useAnalytics or self.sent:
-            #print("not sending")
             return
-        self.sent=True # Prevent Send from being called multiple times
+        
+        self.sent = True # Prevent Send from being called multiple times
         try:
-            #copy kw to prevent modifying the original
+            # Copy kw to prevent modifying the original
             kwargs = kw.copy()
             kwargs["engagement_time_msec"] = 1
+            kwargs["cli_version"] = get_version()
+            kwargs["platform"] = sys.platform
             
             for key, val in kwargs.items():
                 # checking for required value
                 if val is None:
                     kwargs[key] = "Unspecified_Default"
             key = config['analytics']['api_key']
-            url = f'https://www.google-analytics.com/mp/collect?measurement_id=G-PXK9EBVY1Y&api_secret={key}'
+            url = f'https://www.google-analytics.com/mp/collect?measurement_id=G-PXK9EBVY1Y&api_secret=DRDnqpaeTSebT7BsuGk_oA'
             payload = {
                 "client_id": f'CLI.{self.user_timestamp}',
                 "user_id": self.uID,

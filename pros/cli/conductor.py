@@ -230,7 +230,7 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
 @default_options
 def new_project(ctx: click.Context, path: str, target: str, version: str,
                 force_user: bool = False, force_system: bool = False,
-                no_default_libs: bool = False, compile_after: bool = True, build_cache: bool = None, **kwargs):
+                no_default_libs: bool = False, compile_after: bool = True, build_cache: bool = None, beta: bool = False, **kwargs):
     """
     Create a new PROS project
 
