@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: python -m pylint
+        language: system
+        types: [python]
+        args: [--rcfile=.pylintrc]
