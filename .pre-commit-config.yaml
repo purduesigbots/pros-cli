@@ -1,4 +1,17 @@
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-vcs-permalinks
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-ast
+      - id: trailing-whitespace
+      - id: requirements-txt-fixer
   - repo: local
     hooks:
       - id: pylint

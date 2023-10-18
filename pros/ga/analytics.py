@@ -53,9 +53,9 @@ class Analytics():
                 'ni': 0
             }
 
-            session = FuturesSession()          
+            session = FuturesSession()
 
-            #Send payload to GA servers 
+            #Send payload to GA servers
             future = session.post(url=url,
                              data=payload,
                              headers={'User-Agent': agent},
@@ -71,13 +71,13 @@ class Analytics():
         self.useAnalytics = value
         self.cli_config.ga['enabled'] = self.useAnalytics
         self.cli_config.save()
-    
+
     def process_requests(self):
         responses = []
         for future in as_completed(self.pendingRequests):
             try:
                 response = future.result()
-                
+
                 if not response.status_code==200:
                     print("Something went wrong while sending analytics!")
                     print(response)

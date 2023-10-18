@@ -42,7 +42,7 @@ def terminal(port: str, backend: str, **kwargs):
     may be preferred when "share" doesn't perform adequately.
 
     Note: share backend is not yet implemented.
-    """       
+    """
     analytics.send("terminal")
     from pros.serial.devices.vex.v5_user_device import V5UserDevice
     from pros.serial.terminal import Terminal
@@ -91,7 +91,7 @@ def terminal(port: str, backend: str, **kwargs):
             self.log = open(file, 'a')
         def write(self, data):
             self.terminal.write(data)
-            self.log.write(data) 
+            self.log.write(data)
         def flush(self):
             pass
         def end(self):

@@ -293,7 +293,7 @@ class Project(Config):
                     if not os.environ.get('PROS_TOOLCHAIN'):
                         ui.logger(__name__).warn("PROS toolchain not found! Please ensure the toolchain is installed correctly and your environment variables are set properly.\n")
                     ui.logger(__name__).error(f"ERROR WHILE CALLING '{make_cmd}' WITH EXCEPTION: {str(e)}\n",extra={'sentry':False})
-                    if not suppress_output: 
+                    if not suppress_output:
                         pipe.close()
                     sys.exit()
                 if not suppress_output:
