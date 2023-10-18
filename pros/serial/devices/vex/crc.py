@@ -9,7 +9,7 @@ class CRC:
 
         for i in range(256):
             crc_accumulator = i << (self._size - 8)
-            for j in range(8):
+            for _ in range(8):
                 if crc_accumulator & (1 << (self._size - 1)):
                     crc_accumulator = (crc_accumulator << 1) ^ self._polynomial
                 else:

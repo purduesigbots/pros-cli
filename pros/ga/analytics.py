@@ -62,7 +62,7 @@ class Analytics():
                              timeout=5.0)
             self.pendingRequests.append(future)
 
-        except Exception as e:
+        except Exception:
             from pros.cli.common import logger
             logger(__name__).warning("Unable to send analytics. Do you have a stable internet connection?", extra={'sentry': False})
 

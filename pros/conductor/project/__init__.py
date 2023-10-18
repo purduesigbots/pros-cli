@@ -411,7 +411,7 @@ class Project(Config):
         if os.path.isfile(path):
             path = os.path.dirname(path)
         if os.path.isdir(path):
-            for n in range(recurse_times):
+            for _ in range(recurse_times):
                 if path is not None and os.path.isdir(path):
                     files = [f for f in os.listdir(path)
                              if os.path.isfile(os.path.join(path, f)) and f.lower() == 'project.pros']

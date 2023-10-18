@@ -35,7 +35,7 @@ def get_version():
         module = pros.cli.main.__name__
         for dist in pkg_resources.working_set:
             scripts = dist.get_entry_map().get('console_scripts') or {}
-            for script_name, entry_point in iter(scripts.items()):
+            for _, entry_point in iter(scripts.items()):
                 if entry_point.module_name == module:
                     ver = dist.version
                     if ver is not None:
