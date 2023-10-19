@@ -91,6 +91,8 @@ def fetch(query: c.BaseTemplate):
               help="Force apply the template, disregarding if the template is already installed.")
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
+@click.option('--early-access', '--early', '-ea', 'early_access', '--beta', is_flag=True, default=False, show_default=True,
+              help='Create a project using the PROS 4 kernel')
 @project_option()
 @template_query(required=True)
 @default_options
@@ -140,6 +142,8 @@ def install(ctx: click.Context, **kwargs):
               help="Force apply the template, disregarding if the template is already installed.")
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
+@click.option('--early-access', '--early', '-ea', 'early_access', '--beta', is_flag=True, default=False, show_default=True,
+              help='Create a project using the PROS 4 kernel')
 @project_option()
 @template_query(required=False)
 @default_options
@@ -213,6 +217,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
     analytics.send("new-project")
+    version_source = version.lower() == 'latest'
     if version.lower() == 'latest' or not version:
         version = '>0'
     if not force_system and c.Project.find_project(path) is not None:
@@ -223,7 +228,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
         _conductor = c.Conductor()
         if target is None:
             target = _conductor.default_target
-        project = _conductor.new_project(path, target=target, version=version,
+        project = _conductor.new_project(path, target=target, version=version, version_source=version_source,
                                          force_user=force_user, force_system=force_system,
                                          no_default_libs=no_default_libs, **kwargs)
         ui.echo('New PROS Project was created:', output_machine=False)

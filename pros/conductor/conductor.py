@@ -151,10 +151,6 @@ class Conductor(Config):
             else:
                 offline_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))
 
-            if len(offline_results) == 0 and kernel_version and list(filter(lambda t: t.satisfies(query, kernel_version=None), self.local_templates)):
-                raise dont_send(
-                    InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}'))
-
             if unique:
                 results.update(offline_results)
             else:
@@ -167,17 +163,16 @@ class Conductor(Config):
                     online_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                             remote_templates))
 
-                    if len(online_results) == 0 and kernel_version and list(filter(lambda t: t.satisfies(query, kernel_version=None),
-                                            remote_templates)):
-                        raise dont_send(
-                            InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}'))
-
                     if unique:
                         results.update(online_results)
                     else:
                         results.extend(online_results)
             logger(__name__).debug('Saving Conductor config after checking for remote updates')
             self.save()  # Save self since there may have been some updates from the depots
+        
+        if len(results) == 0:
+            raise dont_send(
+                        InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}'))
             
         return list(results)
 
@@ -209,7 +204,7 @@ class Conductor(Config):
             if len(local_templates) > 1:
                 # This should never happen! Conductor state must be invalid
                 raise Exception(f'Multiple local templates satisfy {query.identifier}!')
-            return [t for t in templates if isinstance(t, LocalTemplate)][0]
+            return local_templates[0]
 
         # prefer pros-mainline template second
         mainline_templates = [t for t in templates if t.metadata['origin'] == 'pros-mainline']
@@ -281,11 +276,13 @@ class Conductor(Config):
                                    force_user=kwargs.pop('force_user', False),
                                    remove_empty_directories=kwargs.pop('remove_empty_directories', False))
             ui.finalize('apply', f'Finished applying {template.identifier} to {project.location}')
-        else:
+        elif valid_action != TemplateAction.AlreadyInstalled:
             raise dont_send(
                 InvalidTemplateException(f'Could not install {template.identifier} because it is {valid_action.name},'
                                          f' and that is not allowed.', reason=valid_action)
             )
+        else:
+            ui.finalize('apply', f'{template.identifier} is already installed in {project.location}')
 
     @staticmethod
     def remove_template(project: Project, identifier: Union[str, BaseTemplate], remove_user: bool = True,
@@ -300,11 +297,14 @@ class Conductor(Config):
 
     def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
         self.use_early_access = kwargs.get('early_access', False) or self.use_early_access
-        if not self.use_early_access and self.warn_early_access:
-            ui.echo(f"PROS 4 is now in early access. "
-                    f"If you would like to use it, use the --early-access flag.")
+        if kwargs["version_source"]: # If true, then the user has not specified a version
+            if not self.use_early_access and self.warn_early_access:
+                ui.echo(f"PROS 4 is now in early access. "
+                        f"If you would like to use it, use the --early-access flag.")
+            elif self.use_early_access:
+                ui.echo(f'Early access is enabled. Using PROS 4.')
         elif self.use_early_access:
-            ui.echo(f'Early access is enabled. Using PROS 4.')
+            ui.echo(f'Early access is enabled.')
 
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
             raise dont_send(ValueError('Will not create a project in user home directory'))
