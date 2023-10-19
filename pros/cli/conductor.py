@@ -115,7 +115,7 @@ def apply(project: c.Project, query: c.BaseTemplate, **kwargs):
     name_version = query.identifier
     if os.path.exists(query.identifier):
         name_version = os.path.basename(query.identifier)
-    analytics.send("apply_template", {'template': name_version.replace("@", "_"), "beta": beta, "upgrade_ok": upgrade_ok, "install_ok": install_ok})
+    analytics.send("apply_template", {'template': name_version.replace("@", "_"), "beta": kwargs.get('beta'), "upgrade_ok": kwargs.get('upgrade_ok'), "install_ok": kwargs.get('install_ok')})
     return c.Conductor().apply_template(project, identifier=query, **kwargs)
 
 
@@ -172,7 +172,8 @@ def upgrade(ctx: click.Context, project: c.Project, query: c.BaseTemplate, **kwa
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
     templatename = query.name if query.name else "All"
-    analytics.send("upgrade_template", {"template_name": templatename, "beta": beta, "download_ok": download_ok, "install_ok": install_ok})
+    print(kwargs)
+    analytics.send("upgrade_template", {"template_name": templatename, "beta": kwargs.get('beta'), "download_ok": kwargs.get('download_ok'), "install_ok": kwargs.get('install_ok')})
     if not query.name:
         for template in project.templates.keys():
             click.secho(f'Upgrading {template}', color='yellow')

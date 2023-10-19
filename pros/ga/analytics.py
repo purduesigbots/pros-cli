@@ -76,7 +76,10 @@ class Analytics():
                 # checking for required value
                 if val is None:
                     kwargs[key] = "Unspecified_Default"
-            key = config['analytics']['api_key']
+            
+            # Hardcoding api secret for now
+            # key = config['analytics']['api_key']
+            
             url = f'https://www.google-analytics.com/mp/collect?measurement_id=G-PXK9EBVY1Y&api_secret=DRDnqpaeTSebT7BsuGk_oA'
             payload = {
                 "client_id": f'CLI.{self.user_timestamp}',
