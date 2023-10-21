@@ -17,7 +17,15 @@ def upgrade(force_check, no_install):
     """
     Check for updates to the PROS CLI
     """
+
     analytics.send("upgrade", {"force_check": force_check, "no_install": no_install})
+    
+    with ui.Notification():
+        ui.echo('The "pros upgrade" command is currently non-functioning. Did you mean to run "pros c upgrade"?', color='yellow')
+        
+    return # Dead code below
+    
+
     from pros.upgrade import UpgradeManager
     manager = UpgradeManager()
     manifest = manager.get_manifest(force_check)
