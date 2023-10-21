@@ -162,6 +162,7 @@ def rm_program(slot: int, port: str, vid: int):
     """
     Remove a program from the flash filesystem
     """
+    analytics.send("rm_program")
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
     port = resolve_v5_port(port, 'system')[0]
