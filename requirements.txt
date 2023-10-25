@@ -4,7 +4,9 @@ cobs
 colorama
 jsonpickle
 observable
+pre-commit
 pyinstaller
+pylint
 pypng==0.0.20
 pyserial
 pyzmq
