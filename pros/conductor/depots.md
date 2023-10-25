@@ -13,7 +13,7 @@ $ pros conduct add-depot test "https://pros.cs.purdue.edu/v5/_static/beta/testin
 `pros conduct remove-depot <name-of-your-depot>`
 
 Example:
-```bash 
+```bash
 $ pros conduct remove-depot test
 > Removed depot test
 ```
@@ -28,11 +28,11 @@ Examples:
 ```bash
 $ pros conduct query-depots --url
 > Available Depots:
-> 
+>
 > kernel-beta-mainline -- https://raw.githubusercontent.com/purduesigbots/pros-mainline/master/beta/kernel-beta-mainline.json
 > pros-mainline -- https://purduesigbots.github.io/pros-mainline/pros-mainline.json
 > test -- https://pros.cs.purdue.edu/v5/_static/beta/testing-mainline.json
-> 
+>
 ```
 ```bash
 $ pros conduct query-depots
@@ -41,5 +41,5 @@ $ pros conduct query-depots
 > kernel-beta-mainline
 > pros-mainline
 > test
-> 
+>
 ```

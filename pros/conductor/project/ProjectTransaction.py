@@ -36,7 +36,6 @@ class ApplyTemplateAction(Action):
                 raise e
             else:
                 ui.logger(__name__).warning(str(e))
-        return None
 
     def describe(self, conductor: c.Conductor, project: c.Project):
         action = project.get_template_actions(conductor.resolve_template(self.template))

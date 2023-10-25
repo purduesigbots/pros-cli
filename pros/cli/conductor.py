@@ -222,7 +222,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
     if version.lower() == 'latest' or not version:
         version = '>0'
     if not force_system and c.Project.find_project(path) is not None:
-        logger(__name__).error('A project already exists in this location at ' + c.Project.find_project(path) + 
+        logger(__name__).error('A project already exists in this location at ' + c.Project.find_project(path) +
                                '! Delete it first. Are you creating a project in an existing one?', extra={'sentry': False})
         ctx.exit(-1)
     try:
@@ -311,7 +311,7 @@ def info_project(project: c.Project, ls_upgrades):
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
-    analytics.send("info-project")    
+    analytics.send("info-project")
     from pros.conductor.project import ProjectReport
     report = ProjectReport(project)
     _conductor = c.Conductor()
@@ -366,4 +366,3 @@ def query_depots(url: bool):
     _conductor = c.Conductor()
     ui.echo(f"Available Depots{' (Add --url for the url)' if not url else ''}:\n")
     ui.echo('\n'.join(_conductor.query_depots(url))+"\n")
-    

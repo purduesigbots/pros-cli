@@ -22,7 +22,7 @@ def upload_cli():
               cls=PROSDeprecated, replacement='after')
 @click.option('--run-screen/--execute', 'run_screen', default=None, help='Display run program screen on the brain after upload.',
               cls=PROSDeprecated, replacement='after')
-@click.option('-af', '--after', type=click.Choice(['run','screen','none']), default=None, help='Action to perform on the brain after upload.', 
+@click.option('-af', '--after', type=click.Choice(['run','screen','none']), default=None, help='Action to perform on the brain after upload.',
               cls=PROSOption, group='V5 Options')
 @click.option('--quirk', type=int, default=0)
 @click.option('--name', 'remote_name', type=str, default=None, required=False, help='Remote program name.',
@@ -37,9 +37,9 @@ def upload_cli():
               cls=PROSOption, group='V5 Options', hidden=True)
 @click.option('--compress-bin/--no-compress-bin', 'compress_bin', cls=PROSOption, group='V5 Options', default=True,
               help='Compress the program binary before uploading.')
-@click.option('--description', default="Made with PROS", type=str, cls=PROSOption, group='V5 Options', 
+@click.option('--description', default="Made with PROS", type=str, cls=PROSOption, group='V5 Options',
               help='Change the description displayed for the program.')
-@click.option('--name', default=None, type=str, cls=PROSOption, group='V5 Options', 
+@click.option('--name', default=None, type=str, cls=PROSOption, group='V5 Options',
               help='Change the name of the program.')
 
 @default_options
@@ -119,12 +119,12 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
             kwargs['remote_name'] = os.path.splitext(os.path.basename(path))[0]
         kwargs['remote_name'] = kwargs['remote_name'].replace('@', '_')
         kwargs['slot'] -= 1
-        
+
         action_to_kwarg = {
-            'run' : vex.V5Device.FTCompleteOptions.RUN_IMMEDIATELY, 
-            'screen' : vex.V5Device.FTCompleteOptions.RUN_SCREEN, 
+            'run' : vex.V5Device.FTCompleteOptions.RUN_IMMEDIATELY,
+            'screen' : vex.V5Device.FTCompleteOptions.RUN_SCREEN,
             'none' : vex.V5Device.FTCompleteOptions.DONT_RUN
-            }    
+            }
         after_upload_default = 'screen'
         #Determine which FTCompleteOption to assign to run_after
         if kwargs['after']==None:

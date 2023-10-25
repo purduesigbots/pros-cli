@@ -1,7 +1,7 @@
 from functools import lru_cache
 
 from pros.common import logger
-from serial.tools import list_ports as list_ports
+from serial.tools import list_ports
 
 from .base_port import BasePort, PortConnectionException, PortException
 from .direct_port import DirectPort
