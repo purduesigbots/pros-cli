@@ -130,7 +130,7 @@ class V5Device(VEXDevice, SystemDevice):
             BRAIN = 0x10
 
         class BrainFlags(IntFlag):
-            pass
+            CONNECTED = 0x02
 
         class ControllerFlags(IntFlag):
             CONNECTED = 0x02
