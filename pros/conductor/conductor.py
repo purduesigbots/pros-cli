@@ -140,7 +140,7 @@ class Conductor(Config):
                           unique: bool = True, **kwargs) -> List[BaseTemplate]:
         results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
-        self.use_early_access = kwargs.get('early_access', False) or self.use_early_access
+        self.use_early_access = [kwargs.get('early_access', False), self.use_early_access][kwargs.get('early_access', None) is None]
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
@@ -255,6 +255,7 @@ class Conductor(Config):
                 self.warn_early_access = True
                 self.save()
                 if not confirm:
+                    project.delete()
                     raise dont_send(
                         InvalidTemplateException(f'Not using PROS 3'))
         if not isinstance(template, LocalTemplate):
@@ -296,7 +297,7 @@ class Conductor(Config):
                                     remove_empty_directories=remove_empty_directories)
 
     def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
-        self.use_early_access = kwargs.get('early_access', False) or self.use_early_access
+        self.use_early_access = [kwargs.get('early_access', False), self.use_early_access][kwargs.get('early_access', None) is None]
         if kwargs["version_source"]: # If true, then the user has not specified a version
             if not self.use_early_access and self.warn_early_access:
                 ui.echo(f"PROS 4 is now in early access. "

@@ -91,7 +91,7 @@ def fetch(query: c.BaseTemplate):
               help="Force apply the template, disregarding if the template is already installed.")
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
-@click.option('--early-access', '--early', '-ea', 'early_access', '--beta', is_flag=True, default=False, show_default=True,
+@click.option('--early-access/--no-early-access', '--early/--no-early', '-ea/-nea', 'early_access', '--beta/--no-beta', default=None,
               help='Create a project using the PROS 4 kernel')
 @project_option()
 @template_query(required=True)
@@ -142,7 +142,7 @@ def install(ctx: click.Context, **kwargs):
               help="Force apply the template, disregarding if the template is already installed.")
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
-@click.option('--early-access', '--early', '-ea', 'early_access', '--beta', is_flag=True, default=False, show_default=True,
+@click.option('--early-access/--no-early-access', '--early/--no-early', '-ea/-nea', 'early_access', '--beta/--no-beta', default=None,
               help='Create a project using the PROS 4 kernel')
 @project_option()
 @template_query(required=False)
@@ -204,7 +204,7 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
               help='Compile the project after creation')
 @click.option('--build-cache', is_flag=True, default=None, show_default=False,
               help='Build compile commands cache after creation. Overrides --compile-after if both are specified.')
-@click.option('--early-access', '--early', '-ea', 'early_access', '--beta', is_flag=True, default=False, show_default=True,
+@click.option('--early-access/--no-early-access', '--early/--no-early', '-ea/-nea', 'early_access', '--beta/--no-beta', default=None,
               help='Create a project using the PROS 4 kernel')
 @click.pass_context
 @default_options
@@ -255,7 +255,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
               help='Force update all remote depots, ignoring automatic update checks')
 @click.option('--limit', type=int, default=15,
               help='The maximum number of displayed results for each library')
-@click.option('--early-access', '--early', '-ea', '--beta', 'early_access', is_flag=True, default=False, show_default=True,
+@click.option('--early-access/--no-early-access', '--early/--no-early', '-ea/-nea', 'early_access', '--beta/--no-beta', default=None,
               help='View a list of early access templates')
 @template_query(required=False)
 @click.pass_context
