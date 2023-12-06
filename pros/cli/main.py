@@ -7,6 +7,7 @@ import os.path
 import pros.common.sentry
 
 import click
+import ctypes
 import sys
 
 import pros.common.ui as ui
@@ -26,6 +27,10 @@ import pros.cli.v5_utils
 import pros.cli.misc_commands
 import pros.cli.interactive
 import pros.cli.user_script
+
+if sys.platform == 'win32':
+    kernel32 = ctypes.windll.kernel32
+    kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
 
 root_sources = [
     'build',
