@@ -171,7 +171,7 @@ class Conductor(Config):
             logger(__name__).debug('Saving Conductor config after checking for remote updates')
             self.save()  # Save self since there may have been some updates from the depots
         
-        if len(results) == 0:
+        if len(results) == 0 and (kernel_version.split('.')[0] == '3' and not self.use_early_access):
             raise dont_send(
                         InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}'))
             
@@ -252,13 +252,16 @@ class Conductor(Config):
             elif not self.use_early_access and template.version[0] == '3' and not self.warn_early_access:
                 confirm = ui.confirm(f'PROS 4 is now in early access. '
                                      f'Please use the --early-access flag if you would like to use it.\n'
-                                     f'Do you still want to use PROS 3?')
+                                     f'Do you want to use PROS 4 instead?')
                 self.warn_early_access = True
+                if confirm: # use pros 4
+                    self.use_early_access = True
+                    kwargs['version'] = '>=0'
+                    self.save()
+                    # Recall the function with early access enabled
+                    return self.apply_template(project, identifier, **kwargs)
+                    
                 self.save()
-                if not confirm:
-                    project.delete()
-                    raise dont_send(
-                        InvalidTemplateException(f'Not using PROS 3'))
         if not isinstance(template, LocalTemplate):
             with ui.Notification():
                 template = self.fetch_template(self.get_depot(template.metadata['origin']), template, **kwargs)
