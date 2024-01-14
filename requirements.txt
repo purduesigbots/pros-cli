@@ -14,3 +14,4 @@ scan-build==2.0.13
 sentry-sdk
 observable
 pypng==0.0.20
+pyinstaller
