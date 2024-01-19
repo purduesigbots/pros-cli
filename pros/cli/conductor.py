@@ -237,7 +237,10 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
         if compile_after or build_cache:
             with ui.Notification():
                 ui.echo('Building project...')
-                ctx.exit(project.compile([], scan_build=build_cache))
+                exit_code = project.compile([], scan_build=build_cache)
+                if exit_code != 0:
+                    logger(__name__).error(f'Failed to make project: Exit Code {exit_code}', extra={'sentry': False})
+                    raise click.ClickException('Failed to build')
 
     except Exception as e:
         pros.common.logger(__name__).exception(e)
