@@ -1,8 +1,12 @@
 name: Build PROS CLI
 
 on:
+  # make github actions run on every push and every tag
   push:
-  pull_request:
+    tags:
+      - '*'
+    branches:
+      - '**'
 
 jobs:
   update_build_number:
@@ -19,7 +23,8 @@ jobs:
               git describe --tags
               git clean -f
               python3 version.py
-              echo "::set-output name=test::$(cat version)"
+              echo "test=$(cat version)" >> $GITHUB_OUTPUT
+        if: github.ref_type != 'tag'
 
   build:
     needs: update_build_number
@@ -64,7 +69,7 @@ jobs:
       
     - name: Run Pyinstaller
       run: |
-            python3 version.py
+            # python3 version.py
             pyinstaller pros.spec
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-cc
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-c++
@@ -75,7 +80,7 @@ jobs:
             pip3 uninstall -y charset_normalizer
             git clone https://github.com/Ousret/charset_normalizer.git
             pip3 install -e ./charset_normalizer
-            python3 version.py
+            # python3 version.py
             pyinstaller pros-macos.spec
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-cc --target-arch=universal2
             pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-c++ --target-arch=universal2
@@ -93,3 +98,10 @@ jobs:
       with:
         name: ${{ matrix.os }}-${{needs.update_build_number.outputs.output1}}
         path: dist/*
+      if: matrix.os != 'macos-latest'
+    - name: Upload Artifact (Tagged Version Naming)
+      uses: actions/upload-artifact@v3.1.0
+      with:
+        name: ${{ matrix.os }}-${{github.ref_name}}
+        path: dist/*
+      if: github.ref_type == 'tag'
