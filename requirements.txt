@@ -1,13 +1,5 @@
-cachetools
-click>=6,<7
-cobs
-colorama
-jsonpickle
-observable
-pre-commit
-pyinstaller
-pylint
-pypng==0.0.20
+click>=8
+rich-click
 pyserial
 pyzmq
 requests
@@ -15,4 +7,6 @@ requests-futures
 scan-build==2.0.13
 semantic_version
 sentry-sdk
-tabulate
+observable
+pypng==0.0.20
+pyinstaller

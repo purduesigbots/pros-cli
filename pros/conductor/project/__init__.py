@@ -126,7 +126,7 @@ class Project(Config):
         deprecated_user_files = installed_user_files.intersection(self.all_files) - set(template.user_files)
         if any(deprecated_user_files):
             if force_user or confirm(f'The following user files have been deprecated: {deprecated_user_files}. '
-                                     f'Do you want to remove them?'):
+                                     f'Do you want to update them?'):
                 transaction.extend_rm(deprecated_user_files)
             else:
                 logger(__name__).warning(f'Deprecated user files may cause weird quirks. See migration guidelines from '
