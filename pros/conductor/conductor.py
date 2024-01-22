@@ -170,11 +170,11 @@ class Conductor(Config):
                         results.extend(online_results)
             logger(__name__).debug('Saving Conductor config after checking for remote updates')
             self.save()  # Save self since there may have been some updates from the depots
-        
+
         if len(results) == 0 and (kernel_version.split('.')[0] == '3' and not self.use_early_access):
             raise dont_send(
                         InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}'))
-            
+
         return list(results)
 
     def resolve_template(self, identifier: Union[str, BaseTemplate], **kwargs) -> Optional[BaseTemplate]:
@@ -260,7 +260,7 @@ class Conductor(Config):
                     self.save()
                     # Recall the function with early access enabled
                     return self.apply_template(project, identifier, **kwargs)
-                    
+
                 self.save()
         if not isinstance(template, LocalTemplate):
             with ui.Notification():
