@@ -1,4 +1,8 @@
+cachetools
 click>=8
+cobs
+colorama
+jsonpickle
 observable
 pre-commit
 pyinstaller
@@ -12,3 +16,4 @@ rich-click
 scan-build==2.0.13
 semantic_version
 sentry-sdk
+tabulate
