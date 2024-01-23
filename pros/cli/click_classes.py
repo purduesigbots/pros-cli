@@ -1,13 +1,14 @@
 from collections import defaultdict
 from typing import *
 
+from rich_click import RichCommand
 import click.decorators
 from click import ClickException
 from pros.conductor.project import Project as p
 from pros.common.utils import get_version
 
 
-class PROSFormatted(click.BaseCommand):
+class PROSFormatted(RichCommand):
     """
     Common format functions used in the PROS derived classes. Derived classes mix and match which functions are needed
     """
