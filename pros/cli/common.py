@@ -244,6 +244,7 @@ def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Tupl
     is_joystick = False
     if not port:
         ports = find_v5_ports(type)
+        logger(__name__).debug('Ports: {}'.format(';'.join([str(p.__dict__) for p in ports])))
         if len(ports) == 0:
             if not quiet:
                 logger(__name__).error('No {0} ports were found! If you think you have a {0} plugged in, '
@@ -252,8 +253,10 @@ def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Tupl
             return None, False
         if len(ports) > 1:
             if not quiet:
-                port = click.prompt('Multiple {} ports were found. Please choose one: '.format('v5'),
+                port = click.prompt('Multiple {} ports were found. Please choose one: [{}]'
+                                    .format('v5', '|'.join([p.device for p in ports])),
                                     default=ports[0].device,
+                                    show_default=False,
                                     type=click.Choice([p.device for p in ports]))
                 assert port in [p.device for p in ports]
             else:
