@@ -368,4 +368,27 @@ def query_depots(url: bool):
     _conductor = c.Conductor()
     ui.echo(f"Available Depots{' (Add --url for the url)' if not url else ''}:\n")
     ui.echo('\n'.join(_conductor.query_depots(url))+"\n")
+
+
+@conductor.command('reset')
+@click.option('--force', is_flag=True, default=False, help='Force reset')
+@default_options
+def reset(force: bool):
+    """
+    Reset the conductor
+
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
+    """
+
+    if not force:
+        if not ui.confirm("This will remove all depots and templates. Are you sure you want to continue?"):
+            ui.echo("Aborting")
+            return
+        
+    # Delete conductor.pros
+    file = os.path.join(click.get_app_dir('PROS'), 'conductor.pros')
+    if os.path.exists(file):
+        os.remove(file)
+
+    ui.echo("Reset conductor")
     
