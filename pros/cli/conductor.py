@@ -375,7 +375,7 @@ def query_depots(url: bool):
 @default_options
 def reset(force: bool):
     """
-    Reset the conductor
+    Reset conductor.pros
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
@@ -390,5 +390,5 @@ def reset(force: bool):
     if os.path.exists(file):
         os.remove(file)
 
-    ui.echo("Reset conductor")
+    ui.echo("Conductor was reset")
     
