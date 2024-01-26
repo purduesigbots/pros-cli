@@ -147,10 +147,12 @@ class Conductor(Config):
         else:
             query = identifier
         if allow_offline:
+            offline_results = list()
+
             if self.use_early_access:
-                offline_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.early_access_local_templates))
-            else:
-                offline_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))
+                offline_results.extend(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.early_access_local_templates))
+
+            offline_results.extend(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))
 
             if unique:
                 results.update(offline_results)
