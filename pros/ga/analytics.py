@@ -30,20 +30,22 @@ class Analytics():
 
             '''
 
-            print("PROS CLI collects analytics while in use in order to better understand how people use PROS and improve this software. The data collected is as follows:\n    1) Commands being run\n    2) Non identifying command arguments\n    3) Granular location data (through google analytics).")
+            print("PROS CLI collects analytics while in use in order to better understand how people use PROS and improve this software. The data collected is as follows:\n    1) Commands being run\n    2) Non identifying command arguments.")
+            print("The scope of collected data may be expanded in the future. To see what data is actively being collected, run the command `pros --show-analytics`")
             print("We do not collect any personal information, or specifics of your projects, file paths, etc.")
             print("You may opt out of analytics at any time by running `pros --use-analytics False`, or may opt out for a single command by adding the `--no-analytics` flag.")
             print("For questions or concerns, please contact us at pros_development@cs.purdue.edu\n")
-            response = None
+            response = input("Do you choose to opt in to analytics? (y/N): ").lower()
             while response not in ["y", "n"]:
+                print("Invalid response. Please enter y or n.")
                 response = input("Do you choose to opt in to analytics? (y/N): ").lower()
 
             if response == "y":
                 response = "True"
-                print("Thank you for opting in to analytics! You may opt out at any time by running `pros --use-analytics False`, or for a specific command by adding the `--no-analytics` flag.")
+                print("Thank you for opting in to analytics! You may opt out at any time by running the command `pros --use-analytics False`, or for a specific command by adding the `--no-analytics` flag.")
             else:
                 response = "False"
-                print("You have opted out of analytics. You may opt back in at any time by running `pros --use-analytics True`.")
+                print("You have opted out of analytics. You may opt back in at any time by running the command `pros --use-analytics True`.")
             # Default values for GA
             # generate a unix timestamp
             self.cli_config.ga = {
