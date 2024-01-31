@@ -47,13 +47,13 @@ class Conductor(Config):
         if MAINLINE_NAME not in self.depots or \
                 not isinstance(self.depots[MAINLINE_NAME], HttpDepot) or \
                 self.depots[MAINLINE_NAME].location != MAINLINE_URL:
-            self.depots[MAINLINE_NAME] = HttpDepot(MAINLINE_NAME, MAINLINE_URL)
+            self.depots[MAINLINE_NAME] = HttpDepot(MAINLINE_NAME, MAINLINE_URL, beta=False)
             needs_saving = True
         # add early access depot as another remote depot
         if EARLY_ACCESS_NAME not in self.depots or \
                 not isinstance(self.depots[EARLY_ACCESS_NAME], HttpDepot) or \
                 self.depots[EARLY_ACCESS_NAME].location != EARLY_ACCESS_URL:
-            self.depots[EARLY_ACCESS_NAME] = HttpDepot(EARLY_ACCESS_NAME, EARLY_ACCESS_URL)
+            self.depots[EARLY_ACCESS_NAME] = HttpDepot(EARLY_ACCESS_NAME, EARLY_ACCESS_URL, beta=True)
             needs_saving = True
         if self.default_target is None:
             self.default_target = 'v5'
@@ -107,7 +107,7 @@ class Conductor(Config):
         local_template = LocalTemplate(orig=template, location=destination)
         local_template.metadata['origin'] = depot.name
         click.echo(f'Adding {local_template.identifier} to registry...', nl=False)
-        if depot.name == EARLY_ACCESS_NAME: # check for early access
+        if depot.config.get("beta",False): # check for early access
             self.early_access_local_templates.add(local_template)
         else:
             self.local_templates.add(local_template)
@@ -118,16 +118,13 @@ class Conductor(Config):
         return local_template
 
     def purge_template(self, template: LocalTemplate):
-        if template.metadata['origin'] == EARLY_ACCESS_NAME:
-            if template not in self.early_access_local_templates:
-                logger(__name__).info(f"{template.identifier} was not in the Conductor's local early access templates cache.")
-            else:
-                self.early_access_local_templates.remove(template)
+        if template in self.local_templates:
+            self.local_templates.remove(template)
+        elif template in self.early_access_local_templates:
+            self.early_access_local_templates.remove(template)
         else:
-            if template not in self.local_templates:
-                logger(__name__).info(f"{template.identifier} was not in the Conductor's local templates cache.")
-            else:
-                self.local_templates.remove(template)
+            logger(__name__).info(f'{template.identifier} was not in the Conductor\'s local templates cache.')
+
 
         if os.path.abspath(template.location).startswith(
                 os.path.abspath(os.path.join(self.directory, 'templates'))) \
@@ -161,7 +158,7 @@ class Conductor(Config):
         if allow_online:
             for depot in self.depots.values():
                 # EarlyAccess depot will only be accessed when the --early-access flag is true
-                if depot.name != EARLY_ACCESS_NAME or (depot.name == EARLY_ACCESS_NAME and self.use_early_access):
+                if not depot.config.get("beta", False) or (depot.config.get("beta", False) and self.use_early_access):
                     remote_templates = depot.get_remote_templates(force_check=force_refresh, **kwargs)
                     online_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                             remote_templates))
@@ -346,7 +343,7 @@ class Conductor(Config):
                     logger(__name__).exception(e)
         return proj
 
-    def add_depot(self, name: str, url: str):
+    def add_depot(self, name: str, url: str, beta: bool):
         self.depots[name] = HttpDepot(name, url)
         self.save()
 
@@ -355,4 +352,4 @@ class Conductor(Config):
         self.save()
     
     def query_depots(self, url: bool):
-        return [name + ((' -- ' + depot.location) if url else '') for name, depot in self.depots.items()]
+        return [name + ' -- ' + depot.config.get("beta", False) + ((' -- ' + depot.location) if url else '') for name, depot in self.depots.items()]
