@@ -147,10 +147,12 @@ class Conductor(Config):
         else:
             query = identifier
         if allow_offline:
+            offline_results = list()
+
             if self.use_early_access:
-                offline_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.early_access_local_templates))
-            else:
-                offline_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))
+                offline_results.extend(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.early_access_local_templates))
+
+            offline_results.extend(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))
 
             if unique:
                 results.update(offline_results)
@@ -171,7 +173,7 @@ class Conductor(Config):
             logger(__name__).debug('Saving Conductor config after checking for remote updates')
             self.save()  # Save self since there may have been some updates from the depots
         
-        if len(results) == 0 and (kernel_version.split('.')[0] == '3' and not self.use_early_access):
+        if len(results) == 0 and not self.use_early_access:
             raise dont_send(
                         InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}'))
             
