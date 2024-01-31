@@ -381,7 +381,7 @@ def reset(force: bool):
     """
 
     if not force:
-        if not ui.confirm("This will remove all depots and templates. Are you sure you want to continue?"):
+        if not ui.confirm("This will remove all depots and templates. You will be unable to create a new PROS project if you do not have internet connection. Are you sure you want to continue?"):
             ui.echo("Aborting")
             return
         
