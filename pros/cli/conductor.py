@@ -339,7 +339,7 @@ def add_depot(name: str, url: str, early_access: bool):
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
     _conductor = c.Conductor()
-    _conductor.add_depot(name, url, early_access=early_access)
+    _conductor.add_depot(name, url, beta=early_access)
 
     ui.echo(f"Added depot {name} from {url}")
 

@@ -344,7 +344,7 @@ class Conductor(Config):
         return proj
 
     def add_depot(self, name: str, url: str, beta: bool):
-        self.depots[name] = HttpDepot(name, url)
+        self.depots[name] = HttpDepot(name, url, beta=beta)
         self.save()
 
     def remove_depot(self, name: str):
@@ -352,4 +352,4 @@ class Conductor(Config):
         self.save()
     
     def query_depots(self, url: bool):
-        return [name + ' -- ' + depot.config.get("beta", False) + ((' -- ' + depot.location) if url else '') for name, depot in self.depots.items()]
+        return [('  BETA -- ' if depot.config.get("beta", False) else 'STABLE -- ') + name + ((' -- ' + depot.location) if url else '') for name, depot in self.depots.items()]
