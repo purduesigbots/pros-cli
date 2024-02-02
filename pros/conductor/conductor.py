@@ -55,6 +55,20 @@ def is_pathname_valid(pathname: str) -> bool:
                         return False
                 elif exc.errno in {errno.ENAMETOOLONG, errno.ERANGE}:
                     return False
+        
+        # Check for emojis
+        # https://stackoverflow.com/a/62898106/11177720
+        ranges = [
+            (ord(u'\U0001F300'), ord(u"\U0001FAF6")), # 127744, 129782
+            (126980, 127569),
+            (169, 174),
+            (8205, 12953)
+        ]
+        for a_char in pathname:
+            char_code = ord(a_char)
+            for range_min, range_max in ranges:
+                if range_min <= char_code <= range_max:
+                    return False
     except TypeError as exc:
         return False
     else:
