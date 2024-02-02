@@ -1,6 +1,7 @@
 from typing import *
 
 from cobs import cobs
+
 from pros.common.utils import logger
 from pros.serial.devices.stream_device import StreamDevice
 from pros.serial.ports import BasePort

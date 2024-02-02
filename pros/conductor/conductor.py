@@ -11,6 +11,7 @@ from pros.common import *
 from pros.conductor.project import TemplateAction
 from pros.conductor.project.template_resolution import InvalidTemplateException
 from pros.config import Config
+
 from .depots import Depot, HttpDepot
 from .project import Project
 from .templates import BaseTemplate, ExternalTemplate, LocalTemplate, Template

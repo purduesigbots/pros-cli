@@ -3,8 +3,9 @@ from typing import *
 import click
 
 import pros.conductor as c
-from pros.ga.analytics import analytics
 from pros.cli.common import default_options, logger, project_option, pros_root, shadow_command
+from pros.ga.analytics import analytics
+
 from .upload import upload
 
 

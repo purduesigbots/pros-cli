@@ -6,6 +6,7 @@ from click import Context, get_current_context
 from pros.common import ui
 from pros.common.ui.interactive import application, components, parameters
 from pros.conductor import Conductor
+
 from .parameters import NonExistentProjectParameter
 
 

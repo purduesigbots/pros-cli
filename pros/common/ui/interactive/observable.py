@@ -58,6 +58,7 @@ class Observable(observable.Observable):
             def bind(h):
                 def bound(*args, **kw):
                     from threading import Thread
+
                     from pros.common.utils import with_click_context
 
                     t = Thread(target=with_click_context(h), args=(*bound_args, *args), kwargs={**bound_kwargs, **kw})

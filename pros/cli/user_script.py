@@ -1,8 +1,9 @@
 import click
 
 from pros.common import ui
-from .common import default_options, pros_root
 from pros.ga.analytics import analytics
+
+from .common import default_options, pros_root
 
 
 @pros_root
@@ -18,8 +19,8 @@ def user_script(script_file):
     Run a script file with the PROS CLI package
     """
     analytics.send("user-script")
-    import os.path
     import importlib.util
+    import os.path
 
     package_name = os.path.splitext(os.path.split(script_file)[0])[0]
     package_path = os.path.abspath(script_file)

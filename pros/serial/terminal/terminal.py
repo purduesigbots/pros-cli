@@ -11,7 +11,6 @@ from pros.serial import decode_bytes_to_str
 from pros.serial.devices import StreamDevice
 from pros.serial.ports import PortConnectionException
 
-
 # This file is a modification of the miniterm implementation on pyserial
 
 
@@ -61,8 +60,8 @@ class ConsoleBase(object):
 
 
 if os.name == 'nt':  # noqa
-    import msvcrt
     import ctypes
+    import msvcrt
 
     class Out(object):
         """file-like wrapper that uses os.write"""
@@ -115,8 +114,8 @@ if os.name == 'nt':  # noqa
 
 elif os.name == 'posix':
     import atexit
-    import termios
     import select
+    import termios
 
     class Console(ConsoleBase):
         def __init__(self):

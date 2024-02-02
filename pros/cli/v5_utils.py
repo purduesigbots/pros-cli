@@ -1,5 +1,6 @@
-from .common import *
 from pros.ga.analytics import analytics
+
+from .common import *
 
 
 @pros_root
@@ -102,8 +103,8 @@ def write_file(file, port: str, remote_file: str, **kwargs):
     Write a file to the V5.
     """
     analytics.send("write-file")
-    from pros.serial.ports import DirectPort
     from pros.serial.devices.vex import V5Device
+    from pros.serial.ports import DirectPort
 
     port = resolve_v5_port(port, 'system')[0]
     if not port:
@@ -269,10 +270,12 @@ def capture(file_name: str, port: str, force: bool = False):
     """
     Take a screen capture of the display
     """
+    import os
+
+    import png
+
     from pros.serial.devices.vex import V5Device
     from pros.serial.ports import DirectPort
-    import png
-    import os
 
     port = resolve_v5_port(port, 'system')[0]
     if not port:

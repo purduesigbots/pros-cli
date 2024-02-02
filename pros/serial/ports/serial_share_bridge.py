@@ -5,10 +5,11 @@ import time
 
 import zmq
 from cobs import cobs
+
 from pros.common.utils import *
 
-from .direct_port import DirectPort
 from .. import bytes_to_str
+from .direct_port import DirectPort
 
 
 def get_port_num(serial_port_name: str, hash: str) -> int:

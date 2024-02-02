@@ -1,6 +1,7 @@
 # setup.py for non-frozen builds
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
+
 from install_requires import install_requires as install_reqs
 
 setup(

@@ -1,10 +1,10 @@
 import gzip
 import io
+import platform
 import re
 import struct
 import time
 import typing
-import platform
 from collections import defaultdict
 from configparser import ConfigParser
 from datetime import datetime, timedelta
@@ -16,17 +16,18 @@ from typing import BinaryIO
 
 from semantic_version import Spec
 
-from pros.common import ui
 from pros.common import *
+from pros.common import ui
 from pros.common.utils import *
 from pros.conductor import Project
 from pros.serial import bytes_to_str, decode_bytes_to_str
 from pros.serial.ports import BasePort, list_all_comports
+
+from ..system_device import SystemDevice
 from .comm_error import VEXCommError
 from .crc import CRC
 from .message import Message
 from .vex_device import VEXDevice
-from ..system_device import SystemDevice
 
 int_str = Union[int, str]
 
@@ -247,8 +248,8 @@ class V5Device(VEXDevice, SystemDevice):
     def generate_cold_hash(self, project: Project, extra: dict):
         keys = {k: t.version for k, t in project.templates.items()}
         keys.update(extra)
-        from hashlib import md5
         from base64 import b64encode
+        from hashlib import md5
 
         msg = str(sorted(keys, key=lambda t: t[0])).encode('ascii')
         name = b64encode(md5(msg).digest()).rstrip(b'=').decode('ascii')

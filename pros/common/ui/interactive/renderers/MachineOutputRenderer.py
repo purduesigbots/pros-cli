@@ -6,8 +6,9 @@ import click
 
 from pros.common import ui
 from pros.common.ui.interactive.observable import Observable
-from .Renderer import Renderer
+
 from ..application import Application
+from .Renderer import Renderer
 
 current: List['MachineOutputRenderer'] = []
 

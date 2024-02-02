@@ -3,12 +3,13 @@ from datetime import datetime
 from enum import Enum
 from typing import *
 
-from pros.common import logger
 import pros.common.ui as ui
+from pros.common import logger
 from pros.config import Config
 from pros.config.cli_config import cli_config
-from .manifests import *
+
 from .instructions import UpgradeResult
+from .manifests import *
 
 
 class ReleaseChannel(Enum):
@@ -40,9 +41,10 @@ class UpgradeManager(Config):
             return self._manifest
 
         ui.echo('Fetching upgrade manifest...')
-        import requests
-        import jsonpickle
         import json
+
+        import jsonpickle
+        import requests
 
         channel_url = f'https://purduesigbots.github.io/pros-mainline/{self.release_channel.value}'
         self._manifest = None

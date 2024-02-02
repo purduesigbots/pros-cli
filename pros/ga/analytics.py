@@ -1,10 +1,11 @@
 import json
-from os import path
+import random
 import uuid
+from concurrent.futures import as_completed
+from os import path
+
 import requests
 from requests_futures.sessions import FuturesSession
-import random
-from concurrent.futures import as_completed
 
 url = 'https://www.google-analytics.com/collect'
 agent = 'pros-cli'

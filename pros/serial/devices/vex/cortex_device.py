@@ -6,15 +6,15 @@ from pathlib import Path
 from typing import *
 
 from pros.common import ui
-from pros.common.utils import retries, logger
+from pros.common.utils import logger, retries
 from pros.conductor import Project
 from pros.serial import bytes_to_str
 from pros.serial.devices.vex import VEXCommError
 from pros.serial.devices.vex.stm32_device import STM32Device
 from pros.serial.ports import list_all_comports
 
-from .vex_device import VEXDevice
 from ..system_device import SystemDevice
+from .vex_device import VEXDevice
 
 
 def find_cortex_ports():

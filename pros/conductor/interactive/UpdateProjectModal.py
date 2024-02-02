@@ -8,6 +8,7 @@ from pros.common import ui
 from pros.common.ui.interactive import application, components, parameters
 from pros.conductor import BaseTemplate, Conductor, Project
 from pros.conductor.project.ProjectTransaction import ProjectTransaction
+
 from .components import TemplateListingComponent
 from .parameters import ExistingProjectParameter, TemplateParameter
 

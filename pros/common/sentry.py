@@ -5,8 +5,9 @@ import click
 import pros.common.ui as ui
 
 if TYPE_CHECKING:
-    from sentry_sdk import Client, Hub, Scope  # noqa: F401, flake8 issue with "if TYPE_CHECKING"
     import jsonpickle.handlers  # noqa: F401, flake8 issue, flake8 issue with "if TYPE_CHECKING"
+    from sentry_sdk import Client, Hub, Scope  # noqa: F401, flake8 issue with "if TYPE_CHECKING"
+
     from pros.config.cli_config import CliConfig  # noqa: F401, flake8 issue, flake8 issue with "if TYPE_CHECKING"
 
 cli_config: 'CliConfig' = None
@@ -76,6 +77,7 @@ def add_context(obj: object, override_handlers: bool = True, key: str = None) ->
     """
 
     import jsonpickle.handlers  # noqa: F811, flake8 issue with "if TYPE_CHECKING"
+
     from pros.conductor.templates import BaseTemplate
 
     class TemplateHandler(jsonpickle.handlers.BaseHandler):
@@ -135,6 +137,7 @@ def register(cfg: Optional['CliConfig'] = None):
         return
 
     import sentry_sdk as sentry
+
     from pros.upgrade import get_platformv2
 
     client = sentry.Client(

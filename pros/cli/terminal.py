@@ -1,17 +1,18 @@
 import os
 import signal
+import sys
 import time
 
 import click
-import sys
 
 import pros.conductor as c
 import pros.serial.devices as devices
-from pros.serial.ports import DirectPort
 from pros.common.utils import logger
-from .common import default_options, resolve_v5_port, resolve_cortex_port, pros_root
-from pros.serial.ports.v5_wireless_port import V5WirelessPort
 from pros.ga.analytics import analytics
+from pros.serial.ports import DirectPort
+from pros.serial.ports.v5_wireless_port import V5WirelessPort
+
+from .common import default_options, pros_root, resolve_cortex_port, resolve_v5_port
 
 
 @pros_root

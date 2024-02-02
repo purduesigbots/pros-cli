@@ -1,9 +1,10 @@
 import click.core
 
 from pros.common.sentry import add_tag
-from pros.ga.analytics import analytics
-from pros.common.utils import *
 from pros.common.ui import echo
+from pros.common.utils import *
+from pros.ga.analytics import analytics
+
 from .click_classes import *
 
 

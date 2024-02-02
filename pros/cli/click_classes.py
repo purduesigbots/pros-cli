@@ -1,11 +1,12 @@
 from collections import defaultdict
 from typing import *
 
-from rich_click import RichCommand
 import click.decorators
 from click import ClickException
-from pros.conductor.project import Project as p
+from rich_click import RichCommand
+
 from pros.common.utils import get_version
+from pros.conductor.project import Project as p
 
 
 class PROSFormatted(RichCommand):

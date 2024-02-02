@@ -10,9 +10,10 @@ from pros.common import *
 from pros.common.ui import EchoPipe
 from pros.conductor.project.template_resolution import TemplateAction
 from pros.config.config import Config, ConfigNotFoundException
-from .ProjectReport import ProjectReport
+
 from ..templates import BaseTemplate, LocalTemplate, Template
 from ..transaction import Transaction
+from .ProjectReport import ProjectReport
 
 
 class Project(Config):
@@ -290,12 +291,12 @@ class Project(Config):
         suppress_output: bool = False,
         sandbox: bool = False,
     ):
-        from libscanbuild.compilation import Compilation, CompilationDatabase
-        from libscanbuild.arguments import create_intercept_parser
-        import itertools
-
-        import subprocess
         import argparse
+        import itertools
+        import subprocess
+
+        from libscanbuild.arguments import create_intercept_parser
+        from libscanbuild.compilation import Compilation, CompilationDatabase
 
         if sandbox:
             import tempfile
@@ -311,14 +312,14 @@ class Project(Config):
             :param args:    the parsed and validated command line arguments
             :return:        the exit status of build process.
             """
+            from libear import temporary_directory
             from libscanbuild.intercept import (
-                setup_environment,
-                run_build,
+                compilations,
                 exec_trace_files,
                 parse_exec_trace,
-                compilations,
+                run_build,
+                setup_environment,
             )
-            from libear import temporary_directory
 
             with temporary_directory(prefix='intercept-') as tmp_dir:
                 # run the build command

@@ -40,8 +40,8 @@ class CliConfig(Config):
         if not force and not self.needs_online_fetch(self.cached_upgrade[0]):
             return self.cached_upgrade[1]
         pros.common.logger(__name__).info('Fetching upgrade manifest...')
-        import requests
         import jsonpickle
+        import requests
 
         r = requests.get('https://purduesigbots.github.io/pros-mainline/cli-updates.json')
         pros.common.logger(__name__).debug(r)

@@ -2,6 +2,7 @@ import os.path
 from typing import *
 
 from pros.common.utils import download_file
+
 from .base_instructions import UpgradeInstruction, UpgradeResult
 
 

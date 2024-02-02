@@ -3,9 +3,9 @@ from unicodedata import name
 
 import pros.common.ui as ui
 import pros.conductor as c
+from pros.ga.analytics import analytics
 
 from .common import *
-from pros.ga.analytics import analytics
 
 
 @pros_root
@@ -238,7 +238,7 @@ def ls_usb(target):
     List plugged in VEX Devices
     """
     analytics.send("ls-usb")
-    from pros.serial.devices.vex import find_v5_ports, find_cortex_ports
+    from pros.serial.devices.vex import find_cortex_ports, find_v5_ports
 
     class PortReport(object):
         def __init__(self, header: str, ports: List[Any], machine_header: Optional[str] = None):

@@ -1,9 +1,12 @@
 import os
 from typing import *
+
 import click
+
 import pros.conductor as c
-from .common import PROSGroup, default_options, project_option, pros_root
 from pros.ga.analytics import analytics
+
+from .common import PROSGroup, default_options, project_option, pros_root
 
 
 @pros_root

@@ -1,7 +1,7 @@
 from typing import *
 
-from .component import Component
 from ..observable import Observable
+from .component import Component
 
 
 class Button(Component, Observable):

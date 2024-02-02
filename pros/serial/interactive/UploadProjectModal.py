@@ -119,8 +119,9 @@ class UploadProjectModal(application.Modal[None]):
             ui.logger(__name__).exception(e)
 
     def confirm(self, *args, **kwargs):
-        from pros.cli.upload import upload
         from click import get_current_context
+
+        from pros.cli.upload import upload
 
         kwargs = {'path': None, 'project': self.project, 'port': self.port.value}
         savable_kwargs = {}

@@ -7,8 +7,9 @@ import jsonpickle
 import pros.common.ui as ui
 from pros.common import logger
 from pros.common.utils import download_file
-from .depot import Depot
+
 from ..templates import BaseTemplate, ExternalTemplate
+from .depot import Depot
 
 
 class HttpDepot(Depot):

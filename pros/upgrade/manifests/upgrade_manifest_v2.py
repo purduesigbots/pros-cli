@@ -3,8 +3,9 @@ from enum import Enum
 from typing import *
 
 from pros.common import logger
+
+from ..instructions import NothingInstruction, UpgradeInstruction, UpgradeResult
 from .upgrade_manifest_v1 import UpgradeManifestV1
-from ..instructions import UpgradeInstruction, UpgradeResult, NothingInstruction
 
 
 class PlatformsV2(Enum):

@@ -1,15 +1,21 @@
-import logging
-
-# Setup analytics first because it is used by other files
-
-import os.path
-
-import pros.common.sentry
-
-import click
 import ctypes
+import logging
+import os.path
 import sys
 
+import click
+import jsonpickle
+
+import pros.cli.build
+import pros.cli.conductor
+import pros.cli.conductor_utils
+import pros.cli.interactive
+import pros.cli.misc_commands
+import pros.cli.terminal
+import pros.cli.upload
+import pros.cli.user_script
+import pros.cli.v5_utils
+import pros.common.sentry
 import pros.common.ui as ui
 import pros.common.ui.log
 from pros.cli.click_classes import *
@@ -17,16 +23,8 @@ from pros.cli.common import default_options, root_commands
 from pros.common.utils import get_version, logger
 from pros.ga.analytics import analytics
 
-import jsonpickle
-import pros.cli.build
-import pros.cli.conductor
-import pros.cli.conductor_utils
-import pros.cli.terminal
-import pros.cli.upload
-import pros.cli.v5_utils
-import pros.cli.misc_commands
-import pros.cli.interactive
-import pros.cli.user_script
+# Setup analytics first because it is used by other files
+
 
 if sys.platform == 'win32':
     kernel32 = ctypes.windll.kernel32

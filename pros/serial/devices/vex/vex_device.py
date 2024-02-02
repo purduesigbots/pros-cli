@@ -5,9 +5,10 @@ from typing import *
 from pros.common import *
 from pros.serial import bytes_to_str
 from pros.serial.ports import BasePort
+
+from ..generic_device import GenericDevice
 from . import comm_error
 from .message import Message
-from ..generic_device import GenericDevice
 
 
 def debug(msg):

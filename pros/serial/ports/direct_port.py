@@ -3,8 +3,9 @@ from typing import *
 
 import serial
 
-from pros.common import logger, dont_send
+from pros.common import dont_send, logger
 from pros.serial.ports.exceptions import ConnectionRefusedException, PortNotFoundException
+
 from .base_port import BasePort, PortConnectionException
 
 

@@ -112,11 +112,12 @@ def download_file(url: str, ext: Optional[str] = None, desc: Optional[str] = Non
     :param desc: Description of file being downloaded (for progressbar)
     :return: The path of the downloaded file, or None if there was an error
     """
-    import requests
-    from pros.common.ui import progressbar
-
     # from rfc6266_parser import parse_requests_response
     import re
+
+    import requests
+
+    from pros.common.ui import progressbar
 
     response = requests.get(url, stream=True)
     if response.status_code == 200:

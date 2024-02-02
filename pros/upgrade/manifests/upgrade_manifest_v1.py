@@ -1,6 +1,7 @@
 from semantic_version import Version
 
 from pros.common.utils import get_version, logger
+
 from ..instructions import UpgradeResult
 
 

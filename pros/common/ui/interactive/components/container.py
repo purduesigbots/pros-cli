@@ -1,6 +1,7 @@
 from typing import *
 
 from pros.common.ui.interactive.parameters import BooleanParameter
+
 from .component import Component
 
 

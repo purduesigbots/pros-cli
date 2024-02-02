@@ -4,10 +4,11 @@ import zipfile
 
 import click
 
-from pros.config import ConfigNotFoundException
-from .depot import Depot
-from ..templates import BaseTemplate, Template, ExternalTemplate
 from pros.common.utils import logger
+from pros.config import ConfigNotFoundException
+
+from ..templates import BaseTemplate, ExternalTemplate, Template
+from .depot import Depot
 
 
 class LocalDepot(Depot):
