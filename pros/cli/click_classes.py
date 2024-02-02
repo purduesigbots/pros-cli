@@ -22,7 +22,7 @@ class PROSFormatted(RichCommand):
         """Extra format methods for multi methods that adds all the commands
         after the options.
         """
-        if not hasattr(self, 'list_commands'):
+        if not hasattr(self, "list_commands"):
             return
         rows = []
         for subcommand in self.list_commands(ctx):
@@ -30,14 +30,14 @@ class PROSFormatted(RichCommand):
             # What is this, the tool lied about a command.  Ignore it
             if cmd is None:
                 continue
-            if hasattr(cmd, 'hidden') and cmd.hidden:
+            if hasattr(cmd, "hidden") and cmd.hidden:
                 continue
 
-            help = cmd.short_help or ''
+            help = cmd.short_help or ""
             rows.append((subcommand, help))
 
         if rows:
-            with formatter.section('Commands'):
+            with formatter.section("Commands"):
                 formatter.write_dl(rows)
 
     def format_options(self, ctx, formatter):
@@ -46,15 +46,15 @@ class PROSFormatted(RichCommand):
         for param in self.get_params(ctx):
             rv = param.get_help_record(ctx)
             if rv is not None:
-                if hasattr(param, 'group'):
+                if hasattr(param, "group"):
                     opts[param.group].append(rv)
                 else:
-                    opts['Options'].append(rv)
+                    opts["Options"].append(rv)
 
-        if len(opts['Options']) > 0:
-            with formatter.section('Options'):
-                formatter.write_dl(opts['Options'])
-            opts.pop('Options')
+        if len(opts["Options"]) > 0:
+            with formatter.section("Options"):
+                formatter.write_dl(opts["Options"])
+            opts.pop("Options")
 
         for group, options in opts.items():
             with formatter.section(group):
@@ -79,16 +79,16 @@ class PROSOption(click.Option):
         self.group = group
 
     def get_help_record(self, ctx):
-        if hasattr(self, 'hidden') and self.hidden:
+        if hasattr(self, "hidden") and self.hidden:
             return
         return super().get_help_record(ctx)
 
 
 class PROSDeprecated(click.Option):
     def __init__(self, *args, replacement: str = None, **kwargs):
-        kwargs['help'] = "This option has been deprecated."
+        kwargs["help"] = "This option has been deprecated."
         if not replacement == None:
-            kwargs['help'] += " Its replacement is '--{}'".format(replacement)
+            kwargs["help"] += " Its replacement is '--{}'".format(replacement)
         super(PROSDeprecated, self).__init__(*args, **kwargs)
         self.group = "Deprecated"
         self.optiontype = "flag" if str(self.type) == "BOOL" else "switch"
@@ -116,7 +116,7 @@ class PROSGroup(PROSFormatted, click.Group):
             for alias in aliases:
                 self.cmd_dict[alias] = f.__name__ if len(args) == 0 else args[0]
 
-            cmd = super(PROSGroup, self).command(*args, cls=kwargs.pop('cls', PROSCommand), **kwargs)(f)
+            cmd = super(PROSGroup, self).command(*args, cls=kwargs.pop("cls", PROSCommand), **kwargs)(f)
             self.add_command(cmd)
             return cmd
 
@@ -128,7 +128,7 @@ class PROSGroup(PROSFormatted, click.Group):
         def decorator(f):
             for alias in aliases:
                 self.cmd_dict[alias] = f.__name__
-            cmd = super(PROSGroup, self).group(*args, cls=kwargs.pop('cls', PROSGroup), **kwargs)(f)
+            cmd = super(PROSGroup, self).group(*args, cls=kwargs.pop("cls", PROSGroup), **kwargs)(f)
             self.add_command(cmd)
             return cmd
 

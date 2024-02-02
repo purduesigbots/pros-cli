@@ -13,5 +13,5 @@ from .direct_port import DirectPort
 @lru_cache()
 def list_all_comports():
     ports = list_ports.comports()
-    logger(__name__).debug('Connected: {}'.format(';'.join([str(p.__dict__) for p in ports])))
+    logger(__name__).debug("Connected: {}".format(";".join([str(p.__dict__) for p in ports])))
     return ports

@@ -42,7 +42,7 @@ class RawStreamDevice(StreamDevice):
         pass
 
     def read(self) -> Tuple[bytes, bytes]:
-        return b'', self.port.read_all()
+        return b"", self.port.read_all()
 
     def write(self, data: Union[bytes, str]):
         self.port.write(data)

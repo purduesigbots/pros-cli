@@ -29,7 +29,7 @@ class VEXDevice(GenericDevice):
         Verify that a VEX device is connected. Returned payload varies by product
         :return: Payload response
         """
-        logger(__name__).debug('Sending simple 0x21 command')
+        logger(__name__).debug("Sending simple 0x21 command")
         return self._txrx_simple_packet(0x21, 0x0A)
 
     def _txrx_simple_struct(self, command: int, unpack_fmt: str, timeout: Optional[float] = None) -> Tuple:
@@ -46,11 +46,11 @@ class VEXDevice(GenericDevice):
         :return: They payload of the message, or raises and exception if there was an issue
         """
         msg = self._txrx_packet(command, timeout=timeout)
-        if msg['command'] != command:
-            raise comm_error.VEXCommError('Received command does not match sent command.', msg)
-        if len(msg['payload']) != rx_len:
+        if msg["command"] != command:
+            raise comm_error.VEXCommError("Received command does not match sent command.", msg)
+        if len(msg["payload"]) != rx_len:
             raise comm_error.VEXCommError("Received data doesn't match expected length", msg)
-        return msg['payload']
+        return msg["payload"]
 
     def _rx_packet(self, timeout: Optional[float] = None) -> Dict[str, Union[Union[int, bytes, bytearray], Any]]:
         # Optimized to read as quickly as possible w/o delay
@@ -82,18 +82,18 @@ class VEXDevice(GenericDevice):
         rx.extend(self.port.read(1))
         payload_length = rx[-1]
         if command == 0x56 and (payload_length & 0x80) == 0x80:
-            logger(__name__).debug('Found an extended message payload')
+            logger(__name__).debug("Found an extended message payload")
             rx.extend(self.port.read(1))
             payload_length = ((payload_length & 0x7F) << 8) + rx[-1]
         payload = self.port.read(payload_length)
         rx.extend(payload)
-        return {'command': command, 'payload': payload, 'raw': rx}
+        return {"command": command, "payload": payload, "raw": rx}
 
     def _tx_packet(self, command: int, tx_data: Union[Iterable, bytes, bytearray, None] = None):
         tx = self._form_simple_packet(command)
         if tx_data is not None:
             tx = bytes([*tx, *tx_data])
-        logger(__name__).debug(f'{self.__class__.__name__} TX: {bytes_to_str(tx)}')
+        logger(__name__).debug(f"{self.__class__.__name__} TX: {bytes_to_str(tx)}")
         self.port.read_all()
         self.port.write(tx)
         self.port.flush()
@@ -113,10 +113,10 @@ class VEXDevice(GenericDevice):
         """
         tx = self._tx_packet(command, tx_data)
         rx = self._rx_packet(timeout=timeout)
-        msg = Message(rx['raw'], tx)
+        msg = Message(rx["raw"], tx)
         logger(__name__).debug(msg)
-        msg['payload'] = Message(rx['raw'], tx, internal_rx=rx['payload'])
-        msg['command'] = rx['command']
+        msg["payload"] = Message(rx["raw"], tx, internal_rx=rx["payload"])
+        msg["command"] = rx["command"]
         return msg
 
     @staticmethod

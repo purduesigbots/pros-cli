@@ -11,8 +11,8 @@ from .parameters import NonExistentProjectParameter
 
 
 class NewProjectModal(application.Modal[None]):
-    targets = parameters.OptionParameter('v5', ['v5', 'cortex'])
-    kernel_versions = parameters.OptionParameter('latest', ['latest'])
+    targets = parameters.OptionParameter("v5", ["v5", "cortex"])
+    kernel_versions = parameters.OptionParameter("latest", ["latest"])
     install_default_libraries = parameters.BooleanParameter(True)
 
     project_name = parameters.Parameter(None)
@@ -22,9 +22,9 @@ class NewProjectModal(application.Modal[None]):
         self,
         ctx: Context = None,
         conductor: Optional[Conductor] = None,
-        directory=os.path.join(os.path.expanduser('~'), 'My PROS Project'),
+        directory=os.path.join(os.path.expanduser("~"), "My PROS Project"),
     ):
-        super().__init__('Create a new project')
+        super().__init__("Create a new project")
         self.conductor = conductor or Conductor()
         self.click_ctx = ctx or get_current_context()
         self.directory = NonExistentProjectParameter(directory)
@@ -33,11 +33,11 @@ class NewProjectModal(application.Modal[None]):
         cb(self.targets)
 
     def target_changed(self, new_target):
-        templates = self.conductor.resolve_templates('kernel', target=new_target.value)
+        templates = self.conductor.resolve_templates("kernel", target=new_target.value)
         if len(templates) == 0:
-            self.kernel_versions.options = ['latest']
+            self.kernel_versions.options = ["latest"]
         else:
-            self.kernel_versions.options = ['latest'] + sorted({t.version for t in templates}, reverse=True)
+            self.kernel_versions.options = ["latest"] + sorted({t.version for t in templates}, reverse=True)
         self.redraw()
 
     def confirm(self, *args, **kwargs):
@@ -54,10 +54,10 @@ class NewProjectModal(application.Modal[None]):
         from pros.conductor.project import ProjectReport
 
         report = ProjectReport(project)
-        ui.finalize('project-report', report)
+        ui.finalize("project-report", report)
 
         with ui.Notification():
-            ui.echo('Building project...')
+            ui.echo("Building project...")
             project.compile([])
 
     @property
@@ -65,15 +65,15 @@ class NewProjectModal(application.Modal[None]):
         return self.directory.is_valid() and self.targets.is_valid() and self.kernel_versions.is_valid()
 
     def build(self) -> Generator[components.Component, None, None]:
-        yield components.DirectorySelector('Project Directory', self.directory)
-        yield components.ButtonGroup('Target', self.targets)
+        yield components.DirectorySelector("Project Directory", self.directory)
+        yield components.ButtonGroup("Target", self.targets)
 
         project_name_placeholder = os.path.basename(os.path.normpath(os.path.abspath(self.directory.value)))
 
         yield components.Container(
-            components.InputBox('Project Name', self.project_name, placeholder=project_name_placeholder),
-            components.DropDownBox('Kernel Version', self.kernel_versions),
-            components.Checkbox('Install default libraries', self.install_default_libraries),
-            title='Advanced',
+            components.InputBox("Project Name", self.project_name, placeholder=project_name_placeholder),
+            components.DropDownBox("Kernel Version", self.kernel_versions),
+            components.Checkbox("Install default libraries", self.install_default_libraries),
+            title="Advanced",
             collapsed=self.advanced_collapsed,
         )

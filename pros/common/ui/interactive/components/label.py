@@ -25,4 +25,4 @@ class Spinner(Label):
     """
 
     def __init__(self):
-        super(Spinner, self).__init__('Loading...')
+        super(Spinner, self).__init__("Loading...")

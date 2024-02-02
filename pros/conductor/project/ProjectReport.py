@@ -2,7 +2,7 @@ import os.path
 
 
 class ProjectReport(object):
-    def __init__(self, project: 'Project'):
+    def __init__(self, project: "Project"):
         self.project = {
             "target": project.target,
             "location": os.path.abspath(project.location),
@@ -18,9 +18,9 @@ class ProjectReport(object):
         s = (
             f'PROS Project for {self.project["target"]} at: {self.project["location"]}' f' ({self.project["name"]})'
             if self.project["name"]
-            else ''
+            else ""
         )
-        s += '\n'
+        s += "\n"
         rows = [t.values() for t in self.project["templates"]]
         headers = [h.capitalize() for h in self.project["templates"][0].keys()]
         s += tabulate.tabulate(rows, headers=headers)

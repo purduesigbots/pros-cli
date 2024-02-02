@@ -11,7 +11,7 @@ from .base_port import BasePort, PortConnectionException
 
 def create_serial_port(port_name: str, timeout: Optional[float] = 1.0) -> serial.Serial:
     try:
-        logger(__name__).debug(f'Opening serial port {port_name}')
+        logger(__name__).debug(f"Opening serial port {port_name}")
         port = serial.Serial(
             port_name,
             baudrate=115200,
@@ -23,7 +23,7 @@ def create_serial_port(port_name: str, timeout: Optional[float] = 1.0) -> serial
         port.inter_byte_timeout = 0.2
         return port
     except serial.SerialException as e:
-        if any(msg in str(e) for msg in ['Access is denied', 'Errno 16', 'Errno 13']):
+        if any(msg in str(e) for msg in ["Access is denied", "Errno 16", "Errno 13"]):
             tb = sys.exc_info()[2]
             raise dont_send(ConnectionRefusedException(port_name, e).with_traceback(tb))
         else:
@@ -33,7 +33,7 @@ def create_serial_port(port_name: str, timeout: Optional[float] = 1.0) -> serial
 class DirectPort(BasePort):
 
     def __init__(self, port_name: str, **kwargs):
-        self.serial: serial.Serial = create_serial_port(port_name=port_name, timeout=kwargs.pop('timeout', 1.0))
+        self.serial: serial.Serial = create_serial_port(port_name=port_name, timeout=kwargs.pop("timeout", 1.0))
         self.buffer: bytearray = bytearray()
 
     def read(self, n_bytes: int = 0) -> bytes:
@@ -58,14 +58,14 @@ class DirectPort(BasePort):
 
     def write(self, data: Union[str, bytes]):
         if isinstance(data, str):
-            data = data.encode(encoding='ascii')
+            data = data.encode(encoding="ascii")
         self.serial.write(data)
 
     def flush(self):
         self.serial.flush()
 
     def destroy(self):
-        logger(__name__).debug(f'Destroying {self.__class__.__name__} to {self.serial.name}')
+        logger(__name__).debug(f"Destroying {self.__class__.__name__} to {self.serial.name}")
         self.serial.close()
 
     @property

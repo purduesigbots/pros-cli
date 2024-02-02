@@ -1,3 +1,3 @@
 from .UploadProjectModal import UploadProjectModal
 
-__all__ = ['UploadProjectModal']
+__all__ = ["UploadProjectModal"]

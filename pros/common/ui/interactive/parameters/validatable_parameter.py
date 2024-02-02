@@ -2,7 +2,7 @@ from typing import *
 
 from pros.common.ui.interactive.parameters.parameter import Parameter
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class ValidatableParameter(Parameter, Generic[T]):
@@ -44,19 +44,19 @@ class ValidatableParameter(Parameter, Generic[T]):
         if self.allow_invalid_input or self.is_valid(new_value):
             super(ValidatableParameter, self).update(new_value)
             if self.is_valid():
-                self.trigger('changed_validated', self)
+                self.trigger("changed_validated", self)
 
     def on_changed(self, *handlers: Callable, **kwargs):
         """
         Subscribe to event whenever value validly changes
         """
-        return self.on('changed_validated', *handlers, **kwargs)
+        return self.on("changed_validated", *handlers, **kwargs)
 
     def on_any_changed(self, *handlers: Callable, **kwargs):
         """
         Subscribe to event whenever value changes (regardless of whether or not new value is valid)
         """
-        return self.on('changed', *handlers, **kwargs)
+        return self.on("changed", *handlers, **kwargs)
 
 
 class AlwaysInvalidParameter(ValidatableParameter[T], Generic[T]):

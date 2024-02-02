@@ -32,7 +32,7 @@ class Component(object):
         return dict(etype=Component.get_hierarchy(self.__class__))
 
 
-P = TypeVar('P', bound=Parameter)
+P = TypeVar("P", bound=Parameter)
 
 
 class ParameterizedComponent(Component, Generic[P]):
@@ -46,10 +46,10 @@ class ParameterizedComponent(Component, Generic[P]):
     def __getstate__(self):
         extra_state = {}
         if isinstance(self.parameter, ValidatableParameter):
-            extra_state['valid'] = self.parameter.is_valid()
+            extra_state["valid"] = self.parameter.is_valid()
             reason = self.parameter.is_valid_reason()
             if reason:
-                extra_state['valid_reason'] = self.parameter.is_valid_reason()
+                extra_state["valid_reason"] = self.parameter.is_valid_reason()
         return dict(
             **super(ParameterizedComponent, self).__getstate__(),
             **extra_state,

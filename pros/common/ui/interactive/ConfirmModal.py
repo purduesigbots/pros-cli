@@ -10,8 +10,8 @@ class ConfirmModal(application.Modal[bool]):
     In --machine-output mode, this Modal is run instead of a textual confirmation request (e.g. click.confirm())
     """
 
-    def __init__(self, text: str, abort: bool = False, title: AnyStr = 'Please confirm:', log: Optional[AnyStr] = None):
-        super().__init__(title, will_abort=abort, confirm_button='Yes', cancel_button='No', description=text)
+    def __init__(self, text: str, abort: bool = False, title: AnyStr = "Please confirm:", log: Optional[AnyStr] = None):
+        super().__init__(title, will_abort=abort, confirm_button="Yes", cancel_button="No", description=text)
         self.log = log
 
     def confirm(self):

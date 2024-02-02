@@ -33,11 +33,11 @@ class CortexDevice(VEXDevice, SystemDevice):
 
         def __str__(self):
             return (
-                f'  Tether: {str(self.flags)}\n'
-                f'  Cortex: F/W {self.robot_firmware[0]}.{self.robot_firmware[1]} w/ {self.robot_battery:1.2f} V '
-                f'(Backup: {self.backup_battery:1.2f} V)\n'
-                f'Joystick: F/W {self.joystick_firmware[0]}.{self.robot_firmware[1]} w/ '
-                f'{self.joystick_battery:1.2f} V'
+                f"  Tether: {str(self.flags)}\n"
+                f"  Cortex: F/W {self.robot_firmware[0]}.{self.robot_firmware[1]} w/ {self.robot_battery:1.2f} V "
+                f"(Backup: {self.backup_battery:1.2f} V)\n"
+                f"Joystick: F/W {self.joystick_firmware[0]}.{self.robot_firmware[1]} w/ "
+                f"{self.joystick_battery:1.2f} V"
             )
 
     class SystemStatusFlags(IntFlag):
@@ -56,26 +56,26 @@ class CortexDevice(VEXDevice, SystemDevice):
                 return (a & b) == b
 
             if not self.value & self.TETH_BITS:
-                s = 'Serial w/VEXnet 1.0 Keys'
+                s = "Serial w/VEXnet 1.0 Keys"
             elif andeq(self.value, 0x01):
-                s = 'Serial w/VEXnet 1.0 Keys (turbo)'
+                s = "Serial w/VEXnet 1.0 Keys (turbo)"
             elif andeq(self.value, 0x04):
-                s = 'Serial w/VEXnet 2.0 Keys'
+                s = "Serial w/VEXnet 2.0 Keys"
             elif andeq(self.value, 0x05):
-                s = 'Serial w/VEXnet 2.0 Keys (download mode)'
+                s = "Serial w/VEXnet 2.0 Keys (download mode)"
             elif andeq(self.value, 0x10):
-                s = 'Serial w/ a USB Cable'
+                s = "Serial w/ a USB Cable"
             elif andeq(self.value, 0x20):
-                s = 'Directly w/ a USB Cable'
+                s = "Directly w/ a USB Cable"
             else:
-                s = 'Unknown'
+                s = "Unknown"
 
             if andeq(self.value, self.FCS_CONNECT):
-                s += ' - FCS Connected'
+                s += " - FCS Connected"
             return s
 
     def get_connected_device(self) -> SystemDevice:
-        logger(__name__).info('Interrogating Cortex...')
+        logger(__name__).info("Interrogating Cortex...")
         stm32 = STM32Device(self.port, do_negoitate=False)
         try:
             stm32.get(n_retries=1)
@@ -84,21 +84,21 @@ class CortexDevice(VEXDevice, SystemDevice):
             return self
 
     def upload_project(self, project: Project, **kwargs):
-        assert project.target == 'cortex'
+        assert project.target == "cortex"
         output_path = project.path.joinpath(project.output)
         if not output_path.exists():
-            raise ui.dont_send(Exception('No output files were found! Have you built your project?'))
-        with output_path.open(mode='rb') as pf:
+            raise ui.dont_send(Exception("No output files were found! Have you built your project?"))
+        with output_path.open(mode="rb") as pf:
             return self.write_program(pf, **kwargs)
 
     def write_program(self, file: typing.BinaryIO, **kwargs):
-        action_string = ''
-        if hasattr(file, 'name'):
-            action_string += f' {Path(file.name).name}'
-        action_string += f' to Cortex on {self.port}'
-        ui.echo(f'Uploading {action_string}')
+        action_string = ""
+        if hasattr(file, "name"):
+            action_string += f" {Path(file.name).name}"
+        action_string += f" to Cortex on {self.port}"
+        ui.echo(f"Uploading {action_string}")
 
-        logger(__name__).info('Writing program to Cortex')
+        logger(__name__).info("Writing program to Cortex")
         status = self.query_system()
         logger(__name__).info(status)
         if not status.flags | self.SystemStatusFlags.TETH_USB and not status.flags | self.SystemStatusFlags.DL_MODE:
@@ -107,25 +107,25 @@ class CortexDevice(VEXDevice, SystemDevice):
         bootloader = self.expose_bootloader()
         rv = bootloader.write_program(file, **kwargs)
 
-        ui.finalize('upload', f'Finished uploading {action_string}')
+        ui.finalize("upload", f"Finished uploading {action_string}")
         return rv
 
     @retries
     def query_system(self) -> SystemStatus:
-        logger(__name__).info('Querying system information')
+        logger(__name__).info("Querying system information")
         rx = self._txrx_simple_struct(0x21, "<8B2x")
         status = CortexDevice.SystemStatus(rx)
-        ui.finalize('cortex-status', status)
+        ui.finalize("cortex-status", status)
         return status
 
     @retries
     def send_to_download_channel(self):
-        logger(__name__).info('Sending to download channel')
+        logger(__name__).info("Sending to download channel")
         self._txrx_ack_packet(0x35, timeout=1.0)
 
     @retries
     def expose_bootloader(self):
-        logger(__name__).info('Exposing bootloader')
+        logger(__name__).info("Exposing bootloader")
         for _ in itertools.repeat(None, 5):
             self._tx_packet(0x25)
             time.sleep(0.1)
@@ -153,4 +153,4 @@ class CortexDevice(VEXDevice, SystemDevice):
         """
         tx = self._tx_packet(command)
         self._rx_ack(timeout=timeout)
-        logger(__name__).debug('TX: {}'.format(bytes_to_str(tx)))
+        logger(__name__).debug("TX: {}".format(bytes_to_str(tx)))

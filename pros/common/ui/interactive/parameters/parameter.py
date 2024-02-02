@@ -2,7 +2,7 @@ from typing import *
 
 from pros.common.ui.interactive.observable import Observable
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class Parameter(Observable, Generic[T]):
@@ -17,11 +17,11 @@ class Parameter(Observable, Generic[T]):
         super().__init__()
         self.value = initial_value
 
-        self.on('update', self.update)
+        self.on("update", self.update)
 
     def update(self, new_value):
         self.value = new_value
-        self.trigger('changed', self)
+        self.trigger("changed", self)
 
     def on_changed(self, *handlers: Callable, **kwargs):
-        return self.on('changed', *handlers, **kwargs)
+        return self.on("changed", *handlers, **kwargs)

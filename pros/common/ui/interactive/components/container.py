@@ -23,11 +23,11 @@ class Container(Component):
         self.collapsed = BooleanParameter(collapsed) if isinstance(collapsed, bool) else collapsed
 
     def __getstate__(self):
-        extra_state = {'uuid': self.collapsed.uuid, 'collapsed': self.collapsed.value}
+        extra_state = {"uuid": self.collapsed.uuid, "collapsed": self.collapsed.value}
         if self.title is not None:
-            extra_state['title'] = self.title
+            extra_state["title"] = self.title
         if self.description is not None:
-            extra_state['description'] = self.description
+            extra_state["description"] = self.description
         return dict(
             **super(Container, self).__getstate__(), **extra_state, elements=[e.__getstate__() for e in self.elements]
         )

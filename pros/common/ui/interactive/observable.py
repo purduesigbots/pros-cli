@@ -25,7 +25,7 @@ class Observable(observable.Observable):
         if uuid in _uuid_table:
             _uuid_table[uuid].trigger(event, *args, **kwargs)
         else:
-            logger(__name__).warning(f'Could not find an Observable to notify with UUID: {uuid}', sentry=True)
+            logger(__name__).warning(f"Could not find an Observable to notify with UUID: {uuid}", sentry=True)
 
     def on(
         self,

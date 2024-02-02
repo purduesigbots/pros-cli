@@ -10,13 +10,13 @@ def misc_commands_cli():
 
 @misc_commands_cli.command()
 @click.option(
-    '--force-check', default=False, is_flag=True, help='Force check for updates, disregarding auto-check frequency'
+    "--force-check", default=False, is_flag=True, help="Force check for updates, disregarding auto-check frequency"
 )
 @click.option(
-    '--no-install',
+    "--no-install",
     default=False,
     is_flag=True,
-    help='Only check if a new version is available, do not attempt to install',
+    help="Only check if a new version is available, do not attempt to install",
 )
 @default_options
 def upgrade(force_check, no_install):
@@ -26,7 +26,7 @@ def upgrade(force_check, no_install):
     with ui.Notification():
         ui.echo(
             'The "pros upgrade" command is currently non-functioning. Did you mean to run "pros c upgrade"?',
-            color='yellow',
+            color="yellow",
         )
 
     return  # Dead code below
@@ -39,15 +39,15 @@ def upgrade(force_check, no_install):
     ui.logger(__name__).debug(repr(manifest))
     if manager.has_stale_manifest:
         ui.logger(__name__).error(
-            'Failed to get latest upgrade information. ' + 'Try running with --debug for more information'
+            "Failed to get latest upgrade information. " + "Try running with --debug for more information"
         )
         return -1
     if not manager.needs_upgrade:
-        ui.finalize('upgradeInfo', 'PROS CLI is up to date')
+        ui.finalize("upgradeInfo", "PROS CLI is up to date")
     else:
-        ui.finalize('upgradeInfo', manifest)
+        ui.finalize("upgradeInfo", manifest)
         if not no_install:
             if not manager.can_perform_upgrade:
-                ui.logger(__name__).error(f'This manifest cannot perform the upgrade.')
+                ui.logger(__name__).error(f"This manifest cannot perform the upgrade.")
                 return -3
-            ui.finalize('upgradeComplete', manager.perform_upgrade())
+            ui.finalize("upgradeComplete", manager.perform_upgrade())

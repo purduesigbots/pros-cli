@@ -27,34 +27,34 @@ class UpgradeManifestV2(UpgradeManifestV1):
         super().__init__()
         self.platform_instructions: Dict[PlatformsV2, UpgradeInstruction] = {}
 
-        self._platform: 'PlatformsV2' = None
+        self._platform: "PlatformsV2" = None
 
         self._last_file: Optional[str] = None
 
     @property
-    def platform(self) -> 'PlatformsV2':
+    def platform(self) -> "PlatformsV2":
         """
         Attempts to detect the current platform type
         :return: The detected platform type, or Unknown
         """
         if self._platform is not None:
             return self._platform
-        if getattr(sys, 'frozen', False):
+        if getattr(sys, "frozen", False):
             import _constants
 
-            frozen_platform = getattr(_constants, 'FROZEN_PLATFORM_V1', None)
+            frozen_platform = getattr(_constants, "FROZEN_PLATFORM_V1", None)
             if isinstance(frozen_platform, str):
-                if frozen_platform.startswith('Windows86'):
+                if frozen_platform.startswith("Windows86"):
                     self._platform = PlatformsV2.Windows86
-                elif frozen_platform.startswith('Windows64'):
+                elif frozen_platform.startswith("Windows64"):
                     self._platform = PlatformsV2.Windows64
-                elif frozen_platform.startswith('MacOS'):
+                elif frozen_platform.startswith("MacOS"):
                     self._platform = PlatformsV2.MacOS
         else:
             try:
                 from pip._vendor import pkg_resources
 
-                results = [p for p in pkg_resources.working_set if p.project_name.startswith('pros-cli')]
+                results = [p for p in pkg_resources.working_set if p.project_name.startswith("pros-cli")]
                 if any(results):
                     self._platform = PlatformsV2.Pip
             except ImportError:
@@ -70,9 +70,9 @@ class UpgradeManifestV2(UpgradeManifestV1):
     def perform_upgrade(self) -> UpgradeResult:
         instructions: UpgradeInstruction = self.platform_instructions.get(self.platform, NothingInstruction())
         logger(__name__).debug(self.__dict__)
-        logger(__name__).debug(f'Platform: {self.platform}')
+        logger(__name__).debug(f"Platform: {self.platform}")
         logger(__name__).debug(instructions.__dict__)
         return instructions.perform_upgrade()
 
     def __repr__(self):
-        return repr({'platform': self.platform, **self.__dict__})
+        return repr({"platform": self.platform, **self.__dict__})

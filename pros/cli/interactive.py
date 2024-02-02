@@ -21,7 +21,7 @@ def interactive():
 
 
 @interactive.command()
-@click.option('--directory', default=os.path.join(os.path.expanduser('~'), 'My PROS Project'))
+@click.option("--directory", default=os.path.join(os.path.expanduser("~"), "My PROS Project"))
 @default_options
 def new_project(directory):
     from pros.common.ui.interactive.renderers import MachineOutputRenderer

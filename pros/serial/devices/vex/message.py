@@ -33,4 +33,4 @@ class Message(bytes):
         self.bookmarks[key] = value
 
     def __str__(self):
-        return 'TX:{}\tRX:{}'.format(bytes_to_str(self.tx), bytes_to_str(self.rx))
+        return "TX:{}\tRX:{}".format(bytes_to_str(self.tx), bytes_to_str(self.rx))

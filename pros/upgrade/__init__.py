@@ -5,4 +5,4 @@ def get_platformv2():
     return UpgradeManifestV2().platform
 
 
-__all__ = ['UpgradeManager', 'get_platformv2']
+__all__ = ["UpgradeManager", "get_platformv2"]

@@ -33,16 +33,16 @@ class Depot(object):
 
     def get_remote_templates(self, auto_check_freq: Optional[timedelta] = None, force_check: bool = False, **kwargs):
         if auto_check_freq is None:
-            auto_check_freq = getattr(self, 'update_frequency', cli_config().update_frequency)
+            auto_check_freq = getattr(self, "update_frequency", cli_config().update_frequency)
         logger(__name__).info(
-            f'Last check of {self.name} was {self.last_remote_update} '
-            f'({datetime.now() - self.last_remote_update} vs {auto_check_freq}).'
+            f"Last check of {self.name} was {self.last_remote_update} "
+            f"({datetime.now() - self.last_remote_update} vs {auto_check_freq})."
         )
         if force_check or datetime.now() - self.last_remote_update > auto_check_freq:
             with ui.Notification():
-                ui.echo(f'Updating {self.name}... ', nl=False)
+                ui.echo(f"Updating {self.name}... ", nl=False)
                 self.update_remote_templates(**kwargs)
-                ui.echo('Done', color='green')
+                ui.echo("Done", color="green")
         for t in self.remote_templates:
-            t.metadata['origin'] = self.name
+            t.metadata["origin"] = self.name
         return self.remote_templates

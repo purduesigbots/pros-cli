@@ -13,22 +13,22 @@ from .depot import Depot
 
 class LocalDepot(Depot):
     def fetch_template(self, template: BaseTemplate, destination: str, **kwargs) -> Template:
-        if 'location' not in kwargs:
+        if "location" not in kwargs:
             logger(__name__).debug(f"Template not specified. Provided arguments: {kwargs}")
-            raise KeyError('Location of local template must be specified.')
-        location = kwargs['location']
+            raise KeyError("Location of local template must be specified.")
+        location = kwargs["location"]
         if os.path.isdir(location):
             location_dir = location
-            if not os.path.isfile(os.path.join(location_dir, 'template.pros')):
-                raise ConfigNotFoundException(f'A template.pros file was not found in {location_dir}.')
-            template_file = os.path.join(location_dir, 'template.pros')
+            if not os.path.isfile(os.path.join(location_dir, "template.pros")):
+                raise ConfigNotFoundException(f"A template.pros file was not found in {location_dir}.")
+            template_file = os.path.join(location_dir, "template.pros")
         elif zipfile.is_zipfile(location):
             with zipfile.ZipFile(location) as zf:
                 with click.progressbar(length=len(zf.namelist()), label=f"Extracting {location}") as progress_bar:
                     for file in zf.namelist():
                         zf.extract(file, path=destination)
                         progress_bar.update(1)
-            template_file = os.path.join(destination, 'template.pros')
+            template_file = os.path.join(destination, "template.pros")
             location_dir = destination
         elif os.path.isfile(location):
             location_dir = os.path.dirname(location)
@@ -40,7 +40,7 @@ class LocalDepot(Depot):
             raise ValueError(f"The specified location was not a file or directory ({location}).")
         if location_dir != destination:
             n_files = len([os.path.join(dp, f) for dp, dn, fn in os.walk(location_dir) for f in fn])
-            with click.progressbar(length=n_files, label='Copying to local cache') as pb:
+            with click.progressbar(length=n_files, label="Copying to local cache") as pb:
 
                 def my_copy(*args):
                     pb.update(1)
@@ -50,4 +50,4 @@ class LocalDepot(Depot):
         return ExternalTemplate(file=template_file)
 
     def __init__(self):
-        super().__init__('local', 'local')
+        super().__init__("local", "local")

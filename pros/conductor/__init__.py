@@ -1,4 +1,4 @@
-__all__ = ['BaseTemplate', 'Template', 'LocalTemplate', 'Depot', 'LocalDepot', 'Project', 'Conductor']
+__all__ = ["BaseTemplate", "Template", "LocalTemplate", "Depot", "LocalDepot", "Project", "Conductor"]
 
 from .conductor import Conductor
 from .depots import Depot, LocalDepot

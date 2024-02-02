@@ -12,20 +12,20 @@ class BaseTemplate(object):
         self.supported_kernels: str = None
         self.target: str = None
         self.metadata: Dict[str, Any] = {}
-        if 'orig' in kwargs:
-            self.__dict__.update({k: v for k, v in kwargs.pop('orig').__dict__.items() if k in self.__dict__})
+        if "orig" in kwargs:
+            self.__dict__.update({k: v for k, v in kwargs.pop("orig").__dict__.items() if k in self.__dict__})
         self.__dict__.update({k: v for k, v in kwargs.items() if k in self.__dict__})
         self.metadata.update({k: v for k, v in kwargs.items() if k not in self.__dict__})
-        if 'depot' in self.metadata and 'origin' not in self.metadata:
-            self.metadata['origin'] = self.metadata.pop('depot')
-        if 'd' in self.metadata and 'depot' not in self.metadata:
-            self.metadata['depot'] = self.metadata.pop('d')
-        if 'l' in self.metadata and 'location' not in self.metadata:
-            self.metadata['location'] = self.metadata.pop('l')
-        if self.name == 'pros':
-            self.name = 'kernel'
+        if "depot" in self.metadata and "origin" not in self.metadata:
+            self.metadata["origin"] = self.metadata.pop("depot")
+        if "d" in self.metadata and "depot" not in self.metadata:
+            self.metadata["depot"] = self.metadata.pop("d")
+        if "l" in self.metadata and "location" not in self.metadata:
+            self.metadata["location"] = self.metadata.pop("l")
+        if self.name == "pros":
+            self.name = "kernel"
 
-    def satisfies(self, query: 'BaseTemplate', kernel_version: Union[str, Version] = None) -> bool:
+    def satisfies(self, query: "BaseTemplate", kernel_version: Union[str, Version] = None) -> bool:
         if query.name and self.name != query.name:
             return False
         if query.target and self.target != query.target:
@@ -47,7 +47,7 @@ class BaseTemplate(object):
     def __str__(self):
         fields = [self.metadata.get("origin", None), self.target, self.__class__.__name__]
         additional = ", ".join(map(str, filter(bool, fields)))
-        return f'{self.identifier} ({additional})'
+        return f"{self.identifier} ({additional})"
 
     def __gt__(self, other):
         if isinstance(other, BaseTemplate):
@@ -65,30 +65,30 @@ class BaseTemplate(object):
     def __hash__(self):
         return self.identifier.__hash__()
 
-    def as_query(self, version='>0', metadata=False, **kwargs):
+    def as_query(self, version=">0", metadata=False, **kwargs):
         if isinstance(metadata, bool) and not metadata:
             metadata = dict()
         return BaseTemplate(orig=self, version=version, metadata=metadata, **kwargs)
 
     @property
     def identifier(self):
-        return f'{self.name}@{self.version}'
+        return f"{self.name}@{self.version}"
 
     @property
     def origin(self):
-        return self.metadata.get('origin', 'Unknown')
+        return self.metadata.get("origin", "Unknown")
 
     @classmethod
-    def create_query(cls, name: str = None, **kwargs) -> 'BaseTemplate':
+    def create_query(cls, name: str = None, **kwargs) -> "BaseTemplate":
         if not isinstance(name, str):
             return cls(**kwargs)
-        if name.count('@') > 1:
-            raise ValueError(f'Malformed identifier: {name}')
-        if '@' in name:
-            name, kwargs['version'] = name.split('@')
-        if kwargs.get('version', 'latest') == 'latest':
-            kwargs['version'] = '>=0'
-        if name == 'kernal':
+        if name.count("@") > 1:
+            raise ValueError(f"Malformed identifier: {name}")
+        if "@" in name:
+            name, kwargs["version"] = name.split("@")
+        if kwargs.get("version", "latest") == "latest":
+            kwargs["version"] = ">=0"
+        if name == "kernal":
             ui.echo("Assuming 'kernal' is the British spelling of kernel.")
-            name = 'kernel'
+            name = "kernel"
         return cls(name=name, **kwargs)

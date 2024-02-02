@@ -15,7 +15,7 @@ class InputBox(BasicParameterizedComponent[P], Generic[P]):
     def __getstate__(self) -> dict:
         extra_state = {}
         if self.placeholder is not None:
-            extra_state['placeholder'] = self.placeholder
+            extra_state["placeholder"] = self.placeholder
         return dict(
             **super(InputBox, self).__getstate__(),
             **extra_state,

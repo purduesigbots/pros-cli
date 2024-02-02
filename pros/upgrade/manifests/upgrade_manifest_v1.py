@@ -28,11 +28,11 @@ class UpgradeManifestV1(object):
         """
         if self.needs_upgrade:
             return (
-                f'There is an update available! {self.version} is the latest version.\n'
-                f'Go to {self.info_url} to learn more.'
+                f"There is an update available! {self.version} is the latest version.\n"
+                f"Go to {self.info_url} to learn more."
             )
         else:
-            return f'You are up to date. ({self.version})'
+            return f"You are up to date. ({self.version})"
 
     def __str__(self):
         return self.describe_update()
@@ -48,4 +48,4 @@ class UpgradeManifestV1(object):
         return UpgradeResult(launch(self.info_url) == 0)
 
     def describe_post_install(self, **kwargs) -> str:
-        return f'Download the latest version from {self.info_url}'
+        return f"Download the latest version from {self.info_url}"

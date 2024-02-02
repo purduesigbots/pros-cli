@@ -21,18 +21,18 @@ class HttpDepot(Depot):
     def fetch_template(self, template: BaseTemplate, destination: str, **kwargs):
         import requests
 
-        assert 'location' in template.metadata
-        url = template.metadata['location']
-        tf = download_file(url, ext='zip', desc=f'Downloading {template.identifier}')
+        assert "location" in template.metadata
+        url = template.metadata["location"]
+        tf = download_file(url, ext="zip", desc=f"Downloading {template.identifier}")
         if tf is None:
-            raise requests.ConnectionError(f'Could not obtain {url}')
+            raise requests.ConnectionError(f"Could not obtain {url}")
         with zipfile.ZipFile(tf) as zf:
-            with ui.progressbar(length=len(zf.namelist()), label=f'Extracting {template.identifier}') as pb:
+            with ui.progressbar(length=len(zf.namelist()), label=f"Extracting {template.identifier}") as pb:
                 for file in zf.namelist():
                     zf.extract(file, path=destination)
                     pb.update(1)
         os.remove(tf)
-        return ExternalTemplate(file=os.path.join(destination, 'template.pros'))
+        return ExternalTemplate(file=os.path.join(destination, "template.pros"))
 
     def update_remote_templates(self, **_):
         import requests
@@ -41,5 +41,5 @@ class HttpDepot(Depot):
         if response.status_code == 200:
             self.remote_templates = jsonpickle.decode(response.text)
         else:
-            logger(__name__).warning(f'Unable to access {self.name} ({self.location}): {response.status_code}')
+            logger(__name__).warning(f"Unable to access {self.name} ({self.location}): {response.status_code}")
         self.last_remote_update = datetime.now()

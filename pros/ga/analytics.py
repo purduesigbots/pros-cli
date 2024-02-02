@@ -7,8 +7,8 @@ from os import path
 import requests
 from requests_futures.sessions import FuturesSession
 
-url = 'https://www.google-analytics.com/collect'
-agent = 'pros-cli'
+url = "https://www.google-analytics.com/collect"
+agent = "pros-cli"
 
 """
 PROS ANALYTICS CLASS
@@ -27,9 +27,9 @@ class Analytics:
         self.cli_config.save()
         self.sent = False
         # Variables that the class will use
-        self.gaID = self.cli_config.ga['ga_id']
-        self.useAnalytics = self.cli_config.ga['enabled']
-        self.uID = self.cli_config.ga['u_id']
+        self.gaID = self.cli_config.ga["ga_id"]
+        self.useAnalytics = self.cli_config.ga["enabled"]
+        self.uID = self.cli_config.ga["u_id"]
         self.pendingRequests = []
 
     def send(self, action):
@@ -39,36 +39,36 @@ class Analytics:
         try:
             # Payload to be sent to GA, idk what some of them are but it works
             payload = {
-                'v': 1,
-                'tid': self.gaID,
-                'aip': 1,
-                'z': random.random(),
-                'cid': self.uID,
-                't': 'event',
-                'ec': 'action',
-                'ea': action,
-                'el': 'CLI',
-                'ev': '1',
-                'ni': 0,
+                "v": 1,
+                "tid": self.gaID,
+                "aip": 1,
+                "z": random.random(),
+                "cid": self.uID,
+                "t": "event",
+                "ec": "action",
+                "ea": action,
+                "el": "CLI",
+                "ev": "1",
+                "ni": 0,
             }
 
             session = FuturesSession()
 
             # Send payload to GA servers
-            future = session.post(url=url, data=payload, headers={'User-Agent': agent}, timeout=5.0)
+            future = session.post(url=url, data=payload, headers={"User-Agent": agent}, timeout=5.0)
             self.pendingRequests.append(future)
 
         except Exception:
             from pros.cli.common import logger
 
             logger(__name__).warning(
-                "Unable to send analytics. Do you have a stable internet connection?", extra={'sentry': False}
+                "Unable to send analytics. Do you have a stable internet connection?", extra={"sentry": False}
             )
 
     def set_use(self, value: bool):
         # Sets if GA is being used or not
         self.useAnalytics = value
-        self.cli_config.ga['enabled'] = self.useAnalytics
+        self.cli_config.ga["enabled"] = self.useAnalytics
         self.cli_config.save()
 
     def process_requests(self):

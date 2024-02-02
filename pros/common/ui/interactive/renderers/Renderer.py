@@ -2,7 +2,7 @@ from typing import *
 
 from ..application import Application
 
-P = TypeVar('P')
+P = TypeVar("P")
 
 
 class Renderer(Generic[P]):
