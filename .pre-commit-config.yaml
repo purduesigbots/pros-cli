@@ -12,6 +12,11 @@ repos:
       - id: check-ast
       - id: trailing-whitespace
       - id: requirements-txt-fixer
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+        args: ["--skip-string-normalization", "--line-length=120"]
   - repo: local
     hooks:
       - id: pylint
