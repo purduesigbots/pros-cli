@@ -359,8 +359,8 @@ class Conductor(Config):
         elif self.use_early_access:
             ui.echo(f'Early access is enabled.')
 
-        if not is_pathname_valid(path):
-            raise dont_send(ValueError('Invalid path provided.'))
+        if not is_pathname_valid(Path(path).absolute()):
+            raise dont_send(ValueError('Project path contains invalid characters.'))
         
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
             raise dont_send(ValueError('Will not create a project in user home directory'))
