@@ -26,26 +26,28 @@ class CortexDevice(VEXDevice, SystemDevice):
         def __init__(self, data: Tuple[bytes, ...]):
             self.joystick_firmware = data[0:2]
             self.robot_firmware = data[2:4]
-            self.joystick_battery = float(data[4]) * .059
-            self.robot_battery = float(data[5]) * .059
-            self.backup_battery = float(data[6]) * .059
+            self.joystick_battery = float(data[4]) * 0.059
+            self.robot_battery = float(data[5]) * 0.059
+            self.backup_battery = float(data[6]) * 0.059
             self.flags = CortexDevice.SystemStatusFlags(data[7])
 
         def __str__(self):
-            return f'  Tether: {str(self.flags)}\n' \
-                   f'  Cortex: F/W {self.robot_firmware[0]}.{self.robot_firmware[1]} w/ {self.robot_battery:1.2f} V ' \
-                   f'(Backup: {self.backup_battery:1.2f} V)\n' \
-                   f'Joystick: F/W {self.joystick_firmware[0]}.{self.robot_firmware[1]} w/ ' \
-                   f'{self.joystick_battery:1.2f} V'
+            return (
+                f'  Tether: {str(self.flags)}\n'
+                f'  Cortex: F/W {self.robot_firmware[0]}.{self.robot_firmware[1]} w/ {self.robot_battery:1.2f} V '
+                f'(Backup: {self.backup_battery:1.2f} V)\n'
+                f'Joystick: F/W {self.joystick_firmware[0]}.{self.robot_firmware[1]} w/ '
+                f'{self.joystick_battery:1.2f} V'
+            )
 
     class SystemStatusFlags(IntFlag):
-        DL_MODE = (1 << 0)
-        TETH_VN2 = (1 << 2)
-        FCS_CONNECT = (1 << 3)
-        TETH_USB = (1 << 4)
-        DIRECT_USB = (1 << 5)
-        FCS_AUTON = (1 << 6)
-        FCS_DISABLE = (1 << 7)
+        DL_MODE = 1 << 0
+        TETH_VN2 = 1 << 2
+        FCS_CONNECT = 1 << 3
+        TETH_USB = 1 << 4
+        DIRECT_USB = 1 << 5
+        FCS_AUTON = 1 << 6
+        FCS_DISABLE = 1 << 7
 
         TETH_BITS = DL_MODE | TETH_VN2 | TETH_USB
 
@@ -141,14 +143,14 @@ class CortexDevice(VEXDevice, SystemDevice):
 
     def _txrx_ack_packet(self, command: int, timeout=0.1):
         """
-                Goes through a send/receive cycle with a VEX device.
-                Transmits the command with the optional additional payload, then reads and parses the outer layer
-                of the response
-                :param command: Command to send the device
-                :param retries: Number of retries to attempt to parse the output before giving up and raising an error
-                :return: Returns a dictionary containing the received command field and the payload. Correctly computes
-                the payload length even if the extended command (0x56) is used (only applies to the V5).
-                """
+        Goes through a send/receive cycle with a VEX device.
+        Transmits the command with the optional additional payload, then reads and parses the outer layer
+        of the response
+        :param command: Command to send the device
+        :param retries: Number of retries to attempt to parse the output before giving up and raising an error
+        :return: Returns a dictionary containing the received command field and the payload. Correctly computes
+        the payload length even if the extended command (0x56) is used (only applies to the V5).
+        """
         tx = self._tx_packet(command)
         self._rx_ack(timeout=timeout)
         logger(__name__).debug('TX: {}'.format(bytes_to_str(tx)))

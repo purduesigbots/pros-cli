@@ -19,14 +19,23 @@ from .conductor import conductor
 @click.argument('path', type=click.Path(exists=True))
 @click.argument('name')
 @click.argument('version')
-@click.option('--system', 'system_files', multiple=True, type=click.Path(),
-              help='Specify "system" files required by the template')
-@click.option('--user', 'user_files', multiple=True, type=click.Path(),
-              help='Specify files that are intended to be modified by users')
+@click.option(
+    '--system', 'system_files', multiple=True, type=click.Path(), help='Specify "system" files required by the template'
+)
+@click.option(
+    '--user',
+    'user_files',
+    multiple=True,
+    type=click.Path(),
+    help='Specify files that are intended to be modified by users',
+)
 @click.option('--kernels', 'supported_kernels', help='Specify supported kernels')
 @click.option('--target', type=click.Choice(['v5', 'cortex']), help='Specify the target platform (cortex or v5)')
-@click.option('--destination', type=click.Path(),
-              help='Specify an alternate destination for the created ZIP file or template descriptor')
+@click.option(
+    '--destination',
+    type=click.Path(),
+    help='Specify an alternate destination for the created ZIP file or template descriptor',
+)
 @click.option('--zip/--no-zip', 'do_zip', default=True, help='Create a ZIP file or create a template descriptor.')
 @default_options
 @click.pass_context
@@ -146,16 +155,18 @@ def create_template(ctx, path: str, destination: str, do_zip: bool, **kwargs):
         template.save()
 
 
-@conductor.command('purge-template', help='Purge template(s) from the local cache',
-                   context_settings={'ignore_unknown_options': True})
+@conductor.command(
+    'purge-template', help='Purge template(s) from the local cache', context_settings={'ignore_unknown_options': True}
+)
 @click.option('-f', '--force', is_flag=True, default=False, help='Do not prompt for removal of multiple templates')
 @template_query(required=False)
 @default_options
 def purge_template(query: c.BaseTemplate, force):
     analytics.send("purge-template")
     if not query:
-        force = click.confirm('Are you sure you want to remove all cached templates? This action is non-reversable!',
-                              abort=True)
+        force = click.confirm(
+            'Are you sure you want to remove all cached templates? This action is non-reversable!', abort=True
+        )
     cond = c.Conductor()
     templates = cond.resolve_templates(query, allow_online=False)
     beta_templates = cond.resolve_templates(query, allow_online=False, beta=True)

@@ -33,16 +33,22 @@ int_str = Union[int, str]
 
 def find_v5_ports(p_type: str):
     def filter_vex_ports(p):
-        return p.vid is not None and p.vid in [0x2888, 0x0501] or \
-               p.name is not None and ('VEX' in p.name or 'V5' in p.name)
+        return (
+            p.vid is not None
+            and p.vid in [0x2888, 0x0501]
+            or p.name is not None
+            and ('VEX' in p.name or 'V5' in p.name)
+        )
 
     def filter_v5_ports(p, locations, names):
-        return (p.location is not None and any([p.location.endswith(l) for l in locations])) or \
-               (p.name is not None and any([n in p.name for n in names])) or \
-               (p.description is not None and any([n in p.description for n in names]))
+        return (
+            (p.location is not None and any([p.location.endswith(l) for l in locations]))
+            or (p.name is not None and any([n in p.name for n in names]))
+            or (p.description is not None and any([n in p.description for n in names]))
+        )
 
     def filter_v5_ports_mac(p, device):
-        return (p.device is not None and p.device.endswith(device))
+        return p.device is not None and p.device.endswith(device)
 
     ports = [p for p in list_all_comports() if filter_vex_ports(p)]
 
@@ -152,18 +158,22 @@ class V5Device(VEXDevice, SystemDevice):
 
         def __init__(self, data: tuple):
             from semantic_version import Version
+
             self.system_version = Version('{}.{}.{}-{}.{}'.format(*data[0:5]))
             self.product = V5Device.SystemVersion.Product(data[5])
             self.product_flags = self.flag_map[self.product](data[6])
 
         def __str__(self):
-            return f'System Version: {self.system_version}\n' \
-                f'       Product: {self.product.name}\n' \
+            return (
+                f'System Version: {self.system_version}\n'
+                f'       Product: {self.product.name}\n'
                 f' Product Flags: {self.product_flags.value:x}'
+            )
 
     class SystemStatus(object):
         def __init__(self, data: tuple):
             from semantic_version import Version
+
             self.system_version = Version('{}.{}.{}-{}'.format(*data[0:4]))
             self.cpu0_version = Version('{}.{}.{}-{}'.format(*data[4:8]))
             self.cpu1_version = Version('{}.{}.{}-{}'.format(*data[8:12]))
@@ -179,7 +189,7 @@ class V5Device(VEXDevice, SystemDevice):
         super().__init__(port)
 
     class DownloadChannel(object):
-        def __init__(self, device: 'V5Device', timeout: float = 5.):
+        def __init__(self, device: 'V5Device', timeout: float = 5.0):
             self.device = device
             self.timeout = timeout
             self.did_switch = False
@@ -187,19 +197,21 @@ class V5Device(VEXDevice, SystemDevice):
         def __enter__(self):
             version = self.device.query_system_version()
             if version.product == V5Device.SystemVersion.Product.CONTROLLER:
-                self.device.default_timeout = 2.
+                self.device.default_timeout = 2.0
                 if V5Device.SystemVersion.ControllerFlags.CONNECTED not in version.product_flags:
                     raise VEXCommError('V5 Controller doesn\'t appear to be connected to a V5 Brain', version)
                 ui.echo('Transferring V5 to download channel')
                 self.device.ft_transfer_channel('download')
                 self.did_switch = True
                 logger(__name__).debug('Sleeping for a while to let V5 start channel transfer')
-                time.sleep(.25)  # wait at least 250ms before starting to poll controller if it's connected yet
+                time.sleep(0.25)  # wait at least 250ms before starting to poll controller if it's connected yet
                 version = self.device.query_system_version()
                 start_time = time.time()
                 # ask controller every 250 ms if it's connected until it is
-                while V5Device.SystemVersion.ControllerFlags.CONNECTED not in version.product_flags and \
-                        time.time() - start_time < self.timeout:
+                while (
+                    V5Device.SystemVersion.ControllerFlags.CONNECTED not in version.product_flags
+                    and time.time() - start_time < self.timeout
+                ):
                     version = self.device.query_system_version()
                     time.sleep(0.25)
                 if V5Device.SystemVersion.ControllerFlags.CONNECTED not in version.product_flags:
@@ -227,14 +239,17 @@ class V5Device(VEXDevice, SystemDevice):
     @property
     def is_wireless(self):
         version = self.query_system_version()
-        return version.product == V5Device.SystemVersion.Product.CONTROLLER and \
-            V5Device.SystemVersion.ControllerFlags.CONNECTED in version.product_flags
+        return (
+            version.product == V5Device.SystemVersion.Product.CONTROLLER
+            and V5Device.SystemVersion.ControllerFlags.CONNECTED in version.product_flags
+        )
 
     def generate_cold_hash(self, project: Project, extra: dict):
         keys = {k: t.version for k, t in project.templates.items()}
         keys.update(extra)
         from hashlib import md5
         from base64 import b64encode
+
         msg = str(sorted(keys, key=lambda t: t[0])).encode('ascii')
         name = b64encode(md5(msg).digest()).rstrip(b'=').decode('ascii')
         if Spec('<=1.0.0-27').match(self.status['cpu0_version']):
@@ -248,8 +263,10 @@ class V5Device(VEXDevice, SystemDevice):
         monolith_path = project.location.joinpath(project.output)
         if monolith_path.exists():
             logger(__name__).debug(f'Monolith exists! ({monolith_path})')
-        if 'hot_output' in project.templates['kernel'].metadata and \
-                'cold_output' in project.templates['kernel'].metadata:
+        if (
+            'hot_output' in project.templates['kernel'].metadata
+            and 'cold_output' in project.templates['kernel'].metadata
+        ):
             hot_path = project.location.joinpath(project.templates['kernel'].metadata['hot_output'])
             cold_path = project.location.joinpath(project.templates['kernel'].metadata['cold_output'])
             upload_hot_cold = False
@@ -271,7 +288,8 @@ class V5Device(VEXDevice, SystemDevice):
                         kwargs['linked_file'] = cold
                         kwargs['linked_remote_name'] = self.generate_cold_hash(project, {})
                         kwargs['linked_file_addr'] = int(
-                            project.templates['kernel'].metadata.get('cold_addr', 0x03800000))
+                            project.templates['kernel'].metadata.get('cold_addr', 0x03800000)
+                        )
                         kwargs['addr'] = int(project.templates['kernel'].metadata.get('hot_addr', 0x07800000))
                         return self.write_program(hot, **kwargs)
         if not monolith_path.exists():
@@ -284,7 +302,7 @@ class V5Device(VEXDevice, SystemDevice):
         default_icon = 'USER902x.bmp' if Spec('>=1.0.0-22').match(self.status['cpu0_version']) else 'USER999x.bmp'
         project_ini['project'] = {
             'version': str(kwargs.get('ide_version') or get_version()),
-            'ide': str(kwargs.get('ide') or 'PROS')
+            'ide': str(kwargs.get('ide') or 'PROS'),
         }
         project_ini['program'] = {
             'version': kwargs.get('version', '0.0.0') or '0.0.0',
@@ -292,7 +310,7 @@ class V5Device(VEXDevice, SystemDevice):
             'slot': slot,
             'icon': kwargs.get('icon', default_icon) or default_icon,
             'description': kwargs.get('description', 'Created with PROS'),
-            'date': datetime.now().isoformat()
+            'date': datetime.now().isoformat(),
         }
         if ini:
             project_ini.update(ini)
@@ -302,11 +320,22 @@ class V5Device(VEXDevice, SystemDevice):
             return ini_str.getvalue()
 
     @with_download_channel
-    def write_program(self, file: typing.BinaryIO, remote_name: str = None, ini: ConfigParser = None, slot: int = 0,
-                      file_len: int = -1, run_after: FTCompleteOptions = FTCompleteOptions.DONT_RUN,
-                      target: str = 'flash', quirk: int = 0, linked_file: Optional[typing.BinaryIO] = None,
-                      linked_remote_name: Optional[str] = None, linked_file_addr: Optional[int] = None,
-                      compress_bin: bool = True, **kwargs):
+    def write_program(
+        self,
+        file: typing.BinaryIO,
+        remote_name: str = None,
+        ini: ConfigParser = None,
+        slot: int = 0,
+        file_len: int = -1,
+        run_after: FTCompleteOptions = FTCompleteOptions.DONT_RUN,
+        target: str = 'flash',
+        quirk: int = 0,
+        linked_file: Optional[typing.BinaryIO] = None,
+        linked_remote_name: Optional[str] = None,
+        linked_file_addr: Optional[int] = None,
+        compress_bin: bool = True,
+        **kwargs,
+    ):
         with ui.Notification():
             action_string = f'Uploading program "{remote_name}"'
             finish_string = f'Finished uploading "{remote_name}"'
@@ -319,8 +348,16 @@ class V5Device(VEXDevice, SystemDevice):
             ui.echo(action_string)
             remote_base = f'slot_{slot + 1}'
             if target == 'ddr':
-                self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin',
-                                target='ddr', run_after=run_after, linked_filename=linked_remote_name, **kwargs)
+                self.write_file(
+                    file,
+                    f'{remote_base}.bin',
+                    file_len=file_len,
+                    type='bin',
+                    target='ddr',
+                    run_after=run_after,
+                    linked_filename=linked_remote_name,
+                    **kwargs,
+                )
                 return
             if not isinstance(ini, ConfigParser):
                 ini = ConfigParser()
@@ -334,31 +371,53 @@ class V5Device(VEXDevice, SystemDevice):
             logger(__name__).info(f'Created ini: {ini_file}')
 
             if linked_file is not None:
-                self.upload_library(linked_file, remote_name=linked_remote_name, addr=linked_file_addr,
-                                    compress=compress_bin, force_upload=kwargs.pop('force_upload_linked', False))
+                self.upload_library(
+                    linked_file,
+                    remote_name=linked_remote_name,
+                    addr=linked_file_addr,
+                    compress=compress_bin,
+                    force_upload=kwargs.pop('force_upload_linked', False),
+                )
             bin_kwargs = {k: v for k, v in kwargs.items() if v in ['addr']}
-            if (quirk & 0xff) == 1:
+            if (quirk & 0xFF) == 1:
                 # WRITE BIN FILE
-                self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after,
-                                linked_filename=linked_remote_name, compress=compress_bin, **bin_kwargs, **kwargs)
+                self.write_file(
+                    file,
+                    f'{remote_base}.bin',
+                    file_len=file_len,
+                    type='bin',
+                    run_after=run_after,
+                    linked_filename=linked_remote_name,
+                    compress=compress_bin,
+                    **bin_kwargs,
+                    **kwargs,
+                )
                 with BytesIO(ini_file.encode(encoding='ascii')) as ini_bin:
                     # WRITE INI FILE
                     self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
-            elif (quirk & 0xff) == 0:
+            elif (quirk & 0xFF) == 0:
                 # STOP PROGRAM
                 self.execute_program_file('', run=False)
                 with BytesIO(ini_file.encode(encoding='ascii')) as ini_bin:
                     # WRITE INI FILE
                     self.write_file(ini_bin, f'{remote_base}.ini', type='ini', **kwargs)
                 # WRITE BIN FILE
-                self.write_file(file, f'{remote_base}.bin', file_len=file_len, type='bin', run_after=run_after,
-                                linked_filename=linked_remote_name, compress=compress_bin, **bin_kwargs, **kwargs)
+                self.write_file(
+                    file,
+                    f'{remote_base}.bin',
+                    file_len=file_len,
+                    type='bin',
+                    run_after=run_after,
+                    linked_filename=linked_remote_name,
+                    compress=compress_bin,
+                    **bin_kwargs,
+                    **kwargs,
+                )
             else:
                 raise ValueError(f'Unknown quirk option: {quirk}')
             ui.finalize('upload', f'{finish_string} to V5')
 
-    def ensure_library_space(self, name: Optional[str] = None, vid: int_str = None,
-                             target_name: Optional[str] = None):
+    def ensure_library_space(self, name: Optional[str] = None, vid: int_str = None, target_name: Optional[str] = None):
         """
         Uses algorithms, for loops, and if statements to determine what files should be removed
 
@@ -379,10 +438,7 @@ class V5Device(VEXDevice, SystemDevice):
             # assume all libraries
             unused_libraries = [
                 (vid, l['filename'])
-                for l
-                in [self.get_file_metadata_by_idx(i)
-                    for i in range(0, self.get_dir_count(vid=vid))
-                    ]
+                for l in [self.get_file_metadata_by_idx(i) for i in range(0, self.get_dir_count(vid=vid))]
             ]
             if name is not None:
                 if (vid, name) in unused_libraries:
@@ -395,9 +451,7 @@ class V5Device(VEXDevice, SystemDevice):
         programs: Dict[str, Dict] = {
             # need the linked file metadata, so we have to use the get_file_metadata_by_name command
             p['filename']: self.get_file_metadata_by_name(p['filename'], vid='user')
-            for p
-            in [self.get_file_metadata_by_idx(i)
-                for i in range(0, self.get_dir_count(vid='user'))]
+            for p in [self.get_file_metadata_by_idx(i) for i in range(0, self.get_dir_count(vid='user'))]
             if p['type'] == 'bin'
         }
         library_usage: Dict[Tuple[int, str], List[str]] = defaultdict(list)
@@ -440,19 +494,23 @@ class V5Device(VEXDevice, SystemDevice):
         if len(used_libraries) > 3:
             libraries = [
                 (linked_vid, linked_name, self.get_file_metadata_by_name(linked_name, vid=linked_vid)['timestamp'])
-                for linked_vid, linked_name
-                in used_libraries
+                for linked_vid, linked_name in used_libraries
             ]
-            library_usage_timestamps = sorted([
-                (
-                    linked_vid,
-                    linked_name,
-                    # get the most recent timestamp of the library and all files linking to it
-                    max(linked_timestamp, *[programs[p]['timestamp'] for p in library_usage[(linked_vid, linked_name)]])
-                )
-                for linked_vid, linked_name, linked_timestamp
-                in libraries
-            ], key=lambda t: t[2])
+            library_usage_timestamps = sorted(
+                [
+                    (
+                        linked_vid,
+                        linked_name,
+                        # get the most recent timestamp of the library and all files linking to it
+                        max(
+                            linked_timestamp,
+                            *[programs[p]['timestamp'] for p in library_usage[(linked_vid, linked_name)]],
+                        ),
+                    )
+                    for linked_vid, linked_name, linked_timestamp in libraries
+                ],
+                key=lambda t: t[2],
+            )
             evicted_files: List[Union[str, Tuple[int, str]]] = []
             evicted_file_list = ''
             for evicted_library in library_usage_timestamps[:3]:
@@ -462,17 +520,27 @@ class V5Device(VEXDevice, SystemDevice):
                 evicted_file_list += ', '.join(library_usage[evicted_file_list[0:2]])
             evicted_file_list = evicted_file_list[:2]  # remove last ", "
             assert len(evicted_files) > 0
-            if confirm(f'There are too many files on the V5. PROS can remove the following suggested old files: '
-                       f'{evicted_file_list}',
-                       title='Confirm file eviction plan:'):
+            if confirm(
+                f'There are too many files on the V5. PROS can remove the following suggested old files: '
+                f'{evicted_file_list}',
+                title='Confirm file eviction plan:',
+            ):
                 for file in evicted_files:
                     if isinstance(file, tuple):
                         self.erase_file(file_name=file[1], vid=file[0])
                     else:
                         self.erase_file(file_name=file, erase_all=True, vid='user')
 
-    def upload_library(self, file: typing.BinaryIO, remote_name: str = None, file_len: int = -1, vid: int_str = 'pros',
-                       force_upload: bool = False, compress: bool = True, **kwargs):
+    def upload_library(
+        self,
+        file: typing.BinaryIO,
+        remote_name: str = None,
+        file_len: int = -1,
+        vid: int_str = 'pros',
+        force_upload: bool = False,
+        compress: bool = True,
+        **kwargs,
+    ):
         """
         Upload a file used for linking. Contains the logic to check if the file is already present in the filesystem
         and to prompt the user if we need to evict a library (and user programs).
@@ -504,20 +572,32 @@ class V5Device(VEXDevice, SystemDevice):
                     ui.echo('Library is already onboard V5')
                     return
                 else:
-                    logger(__name__).warning(f'Library onboard doesn\'t match! '
-                                             f'Length was {response["size"]} but expected {file_len} '
-                                             f'CRC: was {response["crc"]:x} but expected {crc32:x}')
+                    logger(__name__).warning(
+                        f'Library onboard doesn\'t match! '
+                        f'Length was {response["size"]} but expected {file_len} '
+                        f'CRC: was {response["crc"]:x} but expected {crc32:x}'
+                    )
             except VEXCommError as e:
                 logger(__name__).debug(e)
         else:
             logger(__name__).info('Skipping already-uploaded checks')
 
         logger(__name__).debug('Going to worry about uploading the file now')
-        self.ensure_library_space(remote_name, vid, )
+        self.ensure_library_space(
+            remote_name,
+            vid,
+        )
         self.write_file(file, remote_name, file_len, vid=vid, **kwargs)
 
-    def read_file(self, file: typing.IO[bytes], remote_file: str, vid: int_str = 'user', target: int_str = 'flash',
-                  addr: Optional[int] = None, file_len: Optional[int] = None):
+    def read_file(
+        self,
+        file: typing.IO[bytes],
+        remote_file: str,
+        vid: int_str = 'user',
+        target: int_str = 'flash',
+        addr: Optional[int] = None,
+        file_len: Optional[int] = None,
+    ):
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
         if addr is None:
@@ -529,8 +609,12 @@ class V5Device(VEXDevice, SystemDevice):
             file_len = ft_meta['file_size']
 
         if wireless and file_len > 0x25000:
-            confirm(f'You\'re about to download {file_len} bytes wirelessly. This could take some time, and you should '
-                    f'consider downloading directly with a wire.', abort=True, default=False)
+            confirm(
+                f'You\'re about to download {file_len} bytes wirelessly. This could take some time, and you should '
+                f'consider downloading directly with a wire.',
+                abort=True,
+                default=False,
+            )
 
         max_packet_size = ft_meta['max_packet_size']
         with ui.progressbar(length=file_len, label='Downloading {}'.format(remote_file)) as progress:
@@ -543,9 +627,17 @@ class V5Device(VEXDevice, SystemDevice):
                 logger(__name__).debug('Completed {} of {} bytes'.format(i + packet_size, file_len))
         self.ft_complete()
 
-    def write_file(self, file: typing.BinaryIO, remote_file: str, file_len: int = -1,
-                   run_after: FTCompleteOptions = FTCompleteOptions.DONT_RUN, linked_filename: Optional[str] = None,
-                   linked_vid: int_str = 'pros', compress: bool = False, **kwargs):
+    def write_file(
+        self,
+        file: typing.BinaryIO,
+        remote_file: str,
+        file_len: int = -1,
+        run_after: FTCompleteOptions = FTCompleteOptions.DONT_RUN,
+        linked_filename: Optional[str] = None,
+        linked_vid: int_str = 'pros',
+        compress: bool = False,
+        **kwargs,
+    ):
         if file_len < 0:
             file_len = file.seek(0, 2)
             file.seek(0, 0)
@@ -556,8 +648,12 @@ class V5Device(VEXDevice, SystemDevice):
             file, file_len = compress_file(file, file_len)
 
         if self.is_wireless and file_len > 0x25000:
-            confirm(f'You\'re about to upload {file_len} bytes wirelessly. This could take some time, and you should '
-                    f'consider uploading directly with a wire.', abort=True, default=False)
+            confirm(
+                f'You\'re about to upload {file_len} bytes wirelessly. This could take some time, and you should '
+                f'consider uploading directly with a wire.',
+                abort=True,
+                default=False,
+            )
         crc32 = self.VEX_CRC32.compute(file.read(file_len))
         file.seek(0, 0)
         addr = kwargs.get('addr', 0x03800000)
@@ -602,9 +698,9 @@ class V5Device(VEXDevice, SystemDevice):
             for x in range(width - 1):
                 if x < 480:
                     px = rx[y * width + x]
-                    data[y].append((px & 0xff0000) >> 16)
-                    data[y].append((px & 0x00ff00) >> 8)
-                    data[y].append(px & 0x0000ff)
+                    data[y].append((px & 0xFF0000) >> 16)
+                    data[y].append((px & 0x00FF00) >> 8)
+                    data[y].append(px & 0x0000FF)
 
         return data, 480, height
 
@@ -659,7 +755,7 @@ class V5Device(VEXDevice, SystemDevice):
             'type': 'bin',
             'timestamp': datetime.now(),
             'version': 0x01_00_00_00,
-            'name': file_name
+            'name': file_name,
         }
         options.update({k: v for k, v in kwargs.items() if k in options and v is not None})
 
@@ -677,9 +773,20 @@ class V5Device(VEXDevice, SystemDevice):
         options['timestamp'] = int((options['timestamp'] - datetime(2000, 1, 1)).total_seconds())
 
         logger(__name__).debug('Initializing file transfer w/: {}'.format(options))
-        tx_payload = struct.pack("<4B3I4s2I24s", options['function'], options['target'], options['vid'],
-                                 options['options'], options['length'], options['addr'], options['crc'],
-                                 options['type'], options['timestamp'], options['version'], options['name'])
+        tx_payload = struct.pack(
+            "<4B3I4s2I24s",
+            options['function'],
+            options['target'],
+            options['vid'],
+            options['options'],
+            options['length'],
+            options['addr'],
+            options['crc'],
+            options['type'],
+            options['timestamp'],
+            options['version'],
+            options['name'],
+        )
         rx = self._txrx_ext_struct(0x11, tx_payload, "<H2I", timeout=kwargs.get('timeout', self.default_timeout * 5))
         rx = dict(zip(['max_packet_size', 'file_size', 'crc'], rx))
         logger(__name__).debug('response: {}'.format(rx))
@@ -736,8 +843,7 @@ class V5Device(VEXDevice, SystemDevice):
         return ret
 
     @retries
-    def get_dir_count(self, vid: int_str = 1, options: int = 0) \
-            -> int:
+    def get_dir_count(self, vid: int_str = 1, options: int = 0) -> int:
         logger(__name__).debug('Sending ext 0x16 command')
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
@@ -747,8 +853,7 @@ class V5Device(VEXDevice, SystemDevice):
         return ret
 
     @retries
-    def get_file_metadata_by_idx(self, file_idx: int, options: int = 0) \
-            -> Dict[str, Any]:
+    def get_file_metadata_by_idx(self, file_idx: int, options: int = 0) -> Dict[str, Any]:
         logger(__name__).debug('Sending ext 0x17 command')
         tx_payload = struct.pack("<2B", file_idx, options)
         rx = self._txrx_ext_struct(0x17, tx_payload, "<B3L4sLL24s")
@@ -765,7 +870,7 @@ class V5Device(VEXDevice, SystemDevice):
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
         options = 0
-        options |= (0 if run else 0x80)
+        options |= 0 if run else 0x80
         logger(__name__).debug('VID: {}\tOptions: {}\tFile name: {}\tRun: {}'.format(vid, options, file_name, run))
         tx_payload = struct.pack("<2B24s", vid, options, file_name.encode(encoding='ascii'))
         ret = self._txrx_ext_packet(0x18, tx_payload, 0)
@@ -773,8 +878,7 @@ class V5Device(VEXDevice, SystemDevice):
         return ret
 
     @retries
-    def get_file_metadata_by_name(self, file_name: str, vid: int_str = 1, options: int = 0) \
-            -> Dict[str, Any]:
+    def get_file_metadata_by_name(self, file_name: str, vid: int_str = 1, options: int = 0) -> Dict[str, Any]:
         logger(__name__).debug('Sending ext 0x19 command')
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
@@ -795,22 +899,29 @@ class V5Device(VEXDevice, SystemDevice):
         options = {
             'vid': 'user',
             'options': 0,
-            'addr': 0xff_ff_ff_ff,
+            'addr': 0xFF_FF_FF_FF,
             'type': b'\xff\xff\xff\xff',
-            'timestamp': 0xff_ff_ff_ff,
-            'version': 0xff_ff_ff_ff
+            'timestamp': 0xFF_FF_FF_FF,
+            'version': 0xFF_FF_FF_FF,
         }  # Dict[str, Any]
         options.update(**kwargs)
         if isinstance(options['vid'], str):
             options['vid'] = self.vid_map[options['vid'].lower()]
         if isinstance(options['timestamp'], datetime):
-            assert (isinstance(options['timestamp'], datetime))
+            assert isinstance(options['timestamp'], datetime)
             options['timestamp'] = (options['timestamp'] - datetime(2000, 1, 1)).get_seconds()
         if isinstance(options['type'], str):
             options['type'] = options['type'].encode(encoding='ascii')
-        tx_payload = struct.pack("<2BI4s2I24s", options['vid'], options['options'],
-                                 options['addr'], options['type'], options['timestamp'],
-                                 options['version'], file_name.encode(encoding='ascii'))
+        tx_payload = struct.pack(
+            "<2BI4s2I24s",
+            options['vid'],
+            options['options'],
+            options['addr'],
+            options['type'],
+            options['timestamp'],
+            options['version'],
+            file_name.encode(encoding='ascii'),
+        )
         ret = self._txrx_ext_packet(0x1A, tx_payload, 0)
         logger(__name__).debug('Completed ext 0x1A command')
         return ret
@@ -821,7 +932,7 @@ class V5Device(VEXDevice, SystemDevice):
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
         options = 0
-        options |= (0x80 if erase_all else 0)
+        options |= 0x80 if erase_all else 0
         tx_payload = struct.pack('<2B24s', vid, options, file_name.encode(encoding='ascii'))
         recv = self._txrx_ext_packet(0x1B, tx_payload, 0)
         self.ft_complete()
@@ -829,8 +940,7 @@ class V5Device(VEXDevice, SystemDevice):
         return recv
 
     @retries
-    def get_program_file_slot(self, file_name: str, vid: int = 1, options: int = 0) \
-            -> Dict[str, Any]:
+    def get_program_file_slot(self, file_name: str, vid: int = 1, options: int = 0) -> Dict[str, Any]:
         logger(__name__).debug('Sending ext 0x1C command')
         tx_payload = struct.pack("<2B24s", vid, options, file_name.encode(encoding='ascii'))
         ret = self._txrx_ext_struct(0x1C, tx_payload, "<B")[0]
@@ -844,10 +954,13 @@ class V5Device(VEXDevice, SystemDevice):
     @retries
     def get_system_status(self) -> SystemStatus:
         from semantic_version import Version
+
         logger(__name__).debug('Sending ext 0x22 command')
         version = self.query_system_version()
-        if (version.product == V5Device.SystemVersion.Product.BRAIN and version.system_version in Spec('<1.0.13')) or \
-                (version.product == V5Device.SystemVersion.Product.CONTROLLER and version.system_version in Spec('<1.0.0-0.70')):
+        if (version.product == V5Device.SystemVersion.Product.BRAIN and version.system_version in Spec('<1.0.13')) or (
+            version.product == V5Device.SystemVersion.Product.CONTROLLER
+            and version.system_version in Spec('<1.0.0-0.70')
+        ):
             schema = '<x12B3xBI12x'
         else:
             schema = '<x12B3xBI12xB3x'
@@ -910,7 +1023,7 @@ class V5Device(VEXDevice, SystemDevice):
         encoded_kv = f'{kv}\0'.encode(encoding='ascii')
         tx_payload = struct.pack(f'<{len(encoded_kv)}s', encoded_kv)
         # Because the length of the kernel variables is not known, use None to indicate we are recieving an unknown length.
-        ret = self._txrx_ext_packet(0x2e, tx_payload, 1, check_length=False, check_ack=True)
+        ret = self._txrx_ext_packet(0x2E, tx_payload, 1, check_length=False, check_ack=True)
         logger(__name__).debug('Completed ext 0x2e command')
         return ret
 
@@ -918,25 +1031,28 @@ class V5Device(VEXDevice, SystemDevice):
     def kv_write(self, kv: str, payload: Union[Iterable, bytes, bytearray, str]):
         logger(__name__).debug('Sending ext 0x2f command')
         encoded_kv = f'{kv}\0'.encode(encoding='ascii')
-        kv_to_max_bytes = {
-            'teamnumber': 7,
-            'robotname': 16
-        }
+        kv_to_max_bytes = {'teamnumber': 7, 'robotname': 16}
         if len(payload) > kv_to_max_bytes.get(kv, 254):
             print(f'Truncating input to meet maximum value length ({kv_to_max_bytes[kv]} characters).')
         # Trim down size of payload to fit within the 255 byte limit and add null terminator.
-        payload = payload[:kv_to_max_bytes.get(kv, 254)] + "\0"
+        payload = payload[: kv_to_max_bytes.get(kv, 254)] + "\0"
         if isinstance(payload, str):
             payload = payload.encode(encoding='ascii')
         tx_fmt = f'<{len(encoded_kv)}s{len(payload)}s'
         tx_payload = struct.pack(tx_fmt, encoded_kv, payload)
-        self._txrx_ext_packet(0x2f, tx_payload, 1, check_length=False, check_ack=True)
+        self._txrx_ext_packet(0x2F, tx_payload, 1, check_length=False, check_ack=True)
         logger(__name__).debug('Completed ext 0x2f command')
         return payload
 
-    def _txrx_ext_struct(self, command: int, tx_data: Union[Iterable, bytes, bytearray],
-                         unpack_fmt: str, check_length: bool = True, check_ack: bool = True,
-                         timeout: Optional[float] = None) -> Tuple:
+    def _txrx_ext_struct(
+        self,
+        command: int,
+        tx_data: Union[Iterable, bytes, bytearray],
+        unpack_fmt: str,
+        check_length: bool = True,
+        check_ack: bool = True,
+        timeout: Optional[float] = None,
+    ) -> Tuple:
         """
         Transmits and receives an extended command to the V5, automatically unpacking the values according to unpack_fmt
         which gets passed into struct.unpack. The size of the payload is determined from the fmt string
@@ -948,14 +1064,21 @@ class V5Device(VEXDevice, SystemDevice):
         :param check_ack: If true, then checks the first byte of the extended payload as an AK byte
         :return: A tuple unpacked according to the unpack_fmt
         """
-        rx = self._txrx_ext_packet(command, tx_data, struct.calcsize(unpack_fmt),
-                                   check_length=check_length, check_ack=check_ack, timeout=timeout)
+        rx = self._txrx_ext_packet(
+            command,
+            tx_data,
+            struct.calcsize(unpack_fmt),
+            check_length=check_length,
+            check_ack=check_ack,
+            timeout=timeout,
+        )
         logger(__name__).debug('Unpacking with format: {}'.format(unpack_fmt))
         return struct.unpack(unpack_fmt, rx)
 
     @classmethod
-    def _rx_ext_packet(cls, msg: Message, command: int, rx_length: int, check_ack: bool = True,
-                       check_length: bool = True) -> Message:
+    def _rx_ext_packet(
+        cls, msg: Message, command: int, rx_length: int, check_ack: bool = True, check_length: bool = True
+    ) -> Message:
         """
         Parse a received packet
         :param msg: data to parse
@@ -965,10 +1088,10 @@ class V5Device(VEXDevice, SystemDevice):
         :param tx_payload: what was sent, used if an exception needs to be thrown
         :return: The payload of the extended message
         """
-        assert (msg['command'] == 0x56)
+        assert msg['command'] == 0x56
         if not cls.VEX_CRC16.compute(msg.rx) == 0:
             raise VEXCommError("CRC of message didn't match 0: {}".format(cls.VEX_CRC16.compute(msg.rx)), msg)
-        assert (msg['payload'][0] == command)
+        assert msg['payload'][0] == command
         msg = msg['payload'][1:-2]
         if check_ack:
             nacks = {
@@ -985,7 +1108,7 @@ class V5Device(VEXDevice, SystemDevice):
                 0xD8: "Data downloaded does not match initial length",
                 0xD9: "Directory entry does not exist",
                 0xDA: "Max user files, no more room for another user program",
-                0xDB: "User file exists"
+                0xDB: "User file exists",
             }
             if msg[0] in nacks.keys():
                 raise VEXCommError("Device NACK'd with reason: {}".format(nacks[msg[0]]), msg)
@@ -998,12 +1121,19 @@ class V5Device(VEXDevice, SystemDevice):
             raise VEXCommError(f'Received length is less than {rx_length} (got {len(msg)}).', msg)
         elif len(msg) > rx_length and check_length:
             ui.echo(
-                f'WARNING: Recieved length is more than {rx_length} (got {len(msg)}). Consider upgrading the PROS (CLI Version: {get_version()}).')
+                f'WARNING: Recieved length is more than {rx_length} (got {len(msg)}). Consider upgrading the PROS (CLI Version: {get_version()}).'
+            )
         return msg
 
-    def _txrx_ext_packet(self, command: int, tx_data: Union[Iterable, bytes, bytearray],
-                         rx_length: int, check_length: bool = True,
-                         check_ack: bool = True, timeout: Optional[float] = None) -> Message:
+    def _txrx_ext_packet(
+        self,
+        command: int,
+        tx_data: Union[Iterable, bytes, bytearray],
+        rx_length: int,
+        check_length: bool = True,
+        check_ack: bool = True,
+        timeout: Optional[float] = None,
+    ) -> Message:
         """
         Transmits and receives an extended command to the V5.
         :param command: Extended command code
@@ -1023,13 +1153,13 @@ class V5Device(VEXDevice, SystemDevice):
         if payload is None:
             payload = bytearray()
         payload_length = len(payload)
-        assert payload_length <= 0x7f_ff
+        assert payload_length <= 0x7F_FF
         if payload_length >= 0x80:
-            payload_length = [(payload_length >> 8) | 0x80, payload_length & 0xff]
+            payload_length = [(payload_length >> 8) | 0x80, payload_length & 0xFF]
         else:
             payload_length = [payload_length]
         packet = bytearray([msg, *payload_length, *payload])
         crc = cls.VEX_CRC16.compute(bytes([*cls._form_simple_packet(0x56), *packet]))
-        packet = bytearray([*packet, crc >> 8, crc & 0xff])
-        assert (cls.VEX_CRC16.compute(bytes([*cls._form_simple_packet(0x56), *packet])) == 0)
+        packet = bytearray([*packet, crc >> 8, crc & 0xFF])
+        assert cls.VEX_CRC16.compute(bytes([*cls._form_simple_packet(0x56), *packet])) == 0
         return packet

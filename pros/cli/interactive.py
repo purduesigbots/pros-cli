@@ -5,6 +5,7 @@ import pros.conductor as c
 from .common import PROSGroup, default_options, project_option, pros_root
 from pros.ga.analytics import analytics
 
+
 @pros_root
 def interactive_cli():
     pass
@@ -22,6 +23,7 @@ def interactive():
 def new_project(directory):
     from pros.common.ui.interactive.renderers import MachineOutputRenderer
     from pros.conductor.interactive.NewProjectModal import NewProjectModal
+
     app = NewProjectModal(directory=directory)
     MachineOutputRenderer(app).run()
 
@@ -32,6 +34,7 @@ def new_project(directory):
 def update_project(project: Optional[c.Project]):
     from pros.common.ui.interactive.renderers import MachineOutputRenderer
     from pros.conductor.interactive.UpdateProjectModal import UpdateProjectModal
+
     app = UpdateProjectModal(project)
     MachineOutputRenderer(app).run()
 
@@ -42,4 +45,5 @@ def update_project(project: Optional[c.Project]):
 def upload(project: Optional[c.Project]):
     from pros.common.ui.interactive.renderers import MachineOutputRenderer
     from pros.serial.interactive import UploadProjectModal
+
     MachineOutputRenderer(UploadProjectModal(project)).run()

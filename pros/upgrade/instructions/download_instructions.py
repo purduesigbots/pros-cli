@@ -9,6 +9,7 @@ class DownloadInstruction(UpgradeInstruction):
     """
     Downloads a file
     """
+
     def __init__(self, url='', extension=None, download_description=None, success_explanation=None):
         self.url: str = url
         self.extension: Optional[str] = extension
@@ -24,8 +25,9 @@ class DownloadInstruction(UpgradeInstruction):
             return UpgradeResult(False, explanation=f'Failed to download required file. ({e})', exception=e)
 
         if self.success_explanation:
-            explanation = self.success_explanation.replace('//FILE\\\\', file) \
-                .replace('//SHORT\\\\', os.path.split(file)[1])
+            explanation = self.success_explanation.replace('//FILE\\\\', file).replace(
+                '//SHORT\\\\', os.path.split(file)[1]
+            )
         else:
             explanation = f'Downloaded {os.path.split(file)[1]}'
         return UpgradeResult(True, explanation=explanation, file=file, origin=self.url)

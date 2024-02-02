@@ -4,6 +4,7 @@ from pros.common import ui
 from .common import default_options, pros_root
 from pros.ga.analytics import analytics
 
+
 @pros_root
 def user_script_cli():
     pass
@@ -19,6 +20,7 @@ def user_script(script_file):
     analytics.send("user-script")
     import os.path
     import importlib.util
+
     package_name = os.path.splitext(os.path.split(script_file)[0])[0]
     package_path = os.path.abspath(script_file)
     ui.echo(f'Loading {package_name} from {package_path}')

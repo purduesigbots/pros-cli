@@ -44,11 +44,11 @@ class UploadProjectModal(application.Modal[None]):
         if self.port.is_valid() and bool(self.port.value):
             from pros.serial.devices.vex import V5Device
             from pros.serial.ports import DirectPort
+
             device = V5Device(DirectPort(self.port.value))
             slot_options = [
                 f'{slot}' + ('' if program is None else f' (Currently: {program})')
-                for slot, program in
-                device.used_slots().items()
+                for slot, program in device.used_slots().items()
             ]
         else:
             slot_options = [str(i) for i in range(1, 9)]
@@ -67,9 +67,7 @@ class UploadProjectModal(application.Modal[None]):
             else:
                 # or just slot 1
                 selected = slot_options[0]
-        self.advanced_options['slot'] = parameters.OptionParameter(
-            selected, slot_options
-        )
+        self.advanced_options['slot'] = parameters.OptionParameter(selected, slot_options)
 
     def update_comports(self):
         list_all_comports.cache_clear()
@@ -108,9 +106,7 @@ class UploadProjectModal(application.Modal[None]):
                     'description': parameters.Parameter(
                         self.project.upload_options.get('description', 'Created with PROS')
                     ),
-                    'compress_bin': parameters.BooleanParameter(
-                        self.project.upload_options.get('compress_bin', True)
-                    )
+                    'compress_bin': parameters.BooleanParameter(self.project.upload_options.get('compress_bin', True)),
                 }
                 self.update_slots()
             else:
@@ -125,6 +121,7 @@ class UploadProjectModal(application.Modal[None]):
     def confirm(self, *args, **kwargs):
         from pros.cli.upload import upload
         from click import get_current_context
+
         kwargs = {'path': None, 'project': self.project, 'port': self.port.value}
         savable_kwargs = {}
         if self.project.target == 'v5':
@@ -145,9 +142,7 @@ class UploadProjectModal(application.Modal[None]):
     @property
     def can_confirm(self):
         advanced_valid = all(
-            p.is_valid()
-            for p in self.advanced_options.values()
-            if isinstance(p, parameters.ValidatableParameter)
+            p.is_valid() for p in self.advanced_options.values() if isinstance(p, parameters.ValidatableParameter)
         )
         return self.project is not None and self.port.is_valid() and advanced_valid
 
@@ -167,4 +162,5 @@ class UploadProjectModal(application.Modal[None]):
                 components.InputBox('Description', self.advanced_options['description']),
                 components.Checkbox('Compress Binary', self.advanced_options['compress_bin']),
                 title='Advanced V5 Options',
-                collapsed=self.advanced_options_collapsed)
+                collapsed=self.advanced_options_collapsed,
+            )

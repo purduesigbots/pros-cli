@@ -11,6 +11,7 @@ class ExplorerInstruction(DownloadInstruction):
         result = super().perform_upgrade()
         if result.successful:
             import click
+
             click.launch(getattr(result, 'file'))
         return result
 

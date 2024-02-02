@@ -25,9 +25,7 @@ class UpdateProjectModal(application.Modal[None]):
 
     def _generate_transaction(self) -> ProjectTransaction:
         transaction = ProjectTransaction(self.project, self.conductor)
-        apply_kwargs = dict(
-            force_apply=self.force_apply_parameter.value
-        )
+        apply_kwargs = dict(force_apply=self.force_apply_parameter.value)
         if self.name.value != self.project.name:
             transaction.change_name(self.name.value)
         if self.project.template_is_applicable(self.current_kernel.value, **apply_kwargs):
@@ -53,8 +51,9 @@ class UpdateProjectModal(application.Modal[None]):
 
         self.new_templates.append(p)
 
-    def __init__(self, ctx: Optional[Context] = None, conductor: Optional[Conductor] = None,
-                 project: Optional[Project] = None):
+    def __init__(
+        self, ctx: Optional[Context] = None, conductor: Optional[Conductor] = None, project: Optional[Project] = None
+    ):
         super().__init__('Update a project')
         self.conductor = conductor or Conductor()
         self.click_ctx = ctx or get_current_context()
@@ -93,16 +92,18 @@ class UpdateProjectModal(application.Modal[None]):
                 None,
                 options=sorted(
                     {t for t in self.conductor.resolve_templates(self.project.templates['kernel'].as_query())},
-                    key=lambda v: Version(v.version), reverse=True
-                )
+                    key=lambda v: Version(v.version),
+                    reverse=True,
+                ),
             )
             self.current_templates = [
                 TemplateParameter(
                     None,
-                    options=sorted({
-                        t
-                        for t in self.conductor.resolve_templates(t.as_query())
-                    }, key=lambda v: Version(v.version), reverse=True)
+                    options=sorted(
+                        {t for t in self.conductor.resolve_templates(t.as_query())},
+                        key=lambda v: Version(v.version),
+                        reverse=True,
+                    ),
                 )
                 for t in self.project.templates.values()
                 if t.name != 'kernel'
@@ -131,17 +132,19 @@ class UpdateProjectModal(application.Modal[None]):
             yield components.InputBox('Project Name', self.name)
             yield TemplateListingComponent(self.current_kernel, editable=dict(version=True), removable=False)
             yield components.Container(
-                *(TemplateListingComponent(t, editable=dict(version=True), removable=True) for t in
-                  self.current_templates),
+                *(
+                    TemplateListingComponent(t, editable=dict(version=True), removable=True)
+                    for t in self.current_templates
+                ),
                 *(TemplateListingComponent(t, editable=True, removable=True) for t in self.new_templates),
                 self.add_template_button,
                 title='Templates',
-                collapsed=self.templates_collapsed
+                collapsed=self.templates_collapsed,
             )
             yield components.Container(
                 components.Checkbox('Re-apply all templates', self.force_apply_parameter),
                 title='Advanced',
-                collapsed=self.advanced_collapsed
+                collapsed=self.advanced_collapsed,
             )
             yield components.Label('What will happen when you click "Continue":')
             yield components.VerbatimLabel(self._generate_transaction().describe())

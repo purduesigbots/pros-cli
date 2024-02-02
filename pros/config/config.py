@@ -31,16 +31,17 @@ class Config(object):
                         if isinstance(result, dict):
                             if 'py/state' in result:
                                 class_name = '{}.{}'.format(self.__class__.__module__, self.__class__.__qualname__)
-                                logger(__name__).debug(
-                                    'Coercing {} to {}'.format(result['py/object'], class_name))
+                                logger(__name__).debug('Coercing {} to {}'.format(result['py/object'], class_name))
                                 old_object = result['py/object']
                                 try:
                                     result['py/object'] = class_name
                                     result = jsonpickle.unpickler.Unpickler().restore(result)
                                 except (json.decoder.JSONDecodeError, AttributeError) as e:
                                     logger(__name__).debug(e)
-                                    logger(__name__).warning(f'Couldn\'t coerce {file} ({old_object}) to '
-                                                             f'{class_name}. Using rudimentary coercion')
+                                    logger(__name__).warning(
+                                        f'Couldn\'t coerce {file} ({old_object}) to '
+                                        f'{class_name}. Using rudimentary coercion'
+                                    )
                                     self.__dict__.update(result['py/state'])
                             else:
                                 self.__dict__.update(result)
@@ -69,6 +70,7 @@ class Config(object):
                         logger(__name__).debug('Failed to save {} ({})'.format(file, e))
 
         from pros.common.sentry import add_context
+
         add_context(self)
 
     def __getstate__(self):
@@ -100,7 +102,7 @@ class Config(object):
             logger(__name__).debug('Saved {}'.format(file))
 
     def migrate(self, migration):
-        for (old, new) in migration.iteritems():
+        for old, new in migration.iteritems():
             if self.__dict__.get(old) is not None:
                 self.__dict__[new] = self.__dict__[old]
                 del self.__dict__[old]

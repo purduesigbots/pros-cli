@@ -13,7 +13,7 @@ def build_cli():
     pass
 
 
-@build_cli.command(aliases=['build','m'])
+@build_cli.command(aliases=['build', 'm'])
 @project_option()
 @click.argument('build-args', nargs=-1)
 @default_options
@@ -48,6 +48,7 @@ def make_upload(ctx, project: c.Project, build_args: List[str], **upload_args):
 def make_upload_terminal(ctx, project: c.Project, build_args, **upload_args):
     analytics.send("make-upload-terminal")
     from .terminal import terminal
+
     ctx.invoke(make, project=project, build_args=build_args)
     ctx.invoke(upload, project=project, **upload_args)
     ctx.invoke(terminal, port=project.target, request_banner=False)
@@ -55,21 +56,24 @@ def make_upload_terminal(ctx, project: c.Project, build_args, **upload_args):
 
 @build_cli.command('build-compile-commands', hidden=True)
 @project_option()
-@click.option('--suppress-output/--show-output', 'suppress_output', default=False, show_default=True,
-              help='Suppress output')
+@click.option(
+    '--suppress-output/--show-output', 'suppress_output', default=False, show_default=True, help='Suppress output'
+)
 @click.option('--compile-commands', type=click.File('w'), default=None)
 @click.option('--sandbox', default=False, is_flag=True)
 @click.argument('build-args', nargs=-1)
 @default_options
-def build_compile_commands(project: c.Project, suppress_output: bool, compile_commands, sandbox: bool,
-                           build_args: List[str]):
+def build_compile_commands(
+    project: c.Project, suppress_output: bool, compile_commands, sandbox: bool, build_args: List[str]
+):
     """
     Build a compile_commands.json compatible with cquery
     :return:
     """
     analytics.send("build-compile-commands")
-    exit_code = project.make_scan_build(build_args, cdb_file=compile_commands, suppress_output=suppress_output,
-                                        sandbox=sandbox)
+    exit_code = project.make_scan_build(
+        build_args, cdb_file=compile_commands, suppress_output=suppress_output, sandbox=sandbox
+    )
     if exit_code != 0:
         logger(__name__).error(f'Failed to make project: Exit Code {exit_code}', extra={'sentry': False})
         raise click.ClickException('Failed to build')

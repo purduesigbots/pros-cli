@@ -23,8 +23,16 @@ def verbose_option(f: Union[click.Command, Callable]):
             logger(__name__).info('Verbose messages enabled')
         return value
 
-    return click.option('--verbose', help='Enable verbose output', is_flag=True, is_eager=True, expose_value=False,
-                        callback=callback, cls=PROSOption, group='Standard Options')(f)
+    return click.option(
+        '--verbose',
+        help='Enable verbose output',
+        is_flag=True,
+        is_eager=True,
+        expose_value=False,
+        callback=callback,
+        cls=PROSOption,
+        group='Standard Options',
+    )(f)
 
 
 def debug_option(f: Union[click.Command, Callable]):
@@ -45,8 +53,16 @@ def debug_option(f: Union[click.Command, Callable]):
             logger('pros').debug(f'CLI Version: {get_version()}')
         return value
 
-    return click.option('--debug', help='Enable debugging output', is_flag=True, is_eager=True, expose_value=False,
-                        callback=callback, cls=PROSOption, group='Standard Options')(f)
+    return click.option(
+        '--debug',
+        help='Enable debugging output',
+        is_flag=True,
+        is_eager=True,
+        expose_value=False,
+        callback=callback,
+        cls=PROSOption,
+        group='Standard Options',
+    )(f)
 
 
 def logging_option(f: Union[click.Command, Callable]):
@@ -63,9 +79,17 @@ def logging_option(f: Union[click.Command, Callable]):
         stdout_handler.setLevel(value)
         return value
 
-    return click.option('-l', '--log', help='Logging level', is_eager=True, expose_value=False, callback=callback,
-                        type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']),
-                        cls=PROSOption, group='Standard Options')(f)
+    return click.option(
+        '-l',
+        '--log',
+        help='Logging level',
+        is_eager=True,
+        expose_value=False,
+        callback=callback,
+        type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']),
+        cls=PROSOption,
+        group='Standard Options',
+    )(f)
 
 
 def logfile_option(f: Union[click.Command, Callable]):
@@ -87,11 +111,17 @@ def logfile_option(f: Union[click.Command, Callable]):
         stdout_handler.setLevel(logging.getLogger().level)  # pin stdout_handler to its current log level
         logging.getLogger().setLevel(min(logging.getLogger().level, level))
 
-    return click.option('--logfile', help='Log messages to a file', is_eager=True, expose_value=False,
-                        callback=callback, default=(None, None),
-                        type=click.Tuple(
-                            [click.Path(), click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])]
-                        ), cls=PROSOption, group='Standard Options')(f)
+    return click.option(
+        '--logfile',
+        help='Log messages to a file',
+        is_eager=True,
+        expose_value=False,
+        callback=callback,
+        default=(None, None),
+        type=click.Tuple([click.Path(), click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'])]),
+        cls=PROSOption,
+        group='Standard Options',
+    )(f)
 
 
 def machine_output_option(f: Union[click.Command, Callable]):
@@ -110,46 +140,82 @@ def machine_output_option(f: Union[click.Command, Callable]):
             logging.getLogger(__name__).info('Debugging messages enabled')
         return value
 
-    decorator = click.option('--machine-output', expose_value=False, is_flag=True, default=False, is_eager=True,
-                             help='Enable machine friendly output.', callback=callback, cls=PROSOption, hidden=True)(f)
+    decorator = click.option(
+        '--machine-output',
+        expose_value=False,
+        is_flag=True,
+        default=False,
+        is_eager=True,
+        help='Enable machine friendly output.',
+        callback=callback,
+        cls=PROSOption,
+        hidden=True,
+    )(f)
     decorator.__name__ = f.__name__
     return decorator
+
 
 def no_sentry_option(f: Union[click.Command, Callable]):
     """
     disables the sentry y/N prompt when an error/exception occurs
     """
+
     def callback(ctx: click.Context, param: click.Parameter, value: bool):
         ctx.ensure_object(dict)
-        add_tag('no-sentry',value)
+        add_tag('no-sentry', value)
         if value:
             pros.common.sentry.disable_prompt()
-    decorator = click.option('--no-sentry', expose_value=False, is_flag=True, default=False, is_eager=True,
-                            help="Disable sentry reporting prompt.", callback=callback, cls=PROSOption, hidden=True)(f)
+
+    decorator = click.option(
+        '--no-sentry',
+        expose_value=False,
+        is_flag=True,
+        default=False,
+        is_eager=True,
+        help="Disable sentry reporting prompt.",
+        callback=callback,
+        cls=PROSOption,
+        hidden=True,
+    )(f)
     decorator.__name__ = f.__name__
     return decorator
+
 
 def no_analytics(f: Union[click.Command, Callable]):
     """
     Don't use analytics for this command
     """
+
     def callback(ctx: click.Context, param: click.Parameter, value: bool):
         ctx.ensure_object(dict)
-        add_tag('no-analytics',value)
+        add_tag('no-analytics', value)
         if value:
             echo("Not sending analytics for this command.\n")
             analytics.useAnalytics = False
             pass
-    decorator = click.option('--no-analytics', expose_value=False, is_flag=True, default=False, is_eager=True,
-                            help="Don't send analytics for this command.", callback=callback, cls=PROSOption, hidden=True)(f)
+
+    decorator = click.option(
+        '--no-analytics',
+        expose_value=False,
+        is_flag=True,
+        default=False,
+        is_eager=True,
+        help="Don't send analytics for this command.",
+        callback=callback,
+        cls=PROSOption,
+        hidden=True,
+    )(f)
     decorator.__name__ = f.__name__
     return decorator
 
+
 def default_options(f: Union[click.Command, Callable]):
     """
-     combines verbosity, debug, machine output, no analytics, and no sentry options
+    combines verbosity, debug, machine output, no analytics, and no sentry options
     """
-    decorator = debug_option(verbose_option(logging_option(logfile_option(machine_output_option(no_sentry_option(no_analytics(f)))))))
+    decorator = debug_option(
+        verbose_option(logging_option(logfile_option(machine_output_option(no_sentry_option(no_analytics(f))))))
+    )
     decorator.__name__ = f.__name__
     return decorator
 
@@ -164,15 +230,16 @@ def template_query(arg_name='query', required: bool = False):
 
     def callback(ctx: click.Context, param: click.Parameter, value: Tuple[str, ...]):
         import pros.conductor as c
+
         value = list(value)
         spec = None
         if len(value) > 0 and not value[0].startswith('--'):
             spec = value.pop(0)
         if not spec and required:
             raise ValueError(f'A {arg_name} is required to perform this command')
-        query = c.BaseTemplate.create_query(spec,
-                                            **{value[i][2:]: value[i + 1] for i in
-                                               range(0, int(len(value) / 2) * 2, 2)})
+        query = c.BaseTemplate.create_query(
+            spec, **{value[i][2:]: value[i + 1] for i in range(0, int(len(value) / 2) * 2, 2)}
+        )
         logger(__name__).debug(query)
         return query
 
@@ -187,20 +254,29 @@ def project_option(arg_name='project', required: bool = True, default: str = '.'
         if allow_none and value is None:
             return None
         import pros.conductor as c
+
         project_path = c.Project.find_project(value)
         if project_path is None:
             if allow_none:
                 return None
             else:
-                raise click.UsageError(f'{os.path.abspath(value or ".")} is not inside a PROS project. '
-                                       f'Execute this command from within a PROS project or specify it '
-                                       f'with --project project/path')
+                raise click.UsageError(
+                    f'{os.path.abspath(value or ".")} is not inside a PROS project. '
+                    f'Execute this command from within a PROS project or specify it '
+                    f'with --project project/path'
+                )
         return c.Project(project_path)
 
     def wrapper(f: Union[click.Command, Callable]):
-        return click.option(f'--{arg_name}', callback=callback, required=required,
-                            default=default, type=click.Path(exists=True), show_default=True,
-                            help='PROS Project directory or file')(f)
+        return click.option(
+            f'--{arg_name}',
+            callback=callback,
+            required=required,
+            default=default,
+            type=click.Path(exists=True),
+            show_default=True,
+            help='PROS Project directory or file',
+        )(f)
 
     return wrapper
 
@@ -239,6 +315,7 @@ def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Tupl
     wireless interaction.
     """
     from pros.serial.devices.vex import find_v5_ports
+
     # If a port is specified manually, we'll just assume it's
     # not a joystick.
     is_joystick = False
@@ -247,17 +324,22 @@ def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Tupl
         logger(__name__).debug('Ports: {}'.format(';'.join([str(p.__dict__) for p in ports])))
         if len(ports) == 0:
             if not quiet:
-                logger(__name__).error('No {0} ports were found! If you think you have a {0} plugged in, '
-                                       'run this command again with the --debug flag'.format('v5'),
-                                       extra={'sentry': False})
+                logger(__name__).error(
+                    'No {0} ports were found! If you think you have a {0} plugged in, '
+                    'run this command again with the --debug flag'.format('v5'),
+                    extra={'sentry': False},
+                )
             return None, False
         if len(ports) > 1:
             if not quiet:
-                port = click.prompt('Multiple {} ports were found. Please choose one: [{}]'
-                                    .format('v5', '|'.join([p.device for p in ports])),
-                                    default=ports[0].device,
-                                    show_default=False,
-                                    type=click.Choice([p.device for p in ports]))
+                port = click.prompt(
+                    'Multiple {} ports were found. Please choose one: [{}]'.format(
+                        'v5', '|'.join([p.device for p in ports])
+                    ),
+                    default=ports[0].device,
+                    show_default=False,
+                    type=click.Choice([p.device for p in ports]),
+                )
                 assert port in [p.device for p in ports]
             else:
                 return None, False
@@ -270,19 +352,24 @@ def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Tupl
 
 def resolve_cortex_port(port: Optional[str], quiet: bool = False) -> Optional[str]:
     from pros.serial.devices.vex import find_cortex_ports
+
     if not port:
         ports = find_cortex_ports()
         if len(ports) == 0:
             if not quiet:
-                logger(__name__).error('No {0} ports were found! If you think you have a {0} plugged in, '
-                                       'run this command again with the --debug flag'.format('cortex'),
-                                       extra={'sentry': False})
+                logger(__name__).error(
+                    'No {0} ports were found! If you think you have a {0} plugged in, '
+                    'run this command again with the --debug flag'.format('cortex'),
+                    extra={'sentry': False},
+                )
             return None
         if len(ports) > 1:
             if not quiet:
-                port = click.prompt('Multiple {} ports were found. Please choose one: '.format('cortex'),
-                                    default=ports[0].device,
-                                    type=click.Choice([p.device for p in ports]))
+                port = click.prompt(
+                    'Multiple {} ports were found. Please choose one: '.format('cortex'),
+                    default=ports[0].device,
+                    type=click.Choice([p.device for p in ports]),
+                )
                 assert port in [p.device for p in ports]
             else:
                 return None

@@ -13,11 +13,11 @@ class CRC:
                 if crc_accumulator & (1 << (self._size - 1)):
                     crc_accumulator = (crc_accumulator << 1) ^ self._polynomial
                 else:
-                    crc_accumulator = (crc_accumulator << 1)
+                    crc_accumulator = crc_accumulator << 1
             self._table.append(crc_accumulator)
 
     def compute(self, data: Iterable[int], accumulator: int = 0):
         for d in data:
-            i = ((accumulator >> (self._size - 8)) ^ d) & 0xff
+            i = ((accumulator >> (self._size - 8)) ^ d) & 0xFF
             accumulator = ((accumulator << 8) ^ self._table[i]) & ((1 << self._size) - 1)
         return accumulator

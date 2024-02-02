@@ -13,8 +13,12 @@ class ValidatableParameter(Parameter, Generic[T]):
     the callback get invoked. This event tag is "changed_validated"
     """
 
-    def __init__(self, initial_value: T, allow_invalid_input: bool = True,
-                 validate: Optional[Callable[[T], Union[bool, str]]] = None):
+    def __init__(
+        self,
+        initial_value: T,
+        allow_invalid_input: bool = True,
+        validate: Optional[Callable[[T], Union[bool, str]]] = None,
+    ):
         """
         :param allow_invalid_input: Allow invalid input to be propagated to the `changed` event
         """

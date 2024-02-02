@@ -22,8 +22,9 @@ class Action(object):
 
 class ApplyTemplateAction(Action):
 
-    def __init__(self, template: c.BaseTemplate, apply_kwargs: Dict[str, Any] = None,
-                 suppress_already_installed: bool = False):
+    def __init__(
+        self, template: c.BaseTemplate, apply_kwargs: Dict[str, Any] = None, suppress_already_installed: bool = False
+    ):
         self.template = template
         self.apply_kwargs = apply_kwargs or {}
         self.suppress_already_installed = suppress_already_installed
@@ -44,11 +45,15 @@ class ApplyTemplateAction(Action):
         if action == TemplateAction.Installable:
             return f'{self.template.identifier} will installed to project.'
         if action == TemplateAction.Downgradable:
-            return f'Project will be downgraded to {self.template.identifier} from' \
+            return (
+                f'Project will be downgraded to {self.template.identifier} from'
                 f' {project.templates[self.template.name].version}.'
+            )
         if action == TemplateAction.Upgradable:
-            return f'Project will be upgraded to {self.template.identifier} from' \
+            return (
+                f'Project will be upgraded to {self.template.identifier} from'
                 f' {project.templates[self.template.name].version}.'
+            )
         if action == TemplateAction.AlreadyInstalled:
             if self.apply_kwargs.get('force_apply'):
                 return f'{self.template.identifier} will be re-applied.'
@@ -65,8 +70,9 @@ class ApplyTemplateAction(Action):
 
 
 class RemoveTemplateAction(Action):
-    def __init__(self, template: c.BaseTemplate, remove_kwargs: Dict[str, Any] = None,
-                 suppress_not_removable: bool = False):
+    def __init__(
+        self, template: c.BaseTemplate, remove_kwargs: Dict[str, Any] = None, suppress_not_removable: bool = False
+    ):
         self.template = template
         self.remove_kwargs = remove_kwargs or {}
         self.suppress_not_removable = suppress_not_removable
@@ -162,10 +168,7 @@ class ProjectTransaction(object):
 
     def describe(self) -> str:
         if len(self.actions) > 0:
-            return '\n'.join(
-                f'- {a.describe(self.conductor, self.project)}'
-                for a in self.actions
-            )
+            return '\n'.join(f'- {a.describe(self.conductor, self.project)}' for a in self.actions)
         else:
             return 'No actions necessary.'
 

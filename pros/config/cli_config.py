@@ -6,6 +6,7 @@ from typing import *
 import click
 
 import pros.common
+
 # import pros.conductor.providers.github_releases as githubreleases
 from pros.config.config import Config
 
@@ -41,6 +42,7 @@ class CliConfig(Config):
         pros.common.logger(__name__).info('Fetching upgrade manifest...')
         import requests
         import jsonpickle
+
         r = requests.get('https://purduesigbots.github.io/pros-mainline/cli-updates.json')
         pros.common.logger(__name__).debug(r)
         if r.status_code == 200:

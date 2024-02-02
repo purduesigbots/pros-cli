@@ -27,9 +27,14 @@ class Observable(observable.Observable):
         else:
             logger(__name__).warning(f'Could not find an Observable to notify with UUID: {uuid}', sentry=True)
 
-    def on(self, event, *handlers,
-           bound_args: Tuple[Any, ...] = None, bound_kwargs: Dict[str, Any] = None,
-           asynchronous: bool = False) -> Callable:
+    def on(
+        self,
+        event,
+        *handlers,
+        bound_args: Tuple[Any, ...] = None,
+        bound_kwargs: Dict[str, Any] = None,
+        asynchronous: bool = False,
+    ) -> Callable:
         """
         Sets up a callable to be called whenenver "event" is triggered
         :param event: Event to bind to. Most classes expose an e.g. "on_changed" wrapper which provides the correct
@@ -49,16 +54,20 @@ class Observable(observable.Observable):
             bound_kwargs = {}
 
         if asynchronous:
+
             def bind(h):
                 def bound(*args, **kw):
                     from threading import Thread
                     from pros.common.utils import with_click_context
+
                     t = Thread(target=with_click_context(h), args=(*bound_args, *args), kwargs={**bound_kwargs, **kw})
                     t.start()
                     return t
 
                 return bound
+
         else:
+
             def bind(h):
                 @wraps(h)
                 def bound(*args, **kw):

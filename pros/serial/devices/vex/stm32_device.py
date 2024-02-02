@@ -19,7 +19,7 @@ from ..system_device import SystemDevice
 class STM32Device(GenericDevice, SystemDevice):
     ACK_BYTE = 0x79
     NACK_BYTE = 0xFF
-    NUM_PAGES = 0xff
+    NUM_PAGES = 0xFF
     PAGE_SIZE = 0x2000
 
     def __init__(self, port: BasePort, must_initialize: bool = False, do_negoitate: bool = True):
@@ -29,7 +29,7 @@ class STM32Device(GenericDevice, SystemDevice):
         if do_negoitate:
             # self.port.write(b'\0' * 255)
             if must_initialize:
-                self._txrx_command(0x7f, checksum=False)
+                self._txrx_command(0x7F, checksum=False)
             try:
                 self.get(n_retries=0)
             except:
@@ -38,7 +38,7 @@ class STM32Device(GenericDevice, SystemDevice):
                 self.port.rts = 0
                 for _ in itertools.repeat(None, times=3):
                     time.sleep(0.01)
-                    self._txrx_command(0x7f, checksum=False)
+                    self._txrx_command(0x7F, checksum=False)
                     time.sleep(0.01)
                     self.get()
 
@@ -47,7 +47,8 @@ class STM32Device(GenericDevice, SystemDevice):
         file.seek(0, 0)
         if file_len > (self.NUM_PAGES * self.PAGE_SIZE):
             raise VEXCommError(
-                f'File is too big to be uploaded (max file size: {self.NUM_PAGES * self.PAGE_SIZE} bytes)')
+                f'File is too big to be uploaded (max file size: {self.NUM_PAGES * self.PAGE_SIZE} bytes)'
+            )
 
         if hasattr(file, 'name'):
             display_name = file.name
@@ -117,11 +118,13 @@ class STM32Device(GenericDevice, SystemDevice):
         logger(__name__).info(f'STM32: Go 0x{start_address:x}')
         self._txrx_command(0x21)
         try:
-            self._txrx_command(struct.pack('>I', start_address), timeout=5.)
+            self._txrx_command(struct.pack('>I', start_address), timeout=5.0)
         except VEXCommError:
-            logger(__name__).warning('STM32 Bootloader did not acknowledge GO command. '
-                                     'The program may take a moment to begin running '
-                                     'or the device should be rebooted.')
+            logger(__name__).warning(
+                'STM32 Bootloader did not acknowledge GO command. '
+                'The program may take a moment to begin running '
+                'or the device should be rebooted.'
+            )
 
     @retries
     def write_memory(self, start_address: int, data: bytes):
@@ -139,7 +142,7 @@ class STM32Device(GenericDevice, SystemDevice):
         if not self.commands[6] == 0x43:
             raise VEXCommError('Standard erase not supported on this device (only extended erase)')
         self._txrx_command(0x43)
-        self._txrx_command(0xff)
+        self._txrx_command(0xFF)
 
     @retries
     def erase_memory(self, page_numbers: List[int]):
@@ -156,8 +159,8 @@ class STM32Device(GenericDevice, SystemDevice):
         logger(__name__).info(f'STM32: Extended Erase pages: {page_numbers}')
         if not self.commands[6] == 0x44:
             raise IOError('Extended erase not supported on this device (only standard erase)')
-        assert 0 < len(page_numbers) < 0xfff0
-        assert all([0 <= p <= 0xffff for p in page_numbers])
+        assert 0 < len(page_numbers) < 0xFFF0
+        assert all([0 <= p <= 0xFFFF for p in page_numbers])
         self._txrx_command(0x44)
         self._txrx_command(bytes([len(page_numbers) - 1, *struct.pack(f'>{len(page_numbers)}H', *page_numbers)]))
 
@@ -166,7 +169,7 @@ class STM32Device(GenericDevice, SystemDevice):
         logger(__name__).info(f'STM32: Extended special erase: {command:x}')
         if not self.commands[6] == 0x44:
             raise IOError('Extended erase not supported on this device (only standard erase)')
-        assert 0xfffd <= command <= 0xffff
+        assert 0xFFFD <= command <= 0xFFFF
         self._txrx_command(0x44)
         self._txrx_command(struct.pack('>H', command))
 
@@ -175,7 +178,7 @@ class STM32Device(GenericDevice, SystemDevice):
         if isinstance(command, bytes):
             message = command + (bytes([reduce(operator.xor, command, 0x00)]) if checksum else bytes([]))
         elif isinstance(command, int):
-            message = bytearray([command, ~command & 0xff] if checksum else [command])
+            message = bytearray([command, ~command & 0xFF] if checksum else [command])
         else:
             raise ValueError(f'Expected command to be bytes or int but got {type(command)}')
         logger(__name__).debug(f'STM32 TX: {bytes_to_str(message)}')

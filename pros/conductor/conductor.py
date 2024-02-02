@@ -27,10 +27,12 @@ class ReleaseChannel(Enum):
     Beta = 'beta'
 """
 
+
 class Conductor(Config):
     """
     Provides entrances for all conductor-related tasks (fetching, applying, creating new projects)
     """
+
     def __init__(self, file=None):
         if not file:
             file = os.path.join(click.get_app_dir('PROS'), 'conductor.pros')
@@ -44,31 +46,29 @@ class Conductor(Config):
         self.warn_early_access = False
         super(Conductor, self).__init__(file)
         needs_saving = False
-        if MAINLINE_NAME not in self.depots or \
-                not isinstance(self.depots[MAINLINE_NAME], HttpDepot) or \
-                self.depots[MAINLINE_NAME].location != MAINLINE_URL:
+        if (
+            MAINLINE_NAME not in self.depots
+            or not isinstance(self.depots[MAINLINE_NAME], HttpDepot)
+            or self.depots[MAINLINE_NAME].location != MAINLINE_URL
+        ):
             self.depots[MAINLINE_NAME] = HttpDepot(MAINLINE_NAME, MAINLINE_URL)
             needs_saving = True
         # add early access depot as another remote depot
-        if EARLY_ACCESS_NAME not in self.depots or \
-                not isinstance(self.depots[EARLY_ACCESS_NAME], HttpDepot) or \
-                self.depots[EARLY_ACCESS_NAME].location != EARLY_ACCESS_URL:
+        if (
+            EARLY_ACCESS_NAME not in self.depots
+            or not isinstance(self.depots[EARLY_ACCESS_NAME], HttpDepot)
+            or self.depots[EARLY_ACCESS_NAME].location != EARLY_ACCESS_URL
+        ):
             self.depots[EARLY_ACCESS_NAME] = HttpDepot(EARLY_ACCESS_NAME, EARLY_ACCESS_URL)
             needs_saving = True
         if self.default_target is None:
             self.default_target = 'v5'
             needs_saving = True
         if self.default_libraries is None:
-            self.default_libraries = {
-                'v5': ['okapilib'],
-                'cortex': []
-            }
+            self.default_libraries = {'v5': ['okapilib'], 'cortex': []}
             needs_saving = True
         if self.early_access_libraries is None or len(self.early_access_libraries['v5']) != 2:
-            self.early_access_libraries = {
-                'v5': ['liblvgl', 'okapilib'],
-                'cortex': []
-            }
+            self.early_access_libraries = {'v5': ['liblvgl', 'okapilib'], 'cortex': []}
             needs_saving = True
         if 'v5' not in self.default_libraries:
             self.default_libraries['v5'] = []
@@ -85,6 +85,7 @@ class Conductor(Config):
         if needs_saving:
             self.save()
         from pros.common.sentry import add_context
+
         add_context(self)
 
     def get_depot(self, name: str) -> Optional[Depot]:
@@ -107,7 +108,7 @@ class Conductor(Config):
         local_template = LocalTemplate(orig=template, location=destination)
         local_template.metadata['origin'] = depot.name
         click.echo(f'Adding {local_template.identifier} to registry...', nl=False)
-        if depot.name == EARLY_ACCESS_NAME: # check for early access
+        if depot.name == EARLY_ACCESS_NAME:  # check for early access
             self.early_access_local_templates.add(local_template)
         else:
             self.local_templates.add(local_template)
@@ -120,7 +121,9 @@ class Conductor(Config):
     def purge_template(self, template: LocalTemplate):
         if template.metadata['origin'] == EARLY_ACCESS_NAME:
             if template not in self.early_access_local_templates:
-                logger(__name__).info(f"{template.identifier} was not in the Conductor's local early access templates cache.")
+                logger(__name__).info(
+                    f"{template.identifier} was not in the Conductor's local early access templates cache."
+                )
             else:
                 self.early_access_local_templates.remove(template)
         else:
@@ -130,14 +133,20 @@ class Conductor(Config):
                 self.local_templates.remove(template)
 
         if os.path.abspath(template.location).startswith(
-                os.path.abspath(os.path.join(self.directory, 'templates'))) \
-                and os.path.isdir(template.location):
+            os.path.abspath(os.path.join(self.directory, 'templates'))
+        ) and os.path.isdir(template.location):
             shutil.rmtree(template.location)
         self.save()
 
-    def resolve_templates(self, identifier: Union[str, BaseTemplate], allow_online: bool = True,
-                          allow_offline: bool = True, force_refresh: bool = False,
-                          unique: bool = True, **kwargs) -> List[BaseTemplate]:
+    def resolve_templates(
+        self,
+        identifier: Union[str, BaseTemplate],
+        allow_online: bool = True,
+        allow_offline: bool = True,
+        force_refresh: bool = False,
+        unique: bool = True,
+        **kwargs,
+    ) -> List[BaseTemplate]:
         results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
         if kwargs.get('early_access', None) is not None:
@@ -150,9 +159,15 @@ class Conductor(Config):
             offline_results = list()
 
             if self.use_early_access:
-                offline_results.extend(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.early_access_local_templates))
+                offline_results.extend(
+                    filter(
+                        lambda t: t.satisfies(query, kernel_version=kernel_version), self.early_access_local_templates
+                    )
+                )
 
-            offline_results.extend(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))
+            offline_results.extend(
+                filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates)
+            )
 
             if unique:
                 results.update(offline_results)
@@ -163,8 +178,9 @@ class Conductor(Config):
                 # EarlyAccess depot will only be accessed when the --early-access flag is true
                 if depot.name != EARLY_ACCESS_NAME or (depot.name == EARLY_ACCESS_NAME and self.use_early_access):
                     remote_templates = depot.get_remote_templates(force_check=force_refresh, **kwargs)
-                    online_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
-                                            remote_templates))
+                    online_results = list(
+                        filter(lambda t: t.satisfies(query, kernel_version=kernel_version), remote_templates)
+                    )
 
                     if unique:
                         results.update(online_results)
@@ -175,7 +191,8 @@ class Conductor(Config):
 
         if len(results) == 0 and not self.use_early_access:
             raise dont_send(
-                        InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}'))
+                InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}')
+            )
 
         return list(results)
 
@@ -231,7 +248,8 @@ class Conductor(Config):
         template = self.resolve_template(identifier=identifier, allow_online=download_ok, **kwargs)
         if template is None:
             raise dont_send(
-                InvalidTemplateException(f'Could not find a template satisfying {identifier} for {project.target}'))
+                InvalidTemplateException(f'Could not find a template satisfying {identifier} for {project.target}')
+            )
 
         # warn and prompt user if upgrading to PROS 4 or downgrading to PROS 3
         if template.name == 'kernel':
@@ -240,23 +258,27 @@ class Conductor(Config):
                 curr_proj = Project()
                 if curr_proj.kernel:
                     if template.version[0] == '4' and curr_proj.kernel[0] == '3':
-                        confirm = ui.confirm(f'Warning! Upgrading project to PROS 4 will cause breaking changes. '
-                                             f'Do you still want to upgrade?')
+                        confirm = ui.confirm(
+                            f'Warning! Upgrading project to PROS 4 will cause breaking changes. '
+                            f'Do you still want to upgrade?'
+                        )
                         if not confirm:
-                            raise dont_send(
-                                InvalidTemplateException(f'Not upgrading'))
+                            raise dont_send(InvalidTemplateException(f'Not upgrading'))
                     if template.version[0] == '3' and curr_proj.kernel[0] == '4':
-                        confirm = ui.confirm(f'Warning! Downgrading project to PROS 3 will cause breaking changes. '
-                                             f'Do you still want to downgrade?')
+                        confirm = ui.confirm(
+                            f'Warning! Downgrading project to PROS 3 will cause breaking changes. '
+                            f'Do you still want to downgrade?'
+                        )
                         if not confirm:
-                            raise dont_send(
-                                InvalidTemplateException(f'Not downgrading'))
+                            raise dont_send(InvalidTemplateException(f'Not downgrading'))
             elif not self.use_early_access and template.version[0] == '3' and not self.warn_early_access:
-                confirm = ui.confirm(f'PROS 4 is now in early access. '
-                                     f'Please use the --early-access flag if you would like to use it.\n'
-                                     f'Do you want to use PROS 4 instead?')
+                confirm = ui.confirm(
+                    f'PROS 4 is now in early access. '
+                    f'Please use the --early-access flag if you would like to use it.\n'
+                    f'Do you want to use PROS 4 instead?'
+                )
                 self.warn_early_access = True
-                if confirm: # use pros 4
+                if confirm:  # use pros 4
                     self.use_early_access = True
                     kwargs['version'] = '>=0'
                     self.save()
@@ -275,40 +297,52 @@ class Conductor(Config):
             raise dont_send(
                 InvalidTemplateException(f'{template.identifier} is not applicable to {project}', reason=valid_action)
             )
-        if force \
-                or (valid_action == TemplateAction.Upgradable and upgrade_ok) \
-                or (valid_action == TemplateAction.Installable and install_ok) \
-                or (valid_action == TemplateAction.Downgradable and downgrade_ok):
-            project.apply_template(template, force_system=kwargs.pop('force_system', False),
-                                   force_user=kwargs.pop('force_user', False),
-                                   remove_empty_directories=kwargs.pop('remove_empty_directories', False))
+        if (
+            force
+            or (valid_action == TemplateAction.Upgradable and upgrade_ok)
+            or (valid_action == TemplateAction.Installable and install_ok)
+            or (valid_action == TemplateAction.Downgradable and downgrade_ok)
+        ):
+            project.apply_template(
+                template,
+                force_system=kwargs.pop('force_system', False),
+                force_user=kwargs.pop('force_user', False),
+                remove_empty_directories=kwargs.pop('remove_empty_directories', False),
+            )
             ui.finalize('apply', f'Finished applying {template.identifier} to {project.location}')
         elif valid_action != TemplateAction.AlreadyInstalled:
             raise dont_send(
-                InvalidTemplateException(f'Could not install {template.identifier} because it is {valid_action.name},'
-                                         f' and that is not allowed.', reason=valid_action)
+                InvalidTemplateException(
+                    f'Could not install {template.identifier} because it is {valid_action.name},'
+                    f' and that is not allowed.',
+                    reason=valid_action,
+                )
             )
         else:
             ui.finalize('apply', f'{template.identifier} is already installed in {project.location}')
 
     @staticmethod
-    def remove_template(project: Project, identifier: Union[str, BaseTemplate], remove_user: bool = True,
-                        remove_empty_directories: bool = True):
+    def remove_template(
+        project: Project,
+        identifier: Union[str, BaseTemplate],
+        remove_user: bool = True,
+        remove_empty_directories: bool = True,
+    ):
         ui.logger(__name__).debug(f'Uninstalling templates matching {identifier}')
         if not project.resolve_template(identifier):
             ui.echo(f"{identifier} is not an applicable template")
         for template in project.resolve_template(identifier):
             ui.echo(f'Uninstalling {template.identifier}')
-            project.remove_template(template, remove_user=remove_user,
-                                    remove_empty_directories=remove_empty_directories)
+            project.remove_template(
+                template, remove_user=remove_user, remove_empty_directories=remove_empty_directories
+            )
 
     def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
         if kwargs.get('early_access', None) is not None:
             self.use_early_access = kwargs.get('early_access', False)
-        if kwargs["version_source"]: # If true, then the user has not specified a version
+        if kwargs["version_source"]:  # If true, then the user has not specified a version
             if not self.use_early_access and self.warn_early_access:
-                ui.echo(f"PROS 4 is now in early access. "
-                        f"If you would like to use it, use the --early-access flag.")
+                ui.echo(f"PROS 4 is now in early access. " f"If you would like to use it, use the --early-access flag.")
             elif self.use_early_access:
                 ui.echo(f'Early access is enabled. Using PROS 4.')
         elif self.use_early_access:
@@ -317,8 +351,36 @@ class Conductor(Config):
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
             raise dont_send(ValueError('Will not create a project in user home directory'))
         for char in str(Path(path)):
-            if char in ['?', '<', '>', '*', '|', '^', '#', '%', '&', '$', '+', '!', '`', '\'', '=',
-                        '@', '\'', '{', '}', '[', ']', '(', ')', '~'] or ord(char) > 127:
+            if (
+                char
+                in [
+                    '?',
+                    '<',
+                    '>',
+                    '*',
+                    '|',
+                    '^',
+                    '#',
+                    '%',
+                    '&',
+                    '$',
+                    '+',
+                    '!',
+                    '`',
+                    '\'',
+                    '=',
+                    '@',
+                    '\'',
+                    '{',
+                    '}',
+                    '[',
+                    ']',
+                    '(',
+                    ')',
+                    '~',
+                ]
+                or ord(char) > 127
+            ):
                 raise dont_send(ValueError(f'Invalid character found in directory name: \'{char}\''))
 
         proj = Project(path=path, create=True)
@@ -335,7 +397,12 @@ class Conductor(Config):
         proj.save()
 
         if not no_default_libs:
-            libraries = self.early_access_libraries if self.use_early_access and (kwargs.get("version", ">").startswith("4") or kwargs.get("version", ">").startswith(">")) else self.default_libraries
+            libraries = (
+                self.early_access_libraries
+                if self.use_early_access
+                and (kwargs.get("version", ">").startswith("4") or kwargs.get("version", ">").startswith(">"))
+                else self.default_libraries
+            )
             for library in libraries[proj.target]:
                 try:
                     # remove kernel version so that latest template satisfying query is correctly selected

@@ -23,8 +23,7 @@ class LocalDepot(Depot):
             template_file = os.path.join(location_dir, 'template.pros')
         elif zipfile.is_zipfile(location):
             with zipfile.ZipFile(location) as zf:
-                with click.progressbar(length=len(zf.namelist()),
-                                       label=f"Extracting {location}") as progress_bar:
+                with click.progressbar(length=len(zf.namelist()), label=f"Extracting {location}") as progress_bar:
                     for file in zf.namelist():
                         zf.extract(file, path=destination)
                         progress_bar.update(1)
@@ -41,6 +40,7 @@ class LocalDepot(Depot):
         if location_dir != destination:
             n_files = len([os.path.join(dp, f) for dp, dn, fn in os.walk(location_dir) for f in fn])
             with click.progressbar(length=n_files, label='Copying to local cache') as pb:
+
                 def my_copy(*args):
                     pb.update(1)
                     shutil.copy2(*args)

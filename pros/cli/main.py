@@ -41,7 +41,7 @@ root_sources = [
     'v5_utils',
     'misc_commands',  # misc_commands must be after upload so that "pros u" is an alias for upload, not upgrade
     'interactive',
-    'user_script'
+    'user_script',
 ]
 
 if getattr(sys, 'frozen', False):
@@ -64,8 +64,12 @@ def main():
         ctx_obj = {}
         click_handler = pros.common.ui.log.PROSLogHandler(ctx_obj=ctx_obj)
         ctx_obj['click_handler'] = click_handler
-        formatter = pros.common.ui.log.PROSLogFormatter('%(levelname)s - %(name)s:%(funcName)s - %(message)s - pros-cli version:{version}'
-            .format(version = get_version()), ctx_obj)
+        formatter = pros.common.ui.log.PROSLogFormatter(
+            '%(levelname)s - %(name)s:%(funcName)s - %(message)s - pros-cli version:{version}'.format(
+                version=get_version()
+            ),
+            ctx_obj,
+        )
         click_handler.setFormatter(formatter)
         logging.basicConfig(level=logging.WARNING, handlers=[click_handler])
         cli.main(prog_name='pros', obj=ctx_obj, windows_expand_args=False)
@@ -95,7 +99,9 @@ def use_analytics(ctx: click.Context, param, value):
     elif str(value).lower().startswith("f"):
         touse = False
     else:
-        ui.echo('Invalid argument provided for \'--use-analytics\'. Try \'--use-analytics=False\' or \'--use-analytics=True\'')
+        ui.echo(
+            'Invalid argument provided for \'--use-analytics\'. Try \'--use-analytics=False\' or \'--use-analytics=True\''
+        )
         ctx.exit(0)
     ctx.ensure_object(dict)
     analytics.set_use(touse)
@@ -103,18 +109,25 @@ def use_analytics(ctx: click.Context, param, value):
     ctx.exit(0)
 
 
-@click.command('pros',
-               cls=PROSCommandCollection,
-               sources=root_commands)
+@click.command('pros', cls=PROSCommandCollection, sources=root_commands)
 @click.pass_context
 @default_options
-@click.option('--version', help='Displays version and exits.', is_flag=True, expose_value=False, is_eager=True,
-              callback=version)
-@click.option('--use-analytics', help='Set analytics usage (True/False).', type=str, expose_value=False,
-              is_eager=True, default=None, callback=use_analytics)
+@click.option(
+    '--version', help='Displays version and exits.', is_flag=True, expose_value=False, is_eager=True, callback=version
+)
+@click.option(
+    '--use-analytics',
+    help='Set analytics usage (True/False).',
+    type=str,
+    expose_value=False,
+    is_eager=True,
+    default=None,
+    callback=use_analytics,
+)
 def cli(ctx):
     pros.common.sentry.register()
     ctx.call_on_close(after_command)
+
 
 def after_command():
     analytics.process_requests()

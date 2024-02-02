@@ -21,6 +21,7 @@ def get_version():
     try:
         if getattr(sys, 'frozen', False):
             import _constants
+
             ver = _constants.CLI_VERSION
             if ver is not None:
                 return ver
@@ -32,6 +33,7 @@ def get_version():
         pass
     else:
         import pros.cli.main
+
         module = pros.cli.main.__name__
         for dist in pkg_resources.working_set:
             scripts = dist.get_entry_map().get('console_scripts') or {}
@@ -91,6 +93,7 @@ def with_click_context(func):
     if not ctx or not isinstance(ctx, click.Context):
         return func
     else:
+
         def _wrap(*args, **kwargs):
             with ctx:
                 try:
@@ -111,6 +114,7 @@ def download_file(url: str, ext: Optional[str] = None, desc: Optional[str] = Non
     """
     import requests
     from pros.common.ui import progressbar
+
     # from rfc6266_parser import parse_requests_response
     import re
 
@@ -135,8 +139,9 @@ def download_file(url: str, ext: Optional[str] = None, desc: Optional[str] = Non
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
         with open(output_path, mode='wb') as file:
-            with progressbar(length=int(response.headers['Content-Length']),
-                             label=desc or f'Downloading {filename}') as pb:
+            with progressbar(
+                length=int(response.headers['Content-Length']), label=desc or f'Downloading {filename}'
+            ) as pb:
                 for chunk in response.iter_content(256):
                     file.write(chunk)
                     pb.update(len(chunk))

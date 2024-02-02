@@ -40,6 +40,7 @@ class UpgradeManifestV2(UpgradeManifestV1):
             return self._platform
         if getattr(sys, 'frozen', False):
             import _constants
+
             frozen_platform = getattr(_constants, 'FROZEN_PLATFORM_V1', None)
             if isinstance(frozen_platform, str):
                 if frozen_platform.startswith('Windows86'):
@@ -51,6 +52,7 @@ class UpgradeManifestV2(UpgradeManifestV1):
         else:
             try:
                 from pip._vendor import pkg_resources
+
                 results = [p for p in pkg_resources.working_set if p.project_name.startswith('pros-cli')]
                 if any(results):
                     self._platform = PlatformsV2.Pip
@@ -72,7 +74,4 @@ class UpgradeManifestV2(UpgradeManifestV1):
         return instructions.perform_upgrade()
 
     def __repr__(self):
-        return repr({
-            'platform': self.platform,
-            **self.__dict__
-        })
+        return repr({'platform': self.platform, **self.__dict__})

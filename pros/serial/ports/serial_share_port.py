@@ -3,8 +3,14 @@ from .serial_share_bridge import *
 
 
 class SerialSharePort(BasePort):
-    def __init__(self, port_name: str, topic: bytes = b'sout', addr: str = '127.0.0.1',
-                 to_device_port: int = None, from_device_port: int = None):
+    def __init__(
+        self,
+        port_name: str,
+        topic: bytes = b'sout',
+        addr: str = '127.0.0.1',
+        to_device_port: int = None,
+        from_device_port: int = None,
+    ):
         self.port_name = port_name
         self.topic = topic
         self._base_addr = addr
@@ -26,12 +32,14 @@ class SerialSharePort(BasePort):
         self.from_device_sock.setsockopt(zmq.SUBSCRIBE, b'kdbg')
         self.from_device_sock.connect('tcp://{}:{}'.format(self._base_addr, self._from_port_num))
         logger(__name__).info(
-            'Connected from device as a subscriber on tcp://{}:{}'.format(self._base_addr, self._from_port_num))
+            'Connected from device as a subscriber on tcp://{}:{}'.format(self._base_addr, self._from_port_num)
+        )
 
         self.to_device_sock = self.ctx.socket(zmq.PUB)  # type: zmq.Socket
         self.to_device_sock.connect('tcp://{}:{}'.format(self._base_addr, self._to_port_num))
         logger(__name__).info(
-            'Connected to device as a publisher on tcp://{}:{}'.format(self._base_addr, self._to_port_num))
+            'Connected to device as a publisher on tcp://{}:{}'.format(self._base_addr, self._to_port_num)
+        )
 
         self.alive = threading.Event()
         self.watchdog_thread = threading.Thread(target=self._kick_watchdog, name='Client Kicker')

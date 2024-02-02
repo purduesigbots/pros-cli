@@ -21,10 +21,12 @@ class NonExistentProjectParameter(p.ValidatableParameter[str]):
         blacklisted_directories = []
         # TODO: Proper Windows support
         if sys.platform == 'win32':
-            blacklisted_directories.extend([
-                os.environ.get('WINDIR', os.path.join('C:', 'Windows')),
-                os.environ.get('PROGRAMFILES', os.path.join('C:', 'Program Files'))
-            ])
+            blacklisted_directories.extend(
+                [
+                    os.environ.get('WINDIR', os.path.join('C:', 'Windows')),
+                    os.environ.get('PROGRAMFILES', os.path.join('C:', 'Program Files')),
+                ]
+            )
         if any(value.startswith(d) for d in blacklisted_directories):
             return 'Cannot create project in a system directory'
         if Path(value).exists() and Path(value).samefile(os.path.expanduser('~')):
@@ -64,7 +66,7 @@ class TemplateParameter(p.ValidatableParameter[BaseTemplate]):
         if self.name.value in self.options:
             self.version = p.OptionParameter(
                 self.version.value if self.version else None,
-                list(sorted(self.options[self.name.value].keys(), reverse=True, key=lambda v: Version(v)))
+                list(sorted(self.options[self.name.value].keys(), reverse=True, key=lambda v: Version(v))),
             )
 
             if self.version.value not in self.version.options:
@@ -90,7 +92,7 @@ class TemplateParameter(p.ValidatableParameter[BaseTemplate]):
         self.name: p.ValidatableParameter[str] = p.ValidatableParameter(
             self.value.name,
             allow_invalid_input,
-            validate=lambda v: True if v in self.options.keys() else f'Could not find a template named {v}'
+            validate=lambda v: True if v in self.options.keys() else f'Could not find a template named {v}',
         )
         if not self.value.version and self.value.name in self.options:
             self.value.version = Spec('>0').select([Version(v) for v in self.options[self.value.name].keys()])
@@ -122,5 +124,6 @@ class TemplateParameter(p.ValidatableParameter[BaseTemplate]):
             self.removed = not self.removed
 
     def is_valid(self, value: BaseTemplate = None):
-        return self.name.is_valid(value.name if value else None) and \
-               self.version.is_valid(value.version if value else None)
+        return self.name.is_valid(value.name if value else None) and self.version.is_valid(
+            value.version if value else None
+        )

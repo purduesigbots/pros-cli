@@ -13,6 +13,7 @@ from .common import default_options, resolve_v5_port, resolve_cortex_port, pros_
 from pros.serial.ports.v5_wireless_port import V5WirelessPort
 from pros.ga.analytics import analytics
 
+
 @pros_root
 def terminal_cli():
     pass
@@ -21,17 +22,24 @@ def terminal_cli():
 @terminal_cli.command()
 @default_options
 @click.argument('port', default='default')
-@click.option('--backend', type=click.Choice(['share', 'solo']), default='solo',
-              help='Backend port of the terminal. See above for details')
-@click.option('--raw', is_flag=True, default=False,
-              help='Don\'t process the data.')
+@click.option(
+    '--backend',
+    type=click.Choice(['share', 'solo']),
+    default='solo',
+    help='Backend port of the terminal. See above for details',
+)
+@click.option('--raw', is_flag=True, default=False, help='Don\'t process the data.')
 @click.option('--hex', is_flag=True, default=False, help="Display data as hexadecimal values. Unaffected by --raw")
-@click.option('--ports', nargs=2, type=int, default=(None, None),
-              help='Specify 2 ports for the "share" backend. The default option deterministically selects ports '
-                   'based on the serial port name')
+@click.option(
+    '--ports',
+    nargs=2,
+    type=int,
+    default=(None, None),
+    help='Specify 2 ports for the "share" backend. The default option deterministically selects ports '
+    'based on the serial port name',
+)
 @click.option('--banner/--no-banner', 'request_banner', default=True)
-@click.option('--output', nargs = 1, type=str, is_eager = True, help='Redirect terminal output to a file', default=None)
-
+@click.option('--output', nargs=1, type=str, is_eager=True, help='Redirect terminal output to a file', default=None)
 def terminal(port: str, backend: str, **kwargs):
     """
     Open a terminal to a serial port
@@ -46,6 +54,7 @@ def terminal(port: str, backend: str, **kwargs):
     analytics.send("terminal")
     from pros.serial.devices.vex.v5_user_device import V5UserDevice
     from pros.serial.terminal import Terminal
+
     is_v5_user_joystick = False
     if port == 'default':
         project_path = c.Project.find_project(os.getcwd())
@@ -89,11 +98,14 @@ def terminal(port: str, backend: str, **kwargs):
         def __init__(self, file):
             self.terminal = sys.stdout
             self.log = open(file, 'a')
+
         def write(self, data):
             self.terminal.write(data)
             self.log.write(data)
+
         def flush(self):
             pass
+
         def end(self):
             self.log.close()
 

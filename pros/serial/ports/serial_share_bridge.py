@@ -24,8 +24,13 @@ def get_to_device_port_num(serial_port_name: str) -> int:
 
 
 class SerialShareBridge(object):
-    def __init__(self, serial_port_name: str, base_addr: str = '127.0.0.1',
-                 to_device_port_num: int = None, from_device_port_num: int = None):
+    def __init__(
+        self,
+        serial_port_name: str,
+        base_addr: str = '127.0.0.1',
+        to_device_port_num: int = None,
+        from_device_port_num: int = None,
+    ):
         self._serial_port_name = serial_port_name
         self._base_addr = base_addr
         if to_device_port_num is None:
@@ -79,18 +84,21 @@ class SerialShareBridge(object):
             log_file_name = os.path.join(get_pros_dir(), 'logs', 'serial-share-bridge.log')
             handler = logging.handlers.TimedRotatingFileHandler(log_file_name, backupCount=1)
             handler.setLevel(logging.DEBUG)
-            fmt_str = '%(name)s.%(funcName)s:%(levelname)s - %(asctime)s - %(message)s (%(process)d) ({})' \
-                .format(self._serial_port_name)
+            fmt_str = '%(name)s.%(funcName)s:%(levelname)s - %(asctime)s - %(message)s (%(process)d) ({})'.format(
+                self._serial_port_name
+            )
             handler.setFormatter(logging.Formatter(fmt_str))
             pros_logger.addHandler(handler)
 
             self.zmq_ctx = zmq.Context()
             # timeout is none, so blocks indefinitely. Helps reduce CPU usage when there's nothing being recv
             self.port = DirectPort(self._serial_port_name, timeout=None)
-            self.from_device_thread = threading.Thread(target=self._from_device_loop, name='From Device Reader',
-                                                       daemon=False, args=(initialization_barrier,))
-            self.to_device_thread = threading.Thread(target=self._to_device_loop, name='To Device Reader',
-                                                     daemon=False, args=(initialization_barrier,))
+            self.from_device_thread = threading.Thread(
+                target=self._from_device_loop, name='From Device Reader', daemon=False, args=(initialization_barrier,)
+            )
+            self.to_device_thread = threading.Thread(
+                target=self._to_device_loop, name='To Device Reader', daemon=False, args=(initialization_barrier,)
+            )
             self.dying = threading.Event()  # type: threading.Event
             self.from_device_thread.start()
             self.to_device_thread.start()
@@ -98,8 +106,11 @@ class SerialShareBridge(object):
             while not self.dying.wait(10000):
                 pass
 
-            logger(__name__).info('Main serial share bridge thread is dying. Everything else should be dead: {}'.format(
-                threading.active_count() - 1))
+            logger(__name__).info(
+                'Main serial share bridge thread is dying. Everything else should be dead: {}'.format(
+                    threading.active_count() - 1
+                )
+            )
             self.kill(do_join=True)
         except Exception as e:
             initialization_barrier.abort()
@@ -132,14 +143,20 @@ class SerialShareBridge(object):
                     logger(__name__).error('Unexpected error handling {}'.format(bytes_to_str(msg[:-1])))
                     logger(__name__).exception(e)
                     errors += 1
-                    logger(__name__).info('Current from device broadcasting error rate: {} errors. {} successful. {}%'
-                                          .format(errors, rxd, errors / (errors + rxd)))
+                    logger(__name__).info(
+                        'Current from device broadcasting error rate: {} errors. {} successful. {}%'.format(
+                            errors, rxd, errors / (errors + rxd)
+                        )
+                    )
         except Exception as e:
             initialization_barrier.abort()
             logger(__name__).exception(e)
         logger(__name__).warning('From Device Broadcaster is dying now.')
-        logger(__name__).info('Current from device broadcasting error rate: {} errors. {} successful. {}%'
-                              .format(errors, rxd, errors / (errors + rxd)))
+        logger(__name__).info(
+            'Current from device broadcasting error rate: {} errors. {} successful. {}%'.format(
+                errors, rxd, errors / (errors + rxd)
+            )
+        )
         try:
             self.kill(do_join=False)
         except:

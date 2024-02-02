@@ -4,16 +4,14 @@ from pros.serial import bytes_to_str
 
 
 class Message(bytes):
-    def __new__(cls, rx: bytes, tx: bytes, internal_rx: Union[bytes, int] = None,
-                bookmarks: Dict[str, bytes] = None):
+    def __new__(cls, rx: bytes, tx: bytes, internal_rx: Union[bytes, int] = None, bookmarks: Dict[str, bytes] = None):
         if internal_rx is None:
             internal_rx = rx
         if isinstance(internal_rx, int):
             internal_rx = bytes([internal_rx])
         return super().__new__(cls, internal_rx)
 
-    def __init__(self, rx: bytes, tx: bytes, internal_rx: Union[bytes, int] = None,
-                 bookmarks: Dict[str, bytes] = None):
+    def __init__(self, rx: bytes, tx: bytes, internal_rx: Union[bytes, int] = None, bookmarks: Dict[str, bytes] = None):
         if internal_rx is None:
             internal_rx = rx
         if isinstance(internal_rx, int):

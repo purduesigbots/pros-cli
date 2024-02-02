@@ -29,9 +29,7 @@ class Component(object):
         return None
 
     def __getstate__(self) -> Dict:
-        return dict(
-            etype=Component.get_hierarchy(self.__class__)
-        )
+        return dict(etype=Component.get_hierarchy(self.__class__))
 
 
 P = TypeVar('P', bound=Parameter)

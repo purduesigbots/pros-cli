@@ -13,10 +13,5 @@ setup(
     author_email='pros_development@cs.purdue.edu',
     description='Command Line Interface for managing PROS projects',
     install_requires=install_reqs,
-    entry_points={
-        'console_scripts': [
-            'pros=pros.cli.main:main',
-            'prosv5=pros.cli.main:main'
-        ]
-    }
+    entry_points={'console_scripts': ['pros=pros.cli.main:main', 'prosv5=pros.cli.main:main']},
 )

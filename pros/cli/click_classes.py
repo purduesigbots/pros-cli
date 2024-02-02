@@ -19,8 +19,8 @@ class PROSFormatted(RichCommand):
 
     def format_commands(self, ctx, formatter):
         """Extra format methods for multi methods that adds all the commands
-                after the options.
-                """
+        after the options.
+        """
         if not hasattr(self, 'list_commands'):
             return
         rows = []
@@ -61,6 +61,7 @@ class PROSFormatted(RichCommand):
 
         self.format_commands(ctx, formatter)
 
+
 class PROSCommand(PROSFormatted, click.Command):
     pass
 
@@ -81,24 +82,26 @@ class PROSOption(click.Option):
             return
         return super().get_help_record(ctx)
 
+
 class PROSDeprecated(click.Option):
     def __init__(self, *args, replacement: str = None, **kwargs):
         kwargs['help'] = "This option has been deprecated."
-        if not replacement==None:
+        if not replacement == None:
             kwargs['help'] += " Its replacement is '--{}'".format(replacement)
         super(PROSDeprecated, self).__init__(*args, **kwargs)
         self.group = "Deprecated"
-        self.optiontype = "flag" if str(self.type)=="BOOL" else "switch"
+        self.optiontype = "flag" if str(self.type) == "BOOL" else "switch"
         self.to_use = replacement
-        self.arg = args[0][len(args[0])-1]
+        self.arg = args[0][len(args[0]) - 1]
         self.msg = "The '{}' {} has been deprecated. Please use '--{}' instead."
-        if replacement==None:
-            self.msg = self.msg.split(".")[0]+"."
+        if replacement == None:
+            self.msg = self.msg.split(".")[0] + "."
 
     def type_cast_value(self, ctx, value):
-        if not value==self.default:
-            print("Warning! : "+self.msg.format(self.arg, self.optiontype, self.to_use)+"\n")
+        if not value == self.default:
+            print("Warning! : " + self.msg.format(self.arg, self.optiontype, self.to_use) + "\n")
         return value
+
 
 class PROSGroup(PROSFormatted, click.Group):
     def __init__(self, *args, **kwargs):
@@ -160,7 +163,7 @@ class PROSCommandCollection(PROSFormatted, click.CommandCollection):
         except ClickException as e:
             click.echo("PROS-CLI Version:  {}".format(get_version()))
             isProject = p.find_project("")
-            if (isProject): #check if there is a project
+            if isProject:  # check if there is a project
                 curr_proj = p()
                 click.echo("PROS-Kernel Version: {}".format(curr_proj.kernel))
             raise e

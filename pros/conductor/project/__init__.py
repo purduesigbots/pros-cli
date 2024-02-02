@@ -41,9 +41,13 @@ class Project(Config):
         super(Project, self).__init__(file, error_on_decode=raise_on_error)
         if 'kernel' in self.__dict__:
             # Add backwards compatibility with PROS CLI 2 projects by adding kernel as a pseudo-template
-            self.templates['kernel'] = Template(user_files=self.all_files, name='kernel',
-                                                version=self.__dict__['kernel'], target=self.target,
-                                                output='bin/output.bin')
+            self.templates['kernel'] = Template(
+                user_files=self.all_files,
+                name='kernel',
+                version=self.__dict__['kernel'],
+                target=self.target,
+                output='bin/output.bin',
+            )
 
     @property
     def location(self) -> pathlib.Path:
@@ -55,20 +59,23 @@ class Project(Config):
 
     @property
     def name(self):
-        return self.project_name or os.path.basename(self.location) \
-               or os.path.basename(self.templates['kernel'].metadata['output']) \
-               or 'pros'
+        return (
+            self.project_name
+            or os.path.basename(self.location)
+            or os.path.basename(self.templates['kernel'].metadata['output'])
+            or 'pros'
+        )
 
     @property
     def all_files(self) -> Set[str]:
-        return {os.path.relpath(p, self.location) for p in
-                glob.glob(f'{self.location}/**/*', recursive=True)}
+        return {os.path.relpath(p, self.location) for p in glob.glob(f'{self.location}/**/*', recursive=True)}
 
     def get_template_actions(self, template: BaseTemplate) -> TemplateAction:
         ui.logger(__name__).debug(template)
         if template.target != self.target:
             return TemplateAction.NotApplicable
         from semantic_version import Spec, Version
+
         if template.name != 'kernel' and Version(self.kernel) not in Spec(template.supported_kernels or '>0'):
             if template.name in self.templates.keys():
                 return TemplateAction.AlreadyInstalled
@@ -97,10 +104,16 @@ class Project(Config):
     def template_is_applicable(self, query: BaseTemplate, force_apply: bool = False) -> bool:
         ui.logger(__name__).debug(query.target)
         return self.get_template_actions(query) in (
-            TemplateAction.ForcedApplicable if force_apply else TemplateAction.UnforcedApplicable)
+            TemplateAction.ForcedApplicable if force_apply else TemplateAction.UnforcedApplicable
+        )
 
-    def apply_template(self, template: LocalTemplate, force_system: bool = False, force_user: bool = False,
-                       remove_empty_directories: bool = False):
+    def apply_template(
+        self,
+        template: LocalTemplate,
+        force_system: bool = False,
+        force_user: bool = False,
+        remove_empty_directories: bool = False,
+    ):
         """
         Applies a template to a project
         :param remove_empty_directories:
@@ -125,12 +138,16 @@ class Project(Config):
         # remove newly deprecated user files
         deprecated_user_files = installed_user_files.intersection(self.all_files) - set(template.user_files)
         if any(deprecated_user_files):
-            if force_user or confirm(f'The following user files have been deprecated: {deprecated_user_files}. '
-                                     f'Do you want to update them?'):
+            if force_user or confirm(
+                f'The following user files have been deprecated: {deprecated_user_files}. '
+                f'Do you want to update them?'
+            ):
                 transaction.extend_rm(deprecated_user_files)
             else:
-                logger(__name__).warning(f'Deprecated user files may cause weird quirks. See migration guidelines from '
-                                         f'{template.identifier}\'s release notes.')
+                logger(__name__).warning(
+                    f'Deprecated user files may cause weird quirks. See migration guidelines from '
+                    f'{template.identifier}\'s release notes.'
+                )
                 # Carry forward deprecated user files into the template about to be applied so that user gets warned in
                 # future.
                 template.user_files.extend(deprecated_user_files)
@@ -143,8 +160,13 @@ class Project(Config):
             src/opcontrol.c and src/opcontrol.cpp are friends because they have the same stem
             src/opcontrol.c and include/opcontrol.h are not because they are in different directories
             """
-            return not any([(os.path.normpath(file) in transaction.effective_state) for file in template.user_files if
-                            os.path.splitext(file)[0] == os.path.splitext(new_file)[0]])
+            return not any(
+                [
+                    (os.path.normpath(file) in transaction.effective_state)
+                    for file in template.user_files
+                    if os.path.splitext(file)[0] == os.path.splitext(new_file)[0]
+                ]
+            )
 
         if force_user:
             new_user_files = template.real_user_files
@@ -153,8 +175,11 @@ class Project(Config):
         transaction.extend_add(new_user_files, template.location)
 
         if any([file in transaction.effective_state for file in template.system_files]) and not force_system:
-            confirm(f'Some required files for {template.identifier} already exist in the project. '
-                    f'Overwrite the existing files?', abort=True)
+            confirm(
+                f'Some required files for {template.identifier} already exist in the project. '
+                f'Overwrite the existing files?',
+                abort=True,
+            )
         transaction.extend_add(template.system_files, template.location)
 
         logger(__name__).debug(transaction)
@@ -174,8 +199,9 @@ class Project(Config):
         if remove_user:
             transaction.extend_rm(real_template.real_user_files)
         logger(__name__).debug(transaction)
-        transaction.commit(label=f'Removing {template.identifier}...',
-                           remove_empty_directories=remove_empty_directories)
+        transaction.commit(
+            label=f'Removing {template.identifier}...', remove_empty_directories=remove_empty_directories
+        )
         del self.templates[real_template.name]
         self.save()
 
@@ -195,8 +221,10 @@ class Project(Config):
         return [local_template for local_template in self.templates.values() if local_template.satisfies(query)]
 
     def __str__(self):
-        return f'Project: {self.location} ({self.name}) for {self.target} with ' \
+        return (
+            f'Project: {self.location} ({self.name}) for {self.target} with '
             f'{", ".join([str(t) for t in self.templates.values()])}'
+        )
 
     @property
     def kernel(self):
@@ -216,6 +244,7 @@ class Project(Config):
 
     def make(self, build_args: List[str]):
         import subprocess
+
         env = os.environ.copy()
         # Add PROS toolchain to the beginning of PATH to ensure PROS binaries are preferred
         if os.environ.get('PROS_TOOLCHAIN'):
@@ -228,14 +257,24 @@ class Project(Config):
             make_cmd = 'make'
         stdout_pipe = EchoPipe()
         stderr_pipe = EchoPipe(err=True)
-        process=None
+        process = None
         try:
-            process = subprocess.Popen(executable=make_cmd, args=[make_cmd, *build_args], cwd=self.directory, env=env,
-                                   stdout=stdout_pipe, stderr=stderr_pipe)
+            process = subprocess.Popen(
+                executable=make_cmd,
+                args=[make_cmd, *build_args],
+                cwd=self.directory,
+                env=env,
+                stdout=stdout_pipe,
+                stderr=stderr_pipe,
+            )
         except Exception as e:
             if not os.environ.get('PROS_TOOLCHAIN'):
-                ui.logger(__name__).warn("PROS toolchain not found! Please ensure the toolchain is installed correctly and your environment variables are set properly.\n")
-            ui.logger(__name__).error(f"ERROR WHILE CALLING '{make_cmd}' WITH EXCEPTION: {str(e)}\n",extra={'sentry':False})
+                ui.logger(__name__).warn(
+                    "PROS toolchain not found! Please ensure the toolchain is installed correctly and your environment variables are set properly.\n"
+                )
+            ui.logger(__name__).error(
+                f"ERROR WHILE CALLING '{make_cmd}' WITH EXCEPTION: {str(e)}\n", extra={'sentry': False}
+            )
             stdout_pipe.close()
             stderr_pipe.close()
             sys.exit()
@@ -244,8 +283,13 @@ class Project(Config):
         process.wait()
         return process.returncode
 
-    def make_scan_build(self, build_args: Tuple[str], cdb_file: Optional[Union[str, io.IOBase]] = None,
-                        suppress_output: bool = False, sandbox: bool = False):
+    def make_scan_build(
+        self,
+        build_args: Tuple[str],
+        cdb_file: Optional[Union[str, io.IOBase]] = None,
+        suppress_output: bool = False,
+        sandbox: bool = False,
+    ):
         from libscanbuild.compilation import Compilation, CompilationDatabase
         from libscanbuild.arguments import create_intercept_parser
         import itertools
@@ -255,6 +299,7 @@ class Project(Config):
 
         if sandbox:
             import tempfile
+
             td = tempfile.TemporaryDirectory()
             td_path = td.name.replace("\\", "/")
             build_args = [*build_args, f'BINDIR={td_path}']
@@ -266,33 +311,44 @@ class Project(Config):
             :param args:    the parsed and validated command line arguments
             :return:        the exit status of build process.
             """
-            from libscanbuild.intercept import setup_environment, run_build, exec_trace_files, parse_exec_trace, \
-                compilations
+            from libscanbuild.intercept import (
+                setup_environment,
+                run_build,
+                exec_trace_files,
+                parse_exec_trace,
+                compilations,
+            )
             from libear import temporary_directory
 
             with temporary_directory(prefix='intercept-') as tmp_dir:
                 # run the build command
                 environment = setup_environment(args, tmp_dir)
                 if os.environ.get('PROS_TOOLCHAIN'):
-                    environment['PATH'] = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin') + os.pathsep + \
-                                          environment['PATH']
+                    environment['PATH'] = (
+                        os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin') + os.pathsep + environment['PATH']
+                    )
 
                 if sys.platform == 'darwin':
-                    environment['PATH'] = os.path.dirname(os.path.abspath(sys.executable)) + os.pathsep + \
-                                          environment['PATH']
+                    environment['PATH'] = (
+                        os.path.dirname(os.path.abspath(sys.executable)) + os.pathsep + environment['PATH']
+                    )
 
                 if not suppress_output:
                     pipe = EchoPipe()
                 else:
                     pipe = subprocess.DEVNULL
                 logger(__name__).debug(self.directory)
-                exit_code=None
+                exit_code = None
                 try:
                     exit_code = run_build(args.build, env=environment, stdout=pipe, stderr=pipe, cwd=self.directory)
                 except Exception as e:
                     if not os.environ.get('PROS_TOOLCHAIN'):
-                        ui.logger(__name__).warn("PROS toolchain not found! Please ensure the toolchain is installed correctly and your environment variables are set properly.\n")
-                    ui.logger(__name__).error(f"ERROR WHILE CALLING '{make_cmd}' WITH EXCEPTION: {str(e)}\n",extra={'sentry':False})
+                        ui.logger(__name__).warn(
+                            "PROS toolchain not found! Please ensure the toolchain is installed correctly and your environment variables are set properly.\n"
+                        )
+                    ui.logger(__name__).error(
+                        f"ERROR WHILE CALLING '{make_cmd}' WITH EXCEPTION: {str(e)}\n", extra={'sentry': False}
+                    )
                     if not suppress_output:
                         pipe.close()
                     sys.exit()
@@ -310,9 +366,18 @@ class Project(Config):
         else:
             make_cmd = 'make'
         args = create_intercept_parser().parse_args(
-            ['--override-compiler', '--use-cc', 'arm-none-eabi-gcc', '--use-c++', 'arm-none-eabi-g++', make_cmd,
-             *build_args,
-             'CC=intercept-cc', 'CXX=intercept-c++'])
+            [
+                '--override-compiler',
+                '--use-cc',
+                'arm-none-eabi-gcc',
+                '--use-c++',
+                'arm-none-eabi-g++',
+                make_cmd,
+                *build_args,
+                'CC=intercept-cc',
+                'CXX=intercept-c++',
+            ]
+        )
         exit_code, entries = libscanbuild_capture(args)
 
         if sandbox and td:
@@ -327,8 +392,9 @@ class Project(Config):
         # Add PROS toolchain to the beginning of PATH to ensure PROS binaries are preferred
         if os.environ.get('PROS_TOOLCHAIN'):
             env['PATH'] = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin') + os.pathsep + env['PATH']
-        cc_sysroot = subprocess.run([make_cmd, 'cc-sysroot'], env=env, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE, cwd=self.directory)
+        cc_sysroot = subprocess.run(
+            [make_cmd, 'cc-sysroot'], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.directory
+        )
         lines = str(cc_sysroot.stderr.decode()).splitlines() + str(cc_sysroot.stdout.decode()).splitlines()
         lines = [l.strip() for l in lines]
         cc_sysroot_includes = []
@@ -342,8 +408,9 @@ class Project(Config):
                 continue
             if copy:
                 cc_sysroot_includes.append(f'-isystem{line}')
-        cxx_sysroot = subprocess.run([make_cmd, 'cxx-sysroot'], env=env, stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE, cwd=self.directory)
+        cxx_sysroot = subprocess.run(
+            [make_cmd, 'cxx-sysroot'], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.directory
+        )
         lines = str(cxx_sysroot.stderr.decode()).splitlines() + str(cxx_sysroot.stdout.decode()).splitlines()
         lines = [l.strip() for l in lines]
         cxx_sysroot_includes = []
@@ -362,8 +429,9 @@ class Project(Config):
         if not cdb_file:
             cdb_file = os.path.join(self.directory, 'compile_commands.json')
         if isinstance(cdb_file, str) and os.path.isfile(cdb_file):
-            old_entries = itertools.filterfalse(lambda entry: entry.source in new_sources,
-                                                CompilationDatabase.load(cdb_file))
+            old_entries = itertools.filterfalse(
+                lambda entry: entry.source in new_sources, CompilationDatabase.load(cdb_file)
+            )
         else:
             old_entries = []
 
@@ -395,6 +463,7 @@ class Project(Config):
         if isinstance(cdb_file, str):
             cdb_file = open(cdb_file, 'w')
         import json
+
         json.dump(json_entries, cdb_file, sort_keys=True, indent=4)
 
         return exit_code
@@ -402,6 +471,7 @@ class Project(Config):
     def compile(self, build_args: List[str], scan_build: Optional[bool] = None):
         if scan_build is None:
             from pros.config.cli_config import cli_config
+
             scan_build = cli_config().use_build_compile_commands
         return self.make_scan_build(build_args) if scan_build else self.make(build_args)
 
@@ -413,8 +483,11 @@ class Project(Config):
         if os.path.isdir(path):
             for _ in range(recurse_times):
                 if path is not None and os.path.isdir(path):
-                    files = [f for f in os.listdir(path)
-                             if os.path.isfile(os.path.join(path, f)) and f.lower() == 'project.pros']
+                    files = [
+                        f
+                        for f in os.listdir(path)
+                        if os.path.isfile(os.path.join(path, f)) and f.lower() == 'project.pros'
+                    ]
                     if len(files) == 1:  # found a project.pros file!
                         logger(__name__).info(f'Found Project Path: {os.path.join(path, files[0])}')
                         return os.path.join(path, files[0])

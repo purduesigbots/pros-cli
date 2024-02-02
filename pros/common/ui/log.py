@@ -28,7 +28,7 @@ class PROSLogHandler(logging.StreamHandler):
                     'type': 'log/message',
                     'level': record.levelname,
                     'message': formatter.formatMessage(record),
-                    'simpleMessage': record.message
+                    'simpleMessage': record.message,
                 }
                 if record.exc_info:
                     obj['trace'] = formatter.formatException(record.exc_info)

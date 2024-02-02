@@ -25,8 +25,11 @@ def conductor():
     pass
 
 
-@conductor.command(aliases=['download'], short_help='Fetch/Download a remote template',
-                   context_settings={'ignore_unknown_options': True})
+@conductor.command(
+    aliases=['download'],
+    short_help='Fetch/Download a remote template',
+    context_settings={'ignore_unknown_options': True},
+)
 @template_query(required=True)
 @default_options
 def fetch(query: c.BaseTemplate):
@@ -55,8 +58,9 @@ def fetch(query: c.BaseTemplate):
             return -1
         template_file = query.metadata['location']
 
-    if template_file and (os.path.splitext(template_file)[1] in ['.zip'] or
-                          os.path.exists(os.path.join(template_file, 'template.pros'))):
+    if template_file and (
+        os.path.splitext(template_file)[1] in ['.zip'] or os.path.exists(os.path.join(template_file, 'template.pros'))
+    ):
         template = ExternalTemplate(template_file)
         query.metadata['location'] = template_file
         depot = c.LocalDepot()
@@ -79,20 +83,49 @@ def fetch(query: c.BaseTemplate):
 
 @conductor.command(context_settings={'ignore_unknown_options': True})
 @click.option('--upgrade/--no-upgrade', 'upgrade_ok', default=True, help='Allow upgrading templates in a project')
-
 @click.option('--install/--no-install', 'install_ok', default=True, help='Allow installing templates in a project')
-@click.option('--download/--no-download', 'download_ok', default=True,
-              help='Allow downloading templates or only allow local templates')
-@click.option('--upgrade-user-files/--no-upgrade-user-files', 'force_user', default=False,
-              help='Replace all user files in a template')
-@click.option('--force', 'force_system', default=False, is_flag=True,
-              help="Force all system files to be inserted into the project")
-@click.option('--force-apply', 'force_apply', default=False, is_flag=True,
-              help="Force apply the template, disregarding if the template is already installed.")
-@click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
-              help='Remove empty directories when removing files')
-@click.option('--early-access/--disable-early-access', '--early/--disable-early', '-ea/-dea', 'early_access', '--beta/--disable-beta', default=None,
-              help='Create a project using the PROS 4 kernel')
+@click.option(
+    '--download/--no-download',
+    'download_ok',
+    default=True,
+    help='Allow downloading templates or only allow local templates',
+)
+@click.option(
+    '--upgrade-user-files/--no-upgrade-user-files',
+    'force_user',
+    default=False,
+    help='Replace all user files in a template',
+)
+@click.option(
+    '--force',
+    'force_system',
+    default=False,
+    is_flag=True,
+    help="Force all system files to be inserted into the project",
+)
+@click.option(
+    '--force-apply',
+    'force_apply',
+    default=False,
+    is_flag=True,
+    help="Force apply the template, disregarding if the template is already installed.",
+)
+@click.option(
+    '--remove-empty-dirs/--no-remove-empty-dirs',
+    'remove_empty_directories',
+    is_flag=True,
+    default=True,
+    help='Remove empty directories when removing files',
+)
+@click.option(
+    '--early-access/--disable-early-access',
+    '--early/--disable-early',
+    '-ea/-dea',
+    'early_access',
+    '--beta/--disable-beta',
+    default=None,
+    help='Create a project using the PROS 4 kernel',
+)
 @project_option()
 @template_query(required=True)
 @default_options
@@ -109,14 +142,29 @@ def apply(project: c.Project, query: c.BaseTemplate, **kwargs):
 @conductor.command(aliases=['i', 'in'], context_settings={'ignore_unknown_options': True})
 @click.option('--upgrade/--no-upgrade', 'upgrade_ok', default=False)
 @click.option('--download/--no-download', 'download_ok', default=True)
-@click.option('--force-user', 'force_user', default=False, is_flag=True,
-              help='Replace all user files in a template')
-@click.option('--force-system', '-f', 'force_system', default=False, is_flag=True,
-              help="Force all system files to be inserted into the project")
-@click.option('--force-apply', 'force_apply', default=False, is_flag=True,
-              help="Force apply the template, disregarding if the template is already installed.")
-@click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
-              help='Remove empty directories when removing files')
+@click.option('--force-user', 'force_user', default=False, is_flag=True, help='Replace all user files in a template')
+@click.option(
+    '--force-system',
+    '-f',
+    'force_system',
+    default=False,
+    is_flag=True,
+    help="Force all system files to be inserted into the project",
+)
+@click.option(
+    '--force-apply',
+    'force_apply',
+    default=False,
+    is_flag=True,
+    help="Force apply the template, disregarding if the template is already installed.",
+)
+@click.option(
+    '--remove-empty-dirs/--no-remove-empty-dirs',
+    'remove_empty_directories',
+    is_flag=True,
+    default=True,
+    help='Remove empty directories when removing files',
+)
 @project_option()
 @template_query(required=True)
 @default_options
@@ -134,16 +182,38 @@ def install(ctx: click.Context, **kwargs):
 @conductor.command(context_settings={'ignore_unknown_options': True}, aliases=['u'])
 @click.option('--install/--no-install', 'install_ok', default=False)
 @click.option('--download/--no-download', 'download_ok', default=True)
-@click.option('--force-user', 'force_user', default=False, is_flag=True,
-              help='Replace all user files in a template')
-@click.option('--force-system', '-f', 'force_system', default=False, is_flag=True,
-              help="Force all system files to be inserted into the project")
-@click.option('--force-apply', 'force_apply', default=False, is_flag=True,
-              help="Force apply the template, disregarding if the template is already installed.")
-@click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
-              help='Remove empty directories when removing files')
-@click.option('--early-access/--disable-early-access', '--early/--disable-early', '-ea/-dea', 'early_access', '--beta/--disable-beta', default=None,
-              help='Create a project using the PROS 4 kernel')
+@click.option('--force-user', 'force_user', default=False, is_flag=True, help='Replace all user files in a template')
+@click.option(
+    '--force-system',
+    '-f',
+    'force_system',
+    default=False,
+    is_flag=True,
+    help="Force all system files to be inserted into the project",
+)
+@click.option(
+    '--force-apply',
+    'force_apply',
+    default=False,
+    is_flag=True,
+    help="Force apply the template, disregarding if the template is already installed.",
+)
+@click.option(
+    '--remove-empty-dirs/--no-remove-empty-dirs',
+    'remove_empty_directories',
+    is_flag=True,
+    default=True,
+    help='Remove empty directories when removing files',
+)
+@click.option(
+    '--early-access/--disable-early-access',
+    '--early/--disable-early',
+    '-ea/-dea',
+    'early_access',
+    '--beta/--disable-beta',
+    default=None,
+    help='Create a project using the PROS 4 kernel',
+)
 @project_option()
 @template_query(required=False)
 @default_options
@@ -158,8 +228,9 @@ def upgrade(ctx: click.Context, project: c.Project, query: c.BaseTemplate, **kwa
     if not query.name:
         for template in project.templates.keys():
             click.secho(f'Upgrading {template}', color='yellow')
-            q = c.BaseTemplate.create_query(name=template, target=project.target,
-                                            supported_kernels=project.templates['kernel'].version)
+            q = c.BaseTemplate.create_query(
+                name=template, target=project.target, supported_kernels=project.templates['kernel'].version
+            )
             ctx.invoke(apply, upgrade_ok=True, project=project, query=q, **kwargs)
     else:
         ctx.invoke(apply, project=project, query=query, upgrade_ok=True, **kwargs)
@@ -167,22 +238,33 @@ def upgrade(ctx: click.Context, project: c.Project, query: c.BaseTemplate, **kwa
 
 @conductor.command('uninstall')
 @click.option('--remove-user', is_flag=True, default=False, help='Also remove user files')
-@click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
-              help='Remove empty directories when removing files')
+@click.option(
+    '--remove-empty-dirs/--no-remove-empty-dirs',
+    'remove_empty_directories',
+    is_flag=True,
+    default=True,
+    help='Remove empty directories when removing files',
+)
 @click.option('--no-make-clean', is_flag=True, default=True, help='Do not run make clean after removing')
 @project_option()
 @template_query()
 @default_options
-def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: bool,
-                       remove_empty_directories: bool = False, no_make_clean: bool = False):
+def uninstall_template(
+    project: c.Project,
+    query: c.BaseTemplate,
+    remove_user: bool,
+    remove_empty_directories: bool = False,
+    no_make_clean: bool = False,
+):
     """
     Uninstall a template from a PROS project
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
     analytics.send("uninstall-template")
-    c.Conductor().remove_template(project, query, remove_user=remove_user,
-                                  remove_empty_directories=remove_empty_directories)
+    c.Conductor().remove_template(
+        project, query, remove_user=remove_user, remove_empty_directories=remove_empty_directories
+    )
     if no_make_clean:
         with ui.Notification():
             project.compile(["clean"])
@@ -192,25 +274,62 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
 @click.argument('path', type=click.Path())
 @click.argument('target', default=c.Conductor().default_target, type=click.Choice(['v5', 'cortex']))
 @click.argument('version', default='latest')
-@click.option('--force-user', 'force_user', default=False, is_flag=True,
-              help='Replace all user files in a template')
-@click.option('--force-system', '-f', 'force_system', default=False, is_flag=True,
-              help="Force all system files to be inserted into the project")
-@click.option('--force-refresh', is_flag=True, default=False, show_default=True,
-              help='Force update all remote depots, ignoring automatic update checks')
-@click.option('--no-default-libs', 'no_default_libs', default=False, is_flag=True,
-              help='Do not install any default libraries after creating the project.')
-@click.option('--compile-after', is_flag=True, default=True, show_default=True,
-              help='Compile the project after creation')
-@click.option('--build-cache', is_flag=True, default=None, show_default=False,
-              help='Build compile commands cache after creation. Overrides --compile-after if both are specified.')
-@click.option('--early-access/--disable-early-access', '--early/--disable-early', '-ea/-dea', 'early_access', '--beta/--disable-beta', default=None,
-              help='Create a project using the PROS 4 kernel')
+@click.option('--force-user', 'force_user', default=False, is_flag=True, help='Replace all user files in a template')
+@click.option(
+    '--force-system',
+    '-f',
+    'force_system',
+    default=False,
+    is_flag=True,
+    help="Force all system files to be inserted into the project",
+)
+@click.option(
+    '--force-refresh',
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help='Force update all remote depots, ignoring automatic update checks',
+)
+@click.option(
+    '--no-default-libs',
+    'no_default_libs',
+    default=False,
+    is_flag=True,
+    help='Do not install any default libraries after creating the project.',
+)
+@click.option(
+    '--compile-after', is_flag=True, default=True, show_default=True, help='Compile the project after creation'
+)
+@click.option(
+    '--build-cache',
+    is_flag=True,
+    default=None,
+    show_default=False,
+    help='Build compile commands cache after creation. Overrides --compile-after if both are specified.',
+)
+@click.option(
+    '--early-access/--disable-early-access',
+    '--early/--disable-early',
+    '-ea/-dea',
+    'early_access',
+    '--beta/--disable-beta',
+    default=None,
+    help='Create a project using the PROS 4 kernel',
+)
 @click.pass_context
 @default_options
-def new_project(ctx: click.Context, path: str, target: str, version: str,
-                force_user: bool = False, force_system: bool = False,
-                no_default_libs: bool = False, compile_after: bool = True, build_cache: bool = None, **kwargs):
+def new_project(
+    ctx: click.Context,
+    path: str,
+    target: str,
+    version: str,
+    force_user: bool = False,
+    force_system: bool = False,
+    no_default_libs: bool = False,
+    compile_after: bool = True,
+    build_cache: bool = None,
+    **kwargs,
+):
     """
     Create a new PROS project
 
@@ -221,16 +340,27 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
     if version.lower() == 'latest' or not version:
         version = '>0'
     if not force_system and c.Project.find_project(path) is not None:
-        logger(__name__).error('A project already exists in this location at ' + c.Project.find_project(path) +
-                               '! Delete it first. Are you creating a project in an existing one?', extra={'sentry': False})
+        logger(__name__).error(
+            'A project already exists in this location at '
+            + c.Project.find_project(path)
+            + '! Delete it first. Are you creating a project in an existing one?',
+            extra={'sentry': False},
+        )
         ctx.exit(-1)
     try:
         _conductor = c.Conductor()
         if target is None:
             target = _conductor.default_target
-        project = _conductor.new_project(path, target=target, version=version, version_source=version_source,
-                                         force_user=force_user, force_system=force_system,
-                                         no_default_libs=no_default_libs, **kwargs)
+        project = _conductor.new_project(
+            path,
+            target=target,
+            version=version,
+            version_source=version_source,
+            force_user=force_user,
+            force_system=force_system,
+            no_default_libs=no_default_libs,
+            **kwargs,
+        )
         ui.echo('New PROS Project was created:', output_machine=False)
         ctx.invoke(info_project, project=project)
 
@@ -247,24 +377,54 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
         ctx.exit(-1)
 
 
-@conductor.command('query-templates',
-                   aliases=['search-templates', 'ls-templates', 'lstemplates', 'querytemplates', 'searchtemplates'],
-                   context_settings={'ignore_unknown_options': True})
-@click.option('--allow-offline/--no-offline', 'allow_offline', default=True, show_default=True,
-              help='(Dis)allow offline templates in the listing')
-@click.option('--allow-online/--no-online', 'allow_online', default=True, show_default=True,
-              help='(Dis)allow online templates in the listing')
-@click.option('--force-refresh', is_flag=True, default=False, show_default=True,
-              help='Force update all remote depots, ignoring automatic update checks')
-@click.option('--limit', type=int, default=15,
-              help='The maximum number of displayed results for each library')
-@click.option('--early-access/--disable-early-access', '--early/--disable-early', '-ea/-dea', 'early_access', '--beta/--disable-beta', default=None,
-              help='View a list of early access templates')
+@conductor.command(
+    'query-templates',
+    aliases=['search-templates', 'ls-templates', 'lstemplates', 'querytemplates', 'searchtemplates'],
+    context_settings={'ignore_unknown_options': True},
+)
+@click.option(
+    '--allow-offline/--no-offline',
+    'allow_offline',
+    default=True,
+    show_default=True,
+    help='(Dis)allow offline templates in the listing',
+)
+@click.option(
+    '--allow-online/--no-online',
+    'allow_online',
+    default=True,
+    show_default=True,
+    help='(Dis)allow online templates in the listing',
+)
+@click.option(
+    '--force-refresh',
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help='Force update all remote depots, ignoring automatic update checks',
+)
+@click.option('--limit', type=int, default=15, help='The maximum number of displayed results for each library')
+@click.option(
+    '--early-access/--disable-early-access',
+    '--early/--disable-early',
+    '-ea/-dea',
+    'early_access',
+    '--beta/--disable-beta',
+    default=None,
+    help='View a list of early access templates',
+)
 @template_query(required=False)
 @click.pass_context
 @default_options
-def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_online: bool, force_refresh: bool,
-                    limit: int, early_access: bool):
+def query_templates(
+    ctx,
+    query: c.BaseTemplate,
+    allow_offline: bool,
+    allow_online: bool,
+    force_refresh: bool,
+    limit: int,
+    early_access: bool,
+):
     """
     Query local and remote templates based on a spec
 
@@ -273,11 +433,21 @@ def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_onlin
     analytics.send("query-templates")
     if limit < 0:
         limit = 15
-    templates = c.Conductor().resolve_templates(query, allow_offline=allow_offline, allow_online=allow_online,
-                                                force_refresh=force_refresh, early_access=early_access)
+    templates = c.Conductor().resolve_templates(
+        query,
+        allow_offline=allow_offline,
+        allow_online=allow_online,
+        force_refresh=force_refresh,
+        early_access=early_access,
+    )
     if early_access:
-        templates += c.Conductor().resolve_templates(query, allow_offline=allow_offline, allow_online=allow_online,
-                                                force_refresh=force_refresh, early_access=False)
+        templates += c.Conductor().resolve_templates(
+            query,
+            allow_offline=allow_offline,
+            allow_online=allow_online,
+            force_refresh=force_refresh,
+            early_access=False,
+        )
 
     render_templates = {}
     for template in templates:
@@ -291,10 +461,13 @@ def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_onlin
                 'version': template.version,
                 'location': template.origin,
                 'target': template.target,
-                'local': isinstance(template, c.LocalTemplate)
+                'local': isinstance(template, c.LocalTemplate),
             }
     import semantic_version as semver
-    render_templates = sorted(render_templates.values(), key=lambda k: (k['name'], semver.Version(k['version']), k['local']), reverse=True)
+
+    render_templates = sorted(
+        render_templates.values(), key=lambda k: (k['name'], semver.Version(k['version']), k['local']), reverse=True
+    )
 
     # Impose the output limit for each library's templates
     output_templates = []
@@ -315,17 +488,22 @@ def info_project(project: c.Project, ls_upgrades):
     """
     analytics.send("info-project")
     from pros.conductor.project import ProjectReport
+
     report = ProjectReport(project)
     _conductor = c.Conductor()
     if ls_upgrades:
         for template in report.project['templates']:
             import semantic_version as semver
-            templates = _conductor.resolve_templates(c.BaseTemplate.create_query(name=template["name"],
-                                                                                 version=f'>{template["version"]}',
-                                                                                 target=project.target))
+
+            templates = _conductor.resolve_templates(
+                c.BaseTemplate.create_query(
+                    name=template["name"], version=f'>{template["version"]}', target=project.target
+                )
+            )
             template["upgrades"] = sorted({t.version for t in templates}, key=lambda v: semver.Version(v), reverse=True)
 
     ui.finalize('project-report', report)
+
 
 @conductor.command('add-depot')
 @click.argument('name')
@@ -342,6 +520,7 @@ def add_depot(name: str, url: str):
 
     ui.echo(f"Added depot {name} from {url}")
 
+
 @conductor.command('remove-depot')
 @click.argument('name')
 @default_options
@@ -356,6 +535,7 @@ def remove_depot(name: str):
 
     ui.echo(f"Removed depot {name}")
 
+
 @conductor.command('query-depots')
 @click.option('--url', is_flag=True)
 @default_options
@@ -367,4 +547,4 @@ def query_depots(url: bool):
     """
     _conductor = c.Conductor()
     ui.echo(f"Available Depots{' (Add --url for the url)' if not url else ''}:\n")
-    ui.echo('\n'.join(_conductor.query_depots(url))+"\n")
+    ui.echo('\n'.join(_conductor.query_depots(url)) + "\n")

@@ -8,9 +8,14 @@ from ..templates import BaseTemplate, Template
 
 
 class Depot(object):
-    def __init__(self, name: str, location: str, config: Dict[str, Any] = None,
-                 update_frequency: timedelta = timedelta(minutes=1),
-                 config_schema: Dict[str, Dict[str, Any]] = None):
+    def __init__(
+        self,
+        name: str,
+        location: str,
+        config: Dict[str, Any] = None,
+        update_frequency: timedelta = timedelta(minutes=1),
+        config_schema: Dict[str, Dict[str, Any]] = None,
+    ):
         self.name: str = name
         self.location: str = location
         self.config: Dict[str, Any] = config or {}
@@ -28,8 +33,10 @@ class Depot(object):
     def get_remote_templates(self, auto_check_freq: Optional[timedelta] = None, force_check: bool = False, **kwargs):
         if auto_check_freq is None:
             auto_check_freq = getattr(self, 'update_frequency', cli_config().update_frequency)
-        logger(__name__).info(f'Last check of {self.name} was {self.last_remote_update} '
-                              f'({datetime.now() - self.last_remote_update} vs {auto_check_freq}).')
+        logger(__name__).info(
+            f'Last check of {self.name} was {self.last_remote_update} '
+            f'({datetime.now() - self.last_remote_update} vs {auto_check_freq}).'
+        )
         if force_check or datetime.now() - self.last_remote_update > auto_check_freq:
             with ui.Notification():
                 ui.echo(f'Updating {self.name}... ', nl=False)

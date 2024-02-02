@@ -24,8 +24,15 @@ def _machine_notify(method: str, obj: Dict[str, Any], notify_value: Optional[int
     _machineoutput(obj)
 
 
-def echo(text: Any, err: bool = False, nl: bool = True, notify_value: int = None, color: Any = None,
-         output_machine: bool = True, ctx: Optional[click.Context] = None):
+def echo(
+    text: Any,
+    err: bool = False,
+    nl: bool = True,
+    notify_value: int = None,
+    color: Any = None,
+    output_machine: bool = True,
+    ctx: Optional[click.Context] = None,
+):
     add_breadcrumb(message=text, category='echo')
     if ismachineoutput(ctx):
         if output_machine:
@@ -34,9 +41,16 @@ def echo(text: Any, err: bool = False, nl: bool = True, notify_value: int = None
         return click.echo(str(text), nl=nl, err=err, color=color)
 
 
-def confirm(text: str, default: bool = False, abort: bool = False, prompt_suffix: bool = ': ',
-            show_default: bool = True, err: bool = False, title: AnyStr = 'Please confirm:',
-            log: str = None):
+def confirm(
+    text: str,
+    default: bool = False,
+    abort: bool = False,
+    prompt_suffix: bool = ': ',
+    show_default: bool = True,
+    err: bool = False,
+    title: AnyStr = 'Please confirm:',
+    log: str = None,
+):
     add_breadcrumb(message=text, category='confirm')
     if ismachineoutput():
         from pros.common.ui.interactive.ConfirmModal import ConfirmModal
@@ -45,37 +59,66 @@ def confirm(text: str, default: bool = False, abort: bool = False, prompt_suffix
         app = ConfirmModal(text, abort, title, log)
         rv = MachineOutputRenderer(app).run()
     else:
-        rv = click.confirm(text, default=default, abort=abort, prompt_suffix=prompt_suffix,
-                           show_default=show_default, err=err)
+        rv = click.confirm(
+            text, default=default, abort=abort, prompt_suffix=prompt_suffix, show_default=show_default, err=err
+        )
     add_breadcrumb(message=f'User responded: {rv}')
     return rv
 
 
-def prompt(text, default=None, hide_input=False,
-           confirmation_prompt=False, type=None,
-           value_proc=None, prompt_suffix=': ',
-           show_default=True, err=False):
+def prompt(
+    text,
+    default=None,
+    hide_input=False,
+    confirmation_prompt=False,
+    type=None,
+    value_proc=None,
+    prompt_suffix=': ',
+    show_default=True,
+    err=False,
+):
     if ismachineoutput():
         # TODO
         pass
     else:
-        return click.prompt(text, default=default, hide_input=hide_input, confirmation_prompt=confirmation_prompt,
-                            type=type, value_proc=value_proc, prompt_suffix=prompt_suffix, show_default=show_default,
-                            err=err)
+        return click.prompt(
+            text,
+            default=default,
+            hide_input=hide_input,
+            confirmation_prompt=confirmation_prompt,
+            type=type,
+            value_proc=value_proc,
+            prompt_suffix=prompt_suffix,
+            show_default=show_default,
+            err=err,
+        )
 
 
-def progressbar(iterable: Iterable = None, length: int = None, label: str = None, show_eta: bool = True,
-                show_percent: bool = True, show_pos: bool = False, item_show_func: Callable = None,
-                fill_char: str = '#', empty_char: str = '-', bar_template: str = '%(label)s [%(bar)s] %(info)s',
-                info_sep: str = ' ', width: int = 36):
+def progressbar(
+    iterable: Iterable = None,
+    length: int = None,
+    label: str = None,
+    show_eta: bool = True,
+    show_percent: bool = True,
+    show_pos: bool = False,
+    item_show_func: Callable = None,
+    fill_char: str = '#',
+    empty_char: str = '-',
+    bar_template: str = '%(label)s [%(bar)s] %(info)s',
+    info_sep: str = ' ',
+    width: int = 36,
+):
     if ismachineoutput():
         return _MachineOutputProgressBar(**locals())
     else:
         return click.progressbar(**locals())
 
 
-def finalize(method: str, data: Union[str, Dict, object, List[Union[str, Dict, object, Tuple]]],
-             human_prefix: Optional[str] = None):
+def finalize(
+    method: str,
+    data: Union[str, Dict, object, List[Union[str, Dict, object, Tuple]]],
+    human_prefix: Optional[str] = None,
+):
     """
     To all those who have to debug this... RIP
     """
@@ -96,9 +139,11 @@ def finalize(method: str, data: Union[str, Dict, object, List[Union[str, Dict, o
                 if not isinstance(data[0], dict):
                     data = [d.__dict__ for d in data]
                 import tabulate
+
                 human_readable = tabulate.tabulate([d.values() for d in data], headers=data[0].keys())
         elif isinstance(data[0], tuple):
             import tabulate
+
             human_readable = tabulate.tabulate(data[1:], headers=data[0])
         else:
             human_readable = data
@@ -108,12 +153,7 @@ def finalize(method: str, data: Union[str, Dict, object, List[Union[str, Dict, o
         human_readable = data.__dict__
     human_readable = (human_prefix or '') + str(human_readable)
     if ismachineoutput():
-        _machineoutput({
-            'type': 'finalize',
-            'method': method,
-            'data': data,
-            'human': human_readable
-        })
+        _machineoutput({'type': 'finalize', 'method': method, 'data': data, 'human': human_readable})
     else:
         echo(human_readable)
 
@@ -170,21 +210,18 @@ class EchoPipe(threading.Thread):
         self.start()
 
     def fileno(self):
-        """Return the write file descriptor of the pipe
-        """
+        """Return the write file descriptor of the pipe"""
         return self.fdWrite
 
     def run(self):
-        """Run the thread, logging everything.
-        """
+        """Run the thread, logging everything."""
         for line in iter(self.pipeReader.readline, ''):
             echo(line.strip('\n'), ctx=self.click_ctx, err=self.is_err)
 
         self.pipeReader.close()
 
     def close(self):
-        """Close the write end of the pipe.
-        """
+        """Close the write end of the pipe."""
         os.close(self.fdWrite)
 
 

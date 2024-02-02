@@ -72,8 +72,10 @@ class VEXDevice(GenericDevice):
                 response_header_stack = bytearray(response_header)
                 rx = bytearray()
         if not rx == bytearray(response_header):
-            raise IOError(f"Couldn't find the response header in the device response after {timeout} s. "
-                          f"Got {rx.hex()} but was expecting {response_header.hex()}")
+            raise IOError(
+                f"Couldn't find the response header in the device response after {timeout} s. "
+                f"Got {rx.hex()} but was expecting {response_header.hex()}"
+            )
         rx.extend(self.port.read(1))
         command = rx[-1]
         rx.extend(self.port.read(1))
@@ -81,14 +83,10 @@ class VEXDevice(GenericDevice):
         if command == 0x56 and (payload_length & 0x80) == 0x80:
             logger(__name__).debug('Found an extended message payload')
             rx.extend(self.port.read(1))
-            payload_length = ((payload_length & 0x7f) << 8) + rx[-1]
+            payload_length = ((payload_length & 0x7F) << 8) + rx[-1]
         payload = self.port.read(payload_length)
         rx.extend(payload)
-        return {
-            'command': command,
-            'payload': payload,
-            'raw': rx
-        }
+        return {'command': command, 'payload': payload, 'raw': rx}
 
     def _tx_packet(self, command: int, tx_data: Union[Iterable, bytes, bytearray, None] = None):
         tx = self._form_simple_packet(command)
@@ -100,8 +98,9 @@ class VEXDevice(GenericDevice):
         self.port.flush()
         return tx
 
-    def _txrx_packet(self, command: int, tx_data: Union[Iterable, bytes, bytearray, None] = None,
-                     timeout: Optional[float] = None) -> Message:
+    def _txrx_packet(
+        self, command: int, tx_data: Union[Iterable, bytes, bytearray, None] = None, timeout: Optional[float] = None
+    ) -> Message:
         """
         Goes through a send/receive cycle with a VEX device.
         Transmits the command with the optional additional payload, then reads and parses the outer layer
@@ -121,4 +120,4 @@ class VEXDevice(GenericDevice):
 
     @staticmethod
     def _form_simple_packet(msg: int) -> bytearray:
-        return bytearray([0xc9, 0x36, 0xb8, 0x47, msg])
+        return bytearray([0xC9, 0x36, 0xB8, 0x47, msg])

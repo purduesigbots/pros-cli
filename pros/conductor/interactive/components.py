@@ -26,9 +26,9 @@ class TemplateListingComponent(components.Container):
             remove_button.on_clicked(lambda: self.template.trigger('removed'))
             yield remove_button
 
-    def __init__(self, template: TemplateParameter,
-                 removable: bool = False,
-                 editable: Union[Dict[str, bool], bool] = True):
+    def __init__(
+        self, template: TemplateParameter, removable: bool = False, editable: Union[Dict[str, bool], bool] = True
+    ):
         self.template = template
         self.removable = removable
         if isinstance(editable, bool):

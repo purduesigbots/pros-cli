@@ -93,10 +93,7 @@ class MachineOutputRenderer(Renderer[P], Generic[P]):
                 self.wake_me()
 
         ui.logger(__name__).debug(f'Broadcasting stop {self.app}')
-        self._output({
-            'uuid': self.app.uuid,
-            'should_exit': True
-        })
+        self._output({'uuid': self.app.uuid, 'should_exit': True})
 
         _remove_renderer(self)
         top_renderer = _current_renderer()

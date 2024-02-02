@@ -13,9 +13,11 @@ cli_config: 'CliConfig' = None
 force_prompt_off = False
 SUPPRESSED_EXCEPTIONS = [PermissionError, click.Abort]
 
+
 def disable_prompt():
     global force_prompt_off
     force_prompt_off = True
+
 
 def prompt_to_send(event: Dict[str, Any], hint: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     """
@@ -31,8 +33,10 @@ def prompt_to_send(event: Dict[str, Any], hint: Optional[Dict[str, Any]]) -> Opt
         if 'extra' in event and not event['extra'].get('sentry', True):
             ui.logger(__name__).debug('Not sending candidate event because event was tagged with extra.sentry = False')
             return
-        if 'exc_info' in hint and (not getattr(hint['exc_info'][1], 'sentry', True) or
-                                   any(isinstance(hint['exc_info'][1], t) for t in SUPPRESSED_EXCEPTIONS)):
+        if 'exc_info' in hint and (
+            not getattr(hint['exc_info'][1], 'sentry', True)
+            or any(isinstance(hint['exc_info'][1], t) for t in SUPPRESSED_EXCEPTIONS)
+        ):
             ui.logger(__name__).debug('Not sending candidate event because exception was tagged with sentry = False')
             return
 
@@ -48,10 +52,12 @@ def prompt_to_send(event: Dict[str, Any], hint: Optional[Dict[str, Any]]) -> Opt
             extra_text += event['logentry']['message'] + '\n'
         if 'exc_info' in hint:
             import traceback
+
             extra_text += ''.join(traceback.format_exception(*hint['exc_info'], limit=4))
 
-        event['tags']['confirmed'] = ui.confirm('We detected something went wrong! Do you want to send a report?',
-                                                log=extra_text)
+        event['tags']['confirmed'] = ui.confirm(
+            'We detected something went wrong! Do you want to send a report?', log=extra_text
+        )
         if event['tags']['confirmed']:
             ui.echo('Sending bug report.')
 
@@ -77,6 +83,7 @@ def add_context(obj: object, override_handlers: bool = True, key: str = None) ->
         Override how templates get pickled by JSON pickle - we don't want to send all of the data about a template
         from an object
         """
+
         from pros.conductor.templates import BaseTemplate
 
         def flatten(self, obj: BaseTemplate, data):
@@ -98,6 +105,7 @@ def add_context(obj: object, override_handlers: bool = True, key: str = None) ->
         jsonpickle.handlers.register(BaseTemplate, TemplateHandler, base=True)
 
     from sentry_sdk import configure_scope
+
     with configure_scope() as scope:
         scope.set_extra((key or obj.__class__.__qualname__), jsonpickle.pickler.Pickler(unpicklable=False).flatten(obj))
 
@@ -116,6 +124,7 @@ def register(cfg: Optional['CliConfig'] = None):
     global cli_config, client
     if cfg is None:
         from pros.config.cli_config import cli_config as get_cli_config
+
         cli_config = get_cli_config()
     else:
         cli_config = cfg
@@ -131,7 +140,7 @@ def register(cfg: Optional['CliConfig'] = None):
     client = sentry.Client(
         'https://00bd27dcded6436cad5c8b2941d6a9d6@sentry.io/1226033',
         before_send=prompt_to_send,
-        release=ui.get_version()
+        release=ui.get_version(),
     )
     sentry.Hub.current.bind_client(client)
 

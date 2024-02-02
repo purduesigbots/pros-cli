@@ -17,8 +17,12 @@ class NewProjectModal(application.Modal[None]):
     project_name = parameters.Parameter(None)
     advanced_collapsed = parameters.BooleanParameter(True)
 
-    def __init__(self, ctx: Context = None, conductor: Optional[Conductor] = None,
-                 directory=os.path.join(os.path.expanduser('~'), 'My PROS Project')):
+    def __init__(
+        self,
+        ctx: Context = None,
+        conductor: Optional[Conductor] = None,
+        directory=os.path.join(os.path.expanduser('~'), 'My PROS Project'),
+    ):
         super().__init__('Create a new project')
         self.conductor = conductor or Conductor()
         self.click_ctx = ctx or get_current_context()
@@ -43,10 +47,11 @@ class NewProjectModal(application.Modal[None]):
             target=self.targets.value,
             version=self.kernel_versions.value,
             no_default_libs=not self.install_default_libraries.value,
-            project_name=self.project_name.value
+            project_name=self.project_name.value,
         )
 
         from pros.conductor.project import ProjectReport
+
         report = ProjectReport(project)
         ui.finalize('project-report', report)
 
@@ -69,5 +74,5 @@ class NewProjectModal(application.Modal[None]):
             components.DropDownBox('Kernel Version', self.kernel_versions),
             components.Checkbox('Install default libraries', self.install_default_libraries),
             title='Advanced',
-            collapsed=self.advanced_collapsed
+            collapsed=self.advanced_collapsed,
         )

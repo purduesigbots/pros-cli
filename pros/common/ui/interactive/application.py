@@ -75,7 +75,7 @@ class Application(Observable, Generic[P]):
         return dict(
             etype=Application.get_hierarchy(self.__class__),
             elements=[e.__getstate__() for e in self.build()],
-            uuid=self.uuid
+            uuid=self.uuid,
         )
 
 
@@ -84,6 +84,7 @@ class Modal(Application[P], Generic[P]):
     An Application which is typically displayed in a pop-up box. It has a title, description, continue button,
     and cancel button.
     """
+
     # title of the modal to be displayed
     title: AnyStr
     # optional description displayed underneath the Modal
@@ -96,9 +97,15 @@ class Modal(Application[P], Generic[P]):
     # Cancel button text
     cancel_button: AnyStr
 
-    def __init__(self, title: AnyStr, description: Optional[AnyStr] = None,
-                 will_abort: bool = True, confirm_button: AnyStr = 'Continue', cancel_button: AnyStr = 'Cancel',
-                 can_confirm: Optional[bool] = None):
+    def __init__(
+        self,
+        title: AnyStr,
+        description: Optional[AnyStr] = None,
+        will_abort: bool = True,
+        confirm_button: AnyStr = 'Continue',
+        cancel_button: AnyStr = 'Cancel',
+        can_confirm: Optional[bool] = None,
+    ):
         super().__init__()
         self.title = title
         self.description = description
