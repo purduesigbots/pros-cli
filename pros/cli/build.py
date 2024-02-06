@@ -1,3 +1,5 @@
+import ctypes
+import sys
 from typing import *
 
 import click
@@ -24,6 +26,10 @@ def make(project: c.Project, build_args):
     analytics.send("make")
     exit_code = project.compile(build_args)
     if exit_code != 0:
+        if sys.platform == 'win32':
+            kernel32 = ctypes.windll.kernel32
+            kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
+
         logger(__name__).error(f'Failed to make project: Exit Code {exit_code}', extra={'sentry': False})
         raise click.ClickException('Failed to build')
     return exit_code
