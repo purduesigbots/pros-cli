@@ -64,6 +64,9 @@ def fetch(query: c.BaseTemplate):
     else:
         if template_file:
             logger(__name__).debug(f'Template file exists but is not a valid template: {template_file}')
+        else:
+            logger(__name__).error(f'Template not found: {query.name}')
+            return -1
         template = c.Conductor().resolve_template(query, allow_offline=False)
         logger(__name__).debug(f'Template from resolved query: {template}')
         if template is None:
