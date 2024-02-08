@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import *
 
 import click
-from semantic_version import Spec, Version
+from semantic_version import Spec, Version, SimpleSpec
 
 from pros.common import *
 from pros.conductor.project import TemplateAction
@@ -191,7 +191,7 @@ class Conductor(Config):
         logger(__name__).info(f'Candidates: {", ".join([str(t) for t in templates])}')
         if not any(templates):
             return None
-        query.version = str(Spec(query.version or '>0').select([Version(t.version) for t in templates]))
+        query.version = str(SimpleSpec(query.version or '>0').select([Version(t.version) for t in templates]))
         v = Version(query.version)
         v.prerelease = v.prerelease if len(v.prerelease) else ('',)
         v.build = v.build if len(v.build) else ('',)

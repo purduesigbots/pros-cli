@@ -1,6 +1,6 @@
 from typing import *
 
-from semantic_version import Spec, Version
+from semantic_version import Spec, Version, SimpleSpec
 
 from pros.common import ui
 
@@ -30,7 +30,7 @@ class BaseTemplate(object):
             return False
         if query.target and self.target != query.target:
             return False
-        if query.version and Version(self.version) not in Spec(query.version):
+        if query.version and Version(self.version) not in SimpleSpec(query.version):
             return False
         if kernel_version and isinstance(kernel_version, str):
             kernel_version = Version(kernel_version)
