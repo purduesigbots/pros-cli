@@ -140,7 +140,10 @@ class Conductor(Config):
                           unique: bool = True, **kwargs) -> List[BaseTemplate]:
         results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
-        use_early_access = kwargs.get('early_access', False) or self.use_early_access
+        if kwargs.get('early_access', None) is not None:
+            use_early_access = kwargs.get('early_access', False)
+        else:
+            use_early_access = self.use_early_access
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
@@ -303,7 +306,10 @@ class Conductor(Config):
                                     remove_empty_directories=remove_empty_directories)
 
     def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
-        use_early_access = kwargs.get('early_access', False) or self.use_early_access
+        if kwargs.get('early_access', None) is not None:
+            use_early_access = kwargs.get('early_access', False)
+        else:
+            use_early_access = self.use_early_access
         kwargs["early_access"] = use_early_access
         if kwargs["version_source"]: # If true, then the user has not specified a version
             if not use_early_access and self.warn_early_access:
