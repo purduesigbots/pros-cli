@@ -3,6 +3,7 @@ import logging
 # Setup analytics first because it is used by other files
 
 import os.path
+import os
 
 import pros.common.sentry
 
@@ -68,6 +69,7 @@ def main():
             .format(version = get_version()), ctx_obj)
         click_handler.setFormatter(formatter)
         logging.basicConfig(level=logging.WARNING, handlers=[click_handler])
+        click.echo(sys.path)
         cli.main(prog_name='pros', obj=ctx_obj, windows_expand_args=False)
     except KeyboardInterrupt:
         click.echo('Aborted!')
