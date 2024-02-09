@@ -70,6 +70,8 @@ def main():
         click_handler.setFormatter(formatter)
         logging.basicConfig(level=logging.WARNING, handlers=[click_handler])
         click.echo(sys.path)
+        click.echo(sys.prefix)
+        click.echo(sys.exec_prefix)
         cli.main(prog_name='pros', obj=ctx_obj, windows_expand_args=False)
     except KeyboardInterrupt:
         click.echo('Aborted!')
