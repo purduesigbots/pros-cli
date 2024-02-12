@@ -191,10 +191,13 @@ def project_option(arg_name='project', required: bool = True, default: str = '.'
         if project_path is None:
             if allow_none:
                 return None
-            else:
+            elif required:
                 raise click.UsageError(f'{os.path.abspath(value or ".")} is not inside a PROS project. '
                                        f'Execute this command from within a PROS project or specify it '
                                        f'with --project project/path')
+            else:
+                return None
+
         return c.Project(project_path)
 
     def wrapper(f: Union[click.Command, Callable]):

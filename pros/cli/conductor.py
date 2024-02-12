@@ -259,11 +259,12 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
 @click.option('--limit', type=int, default=15,
               help='The maximum number of displayed results for each library')
 @click.option('--early-access/--no-early-access', '--early/--no-early', '-ea/-nea', 'early_access', '--beta/--no-beta', default=None,
-              help='Create a project using the PROS 4 kernel')
+              help='View a list of early access templates')
 @template_query(required=False)
+@project_option(required=False)
 @click.pass_context
 @default_options
-def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_online: bool, force_refresh: bool,
+def query_templates(ctx, project: Optional[c.Project], query: c.BaseTemplate, allow_offline: bool, allow_online: bool, force_refresh: bool,
                     limit: int, early_access: bool):
     """
     Query local and remote templates based on a spec
@@ -273,6 +274,8 @@ def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_onlin
     analytics.send("query-templates")
     if limit < 0:
         limit = 15
+    if early_access is None and project is not None:
+        early_access = project.use_early_access
     templates = c.Conductor().resolve_templates(query, allow_offline=allow_offline, allow_online=allow_online,
                                                 force_refresh=force_refresh, early_access=early_access)
     render_templates = {}
