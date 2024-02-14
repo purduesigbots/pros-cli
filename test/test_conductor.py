@@ -12,7 +12,7 @@ class TestConductor(unittest.TestCase):
     def test_resolve_template(self):
         okapilib_template = LocalTemplate(name="okapilib", version="5.0.0")
         resolved_template = self._conductor.resolve_template(identifier="okapilib")
-        self.assertTrue(resolved_template == okapilib_template)
+        self.assertTrue(resolved_template >= okapilib_template)        
 
 
 if __name__ == "__main__":

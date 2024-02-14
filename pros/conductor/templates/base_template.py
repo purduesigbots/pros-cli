@@ -62,6 +62,12 @@ class BaseTemplate(object):
         else:
             return super().__eq__(other)
 
+    def __ge__(self, other):
+        if isinstance(other, BaseTemplate):
+            return self.identifier >= other.identifier
+        else:
+            return super().__ge__(other)
+
     def __hash__(self):
         return self.identifier.__hash__()
 
