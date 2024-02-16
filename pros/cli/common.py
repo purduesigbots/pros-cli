@@ -124,7 +124,7 @@ def no_sentry_option(f: Union[click.Command, Callable]):
         add_tag('no-sentry',value)
         if value:
             pros.common.sentry.disable_prompt()
-    decorator = click.option('--no-sentry', expose_value=False, is_flag=True, default=False, is_eager=True,
+    decorator = click.option('--no-sentry', expose_value=False, is_flag=True, default=True, is_eager=True,
                             help="Disable sentry reporting prompt.", callback=callback, cls=PROSOption, hidden=True)(f)
     decorator.__name__ = f.__name__
     return decorator
