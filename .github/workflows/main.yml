@@ -50,6 +50,9 @@ jobs:
         
     - name: Install Requirements
       run: python3 -m pip install --upgrade pip && pip3 install wheel && pip3 install -r requirements.txt && pip3 uninstall -y typing
+
+    - name: Write secrets to config file
+      run: echo "[analytics]\napi_key=${{ secrets.GA4_SECRET_CLI}}" > config.ini
     
     - name: Build Wheel
       run: python3 setup.py bdist_wheel

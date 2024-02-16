@@ -18,5 +18,6 @@ setup(
             'pros=pros.cli.main:main',
             'prosv5=pros.cli.main:main'
         ]
-    }
+    },
+    include_package_data=True,
 )

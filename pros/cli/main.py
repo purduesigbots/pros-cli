@@ -102,6 +102,17 @@ def use_analytics(ctx: click.Context, param, value):
     ui.echo('Analytics set to : {}'.format(analytics.useAnalytics))
     ctx.exit(0)
 
+def show_analytics(ctx: click.Context, param, value):
+    ctx.ensure_object(dict)
+    # if analytics are currently enabled
+    if(analytics.useAnalytics):
+        ui.echo('\nAnalytics are currently ENABLED.\n')
+        ui.echo('DATA currently being collected is as follows:\n    1) Commands being run\n    2) Non identifying command arguments')
+    else:
+        ui.echo('\nAnalytics are currently DISABLED.')
+    
+    ctx.exit(0)
+
 
 @click.command('pros',
                cls=PROSCommandCollection,
@@ -112,6 +123,8 @@ def use_analytics(ctx: click.Context, param, value):
               callback=version)
 @click.option('--use-analytics', help='Set analytics usage (True/False).', type=str, expose_value=False,
               is_eager=True, default=None, callback=use_analytics)
+@click.option('--show-analytics', help='Show current analytics usage.', is_flag=True, expose_value=False,
+              is_eager=True, default=False, callback=show_analytics)
 def cli(ctx):
     pros.common.sentry.register()
     ctx.call_on_close(after_command)
