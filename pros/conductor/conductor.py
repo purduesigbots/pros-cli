@@ -1,8 +1,11 @@
+import errno
 import os.path
 import shutil
 from enum import Enum
 from pathlib import Path
+import sys
 from typing import *
+import re
 
 import click
 from semantic_version import Spec, Version
@@ -26,6 +29,50 @@ class ReleaseChannel(Enum):
     Stable = 'stable'
     Beta = 'beta'
 """
+
+def is_pathname_valid(pathname: str) -> bool:
+    '''
+    A more detailed check for path validity than regex.
+    https://stackoverflow.com/a/34102855/11177720
+    '''
+    try:
+        if not isinstance(pathname, str) or not pathname:
+            return False
+        
+        _, pathname = os.path.splitdrive(pathname)
+        
+        root_dirname = os.environ.get('HOMEDRIVE', 'C:') \
+            if sys.platform == 'win32' else os.path.sep
+        assert os.path.isdir(root_dirname)
+        
+        root_dirname = root_dirname.rstrip(os.path.sep) + os.path.sep
+        for pathname_part in pathname.split(os.path.sep):
+            try:
+                os.lstat(root_dirname + pathname_part)
+            except OSError as exc:
+                if hasattr(exc, 'winerror'):
+                    if exc.winerror == 123: # ERROR_INVALID_NAME, python doesn't have this constant
+                        return False
+                elif exc.errno in {errno.ENAMETOOLONG, errno.ERANGE}:
+                    return False
+        
+        # Check for emojis
+        # https://stackoverflow.com/a/62898106/11177720
+        ranges = [
+            (ord(u'\U0001F300'), ord(u"\U0001FAF6")), # 127744, 129782
+            (126980, 127569),
+            (169, 174),
+            (8205, 12953)
+        ]
+        for a_char in pathname:
+            char_code = ord(a_char)
+            for range_min, range_max in ranges:
+                if range_min <= char_code <= range_max:
+                    return False
+    except TypeError as exc:
+        return False
+    else:
+        return True
 
 class Conductor(Config):
     """
@@ -328,14 +375,14 @@ class Conductor(Config):
         elif use_early_access:
             ui.echo(f'Early access is enabled.')
 
+        if not is_pathname_valid(str(Path(path).absolute())):
+            raise dont_send(ValueError('Project path contains invalid characters.'))
+        
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
             raise dont_send(ValueError('Will not create a project in user home directory'))
-        for char in str(Path(path)):
-            if char in ['?', '<', '>', '*', '|', '^', '#', '%', '&', '$', '+', '!', '`', '\'', '=',
-                        '@', '\'', '{', '}', '[', ']', '(', ')', '~'] or ord(char) > 127:
-                raise dont_send(ValueError(f'Invalid character found in directory name: \'{char}\''))
+        
+        proj = Project(path=path, create=True)
 
-        proj = Project(path=path, create=True, early_access=use_early_access)
         if 'target' in kwargs:
             proj.target = kwargs['target']
         if 'project_name' in kwargs and kwargs['project_name'] and not kwargs['project_name'].isspace():
