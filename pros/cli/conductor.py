@@ -94,7 +94,7 @@ def fetch(query: c.BaseTemplate):
               help="Force apply the template, disregarding if the template is already installed.")
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
-@click.option('--early-access/--disable-early-access', '--early/--disable-early', '-ea/-dea', 'early_access', '--beta/--disable-beta', default=None,
+@click.option('--early-access/--no-early-access', '--early/--no-early', '-ea/-nea', 'early_access', '--beta/--no-beta', default=None,
               help='Create a project using the PROS 4 kernel')
 @project_option()
 @template_query(required=True)
@@ -145,7 +145,7 @@ def install(ctx: click.Context, **kwargs):
               help="Force apply the template, disregarding if the template is already installed.")
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
-@click.option('--early-access/--disable-early-access', '--early/--disable-early', '-ea/-dea', 'early_access', '--beta/--disable-beta', default=None,
+@click.option('--early-access/--no-early-access', '--early/--no-early', '-ea/-nea', 'early_access', '--beta/--no-beta', default=None,
               help='Create a project using the PROS 4 kernel')
 @project_option()
 @template_query(required=False)
@@ -207,7 +207,7 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
               help='Compile the project after creation')
 @click.option('--build-cache', is_flag=True, default=None, show_default=False,
               help='Build compile commands cache after creation. Overrides --compile-after if both are specified.')
-@click.option('--early-access/--disable-early-access', '--early/--disable-early', '-ea/-dea', 'early_access', '--beta/--disable-beta', default=None,
+@click.option('--early-access/--no-early-access', '--early/--no-early', '-ea/-nea', 'early_access', '--beta/--no-beta', default=None,
               help='Create a project using the PROS 4 kernel')
 @click.pass_context
 @default_options
@@ -261,12 +261,13 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
               help='Force update all remote depots, ignoring automatic update checks')
 @click.option('--limit', type=int, default=15,
               help='The maximum number of displayed results for each library')
-@click.option('--early-access/--disable-early-access', '--early/--disable-early', '-ea/-dea', 'early_access', '--beta/--disable-beta', default=None,
+@click.option('--early-access/--no-early-access', '--early/--no-early', '-ea/-nea', 'early_access', '--beta/--no-beta', default=None,
               help='View a list of early access templates')
 @template_query(required=False)
+@project_option(required=False)
 @click.pass_context
 @default_options
-def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_online: bool, force_refresh: bool,
+def query_templates(ctx, project: Optional[c.Project], query: c.BaseTemplate, allow_offline: bool, allow_online: bool, force_refresh: bool,
                     limit: int, early_access: bool):
     """
     Query local and remote templates based on a spec
@@ -276,12 +277,10 @@ def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_onlin
     analytics.send("query-templates")
     if limit < 0:
         limit = 15
+    if early_access is None and project is not None:
+        early_access = project.use_early_access
     templates = c.Conductor().resolve_templates(query, allow_offline=allow_offline, allow_online=allow_online,
                                                 force_refresh=force_refresh, early_access=early_access)
-    if early_access:
-        templates += c.Conductor().resolve_templates(query, allow_offline=allow_offline, allow_online=allow_online,
-                                                force_refresh=force_refresh, early_access=False)
-
     render_templates = {}
     for template in templates:
         key = (template.identifier, template.origin)
@@ -372,7 +371,6 @@ def query_depots(url: bool):
     ui.echo(f"Available Depots{' (Add --url for the url)' if not url else ''}:\n")
     ui.echo('\n'.join(_conductor.query_depots(url))+"\n")
 
-
 @conductor.command('reset')
 @click.option('--force', is_flag=True, default=False, help='Force reset')
 @default_options
@@ -394,4 +392,3 @@ def reset(force: bool):
         os.remove(file)
 
     ui.echo("Conductor was reset")
-    

@@ -188,7 +188,9 @@ class Conductor(Config):
         results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
         if kwargs.get('early_access', None) is not None:
-            self.use_early_access = kwargs.get('early_access', False)
+            use_early_access = kwargs.get('early_access', False)
+        else:
+            use_early_access = self.use_early_access
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
@@ -196,7 +198,7 @@ class Conductor(Config):
         if allow_offline:
             offline_results = list()
 
-            if self.use_early_access:
+            if use_early_access:
                 offline_results.extend(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.early_access_local_templates))
 
             offline_results.extend(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))
@@ -208,7 +210,7 @@ class Conductor(Config):
         if allow_online:
             for depot in self.depots.values():
                 # EarlyAccess depot will only be accessed when the --early-access flag is true
-                if depot.name != EARLY_ACCESS_NAME or (depot.name == EARLY_ACCESS_NAME and self.use_early_access):
+                if depot.name != EARLY_ACCESS_NAME or (depot.name == EARLY_ACCESS_NAME and use_early_access):
                     remote_templates = depot.get_remote_templates(force_check=force_refresh, **kwargs)
                     online_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                             remote_templates))
@@ -219,8 +221,8 @@ class Conductor(Config):
                         results.extend(online_results)
             logger(__name__).debug('Saving Conductor config after checking for remote updates')
             self.save()  # Save self since there may have been some updates from the depots
-        
-        if len(results) == 0 and not self.use_early_access:
+
+        if len(results) == 0 and not use_early_access:
             raise dont_send(
                         InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}'))
             
@@ -298,15 +300,16 @@ class Conductor(Config):
                         if not confirm:
                             raise dont_send(
                                 InvalidTemplateException(f'Not downgrading'))
-            elif not self.use_early_access and template.version[0] == '3' and not self.warn_early_access:
+            elif not project.use_early_access and template.version[0] == '3' and not self.warn_early_access:
                 confirm = ui.confirm(f'PROS 4 is now in early access. '
                                      f'Please use the --early-access flag if you would like to use it.\n'
                                      f'Do you want to use PROS 4 instead?')
                 self.warn_early_access = True
                 if confirm: # use pros 4
-                    self.use_early_access = True
+                    project.use_early_access = True
+                    project.save()
                     kwargs['version'] = '>=0'
-                    self.save()
+                    kwargs['early_access'] = True
                     # Recall the function with early access enabled
                     return self.apply_template(project, identifier, **kwargs)
                     
@@ -351,14 +354,25 @@ class Conductor(Config):
 
     def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
         if kwargs.get('early_access', None) is not None:
-            self.use_early_access = kwargs.get('early_access', False)
+            use_early_access = kwargs.get('early_access', False)
+        else:
+            use_early_access = self.use_early_access
+        kwargs["early_access"] = use_early_access
         if kwargs["version_source"]: # If true, then the user has not specified a version
-            if not self.use_early_access and self.warn_early_access:
+            if not use_early_access and self.warn_early_access:
                 ui.echo(f"PROS 4 is now in early access. "
                         f"If you would like to use it, use the --early-access flag.")
-            elif self.use_early_access:
+            elif not use_early_access and not self.warn_early_access:
+                confirm = ui.confirm(f'PROS 4 is now in early access. '
+                                     f'Please use the --early-access flag if you would like to use it.\n'
+                                     f'Do you want to use PROS 4 instead?')
+                self.warn_early_access = True
+                if confirm:
+                    use_early_access = True
+                    kwargs['early_access'] = True
+            elif use_early_access:
                 ui.echo(f'Early access is enabled. Using PROS 4.')
-        elif self.use_early_access:
+        elif use_early_access:
             ui.echo(f'Early access is enabled.')
 
         if not is_pathname_valid(str(Path(path).absolute())):
@@ -367,7 +381,7 @@ class Conductor(Config):
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
             raise dont_send(ValueError('Will not create a project in user home directory'))
         
-        proj = Project(path=path, create=True)
+        proj = Project(path=path, create=True, early_access=use_early_access)
         if 'target' in kwargs:
             proj.target = kwargs['target']
         if 'project_name' in kwargs and kwargs['project_name'] and not kwargs['project_name'].isspace():
@@ -381,7 +395,7 @@ class Conductor(Config):
         proj.save()
 
         if not no_default_libs:
-            libraries = self.early_access_libraries if self.use_early_access and (kwargs.get("version", ">").startswith("4") or kwargs.get("version", ">").startswith(">")) else self.default_libraries
+            libraries = self.early_access_libraries if proj.use_early_access and (kwargs.get("version", ">").startswith("4") or kwargs.get("version", ">").startswith(">")) else self.default_libraries
             for library in libraries[proj.target]:
                 try:
                     # remove kernel version so that latest template satisfying query is correctly selected
