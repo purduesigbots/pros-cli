@@ -381,8 +381,7 @@ class Conductor(Config):
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
             raise dont_send(ValueError('Will not create a project in user home directory'))
         
-        proj = Project(path=path, create=True)
-
+        proj = Project(path=path, create=True, early_access=use_early_access)
         if 'target' in kwargs:
             proj.target = kwargs['target']
         if 'project_name' in kwargs and kwargs['project_name'] and not kwargs['project_name'].isspace():
