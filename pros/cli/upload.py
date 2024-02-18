@@ -192,7 +192,7 @@ def ls_usb(target):
         result.append(PortReport('VEX EDR V5 System Ports', ports, 'v5/system'))
 
         ports = find_v5_ports('User')
-        result.append(PortReport('VEX EDR V5 User ports', ports, 'v5/user'))
+        result.append(PortReport('VEX EDR V5 User Ports', ports, 'v5/user'))
     if target == 'cortex' or target is None:
         ports = find_cortex_ports()
         result.append(PortReport('VEX EDR Cortex Microcontroller Ports', ports, 'cortex'))

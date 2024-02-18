@@ -251,7 +251,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
 
 
 @conductor.command('query-templates',
-                   aliases=['search-templates', 'ls-templates', 'lstemplates', 'querytemplates', 'searchtemplates'],
+                   aliases=['search-templates', 'ls-templates', 'lstemplates', 'querytemplates', 'searchtemplates', 'q'],
                    context_settings={'ignore_unknown_options': True})
 @click.option('--allow-offline/--no-offline', 'allow_offline', default=True, show_default=True,
               help='(Dis)allow offline templates in the listing')
@@ -392,4 +392,3 @@ def reset(force: bool):
         os.remove(file)
 
     ui.echo("Conductor was reset")
- 
