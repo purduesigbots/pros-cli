@@ -534,8 +534,6 @@ def remove_depot(name: str):
     _conductor.remove_depot(name)
 
     ui.echo(f"Removed depot {name}")
-
-
 @conductor.command("query-depots")
 @click.option("--url", is_flag=True)
 @default_options
