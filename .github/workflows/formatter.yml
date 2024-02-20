@@ -19,5 +19,5 @@ jobs:
       - uses: actions/checkout@v4.1.1
       - uses: psf/black@stable
         with:
-          options: "--line-length=120"
+          options: "--line-length=120 --check --diff"
           version: "24.2.0"

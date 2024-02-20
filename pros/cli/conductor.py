@@ -1,11 +1,12 @@
 import os.path
-from itertools import groupby
 
+
+from pros.cli.common import *
 import pros.common.ui as ui
 import pros.conductor as c
-from pros.cli.common import *
 from pros.conductor.templates import ExternalTemplate
 from pros.ga.analytics import analytics
+from itertools import groupby
 
 
 @pros_root
