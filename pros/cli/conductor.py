@@ -1,12 +1,11 @@
 import os.path
+from itertools import groupby
 
-
-from pros.cli.common import *
 import pros.common.ui as ui
 import pros.conductor as c
+from pros.cli.common import *
 from pros.conductor.templates import ExternalTemplate
 from pros.ga.analytics import analytics
-from itertools import groupby
 
 
 @pros_root
@@ -535,6 +534,8 @@ def remove_depot(name: str):
     _conductor.remove_depot(name)
 
     ui.echo(f"Removed depot {name}")
+
+
 @conductor.command("query-depots")
 @click.option("--url", is_flag=True)
 @default_options
