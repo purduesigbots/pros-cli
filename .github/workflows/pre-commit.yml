@@ -5,7 +5,7 @@ on:
   push:
 
 env:
-  SKIP: pylint
+  SKIP: pylint,black,isort
 
 jobs:
   pre-commit:

@@ -1,0 +1,23 @@
+name: formatter
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  isort:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.1
+      - uses: isort/isort-action@v1.1.0
+        with:
+          configuration: "--settings-file=.isort.cfg"
+          requirements-files: "requirements.txt"
+  black:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.1
+      - uses: psf/black@stable
+        with:
+          options: "--line-length=120"
+          version: "24.2.0"
