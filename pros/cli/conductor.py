@@ -1,16 +1,18 @@
 import os.path
 from itertools import groupby
-from pros.ga.analytics import analytics
 
+import pros.common.ui as ui
 import pros.conductor as c
 from pros.cli.common import *
 from pros.conductor.templates import ExternalTemplate
+from pros.ga.analytics import analytics
 
-import pros.common.ui as ui
 
 @pros_root
 def conductor_cli():
     pass
+
+
 @conductor_cli.group(cls=PROSGroup, aliases=["cond", "c", "conduct"], short_help="Perform project management for PROS")
 @default_options
 def conductor():
