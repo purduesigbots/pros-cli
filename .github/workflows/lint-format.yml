@@ -1,0 +1,54 @@
+name: Formatter
+
+on:
+  pull_request:
+  push:
+
+env:
+  SKIP: pylint,isort,black
+
+jobs:
+  Formatter:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: isort/isort-action@v1.1.0
+        with:
+          configuration: "--settings-file=.isort.cfg"
+          requirements-files: "requirements.txt"
+      - uses: psf/black@stable
+        with:
+          options: "--line-length=120"
+          version: "24.2.0"
+      - uses: stefanzweifel/git-auto-commit-action@v5.0.0
+        with:
+          commit_message: "Format code with isort and black"
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.1
+      - uses: actions/setup-python@v5.0.0
+      - uses: pre-commit/action@v3.0.0
+  Pylint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10"]
+    steps:
+      - uses: actions/checkout@v4.1.1
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Analysing the code with pylint
+        run: |
+          pylint $(git ls-files '*.py') --rcfile=$(git ls-files '.pylintrc')
