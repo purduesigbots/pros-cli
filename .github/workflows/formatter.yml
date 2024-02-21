@@ -5,7 +5,7 @@ on:
   push:
 
 jobs:
-  isort:
+  Formatter:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -17,19 +17,10 @@ jobs:
         with:
           configuration: "--settings-file=.isort.cfg"
           requirements-files: "requirements.txt"
-      - uses: stefanzweifel/git-auto-commit-action@v5.0.0
-        with:
-          commit_message: "Run isort"
-  black:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4.1.1
-        with:
-          ref: ${{ github.head_ref }}
       - uses: psf/black@stable
         with:
           options: "--line-length=120"
           version: "24.2.0"
       - uses: stefanzweifel/git-auto-commit-action@v5.0.0
         with:
-          commit_message: "Run black"
+          commit_message: "Format code with isort and black"

@@ -12,8 +12,6 @@ import pros.common.ui as ui
 @pros_root
 def conductor_cli():
     pass
-
-
 @conductor_cli.group(cls=PROSGroup, aliases=["cond", "c", "conduct"], short_help="Perform project management for PROS")
 @default_options
 def conductor():
