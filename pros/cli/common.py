@@ -124,7 +124,7 @@ def no_sentry_option(f: Union[click.Command, Callable]):
         add_tag('no-sentry',value)
         if value:
             pros.common.sentry.disable_prompt()
-    decorator = click.option('--no-sentry', expose_value=False, is_flag=True, default=False, is_eager=True,
+    decorator = click.option('--no-sentry', expose_value=False, is_flag=True, default=True, is_eager=True,
                             help="Disable sentry reporting prompt.", callback=callback, cls=PROSOption, hidden=True)(f)
     decorator.__name__ = f.__name__
     return decorator
@@ -191,10 +191,13 @@ def project_option(arg_name='project', required: bool = True, default: str = '.'
         if project_path is None:
             if allow_none:
                 return None
-            else:
+            elif required:
                 raise click.UsageError(f'{os.path.abspath(value or ".")} is not inside a PROS project. '
                                        f'Execute this command from within a PROS project or specify it '
                                        f'with --project project/path')
+            else:
+                return None
+
         return c.Project(project_path)
 
     def wrapper(f: Union[click.Command, Callable]):
@@ -253,11 +256,13 @@ def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Tupl
             return None, False
         if len(ports) > 1:
             if not quiet:
-                port = click.prompt('Multiple {} ports were found. Please choose one: [{}]'
-                                    .format('v5', '|'.join([p.device for p in ports])),
-                                    default=ports[0].device,
+                brain_id = click.prompt('Multiple {} Brains were found. Please choose one to upload the program: [{}]'
+                                    .format('v5', ' | '.join([p.product.split(' ')[-1] for p in ports])),
+                                    default=ports[0].product.split(' ')[-1],
                                     show_default=False,
-                                    type=click.Choice([p.device for p in ports]))
+                                    type=click.Choice([p.description.split(' ')[-1] for p in ports]))
+                port = [p.device for p in ports if p.description.split(' ')[-1] == brain_id][0]
+
                 assert port in [p.device for p in ports]
             else:
                 return None, False
