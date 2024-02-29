@@ -238,3 +238,37 @@ def publish_template(name: str, version: str, token: str):
 
     ui.echo("Published template");
 
+@conductor.command('get-branchline-templates')
+def get_branchline_templates():
+    """
+    Get templates list from branchline
+    """
+    # url = 'https://pros.cs.purdue.edu/v5/_static/branchline/pros-branchline.json'
+    url = 'https://raw.githubusercontent.com/purduesigbots/pros-branchline/HEAD/pros-branchline.json'
+    import requests
+    response = requests.get(url)
+    print(response.text)
+
+@conductor.command('get-branchline-template-versions')
+@click.argument('name')
+def get_branchline_template_versions(name: str):
+    """
+    Get branchline template versions
+    """
+    versions_url = f'https://raw.githubusercontent.com/purduesigbots/pros-branchline/HEAD/templates/{name}.json'
+    versions = requests.get(versions_url).json()
+    print(versions)
+
+    templates_url = 'https://raw.githubusercontent.com/purduesigbots/pros-branchline/HEAD/pros-branchline.json'
+    templates = requests.get(templates_url).json()
+    
+    repository = ''
+    for entry in templates:
+        if entry['name'] == name:
+            repository = entry['repository']
+
+    readme_url = f'https://raw.githubusercontent.com/{repository}/HEAD/README.md'
+    readme = requests.get(readme_url).text
+    versions.append(readme)
+    print(versions)
+
