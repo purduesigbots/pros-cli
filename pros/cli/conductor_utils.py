@@ -180,9 +180,10 @@ def purge_template(query: c.BaseTemplate, force):
 @conductor.command('publish-template')
 @click.argument('name')
 @click.argument('version')
+@click.argument('repository')
 @click.argument('token')
 @default_options
-def publish_template(name: str, version: str, token: str):
+def publish_template(name: str, version: str, repository: str, token: str):
     """
     Publish a template to branchline
 
@@ -204,9 +205,9 @@ def publish_template(name: str, version: str, token: str):
     exists = any([entry['name'] == name for entry in data])    
     
     if not exists: 
-        new_template = {'metadata': {'versions': version_file_name}, 'name': name}
+        new_template = {'metadata': {'versions': version_file_name}, 'name': name, 'repository': repository}
         data.append(new_template)
-        with open('pros-branchline/templates.json', 'w') as file:
+        with open('pros-branchline/pros-branchline.json', 'w') as file:
             json.dump(data, file, indent=2)
         versions = [{'metadata': {'location': f'https://pros.cs.purdue.edu/v5/_static/releases/{name}@{version}.zip'}, 'version': version}]
         with open(version_file_name, 'w') as file:
