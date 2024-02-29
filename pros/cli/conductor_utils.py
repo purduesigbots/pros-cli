@@ -197,7 +197,7 @@ def publish_template(name: str, version: str, token: str):
     branchline_url = 'https://github.com/purduesigbots/pros-branchline'
     subprocess.run(f'git clone {branchline_url}', shell=True)
     subprocess.run(f'git -C pros-branchline checkout -b publish/{name}', shell=True)
-    with open('pros-branchline/templates.json', 'r') as file:
+    with open('pros-branchline/pros-branchline.json', 'r') as file:
         data = json.load(file)
 
     version_file_name = f'pros-branchline/templates/{name}.json'
@@ -257,7 +257,7 @@ def get_branchline_template_versions(name: str):
     """
     versions_url = f'https://raw.githubusercontent.com/purduesigbots/pros-branchline/HEAD/templates/{name}.json'
     versions = requests.get(versions_url).json()
-    print(versions)
+    # print(versions)
 
     templates_url = 'https://raw.githubusercontent.com/purduesigbots/pros-branchline/HEAD/pros-branchline.json'
     templates = requests.get(templates_url).json()
@@ -269,6 +269,6 @@ def get_branchline_template_versions(name: str):
 
     readme_url = f'https://raw.githubusercontent.com/{repository}/HEAD/README.md'
     readme = requests.get(readme_url).text
-    versions.append(readme)
-    print(versions)
+    json_output = {'versions': versions, 'description': readme}
+    print(json.dumps(json_output))
 
