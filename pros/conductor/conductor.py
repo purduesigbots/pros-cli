@@ -38,13 +38,13 @@ def is_pathname_valid(pathname: str) -> bool:
     try:
         if not isinstance(pathname, str) or not pathname:
             return False
-        
+
         _, pathname = os.path.splitdrive(pathname)
-        
+
         root_dirname = os.environ.get('HOMEDRIVE', 'C:') \
             if sys.platform == 'win32' else os.path.sep
         assert os.path.isdir(root_dirname)
-        
+
         root_dirname = root_dirname.rstrip(os.path.sep) + os.path.sep
         for pathname_part in pathname.split(os.path.sep):
             try:
@@ -55,7 +55,7 @@ def is_pathname_valid(pathname: str) -> bool:
                         return False
                 elif exc.errno in {errno.ENAMETOOLONG, errno.ERANGE}:
                     return False
-        
+
         # Check for emojis
         # https://stackoverflow.com/a/62898106/11177720
         ranges = [
@@ -225,7 +225,7 @@ class Conductor(Config):
         if len(results) == 0 and not use_early_access:
             raise dont_send(
                         InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}'))
-            
+
         return list(results)
 
     def resolve_template(self, identifier: Union[str, BaseTemplate], **kwargs) -> Optional[BaseTemplate]:
@@ -312,7 +312,7 @@ class Conductor(Config):
                     kwargs['early_access'] = True
                     # Recall the function with early access enabled
                     return self.apply_template(project, identifier, **kwargs)
-                    
+
                 self.save()
         if not isinstance(template, LocalTemplate):
             with ui.Notification():
@@ -377,10 +377,10 @@ class Conductor(Config):
 
         if not is_pathname_valid(str(Path(path).absolute())):
             raise dont_send(ValueError('Project path contains invalid characters.'))
-        
+
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
             raise dont_send(ValueError('Will not create a project in user home directory'))
-        
+
         proj = Project(path=path, create=True, early_access=use_early_access)
         if 'target' in kwargs:
             proj.target = kwargs['target']
@@ -413,6 +413,6 @@ class Conductor(Config):
     def remove_depot(self, name: str):
         del self.depots[name]
         self.save()
-    
+
     def query_depots(self, url: bool):
         return [name + ((' -- ' + depot.location) if url else '') for name, depot in self.depots.items()]

@@ -224,7 +224,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
     if version.lower() == 'latest' or not version:
         version = '>0'
     if not force_system and c.Project.find_project(path) is not None:
-        logger(__name__).error('A project already exists in this location at ' + c.Project.find_project(path) + 
+        logger(__name__).error('A project already exists in this location at ' + c.Project.find_project(path) +
                                '! Delete it first. Are you creating a project in an existing one?', extra={'sentry': False})
         ctx.exit(-1)
     try:
@@ -315,7 +315,7 @@ def info_project(project: c.Project, ls_upgrades):
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
-    analytics.send("info-project")    
+    analytics.send("info-project")
     from pros.conductor.project import ProjectReport
     report = ProjectReport(project)
     _conductor = c.Conductor()
@@ -385,7 +385,7 @@ def reset(force: bool):
         if not ui.confirm("This will remove all depots and templates. You will be unable to create a new PROS project if you do not have internet connection. Are you sure you want to continue?"):
             ui.echo("Aborting")
             return
-        
+
     # Delete conductor.pros
     file = os.path.join(click.get_app_dir('PROS'), 'conductor.pros')
     if os.path.exists(file):

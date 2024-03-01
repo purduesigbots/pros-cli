@@ -294,7 +294,7 @@ class Project(Config):
                     if not os.environ.get('PROS_TOOLCHAIN'):
                         ui.logger(__name__).warn("PROS toolchain not found! Please ensure the toolchain is installed correctly and your environment variables are set properly.\n")
                     ui.logger(__name__).error(f"ERROR WHILE CALLING '{make_cmd}' WITH EXCEPTION: {str(e)}\n",extra={'sentry':False})
-                    if not suppress_output: 
+                    if not suppress_output:
                         pipe.close()
                     sys.exit()
                 if not suppress_output:
@@ -412,7 +412,7 @@ class Project(Config):
         if os.path.isfile(path):
             path = os.path.dirname(path)
         if os.path.isdir(path):
-            for n in range(recurse_times):
+            for _ in range(recurse_times):
                 if path is not None and os.path.isdir(path):
                     files = [f for f in os.listdir(path)
                              if os.path.isfile(os.path.join(path, f)) and f.lower() == 'project.pros']

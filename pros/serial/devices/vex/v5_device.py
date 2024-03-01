@@ -281,7 +281,6 @@ class V5Device(VEXDevice, SystemDevice):
 
     def generate_ini_file(self, remote_name: str = None, slot: int = 0, ini: ConfigParser = None, **kwargs):
         project_ini = ConfigParser()
-        from semantic_version import Spec
         default_icon = 'USER902x.bmp' if Spec('>=1.0.0-22').match(self.status['cpu0_version']) else 'USER999x.bmp'
         project_ini['project'] = {
             'version': str(kwargs.get('ide_version') or get_version()),
@@ -625,7 +624,7 @@ class V5Device(VEXDevice, SystemDevice):
             rx_io.seek(0, 0)
             config.read_string(rx_io.read().decode('ascii'))
             return config
-        except VEXCommError as e:
+        except VEXCommError:
             return None
 
     @retries
@@ -931,7 +930,7 @@ class V5Device(VEXDevice, SystemDevice):
             payload = payload.encode(encoding='ascii')
         tx_fmt = f'<{len(encoded_kv)}s{len(payload)}s'
         tx_payload = struct.pack(tx_fmt, encoded_kv, payload)
-        ret = self._txrx_ext_packet(0x2f, tx_payload, 1, check_length=False, check_ack=True)
+        self._txrx_ext_packet(0x2f, tx_payload, 1, check_length=False, check_ack=True)
         logger(__name__).debug('Completed ext 0x2f command')
         return payload
 
