@@ -294,13 +294,14 @@ def capture(file_name: str, port: str, force: bool = False):
 @v5.command(aliases=['sv', 'set'], short_help='Set a kernel variable on a connected V5 device')
 @click.argument('variable', type=click.Choice(['teamnumber', 'robotname']), required=True)
 @click.argument('value', required=True, type=click.STRING, nargs=1)
+@click.argument('port', type=str, default=None, required=False)
 @default_options
-def set_variable(variable, value):
+def set_variable(variable, value, port):
     import pros.serial.devices.vex as vex
     from pros.serial.ports import DirectPort
 
     # Get the connected v5 device
-    port = resolve_v5_port(None, 'system')[0]
+    port = resolve_v5_port(port, 'system')[0]
     if port == None:
         return
     device = vex.V5Device(DirectPort(port))
@@ -309,13 +310,14 @@ def set_variable(variable, value):
 
 @v5.command(aliases=['rv', 'get'], short_help='Read a kernel variable from a connected V5 device')
 @click.argument('variable', type=click.Choice(['teamnumber', 'robotname']), required=True)
+@click.argument('port', type=str, default=None, required=False)
 @default_options
-def read_variable(variable):
+def read_variable(variable, port):
     import pros.serial.devices.vex as vex
     from pros.serial.ports import DirectPort
 
     # Get the connected v5 device
-    port = resolve_v5_port(None, 'system')[0]
+    port = resolve_v5_port(port, 'system')[0]
     if port == None:
         return
     device = vex.V5Device(DirectPort(port))

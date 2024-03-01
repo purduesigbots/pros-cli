@@ -7,6 +7,7 @@ from pros.cli.common import *
 from pros.conductor.templates import ExternalTemplate
 from pros.ga.analytics import analytics
 
+
 @pros_root
 def conductor_cli():
     pass
@@ -78,6 +79,7 @@ def fetch(query: c.BaseTemplate):
 
 @conductor.command(context_settings={'ignore_unknown_options': True})
 @click.option('--upgrade/--no-upgrade', 'upgrade_ok', default=True, help='Allow upgrading templates in a project')
+
 @click.option('--install/--no-install', 'install_ok', default=True, help='Allow installing templates in a project')
 @click.option('--download/--no-download', 'download_ok', default=True,
               help='Allow downloading templates or only allow local templates')
@@ -89,6 +91,8 @@ def fetch(query: c.BaseTemplate):
               help="Force apply the template, disregarding if the template is already installed.")
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
+@click.option('--early-access/--disable-early-access', '--early/--disable-early', '-ea/-dea', 'early_access', '--beta/--disable-beta', default=None,
+              help='Create a project using the PROS 4 kernel')
 @project_option()
 @template_query(required=True)
 @default_options
@@ -138,6 +142,8 @@ def install(ctx: click.Context, **kwargs):
               help="Force apply the template, disregarding if the template is already installed.")
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
+@click.option('--early-access/--disable-early-access', '--early/--disable-early', '-ea/-dea', 'early_access', '--beta/--disable-beta', default=None,
+              help='Create a project using the PROS 4 kernel')
 @project_option()
 @template_query(required=False)
 @default_options
@@ -163,11 +169,12 @@ def upgrade(ctx: click.Context, project: c.Project, query: c.BaseTemplate, **kwa
 @click.option('--remove-user', is_flag=True, default=False, help='Also remove user files')
 @click.option('--remove-empty-dirs/--no-remove-empty-dirs', 'remove_empty_directories', is_flag=True, default=True,
               help='Remove empty directories when removing files')
+@click.option('--no-make-clean', is_flag=True, default=True, help='Do not run make clean after removing')
 @project_option()
 @template_query()
 @default_options
 def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: bool,
-                       remove_empty_directories: bool = False):
+                       remove_empty_directories: bool = False, no_make_clean: bool = False):
     """
     Uninstall a template from a PROS project
 
@@ -176,6 +183,9 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
     analytics.send("uninstall-template")
     c.Conductor().remove_template(project, query, remove_user=remove_user,
                                   remove_empty_directories=remove_empty_directories)
+    if no_make_clean:
+        with ui.Notification():
+            project.compile(["clean"])
 
 
 @conductor.command('new-project', aliases=['new', 'create-project'])
@@ -194,6 +204,8 @@ def uninstall_template(project: c.Project, query: c.BaseTemplate, remove_user: b
               help='Compile the project after creation')
 @click.option('--build-cache', is_flag=True, default=None, show_default=False,
               help='Build compile commands cache after creation. Overrides --compile-after if both are specified.')
+@click.option('--early-access/--disable-early-access', '--early/--disable-early', '-ea/-dea', 'early_access', '--beta/--disable-beta', default=None,
+              help='Create a project using the PROS 4 kernel')
 @click.pass_context
 @default_options
 def new_project(ctx: click.Context, path: str, target: str, version: str,
@@ -205,6 +217,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
     analytics.send("new-project")
+    version_source = version.lower() == 'latest'
     if version.lower() == 'latest' or not version:
         version = '>0'
     if not force_system and c.Project.find_project(path) is not None:
@@ -215,7 +228,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
         _conductor = c.Conductor()
         if target is None:
             target = _conductor.default_target
-        project = _conductor.new_project(path, target=target, version=version,
+        project = _conductor.new_project(path, target=target, version=version, version_source=version_source,
                                          force_user=force_user, force_system=force_system,
                                          no_default_libs=no_default_libs, **kwargs)
         ui.echo('New PROS Project was created:', output_machine=False)
@@ -224,7 +237,10 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
         if compile_after or build_cache:
             with ui.Notification():
                 ui.echo('Building project...')
-                ctx.exit(project.compile([], scan_build=build_cache))
+                exit_code = project.compile([], scan_build=build_cache)
+                if exit_code != 0:
+                    logger(__name__).error(f'Failed to make project: Exit Code {exit_code}', extra={'sentry': False})
+                    raise click.ClickException('Failed to build')
 
     except Exception as e:
         pros.common.logger(__name__).exception(e)
@@ -240,12 +256,15 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
               help='(Dis)allow online templates in the listing')
 @click.option('--force-refresh', is_flag=True, default=False, show_default=True,
               help='Force update all remote depots, ignoring automatic update checks')
-@click.option('--limit', type=int, default=15, help='The maximum number of displayed results for each library')
+@click.option('--limit', type=int, default=15,
+              help='The maximum number of displayed results for each library')
+@click.option('--early-access/--disable-early-access', '--early/--disable-early', '-ea/-dea', 'early_access', '--beta/--disable-beta', default=None,
+              help='View a list of early access templates')
 @template_query(required=False)
 @click.pass_context
 @default_options
 def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_online: bool, force_refresh: bool,
-                    limit: int):
+                    limit: int, early_access: bool):
     """
     Query local and remote templates based on a spec
 
@@ -255,7 +274,10 @@ def query_templates(ctx, query: c.BaseTemplate, allow_offline: bool, allow_onlin
     if limit < 0:
         limit = 15
     templates = c.Conductor().resolve_templates(query, allow_offline=allow_offline, allow_online=allow_online,
-                                                force_refresh=force_refresh)
+                                                force_refresh=force_refresh, early_access=early_access)
+    if early_access:
+        templates += c.Conductor().resolve_templates(query, allow_offline=allow_offline, allow_online=allow_online,
+                                                force_refresh=force_refresh, early_access=False)
 
     render_templates = {}
     for template in templates:
@@ -304,3 +326,46 @@ def info_project(project: c.Project, ls_upgrades):
             template["upgrades"] = sorted({t.version for t in templates}, key=lambda v: semver.Version(v), reverse=True)
 
     ui.finalize('project-report', report)
+
+@conductor.command('add-depot')
+@click.argument('name')
+@click.argument('url')
+@default_options
+def add_depot(name: str, url: str):
+    """
+    Add a depot
+
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
+    """
+    _conductor = c.Conductor()
+    _conductor.add_depot(name, url)
+
+    ui.echo(f"Added depot {name} from {url}")
+
+@conductor.command('remove-depot')
+@click.argument('name')
+@default_options
+def remove_depot(name: str):
+    """
+    Remove a depot
+
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
+    """
+    _conductor = c.Conductor()
+    _conductor.remove_depot(name)
+
+    ui.echo(f"Removed depot {name}")
+
+@conductor.command('query-depots')
+@click.option('--url', is_flag=True)
+@default_options
+def query_depots(url: bool):
+    """
+    Gets all the stored depots
+
+    Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
+    """
+    _conductor = c.Conductor()
+    ui.echo(f"Available Depots{' (Add --url for the url)' if not url else ''}:\n")
+    ui.echo('\n'.join(_conductor.query_depots(url))+"\n")
+    

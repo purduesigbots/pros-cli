@@ -4,6 +4,7 @@ import re
 import struct
 import time
 import typing
+import platform
 from collections import defaultdict
 from configparser import ConfigParser
 from datetime import datetime, timedelta
@@ -40,20 +41,28 @@ def find_v5_ports(p_type: str):
                (p.name is not None and any([n in p.name for n in names])) or \
                (p.description is not None and any([n in p.description for n in names]))
 
+    def filter_v5_ports_mac(p, device):
+        return (p.device is not None and p.device.endswith(device))
+
     ports = [p for p in list_all_comports() if filter_vex_ports(p)]
 
     # Initially try filtering based off of location or the name of the device.
-    # Doesn't work on macOS or Jonathan's Dell, so we have a fallback (below)
-    user_ports = [p for p in ports if filter_v5_ports(p, ['2'], ['User'])]
-    system_ports = [p for p in ports if filter_v5_ports(p, ['0'], ['System', 'Communications'])]
-    joystick_ports = [p for p in ports if filter_v5_ports(p, ['1'], ['Controller'])]
+    # Special logic for macOS
+    if platform.system() == 'Darwin':
+        user_ports = [p for p in ports if filter_v5_ports_mac(p, '3')]
+        system_ports = [p for p in ports if filter_v5_ports_mac(p, '1')]
+        joystick_ports = [p for p in ports if filter_v5_ports_mac(p, '2')]
+    else:
+        user_ports = [p for p in ports if filter_v5_ports(p, ['2'], ['User'])]
+        system_ports = [p for p in ports if filter_v5_ports(p, ['0'], ['System', 'Communications'])]
+        joystick_ports = [p for p in ports if filter_v5_ports(p, ['1'], ['Controller'])]
 
-    # Testing this code path is hard!
+    # Fallback for when a brain port's location is not detected properly
     if len(user_ports) != len(system_ports):
         if len(user_ports) > len(system_ports):
-            user_ports = [p for p in user_ports if p not in system_ports]
+            system_ports = [p for p in ports if p not in user_ports and p not in joystick_ports]
         else:
-            system_ports = [p for p in system_ports if p not in user_ports]
+            user_ports = [p for p in ports if p not in system_ports and p not in joystick_ports]
 
     if len(user_ports) == len(system_ports) and len(user_ports) > 0:
         if p_type.lower() == 'user':
@@ -74,6 +83,10 @@ def find_v5_ports(p_type: str):
         if p_type.lower() == 'user':
             return [ports[1]]
         elif p_type.lower() == 'system':
+            # check if ports contain the word Brain in the description and return that port
+            for port in ports:
+                if "Brain" in port.description:
+                    return [port]
             return [ports[0], *joystick_ports]
         else:
             raise ValueError(f'Invalid port type specified: {p_type}')
@@ -130,7 +143,7 @@ class V5Device(VEXDevice, SystemDevice):
             BRAIN = 0x10
 
         class BrainFlags(IntFlag):
-            pass
+            CONNECTED = 0x02
 
         class ControllerFlags(IntFlag):
             CONNECTED = 0x02
@@ -215,7 +228,7 @@ class V5Device(VEXDevice, SystemDevice):
     def is_wireless(self):
         version = self.query_system_version()
         return version.product == V5Device.SystemVersion.Product.CONTROLLER and \
-               V5Device.SystemVersion.ControllerFlags.CONNECTED in version.product_flags
+            V5Device.SystemVersion.ControllerFlags.CONNECTED in version.product_flags
 
     def generate_cold_hash(self, project: Project, extra: dict):
         keys = {k: t.version for k, t in project.templates.items()}
@@ -835,7 +848,7 @@ class V5Device(VEXDevice, SystemDevice):
         logger(__name__).debug('Sending ext 0x22 command')
         version = self.query_system_version()
         if (version.product == V5Device.SystemVersion.Product.BRAIN and version.system_version in Spec('<1.0.13')) or \
-         (version.product == V5Device.SystemVersion.Product.CONTROLLER and version.system_version in Spec('<1.0.0-0.70')):
+                (version.product == V5Device.SystemVersion.Product.CONTROLLER and version.system_version in Spec('<1.0.0-0.70')):
             schema = '<x12B3xBI12x'
         else:
             schema = '<x12B3xBI12xB3x'
@@ -916,7 +929,7 @@ class V5Device(VEXDevice, SystemDevice):
         payload = payload[:kv_to_max_bytes.get(kv, 254)] + "\0"
         if isinstance(payload, str):
             payload = payload.encode(encoding='ascii')
-        tx_fmt =f'<{len(encoded_kv)}s{len(payload)}s'
+        tx_fmt = f'<{len(encoded_kv)}s{len(payload)}s'
         tx_payload = struct.pack(tx_fmt, encoded_kv, payload)
         ret = self._txrx_ext_packet(0x2f, tx_payload, 1, check_length=False, check_ack=True)
         logger(__name__).debug('Completed ext 0x2f command')
@@ -985,7 +998,8 @@ class V5Device(VEXDevice, SystemDevice):
         if len(msg) < rx_length and check_length:
             raise VEXCommError(f'Received length is less than {rx_length} (got {len(msg)}).', msg)
         elif len(msg) > rx_length and check_length:
-            ui.echo(f'WARNING: Recieved length is more than {rx_length} (got {len(msg)}). Consider upgrading the PROS (CLI Version: {get_version()}).')
+            ui.echo(
+                f'WARNING: Recieved length is more than {rx_length} (got {len(msg)}). Consider upgrading the PROS (CLI Version: {get_version()}).')
         return msg
 
     def _txrx_ext_packet(self, command: int, tx_data: Union[Iterable, bytes, bytearray],

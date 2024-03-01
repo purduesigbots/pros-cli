@@ -133,6 +133,8 @@ def terminal(port: str, backend: str, **kwargs):
 
     signal.signal(signal.SIGINT, term.stop)
     term.start()
+    sys.stdout.write("Established terminal connection\n")
+    sys.stdout.flush()
     while not term.alive.is_set():
         time.sleep(0.005)
     sys.stdout = sys.__stdout__
