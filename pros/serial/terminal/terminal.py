@@ -232,16 +232,29 @@ class Terminal(object):
                 elif data[0] == b'serr':
                     #print(len(text))
                     addr = "0x" + decode_bytes_to_str(data[1])[:7]
-                    if self.beginStackTrace and addr.isalnum() and addr[3] != 'x' and self.convert_stack_traces:
+
+                    convert_trace = (self.beginStackTrace and
+                                    addr.isalnum() and 
+                                    addr[3] != 'x' and 
+                                    self.convert_stack_traces and 
+                                    ((os.name != 'nt') or os.environ.get('PROS_TOOLCHAIN')))
+                    
+                    if convert_trace:
+                        if os.name == 'nt' and os.environ.get('PROS_TOOLCHAIN'):
+                            addr2line_path = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'arm-none-eabi-addr2line.exe')
+                        else:
+                            addr2line_path = 'addr2line'
+
                         def getTrace(s, path):
                             if not os.path.exists(path):
                                 return ''
-                            temp = subprocess.Popen(['addr2line', '-faps', '-e', path, s],
+                            temp = subprocess.Popen([addr2line_path, '-faps', '-e', path, s],
                                 stdout=subprocess.PIPE,shell=True).communicate()[0].decode('utf-8')
                             if (temp.find('?') != -1):
                                 return ''
                             else:
                                 return temp[12: len(temp) - 2]
+                            
                         trace = ' : {}{}{}'.format(
                             getTrace(addr, "bin/hot.package.elf"),
                             getTrace(addr, "bin/cold.package.elf"),
