@@ -92,17 +92,18 @@ class UpdateProjectModal(application.Modal[None]):
             self.current_kernel = TemplateParameter(
                 None,
                 options=sorted(
-                    {t for t in self.conductor.resolve_templates(self.project.templates['kernel'].as_query())},
+                    set(self.conductor.resolve_templates(self.project.templates['kernel'].as_query())),
                     key=lambda v: Version(v.version), reverse=True
                 )
             )
             self.current_templates = [
                 TemplateParameter(
                     None,
-                    options=sorted({
-                        t
-                        for t in self.conductor.resolve_templates(t.as_query())
-                    }, key=lambda v: Version(v.version), reverse=True)
+                    options=sorted(
+                        set(self.conductor.resolve_templates(t.as_query())),
+                        key=lambda v: Version(v.version),
+                        reverse=True
+                    )
                 )
                 for t in self.project.templates.values()
                 if t.name != 'kernel'
