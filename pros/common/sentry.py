@@ -113,7 +113,7 @@ def add_tag(key: str, value: str):
 
 
 def register(cfg: Optional['CliConfig'] = None):
-    global cli_config, client
+    global cli_config
     if cfg is None:
         from pros.config.cli_config import cli_config as get_cli_config
         cli_config = get_cli_config()
