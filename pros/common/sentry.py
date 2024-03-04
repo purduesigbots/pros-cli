@@ -21,7 +21,6 @@ def prompt_to_send(event: Dict[str, Any], hint: Optional[Dict[str, Any]]) -> Opt
     """
     Asks the user for permission to send data to Sentry
     """
-    global cli_config
     with ui.Notification():
         if cli_config is None or (cli_config.offer_sentry is not None and not cli_config.offer_sentry):
             return

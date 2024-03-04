@@ -17,7 +17,6 @@ def _machineoutput(obj: Dict[str, Any]):
 
 def _machine_notify(method: str, obj: Dict[str, Any], notify_value: Optional[int]):
     if notify_value is None:
-        global _current_notify_value
         notify_value = _current_notify_value
     obj['type'] = f'notify/{method}'
     obj['notify_value'] = notify_value
@@ -120,7 +119,6 @@ def finalize(method: str, data: Union[str, Dict, object, List[Union[str, Dict, o
 
 class _MachineOutputProgressBar(_click_ProgressBar):
     def __init__(self, *args, **kwargs):
-        global _current_notify_value
         kwargs['file'] = open(os.devnull, 'w', encoding='UTF-8')
         self.notify_value = kwargs.pop('notify_value', _current_notify_value)
         super(_MachineOutputProgressBar, self).__init__(*args, **kwargs)

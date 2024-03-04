@@ -13,23 +13,17 @@ current: List['MachineOutputRenderer'] = []
 
 
 def _push_renderer(renderer: 'MachineOutputRenderer'):
-    global current
-
     stack: List['MachineOutputRenderer'] = current
     stack.append(renderer)
 
 
 def _remove_renderer(renderer: 'MachineOutputRenderer'):
-    global current
-
     stack: List['MachineOutputRenderer'] = current
     if renderer in stack:
         stack.remove(renderer)
 
 
 def _current_renderer() -> Optional['MachineOutputRenderer']:
-    global current
-
     stack: List['MachineOutputRenderer'] = current
     return stack[-1] if len(stack) > 0 else None
 
@@ -39,8 +33,6 @@ P = TypeVar('P')
 
 class MachineOutputRenderer(Renderer[P], Generic[P]):
     def __init__(self, app: Application[P]):
-        global current
-
         super().__init__(app)
         self.alive = False
         self.thread = None
