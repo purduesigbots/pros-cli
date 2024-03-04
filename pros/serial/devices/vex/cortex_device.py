@@ -89,7 +89,7 @@ class CortexDevice(VEXDevice, SystemDevice):
         with output_path.open(mode='rb') as pf:
             return self.write_program(pf, **kwargs)
 
-    def write_program(self, file: typing.BinaryIO, **kwargs):
+    def write_program(self, file: typing.BinaryIO, quirk: int = 0, **kwargs):
         action_string = ''
         if hasattr(file, 'name'):
             action_string += f' {Path(file.name).name}'
