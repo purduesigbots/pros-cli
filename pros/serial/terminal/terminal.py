@@ -260,9 +260,8 @@ class Terminal(object):
                 if c == '\x03' or not self.no_sigint:
                     self.stop()
                     break
-                else:
-                    self.device.write(c.encode(encoding='utf-8'))
-                    self.console.write(c)
+                self.device.write(c.encode(encoding='utf-8'))
+                self.console.write(c)
         except Exception as e:
             if not self.alive.is_set():
                 logger(__name__).exception(e)
