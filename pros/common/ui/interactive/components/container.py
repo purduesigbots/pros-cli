@@ -1,4 +1,4 @@
-from typing import *
+from typing import AnyStr, Optional, Union
 
 from pros.common.ui.interactive.parameters import BooleanParameter
 from .component import Component
