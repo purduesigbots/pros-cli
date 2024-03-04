@@ -34,8 +34,7 @@ class ApplyTemplateAction(Action):
         except InvalidTemplateException as e:
             if e.reason != TemplateAction.AlreadyInstalled or not self.suppress_already_installed:
                 raise e
-            else:
-                ui.logger(__name__).warning(str(e))
+            ui.logger(__name__).warning(str(e))
 
     def describe(self, conductor: c.Conductor, project: c.Project):
         action = project.get_template_actions(conductor.resolve_template(self.template))
@@ -77,8 +76,7 @@ class RemoveTemplateAction(Action):
         except ValueError as e:
             if not self.suppress_not_removable:
                 raise e
-            else:
-                ui.logger(__name__).warning(str(e))
+            ui.logger(__name__).warning(str(e))
 
     def describe(self, conductor: c.Conductor, project: c.Project) -> str:
         return f'{self.template.identifier} will be removed'

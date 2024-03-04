@@ -47,7 +47,6 @@
 # W0622: Redefining built-in
 # W0221: Arguments number differs from overridden method
 # E1111: Assigning to function call which doesn't return
-# R1720: Unnecessary "else" after "raise"
 # E0401: Unable to import
 # W0212: Access to a protected member
 # W0101: Unreachable code
@@ -93,5 +92,5 @@ disable =   C0114, C0115, C0116, R0903, C0415, R1705, R0913, W1203, R1729, E1120
             W0614, W0401, W1202, C0117, W0718, R0205, R0402, R0914, R1725, R1735, C0411, W0237, W0702, W0223, W0613,
             W0108, R0912, R0911, W0511, E1136, R0902, W0611, C0412, C0103, C0301, R1732, R0915, W1514, R1718, W1510,
             E0602, W1309, C0325, E1101, R1714, R0916, W0719, R1734, E1133, W1201, W0107, W3101, W0640, C0201, W1113,
-            W0246, W0622, W0221, E1111, R1720, E0401, W0212, R0904, W0101,
+            W0246, W0622, W0221, E1111, E0401, W0212, R0904, W0101,
             C0302, E0110, W0603, R0401, C0303

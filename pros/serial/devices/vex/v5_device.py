@@ -989,14 +989,14 @@ class V5Device(VEXDevice, SystemDevice):
             }
             if msg[0] in nacks.keys():
                 raise VEXCommError("Device NACK'd with reason: {}".format(nacks[msg[0]]), msg)
-            elif msg[0] != cls.ACK_BYTE:
+            if msg[0] != cls.ACK_BYTE:
                 raise VEXCommError("Device didn't ACK", msg)
             msg = msg[1:]
         if len(msg) > 0:
             logger(cls).debug('Set msg window to {}'.format(bytes_to_str(msg)))
         if len(msg) < rx_length and check_length:
             raise VEXCommError(f'Received length is less than {rx_length} (got {len(msg)}).', msg)
-        elif len(msg) > rx_length and check_length:
+        if len(msg) > rx_length and check_length:
             ui.echo(
                 f'WARNING: Recieved length is more than {rx_length} (got {len(msg)}). Consider upgrading the PROS (CLI Version: {get_version()}).')
         return msg

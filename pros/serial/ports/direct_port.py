@@ -22,8 +22,7 @@ def create_serial_port(port_name: str, timeout: Optional[float] = 1.0) -> serial
         ]):
             tb = sys.exc_info()[2]
             raise dont_send(ConnectionRefusedException(port_name, e).with_traceback(tb)) from e
-        else:
-            raise dont_send(PortNotFoundException(port_name, e)) from e
+        raise dont_send(PortNotFoundException(port_name, e)) from e
 
 
 

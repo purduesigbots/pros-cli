@@ -73,7 +73,7 @@ def terminal(port: str, backend: str, **kwargs):
     if backend == 'share':
         raise NotImplementedError('Share backend is not yet implemented')
         # ser = SerialSharePort(port)
-    elif is_v5_user_joystick:
+    if is_v5_user_joystick:
         logger(__name__).debug("it's a v5 joystick")
         ser = V5WirelessPort(port)
     else:
