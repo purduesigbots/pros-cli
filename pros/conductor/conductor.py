@@ -59,7 +59,7 @@ def is_pathname_valid(pathname: str) -> bool:
         # Check for emojis
         # https://stackoverflow.com/a/62898106/11177720
         ranges = [
-            (ord(u'\U0001F300'), ord(u"\U0001FAF6")), # 127744, 129782
+            (ord('\U0001F300'), ord("\U0001FAF6")), # 127744, 129782
             (126980, 127569),
             (169, 174),
             (8205, 12953)
