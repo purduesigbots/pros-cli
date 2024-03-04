@@ -103,10 +103,9 @@ class CortexDevice(VEXDevice, SystemDevice):
             self.send_to_download_channel()
 
         bootloader = self.expose_bootloader()
-        rv = bootloader.write_program(file, **kwargs)
+        bootloader.write_program(file, **kwargs)
 
         ui.finalize('upload', f'Finished uploading {action_string}')
-        return rv
 
     @retries
     def query_system(self) -> SystemStatus:
