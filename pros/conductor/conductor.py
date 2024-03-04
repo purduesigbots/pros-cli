@@ -69,7 +69,7 @@ def is_pathname_valid(pathname: str) -> bool:
             for range_min, range_max in ranges:
                 if range_min <= char_code <= range_max:
                     return False
-    except TypeError as exc:
+    except TypeError:
         return False
     else:
         return True
