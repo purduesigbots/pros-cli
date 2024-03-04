@@ -141,8 +141,7 @@ class Notification(object):
         global _last_notify_value
         if not notify_value:
             notify_value = _last_notify_value + 1
-        if notify_value > _last_notify_value:
-            _last_notify_value = notify_value
+        _last_notify_value = max(_last_notify_value, notify_value)
         self.notify_value = notify_value
         self.old_notify_values = []
 
