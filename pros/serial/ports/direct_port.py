@@ -21,9 +21,9 @@ def create_serial_port(port_name: str, timeout: Optional[float] = 1.0) -> serial
             'Access is denied', 'Errno 16', 'Errno 13'
         ]):
             tb = sys.exc_info()[2]
-            raise dont_send(ConnectionRefusedException(port_name, e).with_traceback(tb))
+            raise dont_send(ConnectionRefusedException(port_name, e).with_traceback(tb)) from e
         else:
-            raise dont_send(PortNotFoundException(port_name, e))
+            raise dont_send(PortNotFoundException(port_name, e)) from e
 
 
 
@@ -51,7 +51,7 @@ class DirectPort(BasePort):
                 return msg
         except serial.SerialException as e:
             logger(__name__).debug(e)
-            raise PortConnectionException(e)
+            raise PortConnectionException(e) from e
 
     def write(self, data: Union[str, bytes]):
         if isinstance(data, str):
