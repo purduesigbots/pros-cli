@@ -21,6 +21,7 @@ class CliConfig(Config):
         self.override_use_build_compile_commands: Optional[bool] = None
         self.offer_sentry: Optional[bool] = None
         self.ga: Optional[dict] = None
+        self.cached_upgrade: Optional[Tuple[datetime, 'UpgradeManifestV1']] = None
         super(CliConfig, self).__init__(file)
 
     def needs_online_fetch(self, last_fetch: datetime) -> bool:
@@ -36,7 +37,7 @@ class CliConfig(Config):
     def get_upgrade_manifest(self, force: bool = False) -> Optional['UpgradeManifestV1']:
         from pros.upgrade.manifests.upgrade_manifest_v1 import UpgradeManifestV1  # noqa: F811
 
-        if not force and not self.needs_online_fetch(self.cached_upgrade[0]):
+        if not force and self.cached_upgrade is not None and not self.needs_online_fetch(self.cached_upgrade[0]):
             return self.cached_upgrade[1]
         pros.common.logger(__name__).info('Fetching upgrade manifest...')
         import requests
