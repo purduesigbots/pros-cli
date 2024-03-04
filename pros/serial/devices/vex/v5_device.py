@@ -891,7 +891,7 @@ class V5Device(VEXDevice, SystemDevice):
             if i + max_packet_size > pl_len:
                 packet_size = pl_len - i
             logger(__name__).debug(f'Writing {packet_size} bytes to user FIFO')
-            self._txrx_ext_packet(0x27, b'\x01\x00' + payload[i:packet_size], 0, check_length=False)[1:]
+            # self._txrx_ext_packet(0x27, b'\x01\x00' + payload[i:packet_size], 0, check_length=False)[1:]
         logger(__name__).debug('Completed ext 0x27 command (write)')
 
     @retries
