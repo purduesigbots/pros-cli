@@ -325,10 +325,12 @@ class Conductor(Config):
             raise dont_send(
                 InvalidTemplateException(f'{template.identifier} is not applicable to {project}', reason=valid_action)
             )
-        if force \
-                or (valid_action == TemplateAction.Upgradable and upgrade_ok) \
-                or (valid_action == TemplateAction.Installable and install_ok) \
-                or (valid_action == TemplateAction.Downgradable and downgrade_ok):
+        should_apply = force \
+            or (valid_action == TemplateAction.Upgradable and upgrade_ok) \
+            or (valid_action == TemplateAction.Installable and install_ok) \
+            or (valid_action == TemplateAction.Downgradable and downgrade_ok)
+
+        if should_apply:
             project.apply_template(template, force_system=kwargs.pop('force_system', False),
                                    force_user=kwargs.pop('force_user', False),
                                    remove_empty_directories=kwargs.pop('remove_empty_directories', False))
