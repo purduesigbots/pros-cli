@@ -255,7 +255,7 @@ class Conductor(Config):
             # there's a local template satisfying the query
             if len(local_templates) > 1:
                 # This should never happen! Conductor state must be invalid
-                raise Exception(f'Multiple local templates satisfy {query.identifier}!')
+                raise RuntimeError(f'Multiple local templates satisfy {query.identifier}!')
             return local_templates[0]
 
         # prefer pros-mainline template second
