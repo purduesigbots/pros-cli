@@ -51,6 +51,7 @@ class UpgradeManifestV2(UpgradeManifestV1):
         else:
             try:
                 from pip._vendor import pkg_resources
+                # pylint: disable=not-an-iterable
                 results = [p for p in pkg_resources.working_set if p.project_name.startswith('pros-cli')]
                 if any(results):
                     self._platform = PlatformsV2.Pip

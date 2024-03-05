@@ -33,6 +33,7 @@ def get_version():
     else:
         import pros.cli.main
         module = pros.cli.main.__name__
+        # pylint: disable=not-an-iterable
         for dist in pkg_resources.working_set:
             scripts = dist.get_entry_map().get('console_scripts') or {}
             for _, entry_point in iter(scripts.items()):
