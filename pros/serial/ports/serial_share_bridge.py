@@ -156,6 +156,7 @@ class SerialShareBridge(object):
             initialization_barrier.wait()
             watchdog.start()
             while not self.dying.is_set():
+                # pylint: disable=unsubscriptable-object
                 msg = to_ser_sock.recv_multipart()
                 if not msg or self.dying.is_set():
                     continue

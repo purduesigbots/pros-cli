@@ -42,6 +42,7 @@ class SerialSharePort(BasePort):
             n_bytes = 1
         data = bytearray()
         for _ in range(n_bytes):
+            # pylint: disable=unsubscriptable-object
             data.extend(self.from_device_sock.recv_multipart()[1])
         return bytes(data)
 
