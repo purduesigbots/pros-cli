@@ -118,7 +118,7 @@ class PROSGroup(PROSFormatted, click.Group):
 
         return decorator
 
-    def group(self, aliases=None, *args, **kwargs):
+    def group(self, *args, aliases=None, **kwargs):
         aliases = aliases or []
 
         def decorator(f):
