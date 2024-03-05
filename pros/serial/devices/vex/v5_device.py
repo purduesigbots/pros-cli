@@ -987,7 +987,7 @@ class V5Device(VEXDevice, SystemDevice):
                 0xDA: "Max user files, no more room for another user program",
                 0xDB: "User file exists"
             }
-            if msg[0] in nacks.keys():
+            if msg[0] in nacks:
                 raise VEXCommError("Device NACK'd with reason: {}".format(nacks[msg[0]]), msg)
             if msg[0] != cls.ACK_BYTE:
                 raise VEXCommError("Device didn't ACK", msg)

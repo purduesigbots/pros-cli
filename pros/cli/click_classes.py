@@ -140,7 +140,7 @@ class PROSGroup(PROSFormatted, click.Group):
 
         # fall back to guessing
         matches = {x for x in self.list_commands(ctx) if x.startswith(cmd_name)}
-        matches.union({x for x in self.cmd_dict.keys() if x.startswith(cmd_name)})
+        matches.union({x for x in self.cmd_dict if x.startswith(cmd_name)})
         if len(matches) == 1:
             return super(PROSGroup, self).get_command(ctx, matches.pop())
         return None
