@@ -167,7 +167,7 @@ class Project(Config):
         if not self.template_is_installed(template):
             raise ValueError(f'{template.identifier} is not installed on this project.')
         if template.name == 'kernel':
-            raise ValueError(f'Cannot remove the kernel template. Maybe create a new project?')
+            raise ValueError('Cannot remove the kernel template. Maybe create a new project?')
 
         real_template = LocalTemplate(orig=template, location=self.location)
         transaction = Transaction(self.location, set(self.all_files))

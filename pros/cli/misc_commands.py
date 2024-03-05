@@ -37,6 +37,6 @@ def upgrade(force_check, no_install):
         ui.finalize('upgradeInfo', manifest)
         if not no_install:
             if not manager.can_perform_upgrade:
-                ui.logger(__name__).error(f'This manifest cannot perform the upgrade.')
+                ui.logger(__name__).error('This manifest cannot perform the upgrade.')
                 return -3
             ui.finalize('upgradeComplete', manager.perform_upgrade())

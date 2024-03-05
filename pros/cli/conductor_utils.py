@@ -165,7 +165,7 @@ def purge_template(query: c.BaseTemplate, force):
     t_list = [t.identifier for t in templates] + [t.identifier for t in beta_templates]
     click.echo(f'The following template(s) will be removed {t_list}')
     if len(templates) > 1 and not force:
-        click.confirm(f'Are you sure you want to remove multiple templates?', abort=True)
+        click.confirm('Are you sure you want to remove multiple templates?', abort=True)
     for template in templates:
         if isinstance(template, c.LocalTemplate):
             cond.purge_template(template)

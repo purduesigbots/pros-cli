@@ -289,21 +289,21 @@ class Conductor(Config):
                 curr_proj = Project()
                 if curr_proj.kernel:
                     if template.version[0] == '4' and curr_proj.kernel[0] == '3':
-                        confirm = ui.confirm(f'Warning! Upgrading project to PROS 4 will cause breaking changes. '
-                                             f'Do you still want to upgrade?')
+                        confirm = ui.confirm('Warning! Upgrading project to PROS 4 will cause breaking changes. '
+                                             'Do you still want to upgrade?')
                         if not confirm:
                             raise dont_send(
-                                InvalidTemplateException(f'Not upgrading'))
+                                InvalidTemplateException('Not upgrading'))
                     if template.version[0] == '3' and curr_proj.kernel[0] == '4':
-                        confirm = ui.confirm(f'Warning! Downgrading project to PROS 3 will cause breaking changes. '
-                                             f'Do you still want to downgrade?')
+                        confirm = ui.confirm('Warning! Downgrading project to PROS 3 will cause breaking changes. '
+                                             'Do you still want to downgrade?')
                         if not confirm:
                             raise dont_send(
-                                InvalidTemplateException(f'Not downgrading'))
+                                InvalidTemplateException('Not downgrading'))
             elif not project.use_early_access and template.version[0] == '3' and not self.warn_early_access:
-                confirm = ui.confirm(f'PROS 4 is now in early access. '
-                                     f'Please use the --early-access flag if you would like to use it.\n'
-                                     f'Do you want to use PROS 4 instead?')
+                confirm = ui.confirm('PROS 4 is now in early access. '
+                                     'Please use the --early-access flag if you would like to use it.\n'
+                                     'Do you want to use PROS 4 instead?')
                 self.warn_early_access = True
                 if confirm: # use pros 4
                     project.use_early_access = True
@@ -362,20 +362,20 @@ class Conductor(Config):
         kwargs["early_access"] = use_early_access
         if kwargs["version_source"]: # If true, then the user has not specified a version
             if not use_early_access and self.warn_early_access:
-                ui.echo(f"PROS 4 is now in early access. "
-                        f"If you would like to use it, use the --early-access flag.")
+                ui.echo("PROS 4 is now in early access. "
+                        "If you would like to use it, use the --early-access flag.")
             elif not use_early_access and not self.warn_early_access:
-                confirm = ui.confirm(f'PROS 4 is now in early access. '
-                                     f'Please use the --early-access flag if you would like to use it.\n'
-                                     f'Do you want to use PROS 4 instead?')
+                confirm = ui.confirm('PROS 4 is now in early access. '
+                                     'Please use the --early-access flag if you would like to use it.\n'
+                                     'Do you want to use PROS 4 instead?')
                 self.warn_early_access = True
                 if confirm:
                     use_early_access = True
                     kwargs['early_access'] = True
             elif use_early_access:
-                ui.echo(f'Early access is enabled. Using PROS 4.')
+                ui.echo('Early access is enabled. Using PROS 4.')
         elif use_early_access:
-            ui.echo(f'Early access is enabled.')
+            ui.echo('Early access is enabled.')
 
         if not is_pathname_valid(str(Path(path).absolute())):
             raise dont_send(ValueError('Project path contains invalid characters.'))
