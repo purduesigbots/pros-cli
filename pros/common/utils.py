@@ -114,7 +114,7 @@ def download_file(url: str, ext: Optional[str] = None, desc: Optional[str] = Non
     # from rfc6266_parser import parse_requests_response
     import re
 
-    response = requests.get(url, stream=True)
+    response = requests.get(url, stream=True, timeout=10)
     if response.status_code == 200:
         filename: str = url.rsplit('/', 1)[-1]
         if 'Content-Disposition' in response.headers.keys():

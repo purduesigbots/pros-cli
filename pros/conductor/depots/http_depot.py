@@ -35,7 +35,7 @@ class HttpDepot(Depot):
 
     def update_remote_templates(self, **_):
         import requests
-        response = requests.get(self.location)
+        response = requests.get(self.location, timeout=10)
         if response.status_code == 200:
             self.remote_templates = jsonpickle.decode(response.text)
         else:

@@ -49,7 +49,7 @@ class UpgradeManager(Config):
 
         manifest_urls = [f"{channel_url}/{manifest.__name__}.json" for manifest in manifests]
         for manifest_url in manifest_urls:
-            resp = requests.get(manifest_url)
+            resp = requests.get(manifest_url, timeout=10)
             if resp.status_code == 200:
                 try:
                     self._manifest = jsonpickle.decode(resp.text, keys=True)
