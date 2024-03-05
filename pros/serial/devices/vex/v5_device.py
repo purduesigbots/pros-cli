@@ -965,7 +965,7 @@ class V5Device(VEXDevice, SystemDevice):
         :return: The payload of the extended message
         """
         assert msg['command'] == 0x56
-        if not cls.VEX_CRC16.compute(msg.rx) == 0:
+        if cls.VEX_CRC16.compute(msg.rx) != 0:
             raise VEXCommError("CRC of message didn't match 0: {}".format(cls.VEX_CRC16.compute(msg.rx)), msg)
         assert msg['payload'][0] == command
         msg = msg['payload'][1:-2]
