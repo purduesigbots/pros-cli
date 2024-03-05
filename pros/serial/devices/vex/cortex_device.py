@@ -39,13 +39,13 @@ class CortexDevice(VEXDevice, SystemDevice):
                    f'{self.joystick_battery:1.2f} V'
 
     class SystemStatusFlags(IntFlag):
-        DL_MODE = (1 << 0)
-        TETH_VN2 = (1 << 2)
-        FCS_CONNECT = (1 << 3)
-        TETH_USB = (1 << 4)
-        DIRECT_USB = (1 << 5)
-        FCS_AUTON = (1 << 6)
-        FCS_DISABLE = (1 << 7)
+        DL_MODE = 1 << 0
+        TETH_VN2 = 1 << 2
+        FCS_CONNECT = 1 << 3
+        TETH_USB = 1 << 4
+        DIRECT_USB = 1 << 5
+        FCS_AUTON = 1 << 6
+        FCS_DISABLE = 1 << 7
 
         TETH_BITS = DL_MODE | TETH_VN2 | TETH_USB
 

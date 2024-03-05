@@ -804,7 +804,7 @@ class V5Device(VEXDevice, SystemDevice):
         if isinstance(options['vid'], str):
             options['vid'] = self.vid_map[options['vid'].lower()]
         if isinstance(options['timestamp'], datetime):
-            assert (isinstance(options['timestamp'], datetime))
+            assert isinstance(options['timestamp'], datetime)
             options['timestamp'] = (options['timestamp'] - datetime(2000, 1, 1)).get_seconds()
         if isinstance(options['type'], str):
             options['type'] = options['type'].encode(encoding='ascii')
@@ -965,10 +965,10 @@ class V5Device(VEXDevice, SystemDevice):
         :param tx_payload: what was sent, used if an exception needs to be thrown
         :return: The payload of the extended message
         """
-        assert (msg['command'] == 0x56)
+        assert msg['command'] == 0x56
         if not cls.VEX_CRC16.compute(msg.rx) == 0:
             raise VEXCommError("CRC of message didn't match 0: {}".format(cls.VEX_CRC16.compute(msg.rx)), msg)
-        assert (msg['payload'][0] == command)
+        assert msg['payload'][0] == command
         msg = msg['payload'][1:-2]
         if check_ack:
             nacks = {
