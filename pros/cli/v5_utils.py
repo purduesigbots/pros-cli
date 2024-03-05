@@ -302,7 +302,7 @@ def set_variable(variable, value, port):
 
     # Get the connected v5 device
     port = resolve_v5_port(port, 'system')[0]
-    if port == None:
+    if port is None:
         return
     device = vex.V5Device(DirectPort(port))
     actual_value = device.kv_write(variable, value).decode()
@@ -318,7 +318,7 @@ def read_variable(variable, port):
 
     # Get the connected v5 device
     port = resolve_v5_port(port, 'system')[0]
-    if port == None:
+    if port is None:
         return
     device = vex.V5Device(DirectPort(port))
     value = device.kv_read(variable).decode()

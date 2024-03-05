@@ -55,7 +55,7 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     analytics.send("upload")
     from pros.serial.devices import vex
     from pros.serial.ports import DirectPort
-    kwargs['ide_version'] = project.kernel if not project==None else "None"
+    kwargs['ide_version'] = project.kernel if project is not None else "None"
     kwargs['ide'] = 'PROS'
     if path is None or os.path.isdir(path):
         if project is None:
@@ -126,11 +126,11 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
             }
         after_upload_default = 'screen'
         #Determine which FTCompleteOption to assign to run_after
-        if kwargs['after']==None:
+        if kwargs['after'] is None:
             kwargs['after']=after_upload_default
             if kwargs['run_after']:
                 kwargs['after']='run'
-            elif kwargs['run_screen']==False and not kwargs['run_after']:
+            elif not kwargs['run_screen'] and not kwargs['run_after']:
                 kwargs['after']='none'
         kwargs['run_after'] = action_to_kwarg[kwargs['after']]
         kwargs.pop('run_screen')

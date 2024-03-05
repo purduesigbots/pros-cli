@@ -84,7 +84,7 @@ class PROSOption(click.Option):
 class PROSDeprecated(click.Option):
     def __init__(self, *args, replacement: str = None, **kwargs):
         kwargs['help'] = "This option has been deprecated."
-        if not replacement==None:
+        if replacement is not None:
             kwargs['help'] += " Its replacement is '--{}'".format(replacement)
         super(PROSDeprecated, self).__init__(*args, **kwargs)
         self.group = "Deprecated"
@@ -92,7 +92,7 @@ class PROSDeprecated(click.Option):
         self.to_use = replacement
         self.arg = args[0][len(args[0])-1]
         self.msg = "The '{}' {} has been deprecated. Please use '--{}' instead."
-        if replacement==None:
+        if replacement is None:
             self.msg = self.msg.split(".")[0]+"."
 
     def type_cast_value(self, ctx, value):

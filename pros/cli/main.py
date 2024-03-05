@@ -87,7 +87,7 @@ def version(ctx: click.Context, param, value):
 
 
 def use_analytics(ctx: click.Context, param, value):
-    if value == None:
+    if value is None:
         return
     touse = not analytics.useAnalytics
     if str(value).lower().startswith("t"):
