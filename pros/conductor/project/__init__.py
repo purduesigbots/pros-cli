@@ -330,7 +330,7 @@ class Project(Config):
         if os.environ.get('PROS_TOOLCHAIN'):
             env['PATH'] = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin') + os.pathsep + env['PATH']
         cc_sysroot = subprocess.run([make_cmd, 'cc-sysroot'], env=env, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE, cwd=self.directory)
+                                    stderr=subprocess.PIPE, cwd=self.directory, check=False)
         lines = str(cc_sysroot.stderr.decode()).splitlines() + str(cc_sysroot.stdout.decode()).splitlines()
         lines = [l.strip() for l in lines]
         cc_sysroot_includes = []
@@ -345,7 +345,7 @@ class Project(Config):
             if copy:
                 cc_sysroot_includes.append(f'-isystem{line}')
         cxx_sysroot = subprocess.run([make_cmd, 'cxx-sysroot'], env=env, stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE, cwd=self.directory)
+                                     stderr=subprocess.PIPE, cwd=self.directory, check=False)
         lines = str(cxx_sysroot.stderr.decode()).splitlines() + str(cxx_sysroot.stdout.decode()).splitlines()
         lines = [l.strip() for l in lines]
         cxx_sysroot_includes = []
