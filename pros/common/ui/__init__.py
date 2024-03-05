@@ -134,7 +134,7 @@ class _MachineOutputProgressBar(_click_ProgressBar):
         _machine_notify('progress', obj, self.notify_value)
 
 
-class Notification(object):
+class Notification:
     def __init__(self, notify_value: Optional[int] = None):
         global _last_notify_value
         if not notify_value:

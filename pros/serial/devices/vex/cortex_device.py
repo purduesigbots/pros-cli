@@ -22,7 +22,7 @@ def find_cortex_ports():
 
 
 class CortexDevice(VEXDevice, SystemDevice):
-    class SystemStatus(object):
+    class SystemStatus:
         def __init__(self, data: Tuple[bytes, ...]):
             self.joystick_firmware = data[0:2]
             self.robot_firmware = data[2:4]

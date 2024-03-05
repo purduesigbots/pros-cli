@@ -23,7 +23,7 @@ def get_to_device_port_num(serial_port_name: str) -> int:
     return get_port_num(serial_port_name, 'to')
 
 
-class SerialShareBridge(object):
+class SerialShareBridge:
     def __init__(self, serial_port_name: str, base_addr: str = '127.0.0.1',
                  to_device_port_num: int = None, from_device_port_num: int = None):
         self._serial_port_name = serial_port_name

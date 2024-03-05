@@ -1,7 +1,7 @@
 import os.path
 
 
-class ProjectReport(object):
+class ProjectReport:
     def __init__(self, project: 'Project'):
         self.project = {
             "target": project.target,

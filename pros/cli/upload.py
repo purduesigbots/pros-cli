@@ -166,7 +166,7 @@ def ls_usb(target):
     analytics.send("ls-usb")
     from pros.serial.devices.vex import find_v5_ports, find_cortex_ports
 
-    class PortReport(object):
+    class PortReport:
         def __init__(self, header: str, ports: List[Any], machine_header: Optional[str] = None):
             self.header = header
             self.ports = [{'device': p.device, 'desc': p.description} for p in ports]

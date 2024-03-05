@@ -5,7 +5,7 @@ from semantic_version import Spec, Version
 from pros.common import ui
 
 
-class BaseTemplate(object):
+class BaseTemplate:
     def __init__(self, **kwargs):
         self.name: str = None
         self.version: str = None

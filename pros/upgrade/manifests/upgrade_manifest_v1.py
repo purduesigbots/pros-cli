@@ -4,7 +4,7 @@ from pros.common.utils import get_version, logger
 from ..instructions import UpgradeResult
 
 
-class UpgradeManifestV1(object):
+class UpgradeManifestV1:
     """
     An Upgrade Manifest only capable of determine if there is an update - not how to update
     """

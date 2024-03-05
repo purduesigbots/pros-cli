@@ -9,7 +9,7 @@ import pros.conductor as c
 from pros.conductor.project.template_resolution import InvalidTemplateException, TemplateAction
 
 
-class Action(object):
+class Action:
     def execute(self, conductor: c.Conductor, project: c.Project) -> None:
         raise NotImplementedError()
 
@@ -100,7 +100,7 @@ class ChangeProjectNameAction(Action):
         return True
 
 
-class ProjectTransaction(object):
+class ProjectTransaction:
     def __init__(self, project: c.Project, conductor: Optional[c.Conductor] = None):
         self.project = project
         self.conductor = conductor or c.Conductor()

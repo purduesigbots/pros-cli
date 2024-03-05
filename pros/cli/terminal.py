@@ -84,7 +84,7 @@ def terminal(port: str, backend: str, **kwargs):
         device = devices.vex.V5UserDevice(ser)
     term = Terminal(device, request_banner=kwargs.pop('request_banner', True))
 
-    class TerminalOutput(object):
+    class TerminalOutput:
         def __init__(self, file):
             self.terminal = sys.stdout
             self.log = open(file, 'a')

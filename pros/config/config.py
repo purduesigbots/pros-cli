@@ -10,7 +10,7 @@ class ConfigNotFoundException(Exception):
         self.message = message
 
 
-class Config(object):
+class Config:
     """
     A configuration object that's capable of being saved as a JSON object
     """

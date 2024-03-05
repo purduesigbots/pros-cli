@@ -4,7 +4,7 @@ from pros.common.ui.interactive.parameters.parameter import Parameter
 from pros.common.ui.interactive.parameters.validatable_parameter import ValidatableParameter
 
 
-class Component(object):
+class Component:
     """
     A Component is the basic building block of something to render to users.
 

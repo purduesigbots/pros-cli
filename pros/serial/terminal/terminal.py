@@ -15,7 +15,7 @@ from pros.serial.ports import PortConnectionException
 # This file is a modification of the miniterm implementation on pyserial
 
 
-class ConsoleBase(object):
+class ConsoleBase:
     """OS abstraction for console (input/output codec, no echo)"""
 
     def __init__(self):
@@ -65,7 +65,7 @@ if os.name == 'nt':  # noqa
     import ctypes
 
 
-    class Out(object):
+    class Out:
         """file-like wrapper that uses os.write"""
 
         def __init__(self, fd):
@@ -166,7 +166,7 @@ else:
         ' available.'.format(sys.platform))
 
 
-class Terminal(object):
+class Terminal:
     """This class is loosely based off of the pyserial miniterm"""
 
     def __init__(self, port_instance: StreamDevice, transformations=(),

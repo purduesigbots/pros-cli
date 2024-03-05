@@ -1,7 +1,7 @@
 from typing import *
 
 
-class BasePort(object):
+class BasePort:
     def write(self, data: bytes):
         raise NotImplementedError()
 

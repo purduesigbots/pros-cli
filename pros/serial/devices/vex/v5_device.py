@@ -137,7 +137,7 @@ class V5Device(VEXDevice, SystemDevice):
     VEX_CRC16 = CRC(16, 0x1021)  # CRC-16-CCIT
     VEX_CRC32 = CRC(32, 0x04C11DB7)  # CRC-32 (the one used everywhere but has no name)
 
-    class SystemVersion(object):
+    class SystemVersion:
         class Product(IntEnum):
             CONTROLLER = 0x11
             BRAIN = 0x10
@@ -161,7 +161,7 @@ class V5Device(VEXDevice, SystemDevice):
                 f'       Product: {self.product.name}\n' \
                 f' Product Flags: {self.product_flags.value:x}'
 
-    class SystemStatus(object):
+    class SystemStatus:
         def __init__(self, data: tuple):
             from semantic_version import Version
             self.system_version = Version('{}.{}.{}-{}'.format(*data[0:4]))
@@ -178,7 +178,7 @@ class V5Device(VEXDevice, SystemDevice):
         self._serial_cache = b''
         super().__init__(port)
 
-    class DownloadChannel(object):
+    class DownloadChannel:
         def __init__(self, device: 'V5Device', timeout: float = 5.):
             self.device = device
             self.timeout = timeout
