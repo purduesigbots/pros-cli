@@ -28,8 +28,7 @@ class UpgradeManifestV1:
         if self.needs_upgrade:
             return f'There is an update available! {self.version} is the latest version.\n' \
                    f'Go to {self.info_url} to learn more.'
-        else:
-            return f'You are up to date. ({self.version})'
+        return f'You are up to date. ({self.version})'
 
     def __str__(self):
         return self.describe_update()

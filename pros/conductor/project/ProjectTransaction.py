@@ -51,10 +51,9 @@ class ApplyTemplateAction(Action):
         if action == TemplateAction.AlreadyInstalled:
             if self.apply_kwargs.get('force_apply'):
                 return f'{self.template.identifier} will be re-applied.'
-            elif self.suppress_already_installed:
+            if self.suppress_already_installed:
                 return f'{self.template.identifier} will not be re-applied.'
-            else:
-                return f'{self.template.identifier} cannot be applied to project because it is already installed.'
+            return f'{self.template.identifier} cannot be applied to project because it is already installed.'
 
     def can_execute(self, conductor: c.Conductor, project: c.Project) -> bool:
         action = project.get_template_actions(conductor.resolve_template(self.template))
@@ -164,8 +163,7 @@ class ProjectTransaction:
                 f'- {a.describe(self.conductor, self.project)}'
                 for a in self.actions
             )
-        else:
-            return 'No actions necessary.'
+        return 'No actions necessary.'
 
     def can_execute(self) -> bool:
         return all(a.can_execute(self.conductor, self.project) for a in self.actions)

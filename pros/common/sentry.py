@@ -56,8 +56,7 @@ def prompt_to_send(event: Dict[str, Any], hint: Optional[Dict[str, Any]]) -> Opt
 
             ui.echo(f'Want to get updates? Visit https://pros.cs.purdue.edu/report.html?event={event["event_id"]}')
             return event
-        else:
-            ui.echo('Not sending bug report.')
+        ui.echo('Not sending bug report.')
 
 
 def add_context(obj: object, override_handlers: bool = True, key: str = None) -> None:

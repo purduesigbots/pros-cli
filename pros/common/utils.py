@@ -52,8 +52,7 @@ def retries(func, retry: int = 3):
         except Exception as e:
             if n_retries > 0:
                 return retries_wrapper(*args, n_retries=n_retries - 1, **kwargs)
-            else:
-                raise e
+            raise e
 
     return retries_wrapper
 
@@ -79,8 +78,7 @@ def ismachineoutput(ctx: click.Context = None) -> bool:
         ctx.ensure_object(dict)
         assert isinstance(ctx.obj, dict)
         return ctx.obj.get('machine_output', False)
-    else:
-        return False
+    return False
 
 
 def get_pros_dir():
@@ -91,15 +89,15 @@ def with_click_context(func):
     ctx = click.get_current_context(silent=True)
     if not ctx or not isinstance(ctx, click.Context):
         return func
-    else:
-        def _wrap(*args, **kwargs):
-            with ctx:
-                try:
-                    return func(*args, **kwargs)
-                except BaseException as e:
-                    logger(__name__).exception(e)
 
-        return _wrap
+    def _wrap(*args, **kwargs):
+        with ctx:
+            try:
+                return func(*args, **kwargs)
+            except BaseException as e:
+                logger(__name__).exception(e)
+
+    return _wrap
 
 
 def download_file(url: str, ext: Optional[str] = None, desc: Optional[str] = None) -> Optional[str]:

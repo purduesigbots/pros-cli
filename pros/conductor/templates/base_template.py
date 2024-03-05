@@ -53,14 +53,12 @@ class BaseTemplate:
         if isinstance(other, BaseTemplate):
             # TODO: metadata comparison
             return self.name == other.name and Version(self.version) > Version(other.version)
-        else:
-            return False
+        return False
 
     def __eq__(self, other):
         if isinstance(other, BaseTemplate):
             return self.identifier == other.identifier
-        else:
-            return super().__eq__(other)
+        return super().__eq__(other)
 
     def __hash__(self):
         return self.identifier.__hash__()

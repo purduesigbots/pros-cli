@@ -87,8 +87,7 @@ class Project(Config):
 
         if any([template > current for current in self.templates.values()]):
             return TemplateAction.Upgradable
-        else:
-            return TemplateAction.Installable
+        return TemplateAction.Installable
 
     def template_is_installed(self, query: BaseTemplate) -> bool:
         return self.get_template_actions(query) == TemplateAction.AlreadyInstalled
@@ -204,7 +203,7 @@ class Project(Config):
     def kernel(self):
         if 'kernel' in self.templates:
             return self.templates['kernel'].version
-        elif hasattr(self.__dict__, 'kernel'):
+        if hasattr(self.__dict__, 'kernel'):
             return self.__dict__['kernel']
         return ''
 
@@ -212,7 +211,7 @@ class Project(Config):
     def output(self):
         if 'kernel' in self.templates:
             return self.templates['kernel'].metadata['output']
-        elif hasattr(self.__dict__, 'output'):
+        if hasattr(self.__dict__, 'output'):
             return self.__dict__['output']
         return 'bin/output.bin'
 

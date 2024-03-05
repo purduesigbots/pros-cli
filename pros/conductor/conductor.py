@@ -70,8 +70,7 @@ def is_pathname_valid(pathname: str) -> bool:
                     return False
     except TypeError:
         return False
-    else:
-        return True
+    return True
 
 class Conductor(Config):
     """

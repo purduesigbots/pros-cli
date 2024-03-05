@@ -69,8 +69,7 @@ def progressbar(iterable: Iterable = None, length: int = None, label: str = None
                 info_sep: str = ' ', width: int = 36):
     if ismachineoutput():
         return _MachineOutputProgressBar(**locals())
-    else:
-        return click.progressbar(**locals())
+    return click.progressbar(**locals())
 
 
 def finalize(method: str, data: Union[str, Dict, object, List[Union[str, Dict, object, Tuple]]],

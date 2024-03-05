@@ -32,8 +32,7 @@ class RangeParameter(ValidatableParameter[int]):
     def validate(self, value: T):
         if self.value_range[0] <= value <= self.value_range[1]:
             return True
-        else:
-            return f'{value} is not within [{self.value_range[0]}, {self.value_range[1]}]'
+        return f'{value} is not within [{self.value_range[0]}, {self.value_range[1]}]'
 
     def update(self, new_value):
         super(RangeParameter, self).update(int(new_value))

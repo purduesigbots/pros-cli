@@ -67,10 +67,9 @@ def find_v5_ports(p_type: str):
     if len(user_ports) == len(system_ports) and len(user_ports) > 0:
         if p_type.lower() == 'user':
             return user_ports
-        elif p_type.lower() == 'system':
+        if p_type.lower() == 'system':
             return system_ports + joystick_ports
-        else:
-            raise ValueError(f'Invalid port type specified: {p_type}')
+        raise ValueError(f'Invalid port type specified: {p_type}')
 
     # None of the typical filters worked, so if there are only two ports, then the lower one is always*
     # the USER? port (*always = I haven't found a guarantee)
@@ -82,14 +81,13 @@ def find_v5_ports(p_type: str):
         ports = sorted(ports, key=lambda p: natural_key(p.device))
         if p_type.lower() == 'user':
             return [ports[1]]
-        elif p_type.lower() == 'system':
+        if p_type.lower() == 'system':
             # check if ports contain the word Brain in the description and return that port
             for port in ports:
                 if "Brain" in port.description:
                     return [port]
             return [ports[0], *joystick_ports]
-        else:
-            raise ValueError(f'Invalid port type specified: {p_type}')
+        raise ValueError(f'Invalid port type specified: {p_type}')
     # these can now also be used as user ports
     if len(joystick_ports) > 0:  # and p_type.lower() == 'system':
         return joystick_ports
@@ -205,9 +203,7 @@ class V5Device(VEXDevice, SystemDevice):
                 if V5Device.SystemVersion.ControllerFlags.CONNECTED not in version.product_flags:
                     raise VEXCommError('Could not transfer V5 Controller to download channel', version)
                 logger(__name__).info('V5 should been transferred to higher bandwidth download channel')
-                return self
-            else:
-                return self
+            return self
 
         def __exit__(self, *exc):
             if self.did_switch:
@@ -503,10 +499,9 @@ class V5Device(VEXDevice, SystemDevice):
                 if response['size'] == file_len and response['crc'] == crc32:
                     ui.echo('Library is already onboard V5')
                     return
-                else:
-                    logger(__name__).warning(f'Library onboard doesn\'t match! '
-                                             f'Length was {response["size"]} but expected {file_len} '
-                                             f'CRC: was {response["crc"]:x} but expected {crc32:x}')
+                logger(__name__).warning(f'Library onboard doesn\'t match! '
+                                            f'Length was {response["size"]} but expected {file_len} '
+                                            f'CRC: was {response["crc"]:x} but expected {crc32:x}')
             except VEXCommError as e:
                 logger(__name__).debug(e)
         else:

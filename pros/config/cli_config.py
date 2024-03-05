@@ -53,10 +53,9 @@ class CliConfig(Config):
             pros.common.logger(__name__).debug(self.cached_upgrade[1])
             self.save()
             return self.cached_upgrade[1]
-        else:
-            pros.common.logger(__name__).warning(f'Failed to fetch CLI updates because status code: {r.status_code}')
-            pros.common.logger(__name__).debug(r)
-            return None
+        pros.common.logger(__name__).warning(f'Failed to fetch CLI updates because status code: {r.status_code}')
+        pros.common.logger(__name__).debug(r)
+        return None
 
 
 def cli_config() -> CliConfig:

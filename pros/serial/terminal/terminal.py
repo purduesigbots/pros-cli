@@ -104,7 +104,7 @@ if os.name == 'nt':  # noqa
                 z = msvcrt.getwch()
                 if z == chr(13):
                     return chr(10)
-                elif z in (chr(0), chr(0x0e)):  # functions keys, ignore
+                if z in (chr(0), chr(0x0e)):  # functions keys, ignore
                     msvcrt.getwch()
                 else:
                     return z

@@ -39,15 +39,14 @@ class DirectPort(BasePort):
                 msg = bytes(self.buffer)
                 self.buffer = bytearray()
                 return msg
+            if len(self.buffer) < n_bytes:
+                self.buffer.extend(self.serial.read(n_bytes - len(self.buffer)))
+            if len(self.buffer) < n_bytes:
+                msg = bytes(self.buffer)
+                self.buffer = bytearray()
             else:
-                if len(self.buffer) < n_bytes:
-                    self.buffer.extend(self.serial.read(n_bytes - len(self.buffer)))
-                if len(self.buffer) < n_bytes:
-                    msg = bytes(self.buffer)
-                    self.buffer = bytearray()
-                else:
-                    msg, self.buffer = bytes(self.buffer[:n_bytes]), self.buffer[n_bytes:]
-                return msg
+                msg, self.buffer = bytes(self.buffer[:n_bytes]), self.buffer[n_bytes:]
+            return msg
         except serial.SerialException as e:
             logger(__name__).debug(e)
             raise PortConnectionException(e) from e

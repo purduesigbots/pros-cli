@@ -29,8 +29,7 @@ class ValidatableParameter(Parameter, Generic[T]):
         rv = self.validate(value if value is not None else self.value)
         if isinstance(rv, bool):
             return rv
-        else:
-            return False
+        return False
 
     def is_valid_reason(self, value: T = None) -> Optional[str]:
         rv = self.validate(value if value is not None else self.value)

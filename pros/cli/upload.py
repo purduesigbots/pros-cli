@@ -181,9 +181,8 @@ def ls_usb(target):
         def __str__(self):
             if len(self.ports) == 0:
                 return f'There are no connected {self.header}'
-            else:
-                port_str = "\n".join([f"{p['device']} - {p['desc']}" for p in self.ports])
-                return f'{self.header}:\n{port_str}'
+            port_str = "\n".join([f"{p['device']} - {p['desc']}" for p in self.ports])
+            return f'{self.header}:\n{port_str}'
 
     result = []
     if target == 'v5' or target is None:
