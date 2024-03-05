@@ -320,8 +320,8 @@ def info_project(project: c.Project, ls_upgrades):
     report = ProjectReport(project)
     _conductor = c.Conductor()
     if ls_upgrades:
+        import semantic_version as semver
         for template in report.project['templates']:
-            import semantic_version as semver
             templates = _conductor.resolve_templates(c.BaseTemplate.create_query(name=template["name"],
                                                                                  version=f'>{template["version"]}',
                                                                                  target=project.target))
