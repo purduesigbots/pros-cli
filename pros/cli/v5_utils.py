@@ -297,7 +297,7 @@ def capture(file_name: str, port: str, force: bool = False):
 @click.argument('port', type=str, default=None, required=False)
 @default_options
 def set_variable(variable, value, port):
-    import pros.serial.devices.vex as vex
+    from pros.serial.devices import vex
     from pros.serial.ports import DirectPort
 
     # Get the connected v5 device
@@ -313,7 +313,7 @@ def set_variable(variable, value, port):
 @click.argument('port', type=str, default=None, required=False)
 @default_options
 def read_variable(variable, port):
-    import pros.serial.devices.vex as vex
+    from pros.serial.devices import vex
     from pros.serial.ports import DirectPort
 
     # Get the connected v5 device

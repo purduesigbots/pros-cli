@@ -1,7 +1,7 @@
 import os.path
 from itertools import groupby
 
-import pros.common.ui as ui
+from pros.common import ui
 import pros.conductor as c
 from pros.cli.common import *
 from pros.conductor.templates import ExternalTemplate

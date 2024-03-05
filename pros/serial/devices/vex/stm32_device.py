@@ -6,7 +6,7 @@ import typing
 from functools import reduce
 from typing import *
 
-import pros.common.ui as ui
+from pros.common import ui
 from pros.common import logger, retries
 from pros.serial import bytes_to_str
 from pros.serial.devices.vex import VEXCommError

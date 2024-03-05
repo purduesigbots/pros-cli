@@ -2,7 +2,7 @@ import os
 import shutil
 from typing import *
 
-import pros.common.ui as ui
+from pros.common import ui
 from pros.common import logger
 
 

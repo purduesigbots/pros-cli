@@ -1,6 +1,6 @@
 import sys
 
-import pros.common.ui as ui
+from pros.common import ui
 import pros.conductor as c
 
 from .common import *
@@ -53,7 +53,7 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     automatically detected based on the target (or as supplied by the PROS project)
     """
     analytics.send("upload")
-    import pros.serial.devices.vex as vex
+    from pros.serial.devices import vex
     from pros.serial.ports import DirectPort
     kwargs['ide_version'] = project.kernel if not project==None else "None"
     kwargs['ide'] = 'PROS'

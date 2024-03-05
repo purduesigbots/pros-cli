@@ -6,7 +6,7 @@ import zipfile
 from typing import *
 
 import click
-import pros.common.ui as ui
+from pros.common import ui
 import pros.conductor as c
 from pros.common.utils import logger
 from pros.conductor.templates import ExternalTemplate

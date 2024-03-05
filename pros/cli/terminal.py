@@ -6,7 +6,7 @@ import click
 import sys
 
 import pros.conductor as c
-import pros.serial.devices as devices
+from pros.serial import devices
 from pros.serial.ports import DirectPort
 from pros.common.utils import logger
 from .common import default_options, resolve_v5_port, resolve_cortex_port, pros_root

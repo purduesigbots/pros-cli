@@ -4,7 +4,7 @@ import tempfile
 import zipfile
 from typing import *
 
-import pros.common.ui as ui
+from pros.common import ui
 import pros.conductor as c
 from pros.conductor.project.template_resolution import InvalidTemplateException, TemplateAction
 

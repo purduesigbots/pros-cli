@@ -1,4 +1,4 @@
-import pros.common.ui as ui
+from pros.common import ui
 from pros.cli.common import *
 from pros.ga.analytics import analytics
 

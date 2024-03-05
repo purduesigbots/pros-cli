@@ -10,7 +10,7 @@ import click
 import ctypes
 import sys
 
-import pros.common.ui as ui
+from pros.common import ui
 import pros.common.ui.log
 from pros.cli.click_classes import *
 from pros.cli.common import default_options, root_commands

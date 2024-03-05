@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import jsonpickle
 
-import pros.common.ui as ui
+from pros.common import ui
 from pros.common import logger
 from pros.common.utils import download_file
 from .depot import Depot

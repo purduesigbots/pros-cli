@@ -2,7 +2,7 @@ from typing import *
 
 import click
 
-import pros.common.ui as ui
+from pros.common import ui
 
 if TYPE_CHECKING:
     from sentry_sdk import Client, Hub, Scope  # noqa: F401, flake8 issue with "if TYPE_CHECKING"

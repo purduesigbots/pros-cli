@@ -16,7 +16,6 @@
 # W0401: Wildcard import
 # C0117: Unnecessary negation
 # R0205: Useless object inheritance
-# R0402: Consider using from import
 # R1725: Super with arguments
 # W0237: Renamed arguments
 # W0223: Abstract method is not overridden
@@ -69,7 +68,7 @@
 
 max-line-length = 120
 disable =   C0114, C0115, C0116, R0903, C0415, R1705, R0913, W1203, R1729, E1120, E1123, C0209, R1710, W0621, C0121,
-            W0614, W0401, W1202, C0117, W0718, R0205, R0402, R0914, R1725, R1735, C0411, W0237, W0702, W0223, W0613,
+            W0614, W0401, W1202, C0117, W0718, R0205, R0914, R1725, R1735, C0411, W0237, W0702, W0223, W0613,
             R0912, R0911, W0511, R0902, C0412, C0103, C0301, R1732, R0915, W1514,
             E1101, R1734, W1201,
             E0401, W0212, R0904, W0101,

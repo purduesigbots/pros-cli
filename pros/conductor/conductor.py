@@ -9,7 +9,7 @@ import click
 from semantic_version import Spec, Version
 
 from pros.common import *
-import pros.common.ui as ui
+from pros.common import ui
 from pros.conductor.project import TemplateAction
 from pros.conductor.project.template_resolution import InvalidTemplateException
 from pros.config import Config
