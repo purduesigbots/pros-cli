@@ -360,7 +360,7 @@ class Project(Config):
             if copy:
                 cxx_sysroot_includes.append(f'-isystem{line}')
         new_entries, entries = itertools.tee(entries, 2)
-        new_sources = set([e.source for e in entries])
+        new_sources = {e.source for e in entries}
         if not cdb_file:
             cdb_file = os.path.join(self.directory, 'compile_commands.json')
         if isinstance(cdb_file, str) and os.path.isfile(cdb_file):
