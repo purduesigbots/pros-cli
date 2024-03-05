@@ -22,7 +22,6 @@ def conductor():
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
-    pass
 
 
 @conductor.command(aliases=['download'], short_help='Fetch/Download a remote template',

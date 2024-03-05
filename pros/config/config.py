@@ -52,7 +52,6 @@ class Config(object):
                             logger(__name__).exception(e)
                             raise e
                         logger(__name__).debug(e)
-                        pass
             # obvious
             elif os.path.isdir(file):
                 raise ValueError('{} must be a file, not a directory'.format(file))

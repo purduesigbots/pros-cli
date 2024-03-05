@@ -18,7 +18,6 @@ class VerbatimLabel(Label):
     """
     Should be displayed with a monospace font
     """
-    pass
 
 
 class Spinner(Label):
