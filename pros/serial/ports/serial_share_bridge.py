@@ -11,8 +11,8 @@ from .direct_port import DirectPort
 from .. import bytes_to_str
 
 
-def get_port_num(serial_port_name: str, hash: str) -> int:
-    return sum("Powered by PROS: {}-{}".format(serial_port_name, hash).encode(encoding='ascii'))
+def get_port_num(serial_port_name: str, hash_value: str) -> int:
+    return sum("Powered by PROS: {}-{}".format(serial_port_name, hash_value).encode(encoding='ascii'))
 
 
 def get_from_device_port_num(serial_port_name: str) -> int:

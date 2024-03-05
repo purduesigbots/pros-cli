@@ -1,4 +1,4 @@
-from sys import exit
+import sys
 from unicodedata import name
 
 import pros.common.ui as ui
@@ -155,7 +155,7 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
                 device.write_program(pf, **kwargs)
     except Exception as e:
         logger(__name__).exception(e, exc_info=True)
-        exit(1)
+        sys.exit(1)
 
 @upload_cli.command('lsusb', aliases=['ls-usb', 'ls-devices', 'lsdev', 'list-usb', 'list-devices'])
 @click.option('--target', type=click.Choice(['v5', 'cortex']), default=None, required=False)

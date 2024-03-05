@@ -25,15 +25,15 @@ class BooleanParameter(Parameter[bool]):
 
 
 class RangeParameter(ValidatableParameter[int]):
-    def __init__(self, initial_value: int, range: Tuple[int, int]):
+    def __init__(self, initial_value: int, value_range: Tuple[int, int]):
         super().__init__(initial_value)
-        self.range = range
+        self.value_range = value_range
 
     def validate(self, value: T):
-        if self.range[0] <= value <= self.range[1]:
+        if self.value_range[0] <= value <= self.value_range[1]:
             return True
         else:
-            return f'{value} is not within [{self.range[0]}, {self.range[1]}]'
+            return f'{value} is not within [{self.value_range[0]}, {self.value_range[1]}]'
 
     def update(self, new_value):
         super(RangeParameter, self).update(int(new_value))

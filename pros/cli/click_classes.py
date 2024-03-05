@@ -32,8 +32,8 @@ class PROSFormatted(RichCommand):
             if hasattr(cmd, 'hidden') and cmd.hidden:
                 continue
 
-            help = cmd.short_help or ''
-            rows.append((subcommand, help))
+            help_text = cmd.short_help or ''
+            rows.append((subcommand, help_text))
 
         if rows:
             with formatter.section('Commands'):
