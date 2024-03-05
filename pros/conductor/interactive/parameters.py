@@ -64,7 +64,7 @@ class TemplateParameter(p.ValidatableParameter[BaseTemplate]):
         if self.name.value in self.options:
             self.version = p.OptionParameter(
                 self.version.value if self.version else None,
-                list(sorted(self.options[self.name.value].keys(), reverse=True, key=lambda v: Version(v)))
+                list(sorted(self.options[self.name.value].keys(), reverse=True, key=Version))
             )
 
             if self.version.value not in self.version.options:

@@ -324,7 +324,7 @@ def info_project(project: c.Project, ls_upgrades):
             templates = _conductor.resolve_templates(c.BaseTemplate.create_query(name=template["name"],
                                                                                  version=f'>{template["version"]}',
                                                                                  target=project.target))
-            template["upgrades"] = sorted({t.version for t in templates}, key=lambda v: semver.Version(v), reverse=True)
+            template["upgrades"] = sorted({t.version for t in templates}, key=semver.Version, reverse=True)
 
     ui.finalize('project-report', report)
 

@@ -42,7 +42,7 @@ class MachineOutputRenderer(Renderer[P], Generic[P]):
         def on_redraw():
             self.render(self.app)
 
-        app.on_exit(lambda: self.stop())
+        app.on_exit(self.stop)
 
     @staticmethod
     def get_line():

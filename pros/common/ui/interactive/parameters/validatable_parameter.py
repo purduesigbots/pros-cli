@@ -20,7 +20,7 @@ class ValidatableParameter(Parameter, Generic[T]):
         """
         super().__init__(initial_value)
         self.allow_invalid_input = allow_invalid_input
-        self.validate_lambda = validate or (lambda v: bool(v))
+        self.validate_lambda = validate or bool
 
     def validate(self, value: T) -> Union[bool, str]:
         return self.validate_lambda(value)

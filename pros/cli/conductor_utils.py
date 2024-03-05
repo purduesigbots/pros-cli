@@ -77,7 +77,7 @@ def create_template(ctx, path: str, destination: str, do_zip: bool, **kwargs):
         _path = os.path.normpath(path) + os.path.sep
         for g in [g for g in globs if glob.has_magic(g)]:
             files = glob.glob(f'{path}/{g}', recursive=True)
-            files = filter(lambda f: os.path.isfile(f), files)
+            files = filter(os.path.isfile, files)
             files = [os.path.normpath(os.path.normpath(f).split(_path)[-1]) for f in files]
             matching_files.extend(files)
 

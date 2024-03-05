@@ -21,7 +21,6 @@
 # W0237: Renamed arguments
 # W0223: Abstract method is not overridden
 # W0613: Unused argument
-# W0108: Lambda may not be necessary
 # W0511: TODO
 # C0103: Variable name doesn't conform to naming style
 # R1732: Consider using with
@@ -71,7 +70,7 @@
 max-line-length = 120
 disable =   C0114, C0115, C0116, R0903, C0415, R1705, R0913, W1203, R1729, E1120, E1123, C0209, R1710, W0621, C0121,
             W0614, W0401, W1202, C0117, W0718, R0205, R0402, R0914, R1725, R1735, C0411, W0237, W0702, W0223, W0613,
-            W0108, R0912, R0911, W0511, R0902, C0412, C0103, C0301, R1732, R0915, W1514,
+            R0912, R0911, W0511, R0902, C0412, C0103, C0301, R1732, R0915, W1514,
             E1101, R1734, W1201,
             E0401, W0212, R0904, W0101,
             C0302, E0110, W0603, R0401, C0303, W4902
