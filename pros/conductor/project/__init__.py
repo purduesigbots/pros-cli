@@ -114,7 +114,7 @@ class Project(Config):
         transaction = Transaction(self.location, set(self.all_files))
         installed_user_files = set()
         for lib_name, lib in self.templates.items():
-            if lib_name == template.name or lib.name == template.name:
+            if template.name in (lib_name, lib.name):
                 logger(__name__).debug(f'{lib} is already installed')
                 logger(__name__).debug(lib.system_files)
                 logger(__name__).debug(lib.user_files)
