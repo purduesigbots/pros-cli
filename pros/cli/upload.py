@@ -1,5 +1,4 @@
 import sys
-from unicodedata import name
 
 import pros.common.ui as ui
 import pros.conductor as c

@@ -44,7 +44,6 @@ def terminal(port: str, backend: str, **kwargs):
     Note: share backend is not yet implemented.
     """
     analytics.send("terminal")
-    from pros.serial.devices.vex.v5_user_device import V5UserDevice
     from pros.serial.terminal import Terminal
     is_v5_user_joystick = False
     if port == 'default':

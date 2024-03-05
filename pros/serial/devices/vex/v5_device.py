@@ -843,7 +843,6 @@ class V5Device(VEXDevice, SystemDevice):
 
     @retries
     def get_system_status(self) -> SystemStatus:
-        from semantic_version import Version
         logger(__name__).debug('Sending ext 0x22 command')
         version = self.query_system_version()
         if (version.product == V5Device.SystemVersion.Product.BRAIN and version.system_version in Spec('<1.0.13')) or \

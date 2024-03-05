@@ -1,11 +1,9 @@
 import errno
 import os.path
 import shutil
-from enum import Enum
 from pathlib import Path
 import sys
 from typing import *
-import re
 
 import click
 from semantic_version import Spec, Version

@@ -1,7 +1,4 @@
-import json
-from os import path
 import uuid
-import requests
 from requests_futures.sessions import FuturesSession
 import random
 from concurrent.futures import as_completed

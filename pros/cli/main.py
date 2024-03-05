@@ -17,7 +17,6 @@ from pros.cli.common import default_options, root_commands
 from pros.common.utils import get_version, logger
 from pros.ga.analytics import analytics
 
-import jsonpickle
 import pros.cli.build
 import pros.cli.conductor
 import pros.cli.conductor_utils
@@ -102,7 +101,7 @@ def use_analytics(ctx: click.Context, param, value):
     analytics.set_use(touse)
     ui.echo(f'Analytics usage set to: {analytics.useAnalytics}')
     ctx.exit(0)
-    
+
 def use_early_access(ctx: click.Context, param, value):
     if value is None:
         return
