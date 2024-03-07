@@ -87,7 +87,7 @@ def terminal(port: str, backend: str, **kwargs):
     class TerminalOutput:
         def __init__(self, file):
             self.terminal = sys.stdout
-            self.log = open(file, 'a')
+            self.log = open(file, 'a')  # pylint: disable=consider-using-with
         def write(self, data):
             self.terminal.write(data)
             self.log.write(data)

@@ -81,7 +81,7 @@ class MachineOutputRenderer(Renderer[P], Generic[P]):
 
         if current_thread() != self.thread:
             ui.logger(__name__).debug(f'Interrupting render thread of {self.app}')
-            while not self.stop_sem.acquire(timeout=0.1):
+            while not self.stop_sem.acquire(timeout=0.1):  # pylint: disable=consider-using-with
                 self.wake_me()
 
         ui.logger(__name__).debug(f'Broadcasting stop {self.app}')

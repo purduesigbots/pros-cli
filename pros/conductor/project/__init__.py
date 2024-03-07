@@ -227,6 +227,7 @@ class Project(Config):
             make_cmd = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'make.exe')
         else:
             make_cmd = 'make'
+        # pylint: disable=consider-using-with
         stdout_pipe = EchoPipe()
         stderr_pipe = EchoPipe(err=True)
         process=None
@@ -256,7 +257,7 @@ class Project(Config):
 
         if sandbox:
             import tempfile
-            td = tempfile.TemporaryDirectory()
+            td = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
             td_path = td.name.replace("\\", "/")
             build_args = [*build_args, f'BINDIR={td_path}']
 
@@ -394,7 +395,7 @@ class Project(Config):
         entries = itertools.chain(old_entries, new_entries)
         json_entries = list(map(entry_map, entries))
         if isinstance(cdb_file, str):
-            cdb_file = open(cdb_file, 'w')
+            cdb_file = open(cdb_file, 'w')  # pylint: disable=consider-using-with
         import json
         json.dump(json_entries, cdb_file, sort_keys=True, indent=4)
 

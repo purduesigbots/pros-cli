@@ -13,7 +13,8 @@ import pros
 @lru_cache(1)
 def get_version():
     try:
-        ver = open(os.path.join(os.path.dirname(__file__), '..', '..', 'version')).read().strip()
+        with open(os.path.join(os.path.dirname(__file__), '..', '..', 'version')) as version_file:
+            ver = version_file.read().strip()
         if ver is not None:
             return ver
     except:
