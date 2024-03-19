@@ -183,7 +183,7 @@ class Conductor(Config):
     def resolve_templates(self, identifier: Union[str, BaseTemplate], allow_online: bool = True,
                           allow_offline: bool = True, force_refresh: bool = False,
                           unique: bool = True, **kwargs) -> List[BaseTemplate]:
-        results = list() if not unique else set()
+        results = [] if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
         if kwargs.get('early_access', None) is not None:
             use_early_access = kwargs.get('early_access', False)
@@ -194,7 +194,7 @@ class Conductor(Config):
         else:
             query = identifier
         if allow_offline:
-            offline_results = list()
+            offline_results = []
 
             if use_early_access:
                 offline_results.extend(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.early_access_local_templates))
