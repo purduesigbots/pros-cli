@@ -313,10 +313,13 @@ def capture(file_name: str, port: str, force: bool = False):
 
     print(f"Saved screen capture to {file_name}")
 
-@v5.command('set-variable', aliases=['sv', 'set', 'set_variable'], short_help='Set a kernel variable on a connected V5 device')
-@click.argument('variable', type=click.Choice(['teamnumber', 'robotname']), required=True)
-@click.argument('value', required=True, type=click.STRING, nargs=1)
-@click.argument('port', type=str, default=None, required=False)
+
+@v5.command(
+    "set-variable", aliases=["sv", "set", "set_variable"], short_help="Set a kernel variable on a connected V5 device"
+)
+@click.argument("variable", type=click.Choice(["teamnumber", "robotname"]), required=True)
+@click.argument("value", required=True, type=click.STRING, nargs=1)
+@click.argument("port", type=str, default=None, required=False)
 @default_options
 def set_variable(variable, value, port):
     import pros.serial.devices.vex as vex
@@ -330,9 +333,14 @@ def set_variable(variable, value, port):
     actual_value = device.kv_write(variable, value).decode()
     print(f"Value of '{variable}' set to : {actual_value}")
 
-@v5.command('read-variable', aliases=['rv', 'get', 'read_variable'], short_help='Read a kernel variable from a connected V5 device')
-@click.argument('variable', type=click.Choice(['teamnumber', 'robotname']), required=True)
-@click.argument('port', type=str, default=None, required=False)
+
+@v5.command(
+    "read-variable",
+    aliases=["rv", "get", "read_variable"],
+    short_help="Read a kernel variable from a connected V5 device",
+)
+@click.argument("variable", type=click.Choice(["teamnumber", "robotname"]), required=True)
+@click.argument("port", type=str, default=None, required=False)
 @default_options
 def read_variable(variable, port):
     import pros.serial.devices.vex as vex

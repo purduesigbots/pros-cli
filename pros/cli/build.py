@@ -27,12 +27,12 @@ def make(project: c.Project, build_args):
     analytics.send("make")
     exit_code = project.compile(build_args)
     if exit_code != 0:
-        if sys.platform == 'win32':
+        if sys.platform == "win32":
             kernel32 = ctypes.windll.kernel32
             kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
 
-        logger(__name__).error(f'Failed to make project: Exit Code {exit_code}', extra={'sentry': False})
-        raise click.ClickException('Failed to build')
+        logger(__name__).error(f"Failed to make project: Exit Code {exit_code}", extra={"sentry": False})
+        raise click.ClickException("Failed to build")
     return exit_code
 
 
@@ -82,10 +82,10 @@ def build_compile_commands(
         build_args, cdb_file=compile_commands, suppress_output=suppress_output, sandbox=sandbox
     )
     if exit_code != 0:
-        if sys.platform == 'win32':
+        if sys.platform == "win32":
             kernel32 = ctypes.windll.kernel32
             kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
 
-        logger(__name__).error(f'Failed to make project: Exit Code {exit_code}', extra={'sentry': False})
-        raise click.ClickException('Failed to build')
+        logger(__name__).error(f"Failed to make project: Exit Code {exit_code}", extra={"sentry": False})
+        raise click.ClickException("Failed to build")
     return exit_code

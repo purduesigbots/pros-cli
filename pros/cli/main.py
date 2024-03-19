@@ -18,23 +18,11 @@ import pros.cli.v5_utils
 import pros.common.sentry
 import pros.common.ui as ui
 import pros.common.ui.log
+import pros.conductor as c
 from pros.cli.click_classes import *
 from pros.cli.common import default_options, root_commands
 from pros.common.utils import get_version, logger
 from pros.ga.analytics import analytics
-
-import jsonpickle
-import pros.cli.build
-import pros.cli.conductor
-import pros.cli.conductor_utils
-import pros.cli.terminal
-import pros.cli.upload
-import pros.cli.v5_utils
-import pros.cli.misc_commands
-import pros.cli.interactive
-import pros.cli.user_script
-import pros.conductor as c
-
 
 if sys.platform == "win32":
     kernel32 = ctypes.windll.kernel32
@@ -113,9 +101,10 @@ def use_analytics(ctx: click.Context, param, value):
         ctx.exit(0)
     ctx.ensure_object(dict)
     analytics.set_use(touse)
-    ui.echo(f'Analytics usage set to: {analytics.useAnalytics}')
+    ui.echo(f"Analytics usage set to: {analytics.useAnalytics}")
     ctx.exit(0)
-    
+
+
 def use_early_access(ctx: click.Context, param, value):
     if value is None:
         return
@@ -126,22 +115,39 @@ def use_early_access(ctx: click.Context, param, value):
     elif value.startswith("f") or value in ["0", "no", "n"]:
         conductor.use_early_access = False
     else:
-        ui.echo('Invalid argument provided for \'--use-early-access\'. Try \'--use-early-access=False\' or \'--use-early-access=True\'')
+        ui.echo(
+            "Invalid argument provided for '--use-early-access'. Try '--use-early-access=False' or '--use-early-access=True'"
+        )
         ctx.exit(0)
     conductor.save()
-    ui.echo(f'Early access set to: {conductor.use_early_access}')
+    ui.echo(f"Early access set to: {conductor.use_early_access}")
     ctx.exit(0)
 
 
 @click.command("pros", cls=PROSCommandCollection, sources=root_commands)
 @click.pass_context
 @default_options
-@click.option('--version', help='Displays version and exits.', is_flag=True, expose_value=False, is_eager=True,
-              callback=version)
-@click.option('--use-analytics', help='Set analytics usage (True/False).', type=str, expose_value=False,
-              is_eager=True, default=None, callback=use_analytics)
-@click.option('--use-early-access', type=str, expose_value=False, is_eager=True, default=None,
-              help='Create projects with PROS 4 kernel by default', callback=use_early_access)
+@click.option(
+    "--version", help="Displays version and exits.", is_flag=True, expose_value=False, is_eager=True, callback=version
+)
+@click.option(
+    "--use-analytics",
+    help="Set analytics usage (True/False).",
+    type=str,
+    expose_value=False,
+    is_eager=True,
+    default=None,
+    callback=use_analytics,
+)
+@click.option(
+    "--use-early-access",
+    type=str,
+    expose_value=False,
+    is_eager=True,
+    default=None,
+    help="Create projects with PROS 4 kernel by default",
+    callback=use_early_access,
+)
 def cli(ctx):
     pros.common.sentry.register()
     ctx.call_on_close(after_command)
