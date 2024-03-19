@@ -25,9 +25,9 @@ class UpdateProjectModal(application.Modal[None]):
 
     def _generate_transaction(self) -> ProjectTransaction:
         transaction = ProjectTransaction(self.project, self.conductor)
-        apply_kwargs = dict(
-            force_apply=self.force_apply_parameter.value
-        )
+        apply_kwargs = {
+            "force_apply": self.force_apply_parameter.value
+        }
         if self.name.value != self.project.name:
             transaction.change_name(self.name.value)
         if self.project.template_is_applicable(self.current_kernel.value, **apply_kwargs):
@@ -130,9 +130,9 @@ class UpdateProjectModal(application.Modal[None]):
             assert self.project is not None
             yield components.Label(f'Modify your {self.project.target} project.')
             yield components.InputBox('Project Name', self.name)
-            yield TemplateListingComponent(self.current_kernel, editable=dict(version=True), removable=False)
+            yield TemplateListingComponent(self.current_kernel, editable={"version": True}, removable=False)
             yield components.Container(
-                *(TemplateListingComponent(t, editable=dict(version=True), removable=True) for t in
+                *(TemplateListingComponent(t, editable={"version": True}, removable=True) for t in
                   self.current_templates),
                 *(TemplateListingComponent(t, editable=True, removable=True) for t in self.new_templates),
                 self.add_template_button,

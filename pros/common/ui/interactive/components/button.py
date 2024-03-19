@@ -17,8 +17,8 @@ class Button(Component, Observable):
         return self.on('clicked', *handlers, **kwargs)
 
     def __getstate__(self) -> dict:
-        return dict(
+        return {
             **super(Button, self).__getstate__(),
-            text=self.text,
-            uuid=self.uuid
-        )
+            "text": self.text,
+            "uuid": self.uuid
+        }

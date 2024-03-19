@@ -65,7 +65,7 @@ class BaseTemplate:
 
     def as_query(self, version='>0', metadata=False, **kwargs):
         if isinstance(metadata, bool) and not metadata:
-            metadata = dict()
+            metadata = {}
         return BaseTemplate(orig=self, version=version, metadata=metadata, **kwargs)
 
     @property

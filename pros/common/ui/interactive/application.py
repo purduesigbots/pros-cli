@@ -72,11 +72,11 @@ class Application(Observable, Generic[P]):
         """
         Returns the dictionary representation of this Application
         """
-        return dict(
-            etype=Application.get_hierarchy(self.__class__),
-            elements=[e.__getstate__() for e in self.build()],
-            uuid=self.uuid
-        )
+        return {
+            "etype": Application.get_hierarchy(self.__class__),
+            "elements": [e.__getstate__() for e in self.build()],
+            "uuid": self.uuid
+        }
 
 
 class Modal(Application[P], Generic[P]):
@@ -134,15 +134,15 @@ class Modal(Application[P], Generic[P]):
         extra_state = {}
         if self.description is not None:
             extra_state['description'] = self.description
-        return dict(
+        return {
             **super(Modal, self).__getstate__(),
             **extra_state,
-            title=self.title,
-            will_abort=self.will_abort,
-            confirm_button=self.confirm_button,
-            cancel_button=self.cancel_button,
-            can_confirm=self.can_confirm
-        )
+            "title": self.title,
+            "will_abort": self.will_abort,
+            "confirm_button": self.confirm_button,
+            "cancel_button": self.cancel_button,
+            "can_confirm": self.can_confirm
+        }
 
     def _confirm(self, *args, **kwargs):
         """

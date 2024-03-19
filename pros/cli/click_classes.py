@@ -103,7 +103,7 @@ class PROSDeprecated(click.Option):
 class PROSGroup(PROSFormatted, click.Group):
     def __init__(self, *args, **kwargs):
         super(PROSGroup, self).__init__(*args, **kwargs)
-        self.cmd_dict = dict()
+        self.cmd_dict = {}
 
     def command(self, *args, aliases=None, **kwargs):
         aliases = aliases or []

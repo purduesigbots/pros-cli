@@ -710,7 +710,7 @@ class V5Device(VEXDevice, SystemDevice):
     def ft_read(self, addr: int, n_bytes: int) -> bytearray:
         logger(__name__).debug('Sending ext 0x14 command')
         actual_n_bytes = n_bytes + (0 if n_bytes % 4 == 0 else 4 - n_bytes % 4)
-        ui.logger(__name__).debug(dict(actual_n_bytes=actual_n_bytes, addr=addr))
+        ui.logger(__name__).debug({"actual_n_bytes": actual_n_bytes, "addr": addr})
         tx_payload = struct.pack("<IH", addr, actual_n_bytes)
         rx_fmt = "<I{}s".format(actual_n_bytes)
         ret = self._txrx_ext_struct(0x14, tx_payload, rx_fmt, check_ack=False)[1][:n_bytes]
@@ -773,7 +773,7 @@ class V5Device(VEXDevice, SystemDevice):
         logger(__name__).debug('Sending ext 0x19 command')
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
-        ui.logger(__name__).debug(f'Options: {dict(vid=vid, file_name=file_name)}')
+        ui.logger(__name__).debug(f"Options: {{'vid': {vid}, 'file_name': {file_name}}}")
         tx_payload = struct.pack("<2B24s", vid, options, file_name.encode(encoding='ascii'))
         rx = self._txrx_ext_struct(0x19, tx_payload, "<B3L4sLL24s")
         rx = dict(zip(['linked_vid', 'size', 'addr', 'crc', 'type', 'timestamp', 'version', 'linked_filename'], rx))

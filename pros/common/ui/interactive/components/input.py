@@ -16,10 +16,10 @@ class InputBox(BasicParameterizedComponent[P], Generic[P]):
         extra_state = {}
         if self.placeholder is not None:
             extra_state['placeholder'] = self.placeholder
-        return dict(
+        return {
             **super(InputBox, self).__getstate__(),
             **extra_state,
-        )
+        }
 
 
 class FileSelector(InputBox[P], Generic[P]):

@@ -36,7 +36,7 @@ def prompt_to_send(event: Dict[str, Any], hint: Optional[Dict[str, Any]]) -> Opt
             return
 
         if not event['tags']:
-            event['tags'] = dict()
+            event['tags'] = {}
 
         extra_text = ''
         if 'message' in event:
