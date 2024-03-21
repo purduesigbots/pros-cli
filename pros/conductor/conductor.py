@@ -396,6 +396,7 @@ class Conductor(Config):
 
         if not no_default_libs:
             libraries = self.early_access_libraries if proj.use_early_access and (kwargs.get("version", ">").startswith("4") or kwargs.get("version", ">").startswith(">")) else self.default_libraries
+
             for library in libraries[proj.target]:
                 try:
                     # remove kernel version so that latest template satisfying query is correctly selected
