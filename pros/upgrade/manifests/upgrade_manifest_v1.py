@@ -4,7 +4,7 @@ from pros.common.utils import get_version, logger
 from ..instructions import UpgradeResult
 
 
-class UpgradeManifestV1(object):
+class UpgradeManifestV1:
     """
     An Upgrade Manifest only capable of determine if there is an update - not how to update
     """
@@ -28,8 +28,7 @@ class UpgradeManifestV1(object):
         if self.needs_upgrade:
             return f'There is an update available! {self.version} is the latest version.\n' \
                    f'Go to {self.info_url} to learn more.'
-        else:
-            return f'You are up to date. ({self.version})'
+        return f'You are up to date. ({self.version})'
 
     def __str__(self):
         return self.describe_update()

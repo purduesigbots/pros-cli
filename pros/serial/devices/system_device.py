@@ -3,7 +3,7 @@ import typing
 from pros.conductor import Project
 
 
-class SystemDevice(object):
+class SystemDevice:
     def upload_project(self, project: Project, **kwargs):
         raise NotImplementedError
 

@@ -1,7 +1,6 @@
-from sys import exit
-from unicodedata import name
+import sys
 
-import pros.common.ui as ui
+from pros.common import ui
 import pros.conductor as c
 
 from .common import *
@@ -54,9 +53,9 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     automatically detected based on the target (or as supplied by the PROS project)
     """
     analytics.send("upload")
-    import pros.serial.devices.vex as vex
+    from pros.serial.devices import vex
     from pros.serial.ports import DirectPort
-    kwargs['ide_version'] = project.kernel if not project==None else "None"
+    kwargs['ide_version'] = project.kernel if project is not None else "None"
     kwargs['ide'] = 'PROS'
     if path is None or os.path.isdir(path):
         if project is None:
@@ -69,7 +68,7 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
             kwargs['remote_name'] = project.name
 
         # apply upload_options as a template
-        options = dict(**project.upload_options)
+        options = {**project.upload_options}
         if 'port' in options and port is None:
             port = options.get('port', None)
         if 'slot' in options and kwargs.get('slot', None) is None:
@@ -127,11 +126,11 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
             }
         after_upload_default = 'screen'
         #Determine which FTCompleteOption to assign to run_after
-        if kwargs['after']==None:
+        if kwargs['after'] is None:
             kwargs['after']=after_upload_default
             if kwargs['run_after']:
                 kwargs['after']='run'
-            elif kwargs['run_screen']==False and not kwargs['run_after']:
+            elif not kwargs['run_screen'] and not kwargs['run_after']:
                 kwargs['after']='none'
         kwargs['run_after'] = action_to_kwarg[kwargs['after']]
         kwargs.pop('run_screen')
@@ -155,7 +154,7 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
                 device.write_program(pf, **kwargs)
     except Exception as e:
         logger(__name__).exception(e, exc_info=True)
-        exit(1)
+        sys.exit(1)
 
 @upload_cli.command('lsusb', aliases=['ls-usb', 'ls-devices', 'lsdev', 'list-usb', 'list-devices'])
 @click.option('--target', type=click.Choice(['v5', 'cortex']), default=None, required=False)
@@ -167,7 +166,7 @@ def ls_usb(target):
     analytics.send("ls-usb")
     from pros.serial.devices.vex import find_v5_ports, find_cortex_ports
 
-    class PortReport(object):
+    class PortReport:
         def __init__(self, header: str, ports: List[Any], machine_header: Optional[str] = None):
             self.header = header
             self.ports = [{'device': p.device, 'desc': p.description} for p in ports]
@@ -182,9 +181,8 @@ def ls_usb(target):
         def __str__(self):
             if len(self.ports) == 0:
                 return f'There are no connected {self.header}'
-            else:
-                port_str = "\n".join([f"{p['device']} - {p['desc']}" for p in self.ports])
-                return f'{self.header}:\n{port_str}'
+            port_str = "\n".join([f"{p['device']} - {p['desc']}" for p in self.ports])
+            return f'{self.header}:\n{port_str}'
 
     result = []
     if target == 'v5' or target is None:

@@ -1,16 +1,15 @@
 import errno
 import os.path
 import shutil
-from enum import Enum
 from pathlib import Path
 import sys
 from typing import *
-import re
 
 import click
 from semantic_version import Spec, Version
 
 from pros.common import *
+from pros.common import ui
 from pros.conductor.project import TemplateAction
 from pros.conductor.project.template_resolution import InvalidTemplateException
 from pros.config import Config
@@ -59,7 +58,7 @@ def is_pathname_valid(pathname: str) -> bool:
         # Check for emojis
         # https://stackoverflow.com/a/62898106/11177720
         ranges = [
-            (ord(u'\U0001F300'), ord(u"\U0001FAF6")), # 127744, 129782
+            (ord('\U0001F300'), ord("\U0001FAF6")), # 127744, 129782
             (126980, 127569),
             (169, 174),
             (8205, 12953)
@@ -69,10 +68,9 @@ def is_pathname_valid(pathname: str) -> bool:
             for range_min, range_max in ranges:
                 if range_min <= char_code <= range_max:
                     return False
-    except TypeError as exc:
+    except TypeError:
         return False
-    else:
-        return True
+    return True
 
 class Conductor(Config):
     """
@@ -185,7 +183,7 @@ class Conductor(Config):
     def resolve_templates(self, identifier: Union[str, BaseTemplate], allow_online: bool = True,
                           allow_offline: bool = True, force_refresh: bool = False,
                           unique: bool = True, **kwargs) -> List[BaseTemplate]:
-        results = list() if not unique else set()
+        results = [] if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
         if kwargs.get('early_access', None) is not None:
             use_early_access = kwargs.get('early_access', False)
@@ -196,7 +194,7 @@ class Conductor(Config):
         else:
             query = identifier
         if allow_offline:
-            offline_results = list()
+            offline_results = []
 
             if use_early_access:
                 offline_results.extend(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.early_access_local_templates))
@@ -255,7 +253,7 @@ class Conductor(Config):
             # there's a local template satisfying the query
             if len(local_templates) > 1:
                 # This should never happen! Conductor state must be invalid
-                raise Exception(f'Multiple local templates satisfy {query.identifier}!')
+                raise RuntimeError(f'Multiple local templates satisfy {query.identifier}!')
             return local_templates[0]
 
         # prefer pros-mainline template second
@@ -289,21 +287,21 @@ class Conductor(Config):
                 curr_proj = Project()
                 if curr_proj.kernel:
                     if template.version[0] == '4' and curr_proj.kernel[0] == '3':
-                        confirm = ui.confirm(f'Warning! Upgrading project to PROS 4 will cause breaking changes. '
-                                             f'Do you still want to upgrade?')
+                        confirm = ui.confirm('Warning! Upgrading project to PROS 4 will cause breaking changes. '
+                                             'Do you still want to upgrade?')
                         if not confirm:
                             raise dont_send(
-                                InvalidTemplateException(f'Not upgrading'))
+                                InvalidTemplateException('Not upgrading'))
                     if template.version[0] == '3' and curr_proj.kernel[0] == '4':
-                        confirm = ui.confirm(f'Warning! Downgrading project to PROS 3 will cause breaking changes. '
-                                             f'Do you still want to downgrade?')
+                        confirm = ui.confirm('Warning! Downgrading project to PROS 3 will cause breaking changes. '
+                                             'Do you still want to downgrade?')
                         if not confirm:
                             raise dont_send(
-                                InvalidTemplateException(f'Not downgrading'))
+                                InvalidTemplateException('Not downgrading'))
             elif not project.use_early_access and template.version[0] == '3' and not self.warn_early_access:
-                confirm = ui.confirm(f'PROS 4 is now in early access. '
-                                     f'Please use the --early-access flag if you would like to use it.\n'
-                                     f'Do you want to use PROS 4 instead?')
+                confirm = ui.confirm('PROS 4 is now in early access. '
+                                     'Please use the --early-access flag if you would like to use it.\n'
+                                     'Do you want to use PROS 4 instead?')
                 self.warn_early_access = True
                 if confirm: # use pros 4
                     project.use_early_access = True
@@ -311,7 +309,8 @@ class Conductor(Config):
                     kwargs['version'] = '>=0'
                     kwargs['early_access'] = True
                     # Recall the function with early access enabled
-                    return self.apply_template(project, identifier, **kwargs)
+                    self.apply_template(project, identifier, **kwargs)
+                    return
 
                 self.save()
         if not isinstance(template, LocalTemplate):
@@ -325,10 +324,12 @@ class Conductor(Config):
             raise dont_send(
                 InvalidTemplateException(f'{template.identifier} is not applicable to {project}', reason=valid_action)
             )
-        if force \
-                or (valid_action == TemplateAction.Upgradable and upgrade_ok) \
-                or (valid_action == TemplateAction.Installable and install_ok) \
-                or (valid_action == TemplateAction.Downgradable and downgrade_ok):
+        should_apply = force \
+            or (valid_action == TemplateAction.Upgradable and upgrade_ok) \
+            or (valid_action == TemplateAction.Installable and install_ok) \
+            or (valid_action == TemplateAction.Downgradable and downgrade_ok)
+
+        if should_apply:
             project.apply_template(template, force_system=kwargs.pop('force_system', False),
                                    force_user=kwargs.pop('force_user', False),
                                    remove_empty_directories=kwargs.pop('remove_empty_directories', False))
@@ -360,20 +361,20 @@ class Conductor(Config):
         kwargs["early_access"] = use_early_access
         if kwargs["version_source"]: # If true, then the user has not specified a version
             if not use_early_access and self.warn_early_access:
-                ui.echo(f"PROS 4 is now in early access. "
-                        f"If you would like to use it, use the --early-access flag.")
+                ui.echo("PROS 4 is now in early access. "
+                        "If you would like to use it, use the --early-access flag.")
             elif not use_early_access and not self.warn_early_access:
-                confirm = ui.confirm(f'PROS 4 is now in early access. '
-                                     f'Please use the --early-access flag if you would like to use it.\n'
-                                     f'Do you want to use PROS 4 instead?')
+                confirm = ui.confirm('PROS 4 is now in early access. '
+                                     'Please use the --early-access flag if you would like to use it.\n'
+                                     'Do you want to use PROS 4 instead?')
                 self.warn_early_access = True
                 if confirm:
                     use_early_access = True
                     kwargs['early_access'] = True
             elif use_early_access:
-                ui.echo(f'Early access is enabled. Using PROS 4.')
+                ui.echo('Early access is enabled. Using PROS 4.')
         elif use_early_access:
-            ui.echo(f'Early access is enabled.')
+            ui.echo('Early access is enabled.')
 
         if not is_pathname_valid(str(Path(path).absolute())):
             raise dont_send(ValueError('Project path contains invalid characters.'))

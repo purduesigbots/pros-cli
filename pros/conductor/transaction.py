@@ -2,11 +2,11 @@ import os
 import shutil
 from typing import *
 
-import pros.common.ui as ui
+from pros.common import ui
 from pros.common import logger
 
 
-class Transaction(object):
+class Transaction:
     def __init__(self, location: str, current_state: Set[str]):
         self._add_files: Set[str] = set()
         self._rm_files: Set[str] = set()

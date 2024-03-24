@@ -4,12 +4,12 @@ import tempfile
 import zipfile
 from typing import *
 
-import pros.common.ui as ui
+from pros.common import ui
 import pros.conductor as c
 from pros.conductor.project.template_resolution import InvalidTemplateException, TemplateAction
 
 
-class Action(object):
+class Action:
     def execute(self, conductor: c.Conductor, project: c.Project) -> None:
         raise NotImplementedError()
 
@@ -34,8 +34,7 @@ class ApplyTemplateAction(Action):
         except InvalidTemplateException as e:
             if e.reason != TemplateAction.AlreadyInstalled or not self.suppress_already_installed:
                 raise e
-            else:
-                ui.logger(__name__).warning(str(e))
+            ui.logger(__name__).warning(str(e))
 
     def describe(self, conductor: c.Conductor, project: c.Project):
         action = project.get_template_actions(conductor.resolve_template(self.template))
@@ -52,10 +51,10 @@ class ApplyTemplateAction(Action):
         if action == TemplateAction.AlreadyInstalled:
             if self.apply_kwargs.get('force_apply'):
                 return f'{self.template.identifier} will be re-applied.'
-            elif self.suppress_already_installed:
+            if self.suppress_already_installed:
                 return f'{self.template.identifier} will not be re-applied.'
-            else:
-                return f'{self.template.identifier} cannot be applied to project because it is already installed.'
+            return f'{self.template.identifier} cannot be applied to project because it is already installed.'
+        return None
 
     def can_execute(self, conductor: c.Conductor, project: c.Project) -> bool:
         action = project.get_template_actions(conductor.resolve_template(self.template))
@@ -77,8 +76,7 @@ class RemoveTemplateAction(Action):
         except ValueError as e:
             if not self.suppress_not_removable:
                 raise e
-            else:
-                ui.logger(__name__).warning(str(e))
+            ui.logger(__name__).warning(str(e))
 
     def describe(self, conductor: c.Conductor, project: c.Project) -> str:
         return f'{self.template.identifier} will be removed'
@@ -102,7 +100,7 @@ class ChangeProjectNameAction(Action):
         return True
 
 
-class ProjectTransaction(object):
+class ProjectTransaction:
     def __init__(self, project: c.Project, conductor: Optional[c.Conductor] = None):
         self.project = project
         self.conductor = conductor or c.Conductor()
@@ -135,7 +133,7 @@ class ProjectTransaction(object):
                         raise ValueError('Action did not complete successfully')
             ui.echo('All actions performed successfully')
         except Exception as e:
-            ui.logger(__name__).warning(f'Failed to perform transaction, restoring project to previous state')
+            ui.logger(__name__).warning('Failed to perform transaction, restoring project to previous state')
 
             with zipfile.ZipFile(tfn) as zf:
                 with ui.progressbar(zf.namelist(), label=f'Restoring {self.project.name} from {tfn}') as pb:
@@ -166,8 +164,7 @@ class ProjectTransaction(object):
                 f'- {a.describe(self.conductor, self.project)}'
                 for a in self.actions
             )
-        else:
-            return 'No actions necessary.'
+        return 'No actions necessary.'
 
     def can_execute(self) -> bool:
         return all(a.can_execute(self.conductor, self.project) for a in self.actions)

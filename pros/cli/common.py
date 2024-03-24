@@ -71,7 +71,7 @@ def logging_option(f: Union[click.Command, Callable]):
 def logfile_option(f: Union[click.Command, Callable]):
     def callback(ctx: click.Context, param: click.core.Parameter, value: Any):
         if value is None or value[0] is None:
-            return None
+            return
         ctx.ensure_object(dict)
         level = None
         if isinstance(value[1], str):
@@ -139,7 +139,6 @@ def no_analytics(f: Union[click.Command, Callable]):
         if value:
             echo("Not sending analytics for this command.\n")
             analytics.useAnalytics = False
-            pass
     decorator = click.option('--no-analytics', expose_value=False, is_flag=True, default=False, is_eager=True,
                             help="Don't send analytics for this command.", callback=callback, cls=PROSOption, hidden=True)(f)
     decorator.__name__ = f.__name__
@@ -191,12 +190,11 @@ def project_option(arg_name='project', required: bool = True, default: str = '.'
         if project_path is None:
             if allow_none:
                 return None
-            elif required:
+            if required:
                 raise click.UsageError(f'{os.path.abspath(value or ".")} is not inside a PROS project. '
                                        f'Execute this command from within a PROS project or specify it '
                                        f'with --project project/path')
-            else:
-                return None
+            return None
 
         return c.Project(project_path)
 
@@ -231,12 +229,12 @@ def pros_root(f):
     return decorator
 
 
-def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Tuple[Optional[str], bool]:
+def resolve_v5_port(port: Optional[str], p_type: str, quiet: bool = False) -> Tuple[Optional[str], bool]:
     """
     Detect serial ports that can be used to interact with a V5.
 
     Returns a tuple of (port?, is_joystick). port will be None if no ports are
-    found, and is_joystick is False unless type == 'user' and the port is
+    found, and is_joystick is False unless p_type == 'user' and the port is
     determined to be a controller. This is useful in e.g.
     pros.cli.terminal:terminal where the communication protocol is different for
     wireless interaction.
@@ -246,7 +244,7 @@ def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Tupl
     # not a joystick.
     is_joystick = False
     if not port:
-        ports = find_v5_ports(type)
+        ports = find_v5_ports(p_type)
         logger(__name__).debug('Ports: {}'.format(';'.join([str(p.__dict__) for p in ports])))
         if len(ports) == 0:
             if not quiet:
@@ -268,7 +266,7 @@ def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Tupl
                 return None, False
         else:
             port = ports[0].device
-            is_joystick = type == 'user' and 'Controller' in ports[0].description
+            is_joystick = p_type == 'user' and 'Controller' in ports[0].description
             logger(__name__).info('Automatically selected {}'.format(port))
     return port, is_joystick
 

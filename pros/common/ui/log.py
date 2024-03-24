@@ -48,5 +48,4 @@ class PROSLogFormatter(logging.Formatter):
     def formatException(self, ei):
         if not isdebug():
             return '\n'.join(super().formatException(ei).split('\n')[-3:])
-        else:
-            return super().formatException(ei)
+        return super().formatException(ei)

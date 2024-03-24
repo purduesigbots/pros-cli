@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import *
 
 from pros.common import *
+from pros.common import ui
 from pros.common.ui import EchoPipe
 from pros.conductor.project.template_resolution import TemplateAction
 from pros.config.config import Config, ConfigNotFoundException
@@ -84,10 +85,9 @@ class Project(Config):
             if current > template:
                 return TemplateAction.Downgradable
 
-        if any([template > current for current in self.templates.values()]):
+        if any(template > current for current in self.templates.values()):
             return TemplateAction.Upgradable
-        else:
-            return TemplateAction.Installable
+        return TemplateAction.Installable
 
     def template_is_installed(self, query: BaseTemplate) -> bool:
         return self.get_template_actions(query) == TemplateAction.AlreadyInstalled
@@ -114,7 +114,7 @@ class Project(Config):
         transaction = Transaction(self.location, set(self.all_files))
         installed_user_files = set()
         for lib_name, lib in self.templates.items():
-            if lib_name == template.name or lib.name == template.name:
+            if template.name in (lib_name, lib.name):
                 logger(__name__).debug(f'{lib} is already installed')
                 logger(__name__).debug(lib.system_files)
                 logger(__name__).debug(lib.user_files)
@@ -144,8 +144,8 @@ class Project(Config):
             src/opcontrol.c and src/opcontrol.cpp are friends because they have the same stem
             src/opcontrol.c and include/opcontrol.h are not because they are in different directories
             """
-            return not any([(os.path.normpath(file) in transaction.effective_state) for file in template.user_files if
-                            os.path.splitext(file)[0] == os.path.splitext(new_file)[0]])
+            return not any((os.path.normpath(file) in transaction.effective_state) for file in template.user_files if
+                            os.path.splitext(file)[0] == os.path.splitext(new_file)[0])
 
         if force_user:
             new_user_files = template.real_user_files
@@ -153,7 +153,7 @@ class Project(Config):
             new_user_files = filter(new_user_filter, template.real_user_files)
         transaction.extend_add(new_user_files, template.location)
 
-        if any([file in transaction.effective_state for file in template.system_files]) and not force_system:
+        if any(file in transaction.effective_state for file in template.system_files) and not force_system:
             confirm(f'Some required files for {template.identifier} already exist in the project. '
                     f'Overwrite the existing files?', abort=True)
         transaction.extend_add(template.system_files, template.location)
@@ -167,7 +167,7 @@ class Project(Config):
         if not self.template_is_installed(template):
             raise ValueError(f'{template.identifier} is not installed on this project.')
         if template.name == 'kernel':
-            raise ValueError(f'Cannot remove the kernel template. Maybe create a new project?')
+            raise ValueError('Cannot remove the kernel template. Maybe create a new project?')
 
         real_template = LocalTemplate(orig=template, location=self.location)
         transaction = Transaction(self.location, set(self.all_files))
@@ -203,7 +203,7 @@ class Project(Config):
     def kernel(self):
         if 'kernel' in self.templates:
             return self.templates['kernel'].version
-        elif hasattr(self.__dict__, 'kernel'):
+        if hasattr(self.__dict__, 'kernel'):
             return self.__dict__['kernel']
         return ''
 
@@ -211,7 +211,7 @@ class Project(Config):
     def output(self):
         if 'kernel' in self.templates:
             return self.templates['kernel'].metadata['output']
-        elif hasattr(self.__dict__, 'output'):
+        if hasattr(self.__dict__, 'output'):
             return self.__dict__['output']
         return 'bin/output.bin'
 
@@ -227,6 +227,7 @@ class Project(Config):
             make_cmd = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'make.exe')
         else:
             make_cmd = 'make'
+        # pylint: disable=consider-using-with
         stdout_pipe = EchoPipe()
         stderr_pipe = EchoPipe(err=True)
         process=None
@@ -235,7 +236,7 @@ class Project(Config):
                                    stdout=stdout_pipe, stderr=stderr_pipe)
         except Exception as e:
             if not os.environ.get('PROS_TOOLCHAIN'):
-                ui.logger(__name__).warn("PROS toolchain not found! Please ensure the toolchain is installed correctly and your environment variables are set properly.\n")
+                ui.logger(__name__).warning("PROS toolchain not found! Please ensure the toolchain is installed correctly and your environment variables are set properly.\n")
             ui.logger(__name__).error(f"ERROR WHILE CALLING '{make_cmd}' WITH EXCEPTION: {str(e)}\n",extra={'sentry':False})
             stdout_pipe.close()
             stderr_pipe.close()
@@ -256,7 +257,7 @@ class Project(Config):
 
         if sandbox:
             import tempfile
-            td = tempfile.TemporaryDirectory()
+            td = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
             td_path = td.name.replace("\\", "/")
             build_args = [*build_args, f'BINDIR={td_path}']
 
@@ -292,7 +293,7 @@ class Project(Config):
                     exit_code = run_build(args.build, env=environment, stdout=pipe, stderr=pipe, cwd=self.directory)
                 except Exception as e:
                     if not os.environ.get('PROS_TOOLCHAIN'):
-                        ui.logger(__name__).warn("PROS toolchain not found! Please ensure the toolchain is installed correctly and your environment variables are set properly.\n")
+                        ui.logger(__name__).warning("PROS toolchain not found! Please ensure the toolchain is installed correctly and your environment variables are set properly.\n")
                     ui.logger(__name__).error(f"ERROR WHILE CALLING '{make_cmd}' WITH EXCEPTION: {str(e)}\n",extra={'sentry':False})
                     if not suppress_output:
                         pipe.close()
@@ -329,7 +330,7 @@ class Project(Config):
         if os.environ.get('PROS_TOOLCHAIN'):
             env['PATH'] = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin') + os.pathsep + env['PATH']
         cc_sysroot = subprocess.run([make_cmd, 'cc-sysroot'], env=env, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE, cwd=self.directory)
+                                    stderr=subprocess.PIPE, cwd=self.directory, check=False)
         lines = str(cc_sysroot.stderr.decode()).splitlines() + str(cc_sysroot.stdout.decode()).splitlines()
         lines = [l.strip() for l in lines]
         cc_sysroot_includes = []
@@ -344,7 +345,7 @@ class Project(Config):
             if copy:
                 cc_sysroot_includes.append(f'-isystem{line}')
         cxx_sysroot = subprocess.run([make_cmd, 'cxx-sysroot'], env=env, stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE, cwd=self.directory)
+                                     stderr=subprocess.PIPE, cwd=self.directory, check=False)
         lines = str(cxx_sysroot.stderr.decode()).splitlines() + str(cxx_sysroot.stdout.decode()).splitlines()
         lines = [l.strip() for l in lines]
         cxx_sysroot_includes = []
@@ -359,7 +360,7 @@ class Project(Config):
             if copy:
                 cxx_sysroot_includes.append(f'-isystem{line}')
         new_entries, entries = itertools.tee(entries, 2)
-        new_sources = set([e.source for e in entries])
+        new_sources = {e.source for e in entries}
         if not cdb_file:
             cdb_file = os.path.join(self.directory, 'compile_commands.json')
         if isinstance(cdb_file, str) and os.path.isfile(cdb_file):
@@ -394,7 +395,7 @@ class Project(Config):
         entries = itertools.chain(old_entries, new_entries)
         json_entries = list(map(entry_map, entries))
         if isinstance(cdb_file, str):
-            cdb_file = open(cdb_file, 'w')
+            cdb_file = open(cdb_file, 'w')  # pylint: disable=consider-using-with
         import json
         json.dump(json_entries, cdb_file, sort_keys=True, indent=4)
 

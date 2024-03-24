@@ -1,4 +1,4 @@
-from typing import *
+from typing import AnyStr, Optional, Union
 
 from pros.common.ui.interactive.parameters import BooleanParameter
 from .component import Component
@@ -26,8 +26,8 @@ class Container(Component):
             extra_state['title'] = self.title
         if self.description is not None:
             extra_state['description'] = self.description
-        return dict(
+        return {
             **super(Container, self).__getstate__(),
             **extra_state,
-            elements=[e.__getstate__() for e in self.elements]
-        )
+            "elements": [e.__getstate__() for e in self.elements]
+        }

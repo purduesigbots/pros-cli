@@ -6,7 +6,7 @@ import click
 import sys
 
 import pros.conductor as c
-import pros.serial.devices as devices
+from pros.serial import devices
 from pros.serial.ports import DirectPort
 from pros.common.utils import logger
 from .common import default_options, resolve_v5_port, resolve_cortex_port, pros_root
@@ -44,7 +44,6 @@ def terminal(port: str, backend: str, **kwargs):
     Note: share backend is not yet implemented.
     """
     analytics.send("terminal")
-    from pros.serial.devices.vex.v5_user_device import V5UserDevice
     from pros.serial.terminal import Terminal
     is_v5_user_joystick = False
     if port == 'default':
@@ -73,7 +72,7 @@ def terminal(port: str, backend: str, **kwargs):
     if backend == 'share':
         raise NotImplementedError('Share backend is not yet implemented')
         # ser = SerialSharePort(port)
-    elif is_v5_user_joystick:
+    if is_v5_user_joystick:
         logger(__name__).debug("it's a v5 joystick")
         ser = V5WirelessPort(port)
     else:
@@ -84,11 +83,12 @@ def terminal(port: str, backend: str, **kwargs):
     else:
         device = devices.vex.V5UserDevice(ser)
     term = Terminal(device, request_banner=kwargs.pop('request_banner', True))
+    return 0
 
-    class TerminalOutput(object):
+    class TerminalOutput:
         def __init__(self, file):
             self.terminal = sys.stdout
-            self.log = open(file, 'a')
+            self.log = open(file, 'a')  # pylint: disable=consider-using-with
         def write(self, data):
             self.terminal.write(data)
             self.log.write(data)

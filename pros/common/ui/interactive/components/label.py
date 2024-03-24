@@ -8,17 +8,16 @@ class Label(Component):
         self.text = text
 
     def __getstate__(self):
-        return dict(
+        return {
             **super(Label, self).__getstate__(),
-            text=self.text
-        )
+            "text": self.text
+        }
 
 
 class VerbatimLabel(Label):
     """
     Should be displayed with a monospace font
     """
-    pass
 
 
 class Spinner(Label):

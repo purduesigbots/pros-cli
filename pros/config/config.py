@@ -10,7 +10,7 @@ class ConfigNotFoundException(Exception):
         self.message = message
 
 
-class Config(object):
+class Config:
     """
     A configuration object that's capable of being saved as a JSON object
     """
@@ -51,9 +51,7 @@ class Config(object):
                             logger(__name__).error(f'Error parsing {file}')
                             logger(__name__).exception(e)
                             raise e
-                        else:
-                            logger(__name__).debug(e)
-                            pass
+                        logger(__name__).debug(e)
             # obvious
             elif os.path.isdir(file):
                 raise ValueError('{} must be a file, not a directory'.format(file))
@@ -65,8 +63,7 @@ class Config(object):
                     if error_on_decode:
                         logger(__name__).exception(e)
                         raise e
-                    else:
-                        logger(__name__).debug('Failed to save {} ({})'.format(file, e))
+                    logger(__name__).debug('Failed to save {} ({})'.format(file, e))
 
         from pros.common.sentry import add_context
         add_context(self)

@@ -1,4 +1,4 @@
-import pros.common.ui as ui
+from pros.common import ui
 from pros.cli.common import *
 from pros.ga.analytics import analytics
 
@@ -20,7 +20,7 @@ def upgrade(force_check, no_install):
     with ui.Notification():
         ui.echo('The "pros upgrade" command is currently non-functioning. Did you mean to run "pros c upgrade"?', color='yellow')
 
-    return # Dead code below
+    return None  # Dead code below
 
     analytics.send("upgrade")
     from pros.upgrade import UpgradeManager
@@ -37,6 +37,6 @@ def upgrade(force_check, no_install):
         ui.finalize('upgradeInfo', manifest)
         if not no_install:
             if not manager.can_perform_upgrade:
-                ui.logger(__name__).error(f'This manifest cannot perform the upgrade.')
+                ui.logger(__name__).error('This manifest cannot perform the upgrade.')
                 return -3
             ui.finalize('upgradeComplete', manager.perform_upgrade())

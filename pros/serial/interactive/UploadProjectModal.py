@@ -3,7 +3,7 @@ import time
 from threading import Thread
 from typing import *
 
-import pros.common.ui as ui
+from pros.common import ui
 from pros.common.ui.interactive import application, components, parameters
 from pros.common.utils import with_click_context
 from pros.conductor import Project

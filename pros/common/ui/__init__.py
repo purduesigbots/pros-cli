@@ -17,7 +17,6 @@ def _machineoutput(obj: Dict[str, Any]):
 
 def _machine_notify(method: str, obj: Dict[str, Any], notify_value: Optional[int]):
     if notify_value is None:
-        global _current_notify_value
         notify_value = _current_notify_value
     obj['type'] = f'notify/{method}'
     obj['notify_value'] = notify_value
@@ -32,6 +31,7 @@ def echo(text: Any, err: bool = False, nl: bool = True, notify_value: int = None
             return _machine_notify('echo', {'text': str(text) + ('\n' if nl else '')}, notify_value)
     else:
         return click.echo(str(text), nl=nl, err=err, color=color)
+    return None
 
 
 def confirm(text: str, default: bool = False, abort: bool = False, prompt_suffix: bool = ': ',
@@ -52,7 +52,7 @@ def confirm(text: str, default: bool = False, abort: bool = False, prompt_suffix
 
 
 def prompt(text, default=None, hide_input=False,
-           confirmation_prompt=False, type=None,
+           confirmation_prompt=False, value_type=None,
            value_proc=None, prompt_suffix=': ',
            show_default=True, err=False):
     if ismachineoutput():
@@ -60,8 +60,9 @@ def prompt(text, default=None, hide_input=False,
         pass
     else:
         return click.prompt(text, default=default, hide_input=hide_input, confirmation_prompt=confirmation_prompt,
-                            type=type, value_proc=value_proc, prompt_suffix=prompt_suffix, show_default=show_default,
+                            type=value_type, value_proc=value_proc, prompt_suffix=prompt_suffix, show_default=show_default,
                             err=err)
+    return None
 
 
 def progressbar(iterable: Iterable = None, length: int = None, label: str = None, show_eta: bool = True,
@@ -70,8 +71,7 @@ def progressbar(iterable: Iterable = None, length: int = None, label: str = None
                 info_sep: str = ' ', width: int = 36):
     if ismachineoutput():
         return _MachineOutputProgressBar(**locals())
-    else:
-        return click.progressbar(**locals())
+    return click.progressbar(**locals())
 
 
 def finalize(method: str, data: Union[str, Dict, object, List[Union[str, Dict, object, Tuple]]],
@@ -89,7 +89,7 @@ def finalize(method: str, data: Union[str, Dict, object, List[Union[str, Dict, o
             human_readable = ''
         elif isinstance(data[0], str):
             human_readable = '\n'.join(data)
-        elif isinstance(data[0], dict) or isinstance(data[0], object):
+        elif isinstance(data[0], (dict, object)):
             if hasattr(data[0], '__str__'):
                 human_readable = '\n'.join([str(d) for d in data])
             else:
@@ -120,8 +120,7 @@ def finalize(method: str, data: Union[str, Dict, object, List[Union[str, Dict, o
 
 class _MachineOutputProgressBar(_click_ProgressBar):
     def __init__(self, *args, **kwargs):
-        global _current_notify_value
-        kwargs['file'] = open(os.devnull, 'w', encoding='UTF-8')
+        kwargs['file'] = open(os.devnull, 'w', encoding='UTF-8')  # pylint: disable=consider-using-with
         self.notify_value = kwargs.pop('notify_value', _current_notify_value)
         super(_MachineOutputProgressBar, self).__init__(*args, **kwargs)
 
@@ -136,13 +135,12 @@ class _MachineOutputProgressBar(_click_ProgressBar):
         _machine_notify('progress', obj, self.notify_value)
 
 
-class Notification(object):
+class Notification:
     def __init__(self, notify_value: Optional[int] = None):
         global _last_notify_value
         if not notify_value:
             notify_value = _last_notify_value + 1
-        if notify_value > _last_notify_value:
-            _last_notify_value = notify_value
+        _last_notify_value = max(_last_notify_value, notify_value)
         self.notify_value = notify_value
         self.old_notify_values = []
 
