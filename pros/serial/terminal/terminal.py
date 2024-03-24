@@ -148,7 +148,7 @@ elif os.name == 'posix':
                                         [], None)
             if self.pipe_r in ready:
                 os.read(self.pipe_r, 1)
-                return
+                return None
             c = self.enc_stdin.read(1)
             if c == chr(0x7f):
                 c = chr(8)  # map the BS key (which yields DEL) to backspace

@@ -54,6 +54,7 @@ class ApplyTemplateAction(Action):
             if self.suppress_already_installed:
                 return f'{self.template.identifier} will not be re-applied.'
             return f'{self.template.identifier} cannot be applied to project because it is already installed.'
+        return None
 
     def can_execute(self, conductor: c.Conductor, project: c.Project) -> bool:
         action = project.get_template_actions(conductor.resolve_template(self.template))

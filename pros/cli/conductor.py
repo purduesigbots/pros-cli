@@ -77,6 +77,7 @@ def fetch(query: c.BaseTemplate):
     # whether the arguments are for the template or for the depot, so they share them
     logger(__name__).debug(f'Additional depot and template args: {query.metadata}')
     c.Conductor().fetch_template(depot, template, **query.metadata)
+    return 0
 
 
 @conductor.command(context_settings={'ignore_unknown_options': True})

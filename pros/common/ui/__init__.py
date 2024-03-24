@@ -31,6 +31,7 @@ def echo(text: Any, err: bool = False, nl: bool = True, notify_value: int = None
             return _machine_notify('echo', {'text': str(text) + ('\n' if nl else '')}, notify_value)
     else:
         return click.echo(str(text), nl=nl, err=err, color=color)
+    return None
 
 
 def confirm(text: str, default: bool = False, abort: bool = False, prompt_suffix: bool = ': ',
@@ -61,6 +62,7 @@ def prompt(text, default=None, hide_input=False,
         return click.prompt(text, default=default, hide_input=hide_input, confirmation_prompt=confirmation_prompt,
                             type=value_type, value_proc=value_proc, prompt_suffix=prompt_suffix, show_default=show_default,
                             err=err)
+    return None
 
 
 def progressbar(iterable: Iterable = None, length: int = None, label: str = None, show_eta: bool = True,

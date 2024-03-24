@@ -309,7 +309,8 @@ class Conductor(Config):
                     kwargs['version'] = '>=0'
                     kwargs['early_access'] = True
                     # Recall the function with early access enabled
-                    return self.apply_template(project, identifier, **kwargs)
+                    self.apply_template(project, identifier, **kwargs)
+                    return
 
                 self.save()
         if not isinstance(template, LocalTemplate):

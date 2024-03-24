@@ -36,6 +36,7 @@ def status(port: str):
         print('CPU0 F/W version:', device.status['cpu0_version'])
         print('CPU1 SDK version:', device.status['cpu1_version'])
         print('System ID: 0x{:x}'.format(device.status['system_id']))
+    return 0
 
 
 @v5.command('ls-files')
@@ -59,6 +60,7 @@ def ls_files(port: str, vid: int, options: int):
     c = device.get_dir_count(vid=vid, options=options)
     for i in range(0, c):
         print(device.get_file_metadata_by_idx(i))
+    return 0
 
 
 @v5.command(hidden=True)
@@ -83,6 +85,7 @@ def read_file(file_name: str, port: str, vid: int, source: str):
     device = V5Device(ser)
     device.read_file(file=click.get_binary_stream('stdout'), remote_file=file_name,
                      vid=vid, target=source)
+    return 0
 
 
 @v5.command(hidden=True)
@@ -108,6 +111,7 @@ def write_file(file, port: str, remote_file: str, **kwargs):
     ser = DirectPort(port)
     device = V5Device(ser)
     device.write_file(file=file, remote_file=remote_file or os.path.basename(file.name), **kwargs)
+    return 0
 
 
 @v5.command('rm-file')
@@ -131,6 +135,7 @@ def rm_file(file_name: str, port: str, vid: int, erase_all: bool):
     ser = DirectPort(port)
     device = V5Device(ser)
     device.erase_file(file_name, vid=vid, erase_all=erase_all)
+    return 0
 
 
 @v5.command('cat-metadata')
@@ -152,6 +157,7 @@ def cat_metadata(file_name: str, port: str, vid: int):
     ser = DirectPort(port)
     device = V5Device(ser)
     print(device.get_file_metadata_by_name(file_name, vid=vid))
+    return 0
 
 @v5.command('rm-program')
 @click.argument('slot')
@@ -173,6 +179,7 @@ def rm_program(slot: int, port: str, vid: int):
     device = V5Device(ser)
     device.erase_file(f'{base_name}.ini', vid=vid)
     device.erase_file(f'{base_name}.bin', vid=vid)
+    return 0
 
 @v5.command('rm-all')
 @click.argument('port', required=False, default=None)
@@ -197,6 +204,7 @@ def rm_all(port: str, vid: int):
         files.append(device.get_file_metadata_by_idx(i)['filename'])
     for file in files:
         device.erase_file(file, vid=vid)
+    return 0
 
 
 @v5.command(short_help='Run a V5 Program')
@@ -221,6 +229,7 @@ def run(slot: str, port: str):
     ser = DirectPort(port)
     device = V5Device(ser)
     device.execute_program_file(file, run=True)
+    return 0
 
 
 @v5.command(short_help='Stop a V5 Program')
@@ -240,6 +249,7 @@ def stop(port: str):
     ser = DirectPort(port)
     device = V5Device(ser)
     device.execute_program_file('', run=False)
+    return 0
 
 
 @v5.command(short_help='Take a screen capture of the display')
@@ -275,7 +285,7 @@ def capture(file_name: str, port: str, force: bool = False):
     if file_name == '-':
         # Send the data to stdout to allow for piping
         print(i_data, end='')
-        return
+        return 0
 
     if not file_name.endswith('.png'):
         file_name += '.png'
@@ -290,6 +300,7 @@ def capture(file_name: str, port: str, force: bool = False):
         w.write(file_, i_data)
 
     print(f'Saved screen capture to {file_name}')
+    return 0
 
 @v5.command('set-variable', aliases=['sv', 'set', 'set_variable'], short_help='Set a kernel variable on a connected V5 device')
 @click.argument('variable', type=click.Choice(['teamnumber', 'robotname']), required=True)

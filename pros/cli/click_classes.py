@@ -79,7 +79,7 @@ class PROSOption(click.Option):
 
     def get_help_record(self, ctx):
         if hasattr(self, 'hidden') and self.hidden:
-            return
+            return None
         return super().get_help_record(ctx)
 
 class PROSDeprecated(click.Option):

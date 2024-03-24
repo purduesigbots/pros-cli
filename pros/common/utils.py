@@ -97,6 +97,7 @@ def with_click_context(func):
                 return func(*args, **kwargs)
             except BaseException as e:
                 logger(__name__).exception(e)
+                return None
 
     return _wrap
 

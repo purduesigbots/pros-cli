@@ -161,7 +161,7 @@ def purge_template(query: c.BaseTemplate, force):
     beta_templates = cond.resolve_templates(query, allow_online=False, beta=True)
     if len(templates) == 0:
         click.echo('No matching templates were found matching the spec.')
-        return 0
+        return
     t_list = [t.identifier for t in templates] + [t.identifier for t in beta_templates]
     click.echo(f'The following template(s) will be removed {t_list}')
     if len(templates) > 1 and not force:

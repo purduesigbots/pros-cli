@@ -20,7 +20,7 @@ def upgrade(force_check, no_install):
     with ui.Notification():
         ui.echo('The "pros upgrade" command is currently non-functioning. Did you mean to run "pros c upgrade"?', color='yellow')
 
-    return # Dead code below
+    return None  # Dead code below
 
     analytics.send("upgrade")
     from pros.upgrade import UpgradeManager

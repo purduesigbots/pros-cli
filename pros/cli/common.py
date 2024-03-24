@@ -71,7 +71,7 @@ def logging_option(f: Union[click.Command, Callable]):
 def logfile_option(f: Union[click.Command, Callable]):
     def callback(ctx: click.Context, param: click.core.Parameter, value: Any):
         if value is None or value[0] is None:
-            return None
+            return
         ctx.ensure_object(dict)
         level = None
         if isinstance(value[1], str):

@@ -83,6 +83,7 @@ def terminal(port: str, backend: str, **kwargs):
     else:
         device = devices.vex.V5UserDevice(ser)
     term = Terminal(device, request_banner=kwargs.pop('request_banner', True))
+    return 0
 
     class TerminalOutput:
         def __init__(self, file):
