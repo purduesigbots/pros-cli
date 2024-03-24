@@ -67,7 +67,8 @@ class PROSCommand(PROSFormatted, click.Command):
 
 # Seems to be unused?
 class PROSMultiCommand(PROSFormatted, click.MultiCommand):
-    pass
+    def get_command(self, ctx: click.Context, cmd_name: str) -> Optional[click.Command]:
+        pass
 
 
 class PROSOption(click.Option):

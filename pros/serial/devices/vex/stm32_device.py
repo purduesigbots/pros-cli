@@ -8,6 +8,7 @@ from typing import *
 
 from pros.common import ui
 from pros.common import logger, retries
+from pros.conductor import Project
 from pros.serial import bytes_to_str
 from pros.serial.devices.vex import VEXCommError
 from pros.serial.ports import BasePort
@@ -189,3 +190,6 @@ class STM32Device(GenericDevice, SystemDevice):
                 if data[0] == self.ACK_BYTE:
                     return
         raise VEXCommError(f"Device never ACK'd to {command}", command)
+
+    def upload_project(self, project: Project, **kwargs):
+        pass

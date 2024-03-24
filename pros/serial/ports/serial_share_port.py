@@ -82,3 +82,7 @@ class SerialSharePort(BasePort):
             self.to_device_sock.send_multipart([b'kick'])
             self.alive.wait(2.5)
         logger(__name__).info('Watchdog kicker is dying')
+
+    @property
+    def name(self):
+        pass
