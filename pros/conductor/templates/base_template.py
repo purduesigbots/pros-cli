@@ -40,7 +40,7 @@ class BaseTemplate:
         # Find the intersection of the keys in the template's metadata with the keys in the query metadata
         # This is what allows us to throw all arguments into the query metadata (from the CLI, e.g. those intended
         # for the depot or template application hints)
-        if any([self.metadata[k] != query.metadata[k] for k in keys_intersection]):
+        if any(self.metadata[k] != query.metadata[k] for k in keys_intersection):
             return False
         return True
 

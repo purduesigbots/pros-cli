@@ -32,7 +32,7 @@ class CliConfig(Config):
         if self.override_use_build_compile_commands is not None:
             return self.override_use_build_compile_commands
         paths = [os.path.join('~', '.pros-atom'), os.path.join('~', '.pros-editor')]
-        return any([os.path.exists(os.path.expanduser(p)) for p in paths])
+        return any(os.path.exists(os.path.expanduser(p)) for p in paths)
 
     def get_upgrade_manifest(self, force: bool = False) -> Optional['UpgradeManifestV1']:
         from pros.upgrade.manifests.upgrade_manifest_v1 import UpgradeManifestV1  # noqa: F811

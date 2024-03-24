@@ -24,7 +24,6 @@
 
 # Performance optimization
 # W1203: Use % formatting in logging functions and pass the parameters as arguments
-# R1729: Use a generator instead of comprehension
 # W1202: Use % formatting in logging functions and pass the parameters as arguments
 # W1201: Specify string format arguments as logging function parameters
 
@@ -55,7 +54,7 @@
 # R0401: Cyclic import -- Seems to be platform specific
 
 max-line-length = 120
-disable =   C0114, C0115, C0116, R0903, C0415, R0913, W1203, R1729, E1120, E1123, C0209, W0621,
+disable =   C0114, C0115, C0116, R0903, C0415, R0913, W1203, E1120, E1123, C0209, W0621,
             W0614, W0401, W1202, W0718, R0914, R1725, C0411, W0237, W0702, W0613,
             R0912, R0911, W0511, R0902, C0412, C0103, C0301, R0915, W1514,
             E1101, W1201,

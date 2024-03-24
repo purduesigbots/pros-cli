@@ -148,7 +148,7 @@ class STM32Device(GenericDevice, SystemDevice):
         if not self.commands[6] == 0x43:
             raise VEXCommError('Standard erase not supported on this device (only extended erase)')
         assert 0 < len(page_numbers) <= 255
-        assert all([0 <= p <= 255 for p in page_numbers])
+        assert all(0 <= p <= 255 for p in page_numbers)
         self._txrx_command(0x43)
         self._txrx_command(bytes([len(page_numbers) - 1, *page_numbers]))
 
@@ -158,7 +158,7 @@ class STM32Device(GenericDevice, SystemDevice):
         if not self.commands[6] == 0x44:
             raise IOError('Extended erase not supported on this device (only standard erase)')
         assert 0 < len(page_numbers) < 0xfff0
-        assert all([0 <= p <= 0xffff for p in page_numbers])
+        assert all(0 <= p <= 0xffff for p in page_numbers)
         self._txrx_command(0x44)
         self._txrx_command(bytes([len(page_numbers) - 1, *struct.pack(f'>{len(page_numbers)}H', *page_numbers)]))
 

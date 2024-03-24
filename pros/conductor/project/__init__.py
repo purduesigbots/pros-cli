@@ -85,7 +85,7 @@ class Project(Config):
             if current > template:
                 return TemplateAction.Downgradable
 
-        if any([template > current for current in self.templates.values()]):
+        if any(template > current for current in self.templates.values()):
             return TemplateAction.Upgradable
         return TemplateAction.Installable
 
@@ -144,8 +144,8 @@ class Project(Config):
             src/opcontrol.c and src/opcontrol.cpp are friends because they have the same stem
             src/opcontrol.c and include/opcontrol.h are not because they are in different directories
             """
-            return not any([(os.path.normpath(file) in transaction.effective_state) for file in template.user_files if
-                            os.path.splitext(file)[0] == os.path.splitext(new_file)[0]])
+            return not any((os.path.normpath(file) in transaction.effective_state) for file in template.user_files if
+                            os.path.splitext(file)[0] == os.path.splitext(new_file)[0])
 
         if force_user:
             new_user_files = template.real_user_files
@@ -153,7 +153,7 @@ class Project(Config):
             new_user_files = filter(new_user_filter, template.real_user_files)
         transaction.extend_add(new_user_files, template.location)
 
-        if any([file in transaction.effective_state for file in template.system_files]) and not force_system:
+        if any(file in transaction.effective_state for file in template.system_files) and not force_system:
             confirm(f'Some required files for {template.identifier} already exist in the project. '
                     f'Overwrite the existing files?', abort=True)
         transaction.extend_add(template.system_files, template.location)

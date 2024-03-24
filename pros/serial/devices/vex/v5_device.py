@@ -37,9 +37,9 @@ def find_v5_ports(p_type: str):
                p.name is not None and ('VEX' in p.name or 'V5' in p.name)
 
     def filter_v5_ports(p, locations, names):
-        return (p.location is not None and any([p.location.endswith(l) for l in locations])) or \
-               (p.name is not None and any([n in p.name for n in names])) or \
-               (p.description is not None and any([n in p.description for n in names]))
+        return (p.location is not None and any(p.location.endswith(l) for l in locations)) or \
+               (p.name is not None and any(n in p.name for n in names)) or \
+               (p.description is not None and any(n in p.description for n in names))
 
     def filter_v5_ports_mac(p, device):
         return (p.device is not None and p.device.endswith(device))
