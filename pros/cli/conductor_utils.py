@@ -6,7 +6,7 @@ import zipfile
 from typing import *
 
 import click
-import pros.common.ui as ui
+from pros.common import ui
 import pros.conductor as c
 from pros.common.utils import logger
 from pros.conductor.templates import ExternalTemplate
@@ -77,7 +77,7 @@ def create_template(ctx, path: str, destination: str, do_zip: bool, **kwargs):
         _path = os.path.normpath(path) + os.path.sep
         for g in [g for g in globs if glob.has_magic(g)]:
             files = glob.glob(f'{path}/{g}', recursive=True)
-            files = filter(lambda f: os.path.isfile(f), files)
+            files = filter(os.path.isfile, files)
             files = [os.path.normpath(os.path.normpath(f).split(_path)[-1]) for f in files]
             matching_files.extend(files)
 
@@ -161,11 +161,11 @@ def purge_template(query: c.BaseTemplate, force):
     beta_templates = cond.resolve_templates(query, allow_online=False, beta=True)
     if len(templates) == 0:
         click.echo('No matching templates were found matching the spec.')
-        return 0
+        return
     t_list = [t.identifier for t in templates] + [t.identifier for t in beta_templates]
     click.echo(f'The following template(s) will be removed {t_list}')
     if len(templates) > 1 and not force:
-        click.confirm(f'Are you sure you want to remove multiple templates?', abort=True)
+        click.confirm('Are you sure you want to remove multiple templates?', abort=True)
     for template in templates:
         if isinstance(template, c.LocalTemplate):
             cond.purge_template(template)

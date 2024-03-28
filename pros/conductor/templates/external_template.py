@@ -12,7 +12,7 @@ class ExternalTemplate(Config, Template):
         if os.path.isdir(file):
             file = os.path.join(file, 'template.pros')
         elif zipfile.is_zipfile(file):
-            self.tf = tempfile.NamedTemporaryFile(delete=False)
+            self.tf = tempfile.NamedTemporaryFile(delete=False)  # pylint: disable=consider-using-with
             with zipfile.ZipFile(file) as zf:
                 with zf.open('template.pros') as zt:
                     self.tf.write(zt.read())

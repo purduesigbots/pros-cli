@@ -15,7 +15,7 @@ from pros.serial.ports import PortConnectionException
 # This file is a modification of the miniterm implementation on pyserial
 
 
-class ConsoleBase(object):
+class ConsoleBase:
     """OS abstraction for console (input/output codec, no echo)"""
 
     def __init__(self):
@@ -65,7 +65,7 @@ if os.name == 'nt':  # noqa
     import ctypes
 
 
-    class Out(object):
+    class Out:
         """file-like wrapper that uses os.write"""
 
         def __init__(self, fd):
@@ -104,7 +104,7 @@ if os.name == 'nt':  # noqa
                 z = msvcrt.getwch()
                 if z == chr(13):
                     return chr(10)
-                elif z in (chr(0), chr(0x0e)):  # functions keys, ignore
+                if z in (chr(0), chr(0x0e)):  # functions keys, ignore
                     msvcrt.getwch()
                 else:
                     return z
@@ -148,7 +148,7 @@ elif os.name == 'posix':
                                         [], None)
             if self.pipe_r in ready:
                 os.read(self.pipe_r, 1)
-                return
+                return None
             c = self.enc_stdin.read(1)
             if c == chr(0x7f):
                 c = chr(8)  # map the BS key (which yields DEL) to backspace
@@ -166,7 +166,7 @@ else:
         ' available.'.format(sys.platform))
 
 
-class Terminal(object):
+class Terminal:
     """This class is loosely based off of the pyserial miniterm"""
 
     def __init__(self, port_instance: StreamDevice, transformations=(),
@@ -260,9 +260,8 @@ class Terminal(object):
                 if c == '\x03' or not self.no_sigint:
                     self.stop()
                     break
-                else:
-                    self.device.write(c.encode(encoding='utf-8'))
-                    self.console.write(c)
+                self.device.write(c.encode(encoding='utf-8'))
+                self.console.write(c)
         except Exception as e:
             if not self.alive.is_set():
                 logger(__name__).exception(e)

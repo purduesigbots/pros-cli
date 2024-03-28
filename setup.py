@@ -3,9 +3,12 @@
 from setuptools import setup, find_packages
 from install_requires import install_requires as install_reqs
 
+with open('pip_version') as version_file:
+    version = version_file.read().strip()
+
 setup(
     name='pros-cli',
-    version=open('pip_version').read().strip(),
+    version=version,
     packages=find_packages(),
     url='https://github.com/purduesigbots/pros-cli',
     license='MPL-2.0',

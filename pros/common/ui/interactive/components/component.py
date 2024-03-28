@@ -4,7 +4,7 @@ from pros.common.ui.interactive.parameters.parameter import Parameter
 from pros.common.ui.interactive.parameters.validatable_parameter import ValidatableParameter
 
 
-class Component(object):
+class Component:
     """
     A Component is the basic building block of something to render to users.
 
@@ -29,9 +29,9 @@ class Component(object):
         return None
 
     def __getstate__(self) -> Dict:
-        return dict(
-            etype=Component.get_hierarchy(self.__class__)
-        )
+        return {
+            "etype": Component.get_hierarchy(self.__class__)
+        }
 
 
 P = TypeVar('P', bound=Parameter)
@@ -52,12 +52,12 @@ class ParameterizedComponent(Component, Generic[P]):
             reason = self.parameter.is_valid_reason()
             if reason:
                 extra_state['valid_reason'] = self.parameter.is_valid_reason()
-        return dict(
+        return {
             **super(ParameterizedComponent, self).__getstate__(),
             **extra_state,
-            value=self.parameter.value,
-            uuid=self.parameter.uuid,
-        )
+            "value": self.parameter.value,
+            "uuid": self.parameter.uuid,
+        }
 
 
 class BasicParameterizedComponent(ParameterizedComponent[P], Generic[P]):
@@ -70,7 +70,7 @@ class BasicParameterizedComponent(ParameterizedComponent[P], Generic[P]):
         self.label = label
 
     def __getstate__(self):
-        return dict(
+        return {
             **super(BasicParameterizedComponent, self).__getstate__(),
-            text=self.label,
-        )
+            "text": self.label,
+        }

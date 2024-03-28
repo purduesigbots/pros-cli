@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta
 from typing import *
 
-import pros.common.ui as ui
+from pros.common import ui
 from pros.common import logger
 from pros.config.cli_config import cli_config
 from ..templates import BaseTemplate, Template
 
 
-class Depot(object):
+class Depot:
     def __init__(self, name: str, location: str, config: Dict[str, Any] = None,
                  update_frequency: timedelta = timedelta(minutes=1),
                  config_schema: Dict[str, Dict[str, Any]] = None):

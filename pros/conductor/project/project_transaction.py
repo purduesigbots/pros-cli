@@ -4,12 +4,12 @@ import tempfile
 import zipfile
 from typing import *
 
-import pros.common.ui as ui
+from pros.common import ui
 import pros.conductor as c
 from pros.conductor.project.template_resolution import InvalidTemplateException, TemplateAction
 
 
-class Action(object):
+class Action:
     def execute(self, conductor: c.Conductor, project: c.Project) -> None:
         raise NotImplementedError()
 
@@ -32,36 +32,35 @@ class ApplyTemplateAction(Action):
         try:
             conductor.apply_template(project, self.template, **self.apply_kwargs)
         except InvalidTemplateException as e:
-            if e.reason != TemplateAction.AlreadyInstalled or not self.suppress_already_installed:
+            if e.reason != TemplateAction.ALREADY_INSTALLED or not self.suppress_already_installed:
                 raise e
-            else:
-                ui.logger(__name__).warning(str(e))
+            ui.logger(__name__).warning(str(e))
 
     def describe(self, conductor: c.Conductor, project: c.Project):
         action = project.get_template_actions(conductor.resolve_template(self.template))
-        if action == TemplateAction.NotApplicable:
+        if action == TemplateAction.NOT_APPLICABLE:
             return f'{self.template.identifier} cannot be applied to project!'
-        if action == TemplateAction.Installable:
+        if action == TemplateAction.INSTALLABLE:
             return f'{self.template.identifier} will installed to project.'
-        if action == TemplateAction.Downgradable:
+        if action == TemplateAction.DOWNGRADABLE:
             return f'Project will be downgraded to {self.template.identifier} from' \
                 f' {project.templates[self.template.name].version}.'
-        if action == TemplateAction.Upgradable:
+        if action == TemplateAction.UPGRADABLE:
             return f'Project will be upgraded to {self.template.identifier} from' \
                 f' {project.templates[self.template.name].version}.'
-        if action == TemplateAction.AlreadyInstalled:
+        if action == TemplateAction.ALREADY_INSTALLED:
             if self.apply_kwargs.get('force_apply'):
                 return f'{self.template.identifier} will be re-applied.'
-            elif self.suppress_already_installed:
+            if self.suppress_already_installed:
                 return f'{self.template.identifier} will not be re-applied.'
-            else:
-                return f'{self.template.identifier} cannot be applied to project because it is already installed.'
+            return f'{self.template.identifier} cannot be applied to project because it is already installed.'
+        return None
 
     def can_execute(self, conductor: c.Conductor, project: c.Project) -> bool:
         action = project.get_template_actions(conductor.resolve_template(self.template))
-        if action == TemplateAction.AlreadyInstalled:
+        if action == TemplateAction.ALREADY_INSTALLED:
             return self.apply_kwargs.get('force_apply') or self.suppress_already_installed
-        return action in [TemplateAction.Installable, TemplateAction.Downgradable, TemplateAction.Upgradable]
+        return action in [TemplateAction.INSTALLABLE, TemplateAction.DOWNGRADABLE, TemplateAction.UPGRADABLE]
 
 
 class RemoveTemplateAction(Action):
@@ -77,8 +76,7 @@ class RemoveTemplateAction(Action):
         except ValueError as e:
             if not self.suppress_not_removable:
                 raise e
-            else:
-                ui.logger(__name__).warning(str(e))
+            ui.logger(__name__).warning(str(e))
 
     def describe(self, conductor: c.Conductor, project: c.Project) -> str:
         return f'{self.template.identifier} will be removed'
@@ -102,7 +100,7 @@ class ChangeProjectNameAction(Action):
         return True
 
 
-class ProjectTransaction(object):
+class ProjectTransaction:
     def __init__(self, project: c.Project, conductor: Optional[c.Conductor] = None):
         self.project = project
         self.conductor = conductor or c.Conductor()
@@ -135,7 +133,7 @@ class ProjectTransaction(object):
                         raise ValueError('Action did not complete successfully')
             ui.echo('All actions performed successfully')
         except Exception as e:
-            ui.logger(__name__).warning(f'Failed to perform transaction, restoring project to previous state')
+            ui.logger(__name__).warning('Failed to perform transaction, restoring project to previous state')
 
             with zipfile.ZipFile(tfn) as zf:
                 with ui.progressbar(zf.namelist(), label=f'Restoring {self.project.name} from {tfn}') as pb:
@@ -166,8 +164,7 @@ class ProjectTransaction(object):
                 f'- {a.describe(self.conductor, self.project)}'
                 for a in self.actions
             )
-        else:
-            return 'No actions necessary.'
+        return 'No actions necessary.'
 
     def can_execute(self) -> bool:
         return all(a.can_execute(self.conductor, self.project) for a in self.actions)

@@ -14,11 +14,11 @@ class ConfirmModal(application.Modal[bool]):
         super().__init__(title, will_abort=abort, confirm_button='Yes', cancel_button='No', description=text)
         self.log = log
 
-    def confirm(self):
+    def confirm(self, *args, **kwargs):
         self.set_return(True)
         self.exit()
 
-    def cancel(self):
+    def cancel(self, *args, **kwargs):
         self.set_return(False)
         super(ConfirmModal, self).cancel()
 

@@ -10,14 +10,13 @@ import click
 import ctypes
 import sys
 
-import pros.common.ui as ui
+from pros.common import ui
 import pros.common.ui.log
 from pros.cli.click_classes import *
 from pros.cli.common import default_options, root_commands
 from pros.common.utils import get_version, logger
 from pros.ga.analytics import analytics
 
-import jsonpickle
 import pros.cli.build
 import pros.cli.conductor
 import pros.cli.conductor_utils
@@ -46,14 +45,14 @@ root_sources = [
 ]
 
 if getattr(sys, 'frozen', False):
-    exe_file = sys.executable
+    EXE_FILE = sys.executable
 else:
-    exe_file = __file__
+    EXE_FILE = __file__
 
-if os.path.exists(os.path.join(os.path.dirname(exe_file), os.pardir, os.pardir, '.git')):
+if os.path.exists(os.path.join(os.path.dirname(EXE_FILE), os.pardir, os.pardir, '.git')):
     root_sources.append('test')
 
-if os.path.exists(os.path.join(os.path.dirname(exe_file), os.pardir, os.pardir, '.git')):
+if os.path.exists(os.path.join(os.path.dirname(EXE_FILE), os.pardir, os.pardir, '.git')):
     import pros.cli.test
 
 for root_source in root_sources:
@@ -88,9 +87,9 @@ def version(ctx: click.Context, param, value):
 
 
 def use_analytics(ctx: click.Context, param, value):
-    if value == None:
+    if value is None:
         return
-    touse = not analytics.useAnalytics
+    touse = not analytics.use_analytics
     if str(value).lower().startswith("t"):
         touse = True
     elif str(value).lower().startswith("f"):
@@ -100,9 +99,9 @@ def use_analytics(ctx: click.Context, param, value):
         ctx.exit(0)
     ctx.ensure_object(dict)
     analytics.set_use(touse)
-    ui.echo(f'Analytics usage set to: {analytics.useAnalytics}')
+    ui.echo(f'Analytics usage set to: {analytics.use_analytics}')
     ctx.exit(0)
-    
+
 def use_early_access(ctx: click.Context, param, value):
     if value is None:
         return

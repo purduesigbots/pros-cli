@@ -6,8 +6,9 @@ import typing
 from functools import reduce
 from typing import *
 
-import pros.common.ui as ui
+from pros.common import ui
 from pros.common import logger, retries
+from pros.conductor import Project
 from pros.serial import bytes_to_str
 from pros.serial.devices.vex import VEXCommError
 from pros.serial.ports import BasePort
@@ -147,7 +148,7 @@ class STM32Device(GenericDevice, SystemDevice):
         if not self.commands[6] == 0x43:
             raise VEXCommError('Standard erase not supported on this device (only extended erase)')
         assert 0 < len(page_numbers) <= 255
-        assert all([0 <= p <= 255 for p in page_numbers])
+        assert all(0 <= p <= 255 for p in page_numbers)
         self._txrx_command(0x43)
         self._txrx_command(bytes([len(page_numbers) - 1, *page_numbers]))
 
@@ -157,7 +158,7 @@ class STM32Device(GenericDevice, SystemDevice):
         if not self.commands[6] == 0x44:
             raise IOError('Extended erase not supported on this device (only standard erase)')
         assert 0 < len(page_numbers) < 0xfff0
-        assert all([0 <= p <= 0xffff for p in page_numbers])
+        assert all(0 <= p <= 0xffff for p in page_numbers)
         self._txrx_command(0x44)
         self._txrx_command(bytes([len(page_numbers) - 1, *struct.pack(f'>{len(page_numbers)}H', *page_numbers)]))
 
@@ -189,3 +190,6 @@ class STM32Device(GenericDevice, SystemDevice):
                 if data[0] == self.ACK_BYTE:
                     return
         raise VEXCommError(f"Device never ACK'd to {command}", command)
+
+    def upload_project(self, project: Project, **kwargs):
+        pass

@@ -3,7 +3,6 @@ from typing import *
 import click
 import pros.conductor as c
 from .common import PROSGroup, default_options, project_option, pros_root
-from pros.ga.analytics import analytics
 
 @pros_root
 def interactive_cli():
@@ -21,7 +20,7 @@ def interactive():
 @default_options
 def new_project(directory):
     from pros.common.ui.interactive.renderers import MachineOutputRenderer
-    from pros.conductor.interactive.NewProjectModal import NewProjectModal
+    from pros.conductor.interactive.new_project_modal import NewProjectModal
     app = NewProjectModal(directory=directory)
     MachineOutputRenderer(app).run()
 
@@ -31,7 +30,7 @@ def new_project(directory):
 @default_options
 def update_project(project: Optional[c.Project]):
     from pros.common.ui.interactive.renderers import MachineOutputRenderer
-    from pros.conductor.interactive.UpdateProjectModal import UpdateProjectModal
+    from pros.conductor.interactive.update_project_modal import UpdateProjectModal
     app = UpdateProjectModal(project)
     MachineOutputRenderer(app).run()
 

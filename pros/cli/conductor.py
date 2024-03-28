@@ -1,7 +1,7 @@
 import os.path
 from itertools import groupby
 
-import pros.common.ui as ui
+from pros.common import ui
 import pros.conductor as c
 from pros.cli.common import *
 from pros.conductor.templates import ExternalTemplate
@@ -22,7 +22,6 @@ def conductor():
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
-    pass
 
 
 @conductor.command(aliases=['download'], short_help='Fetch/Download a remote template',
@@ -78,6 +77,7 @@ def fetch(query: c.BaseTemplate):
     # whether the arguments are for the template or for the depot, so they share them
     logger(__name__).debug(f'Additional depot and template args: {query.metadata}')
     c.Conductor().fetch_template(depot, template, **query.metadata)
+    return 0
 
 
 @conductor.command(context_settings={'ignore_unknown_options': True})
@@ -320,12 +320,12 @@ def info_project(project: c.Project, ls_upgrades):
     report = ProjectReport(project)
     _conductor = c.Conductor()
     if ls_upgrades:
+        import semantic_version as semver
         for template in report.project['templates']:
-            import semantic_version as semver
             templates = _conductor.resolve_templates(c.BaseTemplate.create_query(name=template["name"],
                                                                                  version=f'>{template["version"]}',
                                                                                  target=project.target))
-            template["upgrades"] = sorted({t.version for t in templates}, key=lambda v: semver.Version(v), reverse=True)
+            template["upgrades"] = sorted({t.version for t in templates}, key=semver.Version, reverse=True)
 
     ui.finalize('project-report', report)
 

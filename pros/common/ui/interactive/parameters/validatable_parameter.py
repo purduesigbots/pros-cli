@@ -20,7 +20,7 @@ class ValidatableParameter(Parameter, Generic[T]):
         """
         super().__init__(initial_value)
         self.allow_invalid_input = allow_invalid_input
-        self.validate_lambda = validate or (lambda v: bool(v))
+        self.validate_lambda = validate or bool
 
     def validate(self, value: T) -> Union[bool, str]:
         return self.validate_lambda(value)
@@ -29,8 +29,7 @@ class ValidatableParameter(Parameter, Generic[T]):
         rv = self.validate(value if value is not None else self.value)
         if isinstance(rv, bool):
             return rv
-        else:
-            return False
+        return False
 
     def is_valid_reason(self, value: T = None) -> Optional[str]:
         rv = self.validate(value if value is not None else self.value)

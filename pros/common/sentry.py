@@ -2,7 +2,7 @@ from typing import *
 
 import click
 
-import pros.common.ui as ui
+from pros.common import ui
 
 if TYPE_CHECKING:
     from sentry_sdk import Client, Hub, Scope  # noqa: F401, flake8 issue with "if TYPE_CHECKING"
@@ -10,34 +10,33 @@ if TYPE_CHECKING:
     from pros.config.cli_config import CliConfig  # noqa: F401, flake8 issue, flake8 issue with "if TYPE_CHECKING"
 
 cli_config: 'CliConfig' = None
-force_prompt_off = False
+FORCE_PROMPT_OFF = False
 SUPPRESSED_EXCEPTIONS = [PermissionError, click.Abort]
 
 def disable_prompt():
-    global force_prompt_off
-    force_prompt_off = True
+    global FORCE_PROMPT_OFF
+    FORCE_PROMPT_OFF = True
 
 def prompt_to_send(event: Dict[str, Any], hint: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     """
     Asks the user for permission to send data to Sentry
     """
-    global cli_config
     with ui.Notification():
         if cli_config is None or (cli_config.offer_sentry is not None and not cli_config.offer_sentry):
-            return
-        if force_prompt_off:
+            return None
+        if FORCE_PROMPT_OFF:
             ui.logger(__name__).debug('Sentry prompt was forced off through click option')
-            return
+            return None
         if 'extra' in event and not event['extra'].get('sentry', True):
             ui.logger(__name__).debug('Not sending candidate event because event was tagged with extra.sentry = False')
-            return
+            return None
         if 'exc_info' in hint and (not getattr(hint['exc_info'][1], 'sentry', True) or
                                    any(isinstance(hint['exc_info'][1], t) for t in SUPPRESSED_EXCEPTIONS)):
             ui.logger(__name__).debug('Not sending candidate event because exception was tagged with sentry = False')
-            return
+            return None
 
         if not event['tags']:
-            event['tags'] = dict()
+            event['tags'] = {}
 
         extra_text = ''
         if 'message' in event:
@@ -57,8 +56,8 @@ def prompt_to_send(event: Dict[str, Any], hint: Optional[Dict[str, Any]]) -> Opt
 
             ui.echo(f'Want to get updates? Visit https://pros.cs.purdue.edu/report.html?event={event["event_id"]}')
             return event
-        else:
-            ui.echo('Not sending bug report.')
+        ui.echo('Not sending bug report.')
+        return None
 
 
 def add_context(obj: object, override_handlers: bool = True, key: str = None) -> None:
@@ -113,7 +112,7 @@ def add_tag(key: str, value: str):
 
 
 def register(cfg: Optional['CliConfig'] = None):
-    global cli_config, client
+    global cli_config
     if cfg is None:
         from pros.config.cli_config import cli_config as get_cli_config
         cli_config = get_cli_config()

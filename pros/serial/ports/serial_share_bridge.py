@@ -11,8 +11,8 @@ from .direct_port import DirectPort
 from .. import bytes_to_str
 
 
-def get_port_num(serial_port_name: str, hash: str) -> int:
-    return sum("Powered by PROS: {}-{}".format(serial_port_name, hash).encode(encoding='ascii'))
+def get_port_num(serial_port_name: str, hash_value: str) -> int:
+    return sum("Powered by PROS: {}-{}".format(serial_port_name, hash_value).encode(encoding='ascii'))
 
 
 def get_from_device_port_num(serial_port_name: str) -> int:
@@ -23,7 +23,7 @@ def get_to_device_port_num(serial_port_name: str) -> int:
     return get_port_num(serial_port_name, 'to')
 
 
-class SerialShareBridge(object):
+class SerialShareBridge:
     def __init__(self, serial_port_name: str, base_addr: str = '127.0.0.1',
                  to_device_port_num: int = None, from_device_port_num: int = None):
         self._serial_port_name = serial_port_name
@@ -156,6 +156,7 @@ class SerialShareBridge(object):
             initialization_barrier.wait()
             watchdog.start()
             while not self.dying.is_set():
+                # pylint: disable=unsubscriptable-object
                 msg = to_ser_sock.recv_multipart()
                 if not msg or self.dying.is_set():
                     continue

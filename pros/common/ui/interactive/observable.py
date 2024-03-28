@@ -6,7 +6,7 @@ import observable
 
 from pros.common import logger
 
-_uuid_table = dict()  # type: Dict[str, Observable]
+_uuid_table = {}  # type: Dict[str, Observable]
 
 
 class Observable(observable.Observable):

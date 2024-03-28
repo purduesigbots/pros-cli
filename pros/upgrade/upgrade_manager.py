@@ -4,7 +4,7 @@ from enum import Enum
 from typing import *
 
 from pros.common import logger
-import pros.common.ui as ui
+from pros.common import ui
 from pros.config import Config
 from pros.config.cli_config import cli_config
 from .manifests import *
@@ -12,8 +12,8 @@ from .instructions import UpgradeResult
 
 
 class ReleaseChannel(Enum):
-    Stable = 'stable'
-    Beta = 'beta'
+    STABLE = 'stable'
+    BETA = 'beta'
 
 
 class UpgradeManager(Config):
@@ -22,7 +22,7 @@ class UpgradeManager(Config):
             file = os.path.join(cli_config().directory, 'upgrade.pros.json')
         self._last_check: datetime = datetime.min
         self._manifest: Optional[UpgradeManifestV1] = None
-        self.release_channel: ReleaseChannel = ReleaseChannel.Stable
+        self.release_channel: ReleaseChannel = ReleaseChannel.STABLE
 
         super().__init__(file)
 
@@ -49,7 +49,7 @@ class UpgradeManager(Config):
 
         manifest_urls = [f"{channel_url}/{manifest.__name__}.json" for manifest in manifests]
         for manifest_url in manifest_urls:
-            resp = requests.get(manifest_url)
+            resp = requests.get(manifest_url, timeout=10)
             if resp.status_code == 200:
                 try:
                     self._manifest = jsonpickle.decode(resp.text, keys=True)

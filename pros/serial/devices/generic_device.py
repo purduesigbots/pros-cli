@@ -1,7 +1,7 @@
 from ..ports import BasePort
 
 
-class GenericDevice(object):
+class GenericDevice:
     def __init__(self, port: BasePort):
         self.port = port
 

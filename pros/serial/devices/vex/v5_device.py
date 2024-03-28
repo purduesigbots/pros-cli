@@ -28,7 +28,7 @@ from .message import Message
 from .vex_device import VEXDevice
 from ..system_device import SystemDevice
 
-int_str = Union[int, str]
+IntStr = Union[int, str]
 
 
 def find_v5_ports(p_type: str):
@@ -37,9 +37,9 @@ def find_v5_ports(p_type: str):
                p.name is not None and ('VEX' in p.name or 'V5' in p.name)
 
     def filter_v5_ports(p, locations, names):
-        return (p.location is not None and any([p.location.endswith(l) for l in locations])) or \
-               (p.name is not None and any([n in p.name for n in names])) or \
-               (p.description is not None and any([n in p.description for n in names]))
+        return (p.location is not None and any(p.location.endswith(l) for l in locations)) or \
+               (p.name is not None and any(n in p.name for n in names)) or \
+               (p.description is not None and any(n in p.description for n in names))
 
     def filter_v5_ports_mac(p, device):
         return (p.device is not None and p.device.endswith(device))
@@ -67,10 +67,9 @@ def find_v5_ports(p_type: str):
     if len(user_ports) == len(system_ports) and len(user_ports) > 0:
         if p_type.lower() == 'user':
             return user_ports
-        elif p_type.lower() == 'system':
+        if p_type.lower() == 'system':
             return system_ports + joystick_ports
-        else:
-            raise ValueError(f'Invalid port type specified: {p_type}')
+        raise ValueError(f'Invalid port type specified: {p_type}')
 
     # None of the typical filters worked, so if there are only two ports, then the lower one is always*
     # the USER? port (*always = I haven't found a guarantee)
@@ -82,14 +81,13 @@ def find_v5_ports(p_type: str):
         ports = sorted(ports, key=lambda p: natural_key(p.device))
         if p_type.lower() == 'user':
             return [ports[1]]
-        elif p_type.lower() == 'system':
+        if p_type.lower() == 'system':
             # check if ports contain the word Brain in the description and return that port
             for port in ports:
                 if "Brain" in port.description:
                     return [port]
             return [ports[0], *joystick_ports]
-        else:
-            raise ValueError(f'Invalid port type specified: {p_type}')
+        raise ValueError(f'Invalid port type specified: {p_type}')
     # these can now also be used as user ports
     if len(joystick_ports) > 0:  # and p_type.lower() == 'system':
         return joystick_ports
@@ -137,7 +135,7 @@ class V5Device(VEXDevice, SystemDevice):
     VEX_CRC16 = CRC(16, 0x1021)  # CRC-16-CCIT
     VEX_CRC32 = CRC(32, 0x04C11DB7)  # CRC-32 (the one used everywhere but has no name)
 
-    class SystemVersion(object):
+    class SystemVersion:
         class Product(IntEnum):
             CONTROLLER = 0x11
             BRAIN = 0x10
@@ -161,7 +159,7 @@ class V5Device(VEXDevice, SystemDevice):
                 f'       Product: {self.product.name}\n' \
                 f' Product Flags: {self.product_flags.value:x}'
 
-    class SystemStatus(object):
+    class SystemStatus:
         def __init__(self, data: tuple):
             from semantic_version import Version
             self.system_version = Version('{}.{}.{}-{}'.format(*data[0:4]))
@@ -178,7 +176,7 @@ class V5Device(VEXDevice, SystemDevice):
         self._serial_cache = b''
         super().__init__(port)
 
-    class DownloadChannel(object):
+    class DownloadChannel:
         def __init__(self, device: 'V5Device', timeout: float = 5.):
             self.device = device
             self.timeout = timeout
@@ -205,9 +203,7 @@ class V5Device(VEXDevice, SystemDevice):
                 if V5Device.SystemVersion.ControllerFlags.CONNECTED not in version.product_flags:
                     raise VEXCommError('Could not transfer V5 Controller to download channel', version)
                 logger(__name__).info('V5 should been transferred to higher bandwidth download channel')
-                return self
-            else:
-                return self
+            return self
 
         def __exit__(self, *exc):
             if self.did_switch:
@@ -357,7 +353,7 @@ class V5Device(VEXDevice, SystemDevice):
                 raise ValueError(f'Unknown quirk option: {quirk}')
             ui.finalize('upload', f'{finish_string} to V5')
 
-    def ensure_library_space(self, name: Optional[str] = None, vid: int_str = None,
+    def ensure_library_space(self, name: Optional[str] = None, vid: IntStr = None,
                              target_name: Optional[str] = None):
         """
         Uses algorithms, for loops, and if statements to determine what files should be removed
@@ -471,7 +467,7 @@ class V5Device(VEXDevice, SystemDevice):
                     else:
                         self.erase_file(file_name=file, erase_all=True, vid='user')
 
-    def upload_library(self, file: typing.BinaryIO, remote_name: str = None, file_len: int = -1, vid: int_str = 'pros',
+    def upload_library(self, file: typing.BinaryIO, remote_name: str = None, file_len: int = -1, vid: IntStr = 'pros',
                        force_upload: bool = False, compress: bool = True, **kwargs):
         """
         Upload a file used for linking. Contains the logic to check if the file is already present in the filesystem
@@ -503,10 +499,9 @@ class V5Device(VEXDevice, SystemDevice):
                 if response['size'] == file_len and response['crc'] == crc32:
                     ui.echo('Library is already onboard V5')
                     return
-                else:
-                    logger(__name__).warning(f'Library onboard doesn\'t match! '
-                                             f'Length was {response["size"]} but expected {file_len} '
-                                             f'CRC: was {response["crc"]:x} but expected {crc32:x}')
+                logger(__name__).warning(f'Library onboard doesn\'t match! '
+                                            f'Length was {response["size"]} but expected {file_len} '
+                                            f'CRC: was {response["crc"]:x} but expected {crc32:x}')
             except VEXCommError as e:
                 logger(__name__).debug(e)
         else:
@@ -516,7 +511,7 @@ class V5Device(VEXDevice, SystemDevice):
         self.ensure_library_space(remote_name, vid, )
         self.write_file(file, remote_name, file_len, vid=vid, **kwargs)
 
-    def read_file(self, file: typing.IO[bytes], remote_file: str, vid: int_str = 'user', target: int_str = 'flash',
+    def read_file(self, file: typing.IO[bytes], remote_file: str, vid: IntStr = 'user', target: IntStr = 'flash',
                   addr: Optional[int] = None, file_len: Optional[int] = None):
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
@@ -545,7 +540,7 @@ class V5Device(VEXDevice, SystemDevice):
 
     def write_file(self, file: typing.BinaryIO, remote_file: str, file_len: int = -1,
                    run_after: FTCompleteOptions = FTCompleteOptions.DONT_RUN, linked_filename: Optional[str] = None,
-                   linked_vid: int_str = 'pros', compress: bool = False, **kwargs):
+                   linked_vid: IntStr = 'pros', compress: bool = False, **kwargs):
         if file_len < 0:
             file_len = file.seek(0, 2)
             file.seek(0, 0)
@@ -635,7 +630,7 @@ class V5Device(VEXDevice, SystemDevice):
         return V5Device.SystemVersion(ret)
 
     @retries
-    def ft_transfer_channel(self, channel: int_str):
+    def ft_transfer_channel(self, channel: IntStr):
         logger(__name__).debug(f'Transferring to {channel} channel')
         logger(__name__).debug('Sending ext 0x10 command')
         if isinstance(channel, str):
@@ -715,7 +710,7 @@ class V5Device(VEXDevice, SystemDevice):
     def ft_read(self, addr: int, n_bytes: int) -> bytearray:
         logger(__name__).debug('Sending ext 0x14 command')
         actual_n_bytes = n_bytes + (0 if n_bytes % 4 == 0 else 4 - n_bytes % 4)
-        ui.logger(__name__).debug(dict(actual_n_bytes=actual_n_bytes, addr=addr))
+        ui.logger(__name__).debug({"actual_n_bytes": actual_n_bytes, "addr": addr})
         tx_payload = struct.pack("<IH", addr, actual_n_bytes)
         rx_fmt = "<I{}s".format(actual_n_bytes)
         ret = self._txrx_ext_struct(0x14, tx_payload, rx_fmt, check_ack=False)[1][:n_bytes]
@@ -723,7 +718,7 @@ class V5Device(VEXDevice, SystemDevice):
         return ret
 
     @retries
-    def ft_set_link(self, link_name: str, vid: int_str = 'user', options: int = 0):
+    def ft_set_link(self, link_name: str, vid: IntStr = 'user', options: int = 0):
         logger(__name__).debug('Sending ext 0x15 command')
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
@@ -736,7 +731,7 @@ class V5Device(VEXDevice, SystemDevice):
         return ret
 
     @retries
-    def get_dir_count(self, vid: int_str = 1, options: int = 0) \
+    def get_dir_count(self, vid: IntStr = 1, options: int = 0) \
             -> int:
         logger(__name__).debug('Sending ext 0x16 command')
         if isinstance(vid, str):
@@ -760,7 +755,7 @@ class V5Device(VEXDevice, SystemDevice):
         return rx
 
     @retries
-    def execute_program_file(self, file_name: str, vid: int_str = 'user', run: bool = True):
+    def execute_program_file(self, file_name: str, vid: IntStr = 'user', run: bool = True):
         logger(__name__).debug('Sending ext 0x18 command')
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
@@ -773,12 +768,12 @@ class V5Device(VEXDevice, SystemDevice):
         return ret
 
     @retries
-    def get_file_metadata_by_name(self, file_name: str, vid: int_str = 1, options: int = 0) \
+    def get_file_metadata_by_name(self, file_name: str, vid: IntStr = 1, options: int = 0) \
             -> Dict[str, Any]:
         logger(__name__).debug('Sending ext 0x19 command')
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
-        ui.logger(__name__).debug(f'Options: {dict(vid=vid, file_name=file_name)}')
+        ui.logger(__name__).debug(f"Options: {{'vid': {vid}, 'file_name': {file_name}}}")
         tx_payload = struct.pack("<2B24s", vid, options, file_name.encode(encoding='ascii'))
         rx = self._txrx_ext_struct(0x19, tx_payload, "<B3L4sLL24s")
         rx = dict(zip(['linked_vid', 'size', 'addr', 'crc', 'type', 'timestamp', 'version', 'linked_filename'], rx))
@@ -804,7 +799,7 @@ class V5Device(VEXDevice, SystemDevice):
         if isinstance(options['vid'], str):
             options['vid'] = self.vid_map[options['vid'].lower()]
         if isinstance(options['timestamp'], datetime):
-            assert (isinstance(options['timestamp'], datetime))
+            assert isinstance(options['timestamp'], datetime)
             options['timestamp'] = (options['timestamp'] - datetime(2000, 1, 1)).get_seconds()
         if isinstance(options['type'], str):
             options['type'] = options['type'].encode(encoding='ascii')
@@ -816,7 +811,7 @@ class V5Device(VEXDevice, SystemDevice):
         return ret
 
     @retries
-    def erase_file(self, file_name: str, erase_all: bool = False, vid: int_str = 'user'):
+    def erase_file(self, file_name: str, erase_all: bool = False, vid: IntStr = 'user'):
         logger(__name__).debug('Sending ext 0x1B command')
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
@@ -843,7 +838,6 @@ class V5Device(VEXDevice, SystemDevice):
 
     @retries
     def get_system_status(self) -> SystemStatus:
-        from semantic_version import Version
         logger(__name__).debug('Sending ext 0x22 command')
         version = self.query_system_version()
         if (version.product == V5Device.SystemVersion.Product.BRAIN and version.system_version in Spec('<1.0.13')) or \
@@ -891,7 +885,7 @@ class V5Device(VEXDevice, SystemDevice):
             if i + max_packet_size > pl_len:
                 packet_size = pl_len - i
             logger(__name__).debug(f'Writing {packet_size} bytes to user FIFO')
-            self._txrx_ext_packet(0x27, b'\x01\x00' + payload[i:packet_size], 0, check_length=False)[1:]
+            # self._txrx_ext_packet(0x27, b'\x01\x00' + payload[i:packet_size], 0, check_length=False)[1:]
         logger(__name__).debug('Completed ext 0x27 command (write)')
 
     @retries
@@ -965,10 +959,10 @@ class V5Device(VEXDevice, SystemDevice):
         :param tx_payload: what was sent, used if an exception needs to be thrown
         :return: The payload of the extended message
         """
-        assert (msg['command'] == 0x56)
-        if not cls.VEX_CRC16.compute(msg.rx) == 0:
+        assert msg['command'] == 0x56
+        if cls.VEX_CRC16.compute(msg.rx) != 0:
             raise VEXCommError("CRC of message didn't match 0: {}".format(cls.VEX_CRC16.compute(msg.rx)), msg)
-        assert (msg['payload'][0] == command)
+        assert msg['payload'][0] == command
         msg = msg['payload'][1:-2]
         if check_ack:
             nacks = {
@@ -987,16 +981,16 @@ class V5Device(VEXDevice, SystemDevice):
                 0xDA: "Max user files, no more room for another user program",
                 0xDB: "User file exists"
             }
-            if msg[0] in nacks.keys():
+            if msg[0] in nacks:
                 raise VEXCommError("Device NACK'd with reason: {}".format(nacks[msg[0]]), msg)
-            elif msg[0] != cls.ACK_BYTE:
+            if msg[0] != cls.ACK_BYTE:
                 raise VEXCommError("Device didn't ACK", msg)
             msg = msg[1:]
         if len(msg) > 0:
             logger(cls).debug('Set msg window to {}'.format(bytes_to_str(msg)))
         if len(msg) < rx_length and check_length:
             raise VEXCommError(f'Received length is less than {rx_length} (got {len(msg)}).', msg)
-        elif len(msg) > rx_length and check_length:
+        if len(msg) > rx_length and check_length:
             ui.echo(
                 f'WARNING: Recieved length is more than {rx_length} (got {len(msg)}). Consider upgrading the PROS (CLI Version: {get_version()}).')
         return msg

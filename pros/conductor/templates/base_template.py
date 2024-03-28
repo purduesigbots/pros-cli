@@ -5,7 +5,7 @@ from semantic_version import Spec, Version
 from pros.common import ui
 
 
-class BaseTemplate(object):
+class BaseTemplate:
     def __init__(self, **kwargs):
         self.name: str = None
         self.version: str = None
@@ -40,7 +40,7 @@ class BaseTemplate(object):
         # Find the intersection of the keys in the template's metadata with the keys in the query metadata
         # This is what allows us to throw all arguments into the query metadata (from the CLI, e.g. those intended
         # for the depot or template application hints)
-        if any([self.metadata[k] != query.metadata[k] for k in keys_intersection]):
+        if any(self.metadata[k] != query.metadata[k] for k in keys_intersection):
             return False
         return True
 
@@ -53,21 +53,19 @@ class BaseTemplate(object):
         if isinstance(other, BaseTemplate):
             # TODO: metadata comparison
             return self.name == other.name and Version(self.version) > Version(other.version)
-        else:
-            return False
+        return False
 
     def __eq__(self, other):
         if isinstance(other, BaseTemplate):
             return self.identifier == other.identifier
-        else:
-            return super().__eq__(other)
+        return super().__eq__(other)
 
     def __hash__(self):
         return self.identifier.__hash__()
 
     def as_query(self, version='>0', metadata=False, **kwargs):
         if isinstance(metadata, bool) and not metadata:
-            metadata = dict()
+            metadata = {}
         return BaseTemplate(orig=self, version=version, metadata=metadata, **kwargs)
 
     @property

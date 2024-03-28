@@ -66,8 +66,8 @@ jobs:
       run: |
             python3 version.py
             pyinstaller pros.spec
-            pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-cc
-            pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-c++
+            pyinstaller --onefile pros/cli/compile_commands/intercept_cc.py --name=intercept-cc
+            pyinstaller --onefile pros/cli/compile_commands/intercept_cc.py --name=intercept-c++
       if: matrix.os != 'macos-latest'
 
     - name: Run Pyinstaller MacOS
@@ -77,8 +77,8 @@ jobs:
             pip3 install -e ./charset_normalizer
             python3 version.py
             pyinstaller pros-macos.spec
-            pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-cc --target-arch=universal2
-            pyinstaller --onefile pros/cli/compile_commands/intercept-cc.py --name=intercept-c++ --target-arch=universal2
+            pyinstaller --onefile pros/cli/compile_commands/intercept_cc.py --name=intercept-cc --target-arch=universal2
+            pyinstaller --onefile pros/cli/compile_commands/intercept_cc.py --name=intercept-c++ --target-arch=universal2
       if: matrix.os == 'macos-latest'
 
     - name: Package Everything Up

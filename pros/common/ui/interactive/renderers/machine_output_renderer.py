@@ -6,30 +6,24 @@ import click
 
 from pros.common import ui
 from pros.common.ui.interactive.observable import Observable
-from .Renderer import Renderer
+from .renderer import Renderer
 from ..application import Application
 
 current: List['MachineOutputRenderer'] = []
 
 
 def _push_renderer(renderer: 'MachineOutputRenderer'):
-    global current
-
     stack: List['MachineOutputRenderer'] = current
     stack.append(renderer)
 
 
 def _remove_renderer(renderer: 'MachineOutputRenderer'):
-    global current
-
     stack: List['MachineOutputRenderer'] = current
     if renderer in stack:
         stack.remove(renderer)
 
 
 def _current_renderer() -> Optional['MachineOutputRenderer']:
-    global current
-
     stack: List['MachineOutputRenderer'] = current
     return stack[-1] if len(stack) > 0 else None
 
@@ -39,8 +33,6 @@ P = TypeVar('P')
 
 class MachineOutputRenderer(Renderer[P], Generic[P]):
     def __init__(self, app: Application[P]):
-        global current
-
         super().__init__(app)
         self.alive = False
         self.thread = None
@@ -50,7 +42,7 @@ class MachineOutputRenderer(Renderer[P], Generic[P]):
         def on_redraw():
             self.render(self.app)
 
-        app.on_exit(lambda: self.stop())
+        app.on_exit(self.stop)
 
     @staticmethod
     def get_line():
@@ -89,7 +81,7 @@ class MachineOutputRenderer(Renderer[P], Generic[P]):
 
         if current_thread() != self.thread:
             ui.logger(__name__).debug(f'Interrupting render thread of {self.app}')
-            while not self.stop_sem.acquire(timeout=0.1):
+            while not self.stop_sem.acquire(timeout=0.1):  # pylint: disable=consider-using-with
                 self.wake_me()
 
         ui.logger(__name__).debug(f'Broadcasting stop {self.app}')

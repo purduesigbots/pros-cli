@@ -32,8 +32,8 @@ class PROSFormatted(RichCommand):
             if hasattr(cmd, 'hidden') and cmd.hidden:
                 continue
 
-            help = cmd.short_help or ''
-            rows.append((subcommand, help))
+            help_text = cmd.short_help or ''
+            rows.append((subcommand, help_text))
 
         if rows:
             with formatter.section('Commands'):
@@ -65,9 +65,10 @@ class PROSCommand(PROSFormatted, click.Command):
     pass
 
 
+# Seems to be unused?
 class PROSMultiCommand(PROSFormatted, click.MultiCommand):
-    def get_command(self, ctx, cmd_name):
-        super().get_command(ctx, cmd_name)
+    def get_command(self, ctx: click.Context, cmd_name: str) -> Optional[click.Command]:
+        pass
 
 
 class PROSOption(click.Option):
@@ -78,13 +79,13 @@ class PROSOption(click.Option):
 
     def get_help_record(self, ctx):
         if hasattr(self, 'hidden') and self.hidden:
-            return
+            return None
         return super().get_help_record(ctx)
 
 class PROSDeprecated(click.Option):
     def __init__(self, *args, replacement: str = None, **kwargs):
         kwargs['help'] = "This option has been deprecated."
-        if not replacement==None:
+        if replacement is not None:
             kwargs['help'] += " Its replacement is '--{}'".format(replacement)
         super(PROSDeprecated, self).__init__(*args, **kwargs)
         self.group = "Deprecated"
@@ -92,7 +93,7 @@ class PROSDeprecated(click.Option):
         self.to_use = replacement
         self.arg = args[0][len(args[0])-1]
         self.msg = "The '{}' {} has been deprecated. Please use '--{}' instead."
-        if replacement==None:
+        if replacement is None:
             self.msg = self.msg.split(".")[0]+"."
 
     def type_cast_value(self, ctx, value):
@@ -103,7 +104,7 @@ class PROSDeprecated(click.Option):
 class PROSGroup(PROSFormatted, click.Group):
     def __init__(self, *args, **kwargs):
         super(PROSGroup, self).__init__(*args, **kwargs)
-        self.cmd_dict = dict()
+        self.cmd_dict = {}
 
     def command(self, *args, aliases=None, **kwargs):
         aliases = aliases or []
@@ -118,7 +119,7 @@ class PROSGroup(PROSFormatted, click.Group):
 
         return decorator
 
-    def group(self, aliases=None, *args, **kwargs):
+    def group(self, *args, aliases=None, **kwargs):
         aliases = aliases or []
 
         def decorator(f):
@@ -140,7 +141,7 @@ class PROSGroup(PROSFormatted, click.Group):
 
         # fall back to guessing
         matches = {x for x in self.list_commands(ctx) if x.startswith(cmd_name)}
-        matches.union({x for x in self.cmd_dict.keys() if x.startswith(cmd_name)})
+        matches.union({x for x in self.cmd_dict if x.startswith(cmd_name)})
         if len(matches) == 1:
             return super(PROSGroup, self).get_command(ctx, matches.pop())
         return None
@@ -159,8 +160,8 @@ class PROSCommandCollection(PROSFormatted, click.CommandCollection):
             super(PROSCommandCollection, self).invoke(*args, **kwargs)
         except ClickException as e:
             click.echo("PROS-CLI Version:  {}".format(get_version()))
-            isProject = p.find_project("")
-            if (isProject): #check if there is a project
+            is_project = p.find_project("")
+            if is_project: #check if there is a project
                 curr_proj = p()
                 click.echo("PROS-Kernel Version: {}".format(curr_proj.kernel))
             raise e

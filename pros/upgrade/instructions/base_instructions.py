@@ -1,4 +1,4 @@
-class UpgradeResult(object):
+class UpgradeResult:
     def __init__(self, successful: bool, **kwargs):
         self.successful = successful
         self.__dict__.update(**kwargs)
@@ -7,7 +7,7 @@ class UpgradeResult(object):
         return f'The upgrade was {"" if self.successful else "not "}successful.\n{getattr(self, "explanation", "")}'
 
 
-class UpgradeInstruction(object):
+class UpgradeInstruction:
     """
     Base class for all upgrade instructions, not useful to instantiate
     """

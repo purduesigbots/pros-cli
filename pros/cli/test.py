@@ -1,5 +1,5 @@
 from pros.common.ui.interactive.renderers import MachineOutputRenderer
-from pros.conductor.interactive.NewProjectModal import NewProjectModal
+from pros.conductor.interactive.new_project_modal import NewProjectModal
 
 from .common import default_options, pros_root
 
