@@ -83,7 +83,6 @@ def terminal(port: str, backend: str, **kwargs):
     else:
         device = devices.vex.V5UserDevice(ser)
     term = Terminal(device, request_banner=kwargs.pop('request_banner', True))
-    return 0
 
     class TerminalOutput:
         def __init__(self, file):
@@ -118,3 +117,4 @@ def terminal(port: str, backend: str, **kwargs):
         output.end()
     term.join()
     logger(__name__).info('CLI Main Thread Dying')
+    return 0
