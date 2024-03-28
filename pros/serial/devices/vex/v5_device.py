@@ -28,7 +28,7 @@ from .message import Message
 from .vex_device import VEXDevice
 from ..system_device import SystemDevice
 
-int_str = Union[int, str]
+IntStr = Union[int, str]
 
 
 def find_v5_ports(p_type: str):
@@ -353,7 +353,7 @@ class V5Device(VEXDevice, SystemDevice):
                 raise ValueError(f'Unknown quirk option: {quirk}')
             ui.finalize('upload', f'{finish_string} to V5')
 
-    def ensure_library_space(self, name: Optional[str] = None, vid: int_str = None,
+    def ensure_library_space(self, name: Optional[str] = None, vid: IntStr = None,
                              target_name: Optional[str] = None):
         """
         Uses algorithms, for loops, and if statements to determine what files should be removed
@@ -467,7 +467,7 @@ class V5Device(VEXDevice, SystemDevice):
                     else:
                         self.erase_file(file_name=file, erase_all=True, vid='user')
 
-    def upload_library(self, file: typing.BinaryIO, remote_name: str = None, file_len: int = -1, vid: int_str = 'pros',
+    def upload_library(self, file: typing.BinaryIO, remote_name: str = None, file_len: int = -1, vid: IntStr = 'pros',
                        force_upload: bool = False, compress: bool = True, **kwargs):
         """
         Upload a file used for linking. Contains the logic to check if the file is already present in the filesystem
@@ -511,7 +511,7 @@ class V5Device(VEXDevice, SystemDevice):
         self.ensure_library_space(remote_name, vid, )
         self.write_file(file, remote_name, file_len, vid=vid, **kwargs)
 
-    def read_file(self, file: typing.IO[bytes], remote_file: str, vid: int_str = 'user', target: int_str = 'flash',
+    def read_file(self, file: typing.IO[bytes], remote_file: str, vid: IntStr = 'user', target: IntStr = 'flash',
                   addr: Optional[int] = None, file_len: Optional[int] = None):
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
@@ -540,7 +540,7 @@ class V5Device(VEXDevice, SystemDevice):
 
     def write_file(self, file: typing.BinaryIO, remote_file: str, file_len: int = -1,
                    run_after: FTCompleteOptions = FTCompleteOptions.DONT_RUN, linked_filename: Optional[str] = None,
-                   linked_vid: int_str = 'pros', compress: bool = False, **kwargs):
+                   linked_vid: IntStr = 'pros', compress: bool = False, **kwargs):
         if file_len < 0:
             file_len = file.seek(0, 2)
             file.seek(0, 0)
@@ -630,7 +630,7 @@ class V5Device(VEXDevice, SystemDevice):
         return V5Device.SystemVersion(ret)
 
     @retries
-    def ft_transfer_channel(self, channel: int_str):
+    def ft_transfer_channel(self, channel: IntStr):
         logger(__name__).debug(f'Transferring to {channel} channel')
         logger(__name__).debug('Sending ext 0x10 command')
         if isinstance(channel, str):
@@ -718,7 +718,7 @@ class V5Device(VEXDevice, SystemDevice):
         return ret
 
     @retries
-    def ft_set_link(self, link_name: str, vid: int_str = 'user', options: int = 0):
+    def ft_set_link(self, link_name: str, vid: IntStr = 'user', options: int = 0):
         logger(__name__).debug('Sending ext 0x15 command')
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
@@ -731,7 +731,7 @@ class V5Device(VEXDevice, SystemDevice):
         return ret
 
     @retries
-    def get_dir_count(self, vid: int_str = 1, options: int = 0) \
+    def get_dir_count(self, vid: IntStr = 1, options: int = 0) \
             -> int:
         logger(__name__).debug('Sending ext 0x16 command')
         if isinstance(vid, str):
@@ -755,7 +755,7 @@ class V5Device(VEXDevice, SystemDevice):
         return rx
 
     @retries
-    def execute_program_file(self, file_name: str, vid: int_str = 'user', run: bool = True):
+    def execute_program_file(self, file_name: str, vid: IntStr = 'user', run: bool = True):
         logger(__name__).debug('Sending ext 0x18 command')
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]
@@ -768,7 +768,7 @@ class V5Device(VEXDevice, SystemDevice):
         return ret
 
     @retries
-    def get_file_metadata_by_name(self, file_name: str, vid: int_str = 1, options: int = 0) \
+    def get_file_metadata_by_name(self, file_name: str, vid: IntStr = 1, options: int = 0) \
             -> Dict[str, Any]:
         logger(__name__).debug('Sending ext 0x19 command')
         if isinstance(vid, str):
@@ -811,7 +811,7 @@ class V5Device(VEXDevice, SystemDevice):
         return ret
 
     @retries
-    def erase_file(self, file_name: str, erase_all: bool = False, vid: int_str = 'user'):
+    def erase_file(self, file_name: str, erase_all: bool = False, vid: IntStr = 'user'):
         logger(__name__).debug('Sending ext 0x1B command')
         if isinstance(vid, str):
             vid = self.vid_map[vid.lower()]

@@ -138,7 +138,7 @@ def no_analytics(f: Union[click.Command, Callable]):
         add_tag('no-analytics',value)
         if value:
             echo("Not sending analytics for this command.\n")
-            analytics.useAnalytics = False
+            analytics.use_analytics = False
     decorator = click.option('--no-analytics', expose_value=False, is_flag=True, default=False, is_eager=True,
                             help="Don't send analytics for this command.", callback=callback, cls=PROSOption, hidden=True)(f)
     decorator.__name__ = f.__name__

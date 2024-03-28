@@ -6,8 +6,8 @@ from sentry_sdk import add_breadcrumb
 
 from ..utils import *
 
-_last_notify_value = 0
-_current_notify_value = 0
+_LAST_NOTIFY_VALUE = 0
+_CURRENT_NOTIFY_VALUE = 0
 _machine_pickler = jsonpickle.JSONBackend()
 
 
@@ -17,7 +17,7 @@ def _machineoutput(obj: Dict[str, Any]):
 
 def _machine_notify(method: str, obj: Dict[str, Any], notify_value: Optional[int]):
     if notify_value is None:
-        notify_value = _current_notify_value
+        notify_value = _CURRENT_NOTIFY_VALUE
     obj['type'] = f'notify/{method}'
     obj['notify_value'] = notify_value
     _machineoutput(obj)
@@ -121,7 +121,7 @@ def finalize(method: str, data: Union[str, Dict, object, List[Union[str, Dict, o
 class _MachineOutputProgressBar(_click_ProgressBar):
     def __init__(self, *args, **kwargs):
         kwargs['file'] = open(os.devnull, 'w', encoding='UTF-8')  # pylint: disable=consider-using-with
-        self.notify_value = kwargs.pop('notify_value', _current_notify_value)
+        self.notify_value = kwargs.pop('notify_value', _CURRENT_NOTIFY_VALUE)
         super(_MachineOutputProgressBar, self).__init__(*args, **kwargs)
 
     def __del__(self):
@@ -137,21 +137,21 @@ class _MachineOutputProgressBar(_click_ProgressBar):
 
 class Notification:
     def __init__(self, notify_value: Optional[int] = None):
-        global _last_notify_value
+        global _LAST_NOTIFY_VALUE
         if not notify_value:
-            notify_value = _last_notify_value + 1
-        _last_notify_value = max(_last_notify_value, notify_value)
+            notify_value = _LAST_NOTIFY_VALUE + 1
+        _LAST_NOTIFY_VALUE = max(_LAST_NOTIFY_VALUE, notify_value)
         self.notify_value = notify_value
         self.old_notify_values = []
 
     def __enter__(self):
-        global _current_notify_value
-        self.old_notify_values.append(_current_notify_value)
-        _current_notify_value = self.notify_value
+        global _CURRENT_NOTIFY_VALUE
+        self.old_notify_values.append(_CURRENT_NOTIFY_VALUE)
+        _CURRENT_NOTIFY_VALUE = self.notify_value
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        global _current_notify_value
-        _current_notify_value = self.old_notify_values.pop()
+        global _CURRENT_NOTIFY_VALUE
+        _CURRENT_NOTIFY_VALUE = self.old_notify_values.pop()
 
 
 class EchoPipe(threading.Thread):
@@ -163,27 +163,27 @@ class EchoPipe(threading.Thread):
         self.is_err = err
         threading.Thread.__init__(self)
         self.daemon = False
-        self.fdRead, self.fdWrite = os.pipe()
-        self.pipeReader = os.fdopen(self.fdRead, encoding='UTF-8')
+        self.fd_read, self.fd_write = os.pipe()
+        self.pipe_reader = os.fdopen(self.fd_read, encoding='UTF-8')
         self.start()
 
     def fileno(self):
         """Return the write file descriptor of the pipe
         """
-        return self.fdWrite
+        return self.fd_write
 
     def run(self):
         """Run the thread, logging everything.
         """
-        for line in iter(self.pipeReader.readline, ''):
+        for line in iter(self.pipe_reader.readline, ''):
             echo(line.strip('\n'), ctx=self.click_ctx, err=self.is_err)
 
-        self.pipeReader.close()
+        self.pipe_reader.close()
 
     def close(self):
         """Close the write end of the pipe.
         """
-        os.close(self.fdWrite)
+        os.close(self.fd_write)
 
 
 __all__ = ['finalize', 'echo', 'confirm', 'prompt', 'progressbar', 'EchoPipe']

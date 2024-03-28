@@ -12,8 +12,8 @@ from .instructions import UpgradeResult
 
 
 class ReleaseChannel(Enum):
-    Stable = 'stable'
-    Beta = 'beta'
+    STABLE = 'stable'
+    BETA = 'beta'
 
 
 class UpgradeManager(Config):
@@ -22,7 +22,7 @@ class UpgradeManager(Config):
             file = os.path.join(cli_config().directory, 'upgrade.pros.json')
         self._last_check: datetime = datetime.min
         self._manifest: Optional[UpgradeManifestV1] = None
-        self.release_channel: ReleaseChannel = ReleaseChannel.Stable
+        self.release_channel: ReleaseChannel = ReleaseChannel.STABLE
 
         super().__init__(file)
 

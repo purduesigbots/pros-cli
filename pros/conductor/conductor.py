@@ -25,8 +25,8 @@ EARLY_ACCESS_URL = 'https://pros.cs.purdue.edu/v5/_static/beta/beta-pros-mainlin
 """
 # TBD? Currently, EarlyAccess value is stored in config file
 class ReleaseChannel(Enum):
-    Stable = 'stable'
-    Beta = 'beta'
+    STABLE = 'stable'
+    BETA = 'beta'
 """
 
 def is_pathname_valid(pathname: str) -> bool:
@@ -282,8 +282,8 @@ class Conductor(Config):
 
         # warn and prompt user if upgrading to PROS 4 or downgrading to PROS 3
         if template.name == 'kernel':
-            isProject = Project.find_project("")
-            if isProject:
+            is_project = Project.find_project("")
+            if is_project:
                 curr_proj = Project()
                 if curr_proj.kernel:
                     if template.version[0] == '4' and curr_proj.kernel[0] == '3':
@@ -320,21 +320,21 @@ class Conductor(Config):
 
         logger(__name__).info(str(project))
         valid_action = project.get_template_actions(template)
-        if valid_action == TemplateAction.NotApplicable:
+        if valid_action == TemplateAction.NOT_APPLICABLE:
             raise dont_send(
                 InvalidTemplateException(f'{template.identifier} is not applicable to {project}', reason=valid_action)
             )
         should_apply = force \
-            or (valid_action == TemplateAction.Upgradable and upgrade_ok) \
-            or (valid_action == TemplateAction.Installable and install_ok) \
-            or (valid_action == TemplateAction.Downgradable and downgrade_ok)
+            or (valid_action == TemplateAction.UPGRADABLE and upgrade_ok) \
+            or (valid_action == TemplateAction.INSTALLABLE and install_ok) \
+            or (valid_action == TemplateAction.DOWNGRADABLE and downgrade_ok)
 
         if should_apply:
             project.apply_template(template, force_system=kwargs.pop('force_system', False),
                                    force_user=kwargs.pop('force_user', False),
                                    remove_empty_directories=kwargs.pop('remove_empty_directories', False))
             ui.finalize('apply', f'Finished applying {template.identifier} to {project.location}')
-        elif valid_action != TemplateAction.AlreadyInstalled:
+        elif valid_action != TemplateAction.ALREADY_INSTALLED:
             raise dont_send(
                 InvalidTemplateException(f'Could not install {template.identifier} because it is {valid_action.name},'
                                          f' and that is not allowed.', reason=valid_action)

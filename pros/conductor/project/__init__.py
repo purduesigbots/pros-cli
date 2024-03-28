@@ -69,36 +69,36 @@ class Project(Config):
     def get_template_actions(self, template: BaseTemplate) -> TemplateAction:
         ui.logger(__name__).debug(template)
         if template.target != self.target:
-            return TemplateAction.NotApplicable
+            return TemplateAction.NOT_APPLICABLE
         from semantic_version import Spec, Version
         if template.name != 'kernel' and Version(self.kernel) not in Spec(template.supported_kernels or '>0'):
             if template.name in self.templates.keys():
-                return TemplateAction.AlreadyInstalled
-            return TemplateAction.NotApplicable
+                return TemplateAction.ALREADY_INSTALLED
+            return TemplateAction.NOT_APPLICABLE
         for current in self.templates.values():
             if template.name != current.name:
                 continue
             if template > current:
-                return TemplateAction.Upgradable
+                return TemplateAction.UPGRADABLE
             if template == current:
-                return TemplateAction.AlreadyInstalled
+                return TemplateAction.ALREADY_INSTALLED
             if current > template:
-                return TemplateAction.Downgradable
+                return TemplateAction.DOWNGRADABLE
 
         if any(template > current for current in self.templates.values()):
-            return TemplateAction.Upgradable
-        return TemplateAction.Installable
+            return TemplateAction.UPGRADABLE
+        return TemplateAction.INSTALLABLE
 
     def template_is_installed(self, query: BaseTemplate) -> bool:
-        return self.get_template_actions(query) == TemplateAction.AlreadyInstalled
+        return self.get_template_actions(query) == TemplateAction.ALREADY_INSTALLED
 
     def template_is_upgradeable(self, query: BaseTemplate) -> bool:
-        return self.get_template_actions(query) == TemplateAction.Upgradable
+        return self.get_template_actions(query) == TemplateAction.UPGRADABLE
 
     def template_is_applicable(self, query: BaseTemplate, force_apply: bool = False) -> bool:
         ui.logger(__name__).debug(query.target)
         return self.get_template_actions(query) in (
-            TemplateAction.ForcedApplicable if force_apply else TemplateAction.UnforcedApplicable)
+            TemplateAction.FORCED_APPLICABLE if force_apply else TemplateAction.UNFORCED_APPLICABLE)
 
     def apply_template(self, template: LocalTemplate, force_system: bool = False, force_user: bool = False,
                        remove_empty_directories: bool = False):

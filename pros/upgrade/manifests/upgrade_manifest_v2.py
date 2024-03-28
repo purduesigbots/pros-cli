@@ -8,12 +8,12 @@ from ..instructions import UpgradeInstruction, UpgradeResult, NothingInstruction
 
 
 class PlatformsV2(Enum):
-    Unknown = 0
-    Windows86 = 1
-    Windows64 = 2
-    MacOS = 3
-    Linux = 4
-    Pip = 5
+    UNKNOWN = 0
+    WINDOWS86 = 1
+    WINDOWS64 = 2
+    MACOS = 3
+    LINUX = 4
+    PIP = 5
 
 
 class UpgradeManifestV2(UpgradeManifestV1):
@@ -34,7 +34,7 @@ class UpgradeManifestV2(UpgradeManifestV1):
     def platform(self) -> 'PlatformsV2':
         """
         Attempts to detect the current platform type
-        :return: The detected platform type, or Unknown
+        :return: The detected platform type, or UNKNOWN
         """
         if self._platform is not None:
             return self._platform
@@ -43,22 +43,22 @@ class UpgradeManifestV2(UpgradeManifestV1):
             frozen_platform = getattr(_constants, 'FROZEN_PLATFORM_V1', None)
             if isinstance(frozen_platform, str):
                 if frozen_platform.startswith('Windows86'):
-                    self._platform = PlatformsV2.Windows86
+                    self._platform = PlatformsV2.WINDOWS86
                 elif frozen_platform.startswith('Windows64'):
-                    self._platform = PlatformsV2.Windows64
+                    self._platform = PlatformsV2.WINDOWS64
                 elif frozen_platform.startswith('MacOS'):
-                    self._platform = PlatformsV2.MacOS
+                    self._platform = PlatformsV2.MACOS
         else:
             try:
                 from pip._vendor import pkg_resources
                 # pylint: disable=not-an-iterable
                 results = [p for p in pkg_resources.working_set if p.project_name.startswith('pros-cli')]
                 if any(results):
-                    self._platform = PlatformsV2.Pip
+                    self._platform = PlatformsV2.PIP
             except ImportError:
                 pass
         if not self._platform:
-            self._platform = PlatformsV2.Unknown
+            self._platform = PlatformsV2.UNKNOWN
         return self._platform
 
     @property

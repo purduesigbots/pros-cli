@@ -2,14 +2,14 @@ from enum import Flag, auto
 
 
 class TemplateAction(Flag):
-    NotApplicable = auto()
-    Installable = auto()
-    Upgradable = auto()
-    AlreadyInstalled = auto()
-    Downgradable = auto()
+    NOT_APPLICABLE = auto()
+    INSTALLABLE = auto()
+    UPGRADABLE = auto()
+    ALREADY_INSTALLED = auto()
+    DOWNGRADABLE = auto()
 
-    UnforcedApplicable = Installable | Upgradable | Downgradable
-    ForcedApplicable = UnforcedApplicable | AlreadyInstalled
+    UNFORCED_APPLICABLE = INSTALLABLE | UPGRADABLE | DOWNGRADABLE
+    FORCED_APPLICABLE = UNFORCED_APPLICABLE | ALREADY_INSTALLED
 
 
 class InvalidTemplateException(Exception):

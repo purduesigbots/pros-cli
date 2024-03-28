@@ -4,32 +4,32 @@ from sys import stdout
 
 try:
     with open(os.devnull, 'w') as devnull:
-        v = subprocess.check_output(['git', 'describe', '--tags', '--dirty', '--abbrev'], stderr=stdout).decode().strip()
-    if '-' in v:
-        bv = v[:v.index('-')]
-        bv = bv[:bv.rindex('.') + 1] + str(int(bv[bv.rindex('.') + 1:]) + 1)
-        sempre = 'dirty' if v.endswith('-dirty') else 'commit'
-        pippre = 'alpha' if v.endswith('-dirty') else 'pre'
-        build = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode().strip()
-        number_since = subprocess.check_output(
-            ['git', 'rev-list', v[:v.index('-')] + '..HEAD', '--count']).decode().strip()
-        semver = bv + '-' + sempre + '+' + build
-        pipver = bv + pippre + number_since
-        winver = v[:v.index('-')] + '.' + number_since
+        V = subprocess.check_output(['git', 'describe', '--tags', '--dirty', '--abbrev'], stderr=stdout).decode().strip()
+    if '-' in V:
+        BV = V[:V.index('-')]
+        BV = BV[:BV.rindex('.') + 1] + str(int(BV[BV.rindex('.') + 1:]) + 1)
+        SEMPRE = 'dirty' if V.endswith('-dirty') else 'commit'
+        PIPPRE = 'alpha' if V.endswith('-dirty') else 'pre'
+        BUILD = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode().strip()
+        NUMBER_SINCE = subprocess.check_output(
+            ['git', 'rev-list', V[:V.index('-')] + '..HEAD', '--count']).decode().strip()
+        SEMVER = BV + '-' + SEMPRE + '+' + BUILD
+        PIPVER = BV + PIPPRE + NUMBER_SINCE
+        WINVER = V[:V.index('-')] + '.' + NUMBER_SINCE
     else:
-        semver = v
-        pipver = v
-        winver = v + '.0'
+        SEMVER = V
+        PIPVER = V
+        WINVER = V + '.0'
 
     with open('version', 'w') as f:
-        print('Semantic version is ' + semver)
-        f.write(semver)
+        print('Semantic version is ' + SEMVER)
+        f.write(SEMVER)
     with open('pip_version', 'w') as f:
-        print('PIP version is ' + pipver)
-        f.write(pipver)
+        print('PIP version is ' + PIPVER)
+        f.write(PIPVER)
     with open('win_version', 'w') as f:
-        print('Windows version is ' + winver)
-        f.write(winver)
+        print('Windows version is ' + WINVER)
+        f.write(WINVER)
 except Exception as e:
     print('Error calling git')
     print(e)

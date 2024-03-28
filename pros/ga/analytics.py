@@ -3,8 +3,8 @@ from requests_futures.sessions import FuturesSession
 import random
 from concurrent.futures import as_completed
 
-url = 'https://www.google-analytics.com/collect'
-agent = 'pros-cli'
+URL = 'https://www.google-analytics.com/collect'
+AGENT = 'pros-cli'
 
 """
 PROS ANALYTICS CLASS
@@ -25,23 +25,23 @@ class Analytics():
         self.cli_config.save()
         self.sent = False
         #Variables that the class will use
-        self.gaID = self.cli_config.ga['ga_id']
-        self.useAnalytics = self.cli_config.ga['enabled']
-        self.uID = self.cli_config.ga['u_id']
-        self.pendingRequests = []
+        self.ga_id = self.cli_config.ga['ga_id']
+        self.use_analytics = self.cli_config.ga['enabled']
+        self.u_id = self.cli_config.ga['u_id']
+        self.pending_requests = []
 
     def send(self,action):
-        if not self.useAnalytics or self.sent:
+        if not self.use_analytics or self.sent:
             return
         self.sent=True # Prevent Send from being called multiple times
         try:
             #Payload to be sent to GA, idk what some of them are but it works
             payload = {
                 'v': 1,
-                'tid': self.gaID,
+                'tid': self.ga_id,
                 'aip': 1,
                 'z': random.random(),
-                'cid': self.uID,
+                'cid': self.u_id,
                 't': 'event',
                 'ec': 'action',
                 'ea': action,
@@ -53,11 +53,11 @@ class Analytics():
             session = FuturesSession()
 
             #Send payload to GA servers
-            future = session.post(url=url,
+            future = session.post(url=URL,
                              data=payload,
-                             headers={'User-Agent': agent},
+                             headers={'User-Agent': AGENT},
                              timeout=5.0)
-            self.pendingRequests.append(future)
+            self.pending_requests.append(future)
 
         except Exception:
             from pros.cli.common import logger
@@ -65,13 +65,13 @@ class Analytics():
 
     def set_use(self, value: bool):
         #Sets if GA is being used or not
-        self.useAnalytics = value
-        self.cli_config.ga['enabled'] = self.useAnalytics
+        self.use_analytics = value
+        self.cli_config.ga['enabled'] = self.use_analytics
         self.cli_config.save()
 
     def process_requests(self):
         responses = []
-        for future in as_completed(self.pendingRequests):
+        for future in as_completed(self.pending_requests):
             try:
                 response = future.result()
 
@@ -85,7 +85,7 @@ class Analytics():
                 print("Something went wrong while sending analytics!")
 
 
-        self.pendingRequests.clear()
+        self.pending_requests.clear()
         return responses
 
 

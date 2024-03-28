@@ -32,23 +32,23 @@ class ApplyTemplateAction(Action):
         try:
             conductor.apply_template(project, self.template, **self.apply_kwargs)
         except InvalidTemplateException as e:
-            if e.reason != TemplateAction.AlreadyInstalled or not self.suppress_already_installed:
+            if e.reason != TemplateAction.ALREADY_INSTALLED or not self.suppress_already_installed:
                 raise e
             ui.logger(__name__).warning(str(e))
 
     def describe(self, conductor: c.Conductor, project: c.Project):
         action = project.get_template_actions(conductor.resolve_template(self.template))
-        if action == TemplateAction.NotApplicable:
+        if action == TemplateAction.NOT_APPLICABLE:
             return f'{self.template.identifier} cannot be applied to project!'
-        if action == TemplateAction.Installable:
+        if action == TemplateAction.INSTALLABLE:
             return f'{self.template.identifier} will installed to project.'
-        if action == TemplateAction.Downgradable:
+        if action == TemplateAction.DOWNGRADABLE:
             return f'Project will be downgraded to {self.template.identifier} from' \
                 f' {project.templates[self.template.name].version}.'
-        if action == TemplateAction.Upgradable:
+        if action == TemplateAction.UPGRADABLE:
             return f'Project will be upgraded to {self.template.identifier} from' \
                 f' {project.templates[self.template.name].version}.'
-        if action == TemplateAction.AlreadyInstalled:
+        if action == TemplateAction.ALREADY_INSTALLED:
             if self.apply_kwargs.get('force_apply'):
                 return f'{self.template.identifier} will be re-applied.'
             if self.suppress_already_installed:
@@ -58,9 +58,9 @@ class ApplyTemplateAction(Action):
 
     def can_execute(self, conductor: c.Conductor, project: c.Project) -> bool:
         action = project.get_template_actions(conductor.resolve_template(self.template))
-        if action == TemplateAction.AlreadyInstalled:
+        if action == TemplateAction.ALREADY_INSTALLED:
             return self.apply_kwargs.get('force_apply') or self.suppress_already_installed
-        return action in [TemplateAction.Installable, TemplateAction.Downgradable, TemplateAction.Upgradable]
+        return action in [TemplateAction.INSTALLABLE, TemplateAction.DOWNGRADABLE, TemplateAction.UPGRADABLE]
 
 
 class RemoveTemplateAction(Action):

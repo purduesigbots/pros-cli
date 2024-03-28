@@ -10,12 +10,12 @@ if TYPE_CHECKING:
     from pros.config.cli_config import CliConfig  # noqa: F401, flake8 issue, flake8 issue with "if TYPE_CHECKING"
 
 cli_config: 'CliConfig' = None
-force_prompt_off = False
+FORCE_PROMPT_OFF = False
 SUPPRESSED_EXCEPTIONS = [PermissionError, click.Abort]
 
 def disable_prompt():
-    global force_prompt_off
-    force_prompt_off = True
+    global FORCE_PROMPT_OFF
+    FORCE_PROMPT_OFF = True
 
 def prompt_to_send(event: Dict[str, Any], hint: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     """
@@ -24,7 +24,7 @@ def prompt_to_send(event: Dict[str, Any], hint: Optional[Dict[str, Any]]) -> Opt
     with ui.Notification():
         if cli_config is None or (cli_config.offer_sentry is not None and not cli_config.offer_sentry):
             return None
-        if force_prompt_off:
+        if FORCE_PROMPT_OFF:
             ui.logger(__name__).debug('Sentry prompt was forced off through click option')
             return None
         if 'extra' in event and not event['extra'].get('sentry', True):
