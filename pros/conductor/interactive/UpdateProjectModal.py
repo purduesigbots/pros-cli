@@ -8,6 +8,7 @@ from pros.common import ui
 from pros.common.ui.interactive import application, components, parameters
 from pros.conductor import BaseTemplate, Conductor, Project
 from pros.conductor.project.ProjectTransaction import ProjectTransaction
+
 from .components import TemplateListingComponent
 from .parameters import ExistingProjectParameter, TemplateParameter
 
@@ -25,9 +26,7 @@ class UpdateProjectModal(application.Modal[None]):
 
     def _generate_transaction(self) -> ProjectTransaction:
         transaction = ProjectTransaction(self.project, self.conductor)
-        apply_kwargs = dict(
-            force_apply=self.force_apply_parameter.value
-        )
+        apply_kwargs = dict(force_apply=self.force_apply_parameter.value)
         if self.name.value != self.project.name:
             transaction.change_name(self.name.value)
         if self.project.template_is_applicable(self.current_kernel.value, **apply_kwargs):
@@ -47,22 +46,23 @@ class UpdateProjectModal(application.Modal[None]):
         ui.logger(__name__).debug(options)
         p = TemplateParameter(None, options)
 
-        @p.on('removed')
+        @p.on("removed")
         def remove_template():
             self.new_templates.remove(p)
 
         self.new_templates.append(p)
 
-    def __init__(self, ctx: Optional[Context] = None, conductor: Optional[Conductor] = None,
-                 project: Optional[Project] = None):
-        super().__init__('Update a project')
+    def __init__(
+        self, ctx: Optional[Context] = None, conductor: Optional[Conductor] = None, project: Optional[Project] = None
+    ):
+        super().__init__("Update a project")
         self.conductor = conductor or Conductor()
         self.click_ctx = ctx or get_current_context()
         self._is_processing = False
 
         self.project: Optional[Project] = project
         self.project_path = ExistingProjectParameter(
-            str(project.location) if project else os.path.join(os.path.expanduser('~'), 'My PROS Project')
+            str(project.location) if project else os.path.join(os.path.expanduser("~"), "My PROS Project")
         )
 
         self.name = parameters.Parameter(None)
@@ -74,7 +74,7 @@ class UpdateProjectModal(application.Modal[None]):
         self.templates_collapsed = parameters.BooleanParameter(False)
         self.advanced_collapsed = parameters.BooleanParameter(True)
 
-        self.add_template_button = components.Button('Add Template')
+        self.add_template_button = components.Button("Add Template")
 
         self.add_template_button.on_clicked(self._add_template)
 
@@ -92,20 +92,22 @@ class UpdateProjectModal(application.Modal[None]):
             self.current_kernel = TemplateParameter(
                 None,
                 options=sorted(
-                    {t for t in self.conductor.resolve_templates(self.project.templates['kernel'].as_query())},
-                    key=lambda v: Version(v.version), reverse=True
-                )
+                    {t for t in self.conductor.resolve_templates(self.project.templates["kernel"].as_query())},
+                    key=lambda v: Version(v.version),
+                    reverse=True,
+                ),
             )
             self.current_templates = [
                 TemplateParameter(
                     None,
-                    options=sorted({
-                        t
-                        for t in self.conductor.resolve_templates(t.as_query())
-                    }, key=lambda v: Version(v.version), reverse=True)
+                    options=sorted(
+                        {t for t in self.conductor.resolve_templates(t.as_query())},
+                        key=lambda v: Version(v.version),
+                        reverse=True,
+                    ),
                 )
                 for t in self.project.templates.values()
-                if t.name != 'kernel'
+                if t.name != "kernel"
             ]
             self.new_templates = []
 
@@ -122,26 +124,28 @@ class UpdateProjectModal(application.Modal[None]):
         return self.project and self._generate_transaction().can_execute()
 
     def build(self) -> Generator[components.Component, None, None]:
-        yield components.DirectorySelector('Project Directory', self.project_path)
+        yield components.DirectorySelector("Project Directory", self.project_path)
         if self.is_processing:
             yield components.Spinner()
         elif self.project_path.is_valid():
             assert self.project is not None
-            yield components.Label(f'Modify your {self.project.target} project.')
-            yield components.InputBox('Project Name', self.name)
+            yield components.Label(f"Modify your {self.project.target} project.")
+            yield components.InputBox("Project Name", self.name)
             yield TemplateListingComponent(self.current_kernel, editable=dict(version=True), removable=False)
             yield components.Container(
-                *(TemplateListingComponent(t, editable=dict(version=True), removable=True) for t in
-                  self.current_templates),
+                *(
+                    TemplateListingComponent(t, editable=dict(version=True), removable=True)
+                    for t in self.current_templates
+                ),
                 *(TemplateListingComponent(t, editable=True, removable=True) for t in self.new_templates),
                 self.add_template_button,
-                title='Templates',
-                collapsed=self.templates_collapsed
+                title="Templates",
+                collapsed=self.templates_collapsed,
             )
             yield components.Container(
-                components.Checkbox('Re-apply all templates', self.force_apply_parameter),
-                title='Advanced',
-                collapsed=self.advanced_collapsed
+                components.Checkbox("Re-apply all templates", self.force_apply_parameter),
+                title="Advanced",
+                collapsed=self.advanced_collapsed,
             )
             yield components.Label('What will happen when you click "Continue":')
             yield components.VerbatimLabel(self._generate_transaction().describe())

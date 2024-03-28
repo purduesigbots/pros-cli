@@ -11,7 +11,6 @@ from pros.serial import decode_bytes_to_str
 from pros.serial.devices import StreamDevice
 from pros.serial.ports import PortConnectionException
 
-
 # This file is a modification of the miniterm implementation on pyserial
 
 
@@ -60,10 +59,9 @@ class ConsoleBase(object):
         self.setup()
 
 
-if os.name == 'nt':  # noqa
-    import msvcrt
+if os.name == "nt":  # noqa
     import ctypes
-
+    import msvcrt
 
     class Out(object):
         """file-like wrapper that uses os.write"""
@@ -76,7 +74,6 @@ if os.name == 'nt':  # noqa
 
         def write(self, s):
             os.write(self.fd, s)
-
 
     class Console(ConsoleBase):
         def __init__(self):
@@ -104,7 +101,7 @@ if os.name == 'nt':  # noqa
                 z = msvcrt.getwch()
                 if z == chr(13):
                     return chr(10)
-                elif z in (chr(0), chr(0x0e)):  # functions keys, ignore
+                elif z in (chr(0), chr(0x0E)):  # functions keys, ignore
                     msvcrt.getwch()
                 else:
                     return z
@@ -113,13 +110,12 @@ if os.name == 'nt':  # noqa
             # CancelIo, CancelSynchronousIo do not seem to work when using
             # getwch, so instead, send a key to the window with the console
             hwnd = ctypes.windll.kernel32.GetConsoleWindow()
-            ctypes.windll.user32.PostMessageA(hwnd, 0x100, 0x0d, 0)
+            ctypes.windll.user32.PostMessageA(hwnd, 0x100, 0x0D, 0)
 
-elif os.name == 'posix':
+elif os.name == "posix":
     import atexit
-    import termios
     import select
-
+    import termios
 
     class Console(ConsoleBase):
         def __init__(self):
@@ -131,8 +127,7 @@ elif os.name == 'posix':
             self.old = termios.tcgetattr(self.fd)
             atexit.register(self.cleanup)
             if sys.version_info < (3, 0):
-                self.enc_stdin = codecs. \
-                    getreader(sys.stdin.encoding)(sys.stdin)
+                self.enc_stdin = codecs.getreader(sys.stdin.encoding)(sys.stdin)
             else:
                 self.enc_stdin = sys.stdin
 
@@ -144,13 +139,12 @@ elif os.name == 'posix':
             termios.tcsetattr(self.fd, termios.TCSANOW, new)
 
         def getkey(self):
-            ready, _, _ = select.select([self.enc_stdin, self.pipe_r], [],
-                                        [], None)
+            ready, _, _ = select.select([self.enc_stdin, self.pipe_r], [], [], None)
             if self.pipe_r in ready:
                 os.read(self.pipe_r, 1)
                 return
             c = self.enc_stdin.read(1)
-            if c == chr(0x7f):
+            if c == chr(0x7F):
                 c = chr(8)  # map the BS key (which yields DEL) to backspace
             return c
 
@@ -161,19 +155,18 @@ elif os.name == 'posix':
             termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.old)
 
 else:
-    raise NotImplementedError(
-        'Sorry no implementation for your platform ({})'
-        ' available.'.format(sys.platform))
+    raise NotImplementedError("Sorry no implementation for your platform ({})" " available.".format(sys.platform))
 
 
 class Terminal(object):
     """This class is loosely based off of the pyserial miniterm"""
 
-    def __init__(self, port_instance: StreamDevice, transformations=(),
-                 output_raw: bool = False, request_banner: bool = True):
+    def __init__(
+        self, port_instance: StreamDevice, transformations=(), output_raw: bool = False, request_banner: bool = True
+    ):
         self.device = port_instance
-        self.device.subscribe(b'sout')
-        self.device.subscribe(b'serr')
+        self.device.subscribe(b"sout")
+        self.device.subscribe(b"serr")
         self.transformations = transformations
         self._reader_alive = None
         self.receiver_thread = None  # type: threading.Thread
@@ -189,8 +182,7 @@ class Terminal(object):
 
     def _start_rx(self):
         self._reader_alive = True
-        self.receiver_thread = threading.Thread(target=self.reader,
-                                                name='serial-rx-term')
+        self.receiver_thread = threading.Thread(target=self.reader, name="serial-rx-term")
         self.receiver_thread.daemon = True
         self.receiver_thread.start()
 
@@ -200,8 +192,7 @@ class Terminal(object):
 
     def _start_tx(self):
         self._transmitter_alive = True
-        self.transmitter_thread = threading.Thread(target=self.transmitter,
-                                                   name='serial-tx-term')
+        self.transmitter_thread = threading.Thread(target=self.transmitter, name="serial-tx-term")
         self.transmitter_thread.daemon = True
         self.transmitter_thread.start()
 
@@ -213,7 +204,7 @@ class Terminal(object):
     def reader(self):
         if self.request_banner:
             try:
-                self.device.write(b'pRb')
+                self.device.write(b"pRb")
             except Exception as e:
                 logger(__name__).exception(e)
         try:
@@ -221,23 +212,25 @@ class Terminal(object):
                 data = self.device.read()
                 if not data:
                     continue
-                if data[0] == b'sout':
+                if data[0] == b"sout":
                     text = decode_bytes_to_str(data[1])
-                elif data[0] == b'serr':
-                    text = '{}{}{}'.format(colorama.Fore.RED, decode_bytes_to_str(data[1]), colorama.Style.RESET_ALL)
-                elif data[0] == b'kdbg':
-                    text = '{}\n\nKERNEL DEBUG:\t{}{}\n'.format(colorama.Back.GREEN + colorama.Style.BRIGHT,
-                                                                decode_bytes_to_str(data[1]),
-                                                                colorama.Style.RESET_ALL)
-                elif data[0] != b'':
-                    text = '{}{}'.format(decode_bytes_to_str(data[0]), decode_bytes_to_str(data[1]))
+                elif data[0] == b"serr":
+                    text = "{}{}{}".format(colorama.Fore.RED, decode_bytes_to_str(data[1]), colorama.Style.RESET_ALL)
+                elif data[0] == b"kdbg":
+                    text = "{}\n\nKERNEL DEBUG:\t{}{}\n".format(
+                        colorama.Back.GREEN + colorama.Style.BRIGHT,
+                        decode_bytes_to_str(data[1]),
+                        colorama.Style.RESET_ALL,
+                    )
+                elif data[0] != b"":
+                    text = "{}{}".format(decode_bytes_to_str(data[0]), decode_bytes_to_str(data[1]))
                 else:
                     text = "{}".format(decode_bytes_to_str(data[1]))
                 self.console.write(text)
         except UnicodeError as e:
             logger(__name__).exception(e)
         except PortConnectionException:
-            logger(__name__).warning(f'Connection to {self.device.name} broken')
+            logger(__name__).warning(f"Connection to {self.device.name} broken")
             if not self.alive.is_set():
                 self.stop()
         except Exception as e:
@@ -246,7 +239,7 @@ class Terminal(object):
             else:
                 logger(__name__).debug(e)
             self.stop()
-        logger(__name__).info('Terminal receiver dying')
+        logger(__name__).info("Terminal receiver dying")
 
     def transmitter(self):
         try:
@@ -254,14 +247,14 @@ class Terminal(object):
                 try:
                     c = self.console.getkey()
                 except KeyboardInterrupt:
-                    c = '\x03'
+                    c = "\x03"
                 if self.alive.is_set():
                     break
-                if c == '\x03' or not self.no_sigint:
+                if c == "\x03" or not self.no_sigint:
                     self.stop()
                     break
                 else:
-                    self.device.write(c.encode(encoding='utf-8'))
+                    self.device.write(c.encode(encoding="utf-8"))
                     self.console.write(c)
         except Exception as e:
             if not self.alive.is_set():
@@ -269,7 +262,7 @@ class Terminal(object):
             else:
                 logger(__name__).debug(e)
             self.stop()
-        logger(__name__).info('Terminal transmitter dying')
+        logger(__name__).info("Terminal transmitter dying")
 
     def catch_sigint(self):
         self.no_sigint = False
@@ -284,13 +277,13 @@ class Terminal(object):
     def stop(self, *args):
         self.console.cleanup()
         if not self.alive.is_set():
-            logger(__name__).warning('Stopping terminal')
+            logger(__name__).warning("Stopping terminal")
             self.alive.set()
             self.device.destroy()
             if threading.current_thread() != self.transmitter_thread and self.transmitter_thread.is_alive():
                 self.console.cleanup()
                 self.console.cancel()
-            logger(__name__).info('All done!')
+            logger(__name__).info("All done!")
 
     def join(self):
         try:

@@ -3,7 +3,7 @@ from typing import *
 from .components import Component
 from .observable import Observable
 
-P = TypeVar('P')
+P = TypeVar("P")
 
 
 class Application(Observable, Generic[P]):
@@ -22,7 +22,7 @@ class Application(Observable, Generic[P]):
         self.exit()
 
     def on_exit(self, *handlers: Callable):
-        return super(Application, self).on('end', *handlers)
+        return super(Application, self).on("end", *handlers)
 
     def exit(self, **kwargs):
         """
@@ -31,24 +31,24 @@ class Application(Observable, Generic[P]):
         :arg return: set the return value before triggering exit. This value would be the value returned by
                      Renderer.run(Application)
         """
-        if 'return' in kwargs:
-            self.set_return(kwargs['return'])
-        self.trigger('end')
+        if "return" in kwargs:
+            self.set_return(kwargs["return"])
+        self.trigger("end")
 
     def on_redraw(self, *handlers: Callable, **kwargs) -> Callable:
-        return super(Application, self).on('redraw', *handlers, **kwargs)
+        return super(Application, self).on("redraw", *handlers, **kwargs)
 
     def redraw(self) -> None:
-        self.trigger('redraw')
+        self.trigger("redraw")
 
     def set_return(self, value: P) -> None:
         """
         Set the return value of Renderer.run(Application)
         """
-        self.trigger('return', value)
+        self.trigger("return", value)
 
     def on_return_set(self, *handlers: Callable, **kwargs):
-        return super(Application, self).on('return', *handlers, **kwargs)
+        return super(Application, self).on("return", *handlers, **kwargs)
 
     @classmethod
     def get_hierarchy(cls, base: type) -> Optional[List[str]]:
@@ -75,7 +75,7 @@ class Application(Observable, Generic[P]):
         return dict(
             etype=Application.get_hierarchy(self.__class__),
             elements=[e.__getstate__() for e in self.build()],
-            uuid=self.uuid
+            uuid=self.uuid,
         )
 
 
@@ -84,6 +84,7 @@ class Modal(Application[P], Generic[P]):
     An Application which is typically displayed in a pop-up box. It has a title, description, continue button,
     and cancel button.
     """
+
     # title of the modal to be displayed
     title: AnyStr
     # optional description displayed underneath the Modal
@@ -96,9 +97,15 @@ class Modal(Application[P], Generic[P]):
     # Cancel button text
     cancel_button: AnyStr
 
-    def __init__(self, title: AnyStr, description: Optional[AnyStr] = None,
-                 will_abort: bool = True, confirm_button: AnyStr = 'Continue', cancel_button: AnyStr = 'Cancel',
-                 can_confirm: Optional[bool] = None):
+    def __init__(
+        self,
+        title: AnyStr,
+        description: Optional[AnyStr] = None,
+        will_abort: bool = True,
+        confirm_button: AnyStr = "Continue",
+        cancel_button: AnyStr = "Cancel",
+        can_confirm: Optional[bool] = None,
+    ):
         super().__init__()
         self.title = title
         self.description = description
@@ -107,13 +114,13 @@ class Modal(Application[P], Generic[P]):
         self.cancel_button = cancel_button
         self._can_confirm = can_confirm
 
-        self.on('confirm', self._confirm)
+        self.on("confirm", self._confirm)
 
         def on_cancel():
             nonlocal self
             self.cancel()
 
-        self.on('cancel', on_cancel)
+        self.on("cancel", on_cancel)
 
     def confirm(self, *args, **kwargs):
         raise NotImplementedError()
@@ -133,7 +140,7 @@ class Modal(Application[P], Generic[P]):
     def __getstate__(self):
         extra_state = {}
         if self.description is not None:
-            extra_state['description'] = self.description
+            extra_state["description"] = self.description
         return dict(
             **super(Modal, self).__getstate__(),
             **extra_state,

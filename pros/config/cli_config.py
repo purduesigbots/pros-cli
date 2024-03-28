@@ -6,6 +6,7 @@ from typing import *
 import click
 
 import pros.common
+
 # import pros.conductor.providers.github_releases as githubreleases
 from pros.config.config import Config
 
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
 class CliConfig(Config):
     def __init__(self, file=None):
         if not file:
-            file = os.path.join(click.get_app_dir('PROS'), 'cli.pros')
+            file = os.path.join(click.get_app_dir("PROS"), "cli.pros")
         self.update_frequency: timedelta = timedelta(hours=1)
         self.override_use_build_compile_commands: Optional[bool] = None
         self.offer_sentry: Optional[bool] = None
@@ -30,18 +31,19 @@ class CliConfig(Config):
     def use_build_compile_commands(self):
         if self.override_use_build_compile_commands is not None:
             return self.override_use_build_compile_commands
-        paths = [os.path.join('~', '.pros-atom'), os.path.join('~', '.pros-editor')]
+        paths = [os.path.join("~", ".pros-atom"), os.path.join("~", ".pros-editor")]
         return any([os.path.exists(os.path.expanduser(p)) for p in paths])
 
-    def get_upgrade_manifest(self, force: bool = False) -> Optional['UpgradeManifestV1']:
+    def get_upgrade_manifest(self, force: bool = False) -> Optional["UpgradeManifestV1"]:
         from pros.upgrade.manifests.upgrade_manifest_v1 import UpgradeManifestV1  # noqa: F811
 
         if not force and not self.needs_online_fetch(self.cached_upgrade[0]):
             return self.cached_upgrade[1]
-        pros.common.logger(__name__).info('Fetching upgrade manifest...')
-        import requests
+        pros.common.logger(__name__).info("Fetching upgrade manifest...")
         import jsonpickle
-        r = requests.get('https://purduesigbots.github.io/pros-mainline/cli-updates.json')
+        import requests
+
+        r = requests.get("https://purduesigbots.github.io/pros-mainline/cli-updates.json")
         pros.common.logger(__name__).debug(r)
         if r.status_code == 200:
             try:
@@ -53,7 +55,7 @@ class CliConfig(Config):
             self.save()
             return self.cached_upgrade[1]
         else:
-            pros.common.logger(__name__).warning(f'Failed to fetch CLI updates because status code: {r.status_code}')
+            pros.common.logger(__name__).warning(f"Failed to fetch CLI updates because status code: {r.status_code}")
             pros.common.logger(__name__).debug(r)
             return None
 
@@ -64,6 +66,6 @@ def cli_config() -> CliConfig:
         return CliConfig()
     ctx.ensure_object(dict)
     assert isinstance(ctx.obj, dict)
-    if not hasattr(ctx.obj, 'cli_config') or not isinstance(ctx.obj['cli_config'], CliConfig):
-        ctx.obj['cli_config'] = CliConfig()
-    return ctx.obj['cli_config']
+    if not hasattr(ctx.obj, "cli_config") or not isinstance(ctx.obj["cli_config"], CliConfig):
+        ctx.obj["cli_config"] = CliConfig()
+    return ctx.obj["cli_config"]

@@ -4,7 +4,7 @@ from .template import Template
 
 
 def _fix_path(*paths: str) -> str:
-    return os.path.normpath(os.path.join(*paths).replace('\\', '/'))
+    return os.path.normpath(os.path.join(*paths).replace("\\", "/"))
 
 
 class LocalTemplate(Template):

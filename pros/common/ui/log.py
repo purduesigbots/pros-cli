@@ -21,18 +21,18 @@ class PROSLogHandler(logging.StreamHandler):
 
     def emit(self, record):
         try:
-            if self.ctx_obj.get('machine_output', False):
+            if self.ctx_obj.get("machine_output", False):
                 formatter = self.formatter or logging.Formatter()
                 record.message = record.getMessage()
                 obj = {
-                    'type': 'log/message',
-                    'level': record.levelname,
-                    'message': formatter.formatMessage(record),
-                    'simpleMessage': record.message
+                    "type": "log/message",
+                    "level": record.levelname,
+                    "message": formatter.formatMessage(record),
+                    "simpleMessage": record.message,
                 }
                 if record.exc_info:
-                    obj['trace'] = formatter.formatException(record.exc_info)
-                msg = f'Uc&42BWAaQ{jsonpickle.dumps(obj, unpicklable=False, backend=_machine_pickler)}'
+                    obj["trace"] = formatter.formatException(record.exc_info)
+                msg = f"Uc&42BWAaQ{jsonpickle.dumps(obj, unpicklable=False, backend=_machine_pickler)}"
             else:
                 msg = self.format(record)
             click.echo(msg)
@@ -47,6 +47,6 @@ class PROSLogFormatter(logging.Formatter):
 
     def formatException(self, ei):
         if not isdebug():
-            return '\n'.join(super().formatException(ei).split('\n')[-3:])
+            return "\n".join(super().formatException(ei).split("\n")[-3:])
         else:
             return super().formatException(ei)

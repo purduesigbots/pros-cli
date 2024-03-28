@@ -3,23 +3,24 @@ from datetime import datetime
 from enum import Enum
 from typing import *
 
-from pros.common import logger
 import pros.common.ui as ui
+from pros.common import logger
 from pros.config import Config
 from pros.config.cli_config import cli_config
-from .manifests import *
+
 from .instructions import UpgradeResult
+from .manifests import *
 
 
 class ReleaseChannel(Enum):
-    Stable = 'stable'
-    Beta = 'beta'
+    Stable = "stable"
+    Beta = "beta"
 
 
 class UpgradeManager(Config):
     def __init__(self, file=None):
         if file is None:
-            file = os.path.join(cli_config().directory, 'upgrade.pros.json')
+            file = os.path.join(cli_config().directory, "upgrade.pros.json")
         self._last_check: datetime = datetime.min
         self._manifest: Optional[UpgradeManifestV1] = None
         self.release_channel: ReleaseChannel = ReleaseChannel.Stable
@@ -29,22 +30,23 @@ class UpgradeManager(Config):
     @property
     def has_stale_manifest(self):
         if self._manifest is None:
-            logger(__name__).debug('Upgrade manager\'s manifest is nonexistent')
+            logger(__name__).debug("Upgrade manager's manifest is nonexistent")
         if datetime.now() - self._last_check > cli_config().update_frequency:
-            logger(__name__).debug(f'Upgrade manager\'s last check occured at {self._last_check}.')
-            logger(__name__).debug(f'Was longer ago than update frequency ({cli_config().update_frequency}) allows.')
+            logger(__name__).debug(f"Upgrade manager's last check occured at {self._last_check}.")
+            logger(__name__).debug(f"Was longer ago than update frequency ({cli_config().update_frequency}) allows.")
         return (self._manifest is None) or (datetime.now() - self._last_check > cli_config().update_frequency)
 
     def get_manifest(self, force: bool = False) -> UpgradeManifestV1:
         if not force and not self.has_stale_manifest:
             return self._manifest
 
-        ui.echo('Fetching upgrade manifest...')
-        import requests
-        import jsonpickle
+        ui.echo("Fetching upgrade manifest...")
         import json
 
-        channel_url = f'https://purduesigbots.github.io/pros-mainline/{self.release_channel.value}'
+        import jsonpickle
+        import requests
+
+        channel_url = f"https://purduesigbots.github.io/pros-mainline/{self.release_channel.value}"
         self._manifest = None
 
         manifest_urls = [f"{channel_url}/{manifest.__name__}.json" for manifest in manifests]
@@ -58,13 +60,13 @@ class UpgradeManager(Config):
                     self.save()
                     break
                 except json.decoder.JSONDecodeError as e:
-                    logger(__name__).warning(f'Failed to decode {manifest_url}')
+                    logger(__name__).warning(f"Failed to decode {manifest_url}")
                     logger(__name__).debug(e)
             else:
-                logger(__name__).debug(f'Failed to get {manifest_url} ({resp.status_code})')
+                logger(__name__).debug(f"Failed to get {manifest_url} ({resp.status_code})")
         if not self._manifest:
             manifest_list = "\n".join(manifest_urls)
-            logger(__name__).warning(f'Could not access any upgrade manifests from any of:\n{manifest_list}')
+            logger(__name__).warning(f"Could not access any upgrade manifests from any of:\n{manifest_list}")
         return self._manifest
 
     @property

@@ -1,9 +1,13 @@
 import os
 from typing import *
+
 import click
+
 import pros.conductor as c
-from .common import PROSGroup, default_options, project_option, pros_root
 from pros.ga.analytics import analytics
+
+from .common import PROSGroup, default_options, project_option, pros_root
+
 
 @pros_root
 def interactive_cli():
@@ -17,11 +21,12 @@ def interactive():
 
 
 @interactive.command()
-@click.option('--directory', default=os.path.join(os.path.expanduser('~'), 'My PROS Project'))
+@click.option("--directory", default=os.path.join(os.path.expanduser("~"), "My PROS Project"))
 @default_options
 def new_project(directory):
     from pros.common.ui.interactive.renderers import MachineOutputRenderer
     from pros.conductor.interactive.NewProjectModal import NewProjectModal
+
     app = NewProjectModal(directory=directory)
     MachineOutputRenderer(app).run()
 
@@ -32,6 +37,7 @@ def new_project(directory):
 def update_project(project: Optional[c.Project]):
     from pros.common.ui.interactive.renderers import MachineOutputRenderer
     from pros.conductor.interactive.UpdateProjectModal import UpdateProjectModal
+
     app = UpdateProjectModal(project)
     MachineOutputRenderer(app).run()
 
@@ -42,4 +48,5 @@ def update_project(project: Optional[c.Project]):
 def upload(project: Optional[c.Project]):
     from pros.common.ui.interactive.renderers import MachineOutputRenderer
     from pros.serial.interactive import UploadProjectModal
+
     MachineOutputRenderer(UploadProjectModal(project)).run()

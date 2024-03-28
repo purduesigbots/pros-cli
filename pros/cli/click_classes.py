@@ -1,11 +1,12 @@
 from collections import defaultdict
 from typing import *
 
-from rich_click import RichCommand
 import click.decorators
 from click import ClickException
-from pros.conductor.project import Project as p
+from rich_click import RichCommand
+
 from pros.common.utils import get_version
+from pros.conductor.project import Project as p
 
 
 class PROSFormatted(RichCommand):
@@ -19,9 +20,9 @@ class PROSFormatted(RichCommand):
 
     def format_commands(self, ctx, formatter):
         """Extra format methods for multi methods that adds all the commands
-                after the options.
-                """
-        if not hasattr(self, 'list_commands'):
+        after the options.
+        """
+        if not hasattr(self, "list_commands"):
             return
         rows = []
         for subcommand in self.list_commands(ctx):
@@ -29,14 +30,14 @@ class PROSFormatted(RichCommand):
             # What is this, the tool lied about a command.  Ignore it
             if cmd is None:
                 continue
-            if hasattr(cmd, 'hidden') and cmd.hidden:
+            if hasattr(cmd, "hidden") and cmd.hidden:
                 continue
 
-            help = cmd.short_help or ''
+            help = cmd.short_help or ""
             rows.append((subcommand, help))
 
         if rows:
-            with formatter.section('Commands'):
+            with formatter.section("Commands"):
                 formatter.write_dl(rows)
 
     def format_options(self, ctx, formatter):
@@ -45,21 +46,22 @@ class PROSFormatted(RichCommand):
         for param in self.get_params(ctx):
             rv = param.get_help_record(ctx)
             if rv is not None:
-                if hasattr(param, 'group'):
+                if hasattr(param, "group"):
                     opts[param.group].append(rv)
                 else:
-                    opts['Options'].append(rv)
+                    opts["Options"].append(rv)
 
-        if len(opts['Options']) > 0:
-            with formatter.section('Options'):
-                formatter.write_dl(opts['Options'])
-            opts.pop('Options')
+        if len(opts["Options"]) > 0:
+            with formatter.section("Options"):
+                formatter.write_dl(opts["Options"])
+            opts.pop("Options")
 
         for group, options in opts.items():
             with formatter.section(group):
                 formatter.write_dl(options)
 
         self.format_commands(ctx, formatter)
+
 
 class PROSCommand(PROSFormatted, click.Command):
     pass
@@ -77,28 +79,30 @@ class PROSOption(click.Option):
         self.group = group
 
     def get_help_record(self, ctx):
-        if hasattr(self, 'hidden') and self.hidden:
+        if hasattr(self, "hidden") and self.hidden:
             return
         return super().get_help_record(ctx)
 
+
 class PROSDeprecated(click.Option):
     def __init__(self, *args, replacement: str = None, **kwargs):
-        kwargs['help'] = "This option has been deprecated."
-        if not replacement==None:
-            kwargs['help'] += " Its replacement is '--{}'".format(replacement)
+        kwargs["help"] = "This option has been deprecated."
+        if not replacement == None:
+            kwargs["help"] += " Its replacement is '--{}'".format(replacement)
         super(PROSDeprecated, self).__init__(*args, **kwargs)
         self.group = "Deprecated"
-        self.optiontype = "flag" if str(self.type)=="BOOL" else "switch"
+        self.optiontype = "flag" if str(self.type) == "BOOL" else "switch"
         self.to_use = replacement
-        self.arg = args[0][len(args[0])-1]
+        self.arg = args[0][len(args[0]) - 1]
         self.msg = "The '{}' {} has been deprecated. Please use '--{}' instead."
-        if replacement==None:
-            self.msg = self.msg.split(".")[0]+"."
+        if replacement == None:
+            self.msg = self.msg.split(".")[0] + "."
 
     def type_cast_value(self, ctx, value):
-        if not value==self.default:
-            print("Warning! : "+self.msg.format(self.arg, self.optiontype, self.to_use)+"\n")
+        if not value == self.default:
+            print("Warning! : " + self.msg.format(self.arg, self.optiontype, self.to_use) + "\n")
         return value
+
 
 class PROSGroup(PROSFormatted, click.Group):
     def __init__(self, *args, **kwargs):
@@ -112,7 +116,7 @@ class PROSGroup(PROSFormatted, click.Group):
             for alias in aliases:
                 self.cmd_dict[alias] = f.__name__ if len(args) == 0 else args[0]
 
-            cmd = super(PROSGroup, self).command(*args, cls=kwargs.pop('cls', PROSCommand), **kwargs)(f)
+            cmd = super(PROSGroup, self).command(*args, cls=kwargs.pop("cls", PROSCommand), **kwargs)(f)
             self.add_command(cmd)
             return cmd
 
@@ -124,7 +128,7 @@ class PROSGroup(PROSFormatted, click.Group):
         def decorator(f):
             for alias in aliases:
                 self.cmd_dict[alias] = f.__name__
-            cmd = super(PROSGroup, self).group(*args, cls=kwargs.pop('cls', PROSGroup), **kwargs)(f)
+            cmd = super(PROSGroup, self).group(*args, cls=kwargs.pop("cls", PROSGroup), **kwargs)(f)
             self.add_command(cmd)
             return cmd
 
@@ -160,7 +164,7 @@ class PROSCommandCollection(PROSFormatted, click.CommandCollection):
         except ClickException as e:
             click.echo("PROS-CLI Version:  {}".format(get_version()))
             isProject = p.find_project("")
-            if (isProject): #check if there is a project
+            if isProject:  # check if there is a project
                 curr_proj = p()
                 click.echo("PROS-Kernel Version: {}".format(curr_proj.kernel))
             raise e

@@ -1,7 +1,7 @@
 from typing import *
 
-from .component import Component
 from ..observable import Observable
+from .component import Component
 
 
 class Button(Component, Observable):
@@ -14,11 +14,7 @@ class Button(Component, Observable):
         self.text = text
 
     def on_clicked(self, *handlers: Callable, **kwargs):
-        return self.on('clicked', *handlers, **kwargs)
+        return self.on("clicked", *handlers, **kwargs)
 
     def __getstate__(self) -> dict:
-        return dict(
-            **super(Button, self).__getstate__(),
-            text=self.text,
-            uuid=self.uuid
-        )
+        return dict(**super(Button, self).__getstate__(), text=self.text, uuid=self.uuid)
