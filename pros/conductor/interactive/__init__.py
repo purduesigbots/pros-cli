@@ -1,4 +1,4 @@
-from .NewProjectModal import NewProjectModal
-from .UpdateProjectModal import UpdateProjectModal
+from .new_project_modal import NewProjectModal
+from .update_project_modal import UpdateProjectModal
 
 from .parameters import ExistingProjectParameter, NonExistentProjectParameter

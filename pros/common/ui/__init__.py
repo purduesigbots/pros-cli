@@ -39,7 +39,7 @@ def confirm(text: str, default: bool = False, abort: bool = False, prompt_suffix
             log: str = None):
     add_breadcrumb(message=text, category='confirm')
     if ismachineoutput():
-        from pros.common.ui.interactive.ConfirmModal import ConfirmModal
+        from pros.common.ui.interactive.confirm_modal import ConfirmModal
         from pros.common.ui.interactive.renderers import MachineOutputRenderer
 
         app = ConfirmModal(text, abort, title, log)

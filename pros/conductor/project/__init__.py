@@ -11,7 +11,7 @@ from pros.common import ui
 from pros.common.ui import EchoPipe
 from pros.conductor.project.template_resolution import TemplateAction
 from pros.config.config import Config, ConfigNotFoundException
-from .ProjectReport import ProjectReport
+from .project_report import ProjectReport
 from ..templates import BaseTemplate, LocalTemplate, Template
 from ..transaction import Transaction
 
