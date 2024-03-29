@@ -40,3 +40,23 @@ def upgrade(force_check, no_install):
                 ui.logger(__name__).error(f'This manifest cannot perform the upgrade.')
                 return -3
             ui.finalize('upgradeComplete', manager.perform_upgrade())
+
+
+@misc_commands_cli.command()
+@click.argument('shell', type=click.Choice(['bash', 'zsh', 'fish']), required=True)
+@click.argument('rcfile', type=click.Path(file_okay=True, dir_okay=False), required=True)
+@default_options
+def setup_autocomplete(shell, rcfile):
+    ui.echo(f"Setting up autocomplete for PROS CLI for {shell} shell in {rcfile}...")
+
+    if shell == 'bash':
+        with open(rcfile, 'a') as f:
+            f.write('\neval "$(_PROS_COMPLETE=bash_source pros)"')
+
+    if shell == 'zsh':
+        with open(rcfile, 'a') as f:
+            f.write('\neval "$(_PROS_COMPLETE=zsh_source pros)"')
+
+    if shell == 'fish':
+        with open(rcfile, 'a') as f:
+            f.write("\n_PROS_COMPLETE=fish_source pros | source")
