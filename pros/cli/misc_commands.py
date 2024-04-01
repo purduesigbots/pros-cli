@@ -82,7 +82,8 @@ def setup_autocomplete(shell, config_file):
         # Write the autocomplete script to a shell script file
         script_file = os.path.join(config_dir, f".pros-complete.{shell}")
         with open(script_file, 'w') as f:
-            subprocess.Popen(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f).wait()
+            if subprocess.Popen(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f).wait():
+                raise click.ClickException(f"Failed to write autocomplete script to {script_file}")
 
         # Source the autocomplete script in the config file
         source_autocomplete = f". ~/.pros-complete.{shell}\n"
@@ -93,6 +94,7 @@ def setup_autocomplete(shell, config_file):
                 f.write(source_autocomplete)
     elif shell == 'fish':
         with open(config_file, 'w') as f:
-            subprocess.Popen(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f).wait()
+            if subprocess.Popen(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f).wait():
+                raise click.ClickException(f"Failed to write autocomplete script to {config_file}")
 
     ui.echo(f"Succesfully set up autocomplete for PROS CLI for {shell} in {config_file}")
