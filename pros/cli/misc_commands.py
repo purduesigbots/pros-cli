@@ -81,6 +81,6 @@ def setup_autocomplete(shell, config_file):
                 f.write(source_autocomplete)
 
 
-    # if shell == 'fish':
-    #     with open(config_file, 'a') as f:
-    #         f.write("\n_PROS_COMPLETE=fish_source pros | source")
+    if shell == 'fish':
+        with open(config_file, 'w') as f:
+            subprocess.Popen(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f).wait()
