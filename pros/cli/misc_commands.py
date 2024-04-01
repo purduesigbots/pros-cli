@@ -50,7 +50,16 @@ def upgrade(force_check, no_install):
 @click.argument('config_file', type=click.Path(file_okay=True, dir_okay=False), default=None, required=False)
 @default_options
 def setup_autocomplete(shell, config_file):
-    ui.echo(f"Setting up autocomplete for PROS CLI for {shell} shell in {config_file}...")
+    """
+    Set up autocomplete for PROS CLI in the specified shell
+
+    SHELL: The shell to set up autocomplete for
+
+    CONFIG_FILE: The configuration file to add the autocomplete script to. If not specified, the default configuration
+    file for the shell will be used.
+    """
+
+    # https://click.palletsprojects.com/en/8.1.x/shell-completion/
 
     default_config_files = {
         'bash': '~/.bashrc',
@@ -70,17 +79,20 @@ def setup_autocomplete(shell, config_file):
         if not os.path.exists(config_dir):
             raise click.UsageError(f"Config directory {config_dir} does not exist. Please specify a valid config file.")
 
+        # Write the autocomplete script to a shell script file
         script_file = os.path.join(config_dir, f".pros-complete.{shell}")
         with open(script_file, 'w') as f:
             subprocess.Popen(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f).wait()
 
+        # Source the autocomplete script in the config file
         source_autocomplete = f". ~/.pros-complete.{shell}\n"
         with open(config_file, 'r+') as f:
+            # Only append if the source command is not already in the file
             if source_autocomplete not in f.readlines():
                 f.write("\n# PROS CLI autocomplete\n")
                 f.write(source_autocomplete)
-
-
-    if shell == 'fish':
+    elif shell == 'fish':
         with open(config_file, 'w') as f:
             subprocess.Popen(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f).wait()
+
+    ui.echo(f"Succesfully set up autocomplete for PROS CLI for {shell} in {config_file}")
