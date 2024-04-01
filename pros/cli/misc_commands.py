@@ -47,35 +47,40 @@ def upgrade(force_check, no_install):
 
 @misc_commands_cli.command()
 @click.argument('shell', type=click.Choice(['bash', 'zsh', 'fish']), required=True)
-@click.argument('configfile', type=click.Path(file_okay=True, dir_okay=False), default=None, required=False)
+@click.argument('config_file', type=click.Path(file_okay=True, dir_okay=False), default=None, required=False)
 @default_options
-def setup_autocomplete(shell, configfile):
-    ui.echo(f"Setting up autocomplete for PROS CLI for {shell} shell in {configfile}...")
+def setup_autocomplete(shell, config_file):
+    ui.echo(f"Setting up autocomplete for PROS CLI for {shell} shell in {config_file}...")
 
-    default_configfiles = {
+    default_config_files = {
         'bash': '~/.bashrc',
         'zsh': '~/.zshrc',
         'fish': '~/.config/fish/completions/pros.fish'
     }
 
-    if configfile is None:
-        configfile = default_configfiles[shell]
-    configfile = os.path.expanduser(configfile)
-
-    if shell in ['bash', 'zsh'] and not os.path.exists(configfile):
-        raise click.UsageError(f"Config file {configfile} does not exist. Please specify a valid config file.")
+    if config_file is None:
+        config_file = default_config_files[shell]
+    config_file = os.path.expanduser(config_file)
 
     if shell in ['bash', 'zsh']:
-        config_dir = os.path.dirname(configfile)
+        if not os.path.exists(config_file):
+            raise click.UsageError(f"Config file {config_file} does not exist. Please specify a valid config file.")
+
+        config_dir = os.path.dirname(config_file)
         if not os.path.exists(config_dir):
             raise click.UsageError(f"Config directory {config_dir} does not exist. Please specify a valid config file.")
+
         script_file = os.path.join(config_dir, f".pros-complete.{shell}")
         with open(script_file, 'w') as f:
-            # _PROS_COMPLETE=zsh_source pros > ~/.pros-complete.zsh
-            # f.write(os.popen(f"_PROS_COMPLETE={shell}_source pros").read())
             subprocess.Popen(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f).wait()
+
+        source_autocomplete = f". ~/.pros-complete.{shell}\n"
+        with open(config_file, 'r+') as f:
+            if source_autocomplete not in f.readlines():
+                f.write("\n# PROS CLI autocomplete\n")
+                f.write(source_autocomplete)
 
 
     # if shell == 'fish':
-    #     with open(configfile, 'a') as f:
+    #     with open(config_file, 'a') as f:
     #         f.write("\n_PROS_COMPLETE=fish_source pros | source")
