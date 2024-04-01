@@ -93,6 +93,9 @@ def setup_autocomplete(shell, config_file):
                 f.write("\n# PROS CLI autocomplete\n")
                 f.write(source_autocomplete)
     elif shell == 'fish':
+        config_dir = os.path.dirname(config_file)
+        if not os.path.exists(config_dir):
+            raise click.UsageError(f"Config directory {config_dir} does not exist. Please specify a valid config file.")
         with open(config_file, 'w') as f:
             if subprocess.Popen(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f).wait():
                 raise click.ClickException(f"Failed to write autocomplete script to {config_file}")
