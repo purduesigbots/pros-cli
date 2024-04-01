@@ -1,3 +1,6 @@
+import os
+import subprocess
+
 import pros.common.ui as ui
 from pros.cli.common import *
 from pros.ga.analytics import analytics
@@ -44,19 +47,35 @@ def upgrade(force_check, no_install):
 
 @misc_commands_cli.command()
 @click.argument('shell', type=click.Choice(['bash', 'zsh', 'fish']), required=True)
-@click.argument('rcfile', type=click.Path(file_okay=True, dir_okay=False), required=True)
+@click.argument('configfile', type=click.Path(file_okay=True, dir_okay=False), default=None, required=False)
 @default_options
-def setup_autocomplete(shell, rcfile):
-    ui.echo(f"Setting up autocomplete for PROS CLI for {shell} shell in {rcfile}...")
+def setup_autocomplete(shell, configfile):
+    ui.echo(f"Setting up autocomplete for PROS CLI for {shell} shell in {configfile}...")
 
-    if shell == 'bash':
-        with open(rcfile, 'a') as f:
-            f.write('\neval "$(_PROS_COMPLETE=bash_source pros)"')
+    default_configfiles = {
+        'bash': '~/.bashrc',
+        'zsh': '~/.zshrc',
+        'fish': '~/.config/fish/completions/pros.fish'
+    }
 
-    if shell == 'zsh':
-        with open(rcfile, 'a') as f:
-            f.write('\neval "$(_PROS_COMPLETE=zsh_source pros)"')
+    if configfile is None:
+        configfile = default_configfiles[shell]
+    configfile = os.path.expanduser(configfile)
 
-    if shell == 'fish':
-        with open(rcfile, 'a') as f:
-            f.write("\n_PROS_COMPLETE=fish_source pros | source")
+    if shell in ['bash', 'zsh'] and not os.path.exists(configfile):
+        raise click.UsageError(f"Config file {configfile} does not exist. Please specify a valid config file.")
+
+    if shell in ['bash', 'zsh']:
+        config_dir = os.path.dirname(configfile)
+        if not os.path.exists(config_dir):
+            raise click.UsageError(f"Config directory {config_dir} does not exist. Please specify a valid config file.")
+        script_file = os.path.join(config_dir, f".pros-complete.{shell}")
+        with open(script_file, 'w') as f:
+            # _PROS_COMPLETE=zsh_source pros > ~/.pros-complete.zsh
+            # f.write(os.popen(f"_PROS_COMPLETE={shell}_source pros").read())
+            subprocess.Popen(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f).wait()
+
+
+    # if shell == 'fish':
+    #     with open(configfile, 'a') as f:
+    #         f.write("\n_PROS_COMPLETE=fish_source pros | source")
