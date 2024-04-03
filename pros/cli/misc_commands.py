@@ -82,8 +82,10 @@ def setup_autocomplete(shell, config_file):
         # Write the autocomplete script to a shell script file
         script_file = os.path.join(config_dir, f".pros-complete.{shell}")
         with open(script_file, 'w') as f:
-            if subprocess.Popen(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f).wait():
-                raise click.ClickException(f"Failed to write autocomplete script to {script_file}")
+            try:
+                subprocess.run(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f, check=True)
+            except subprocess.CalledProcessError as exc:
+                raise click.ClickException(f"Failed to write autocomplete script to {script_file}") from exc
 
         # Source the autocomplete script in the config file
         source_autocomplete = f". ~/.pros-complete.{shell}\n"
@@ -97,7 +99,9 @@ def setup_autocomplete(shell, config_file):
         if not os.path.exists(config_dir):
             raise click.UsageError(f"Config directory {config_dir} does not exist. Please specify a valid config file.")
         with open(config_file, 'w') as f:
-            if subprocess.Popen(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f).wait():
-                raise click.ClickException(f"Failed to write autocomplete script to {config_file}")
+            try:
+                subprocess.run(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f, check=True)
+            except subprocess.CalledProcessError as exc:
+                raise click.ClickException(f"Failed to write autocomplete script to {config_file}") from exc
 
-    ui.echo(f"Succesfully set up autocomplete for PROS CLI for {shell} in {config_file}")
+    ui.echo(f"Succesfully set up autocomplete for PROS CLI for {shell} in {config_file}. Restart your shell to apply changes.")
