@@ -14,7 +14,7 @@ from pros.common import *
 from pros.conductor.project import TemplateAction
 from pros.conductor.project.template_resolution import InvalidTemplateException
 from pros.config import Config
-from .depots import Depot, HttpDepot
+from .depots import Depot, HttpDepot, BranchlineDepot
 from .project import Project
 from .templates import BaseTemplate, ExternalTemplate, LocalTemplate, Template
 
@@ -22,6 +22,8 @@ MAINLINE_NAME = 'pros-mainline'
 MAINLINE_URL = 'https://pros.cs.purdue.edu/v5/_static/releases/pros-mainline.json'
 EARLY_ACCESS_NAME = 'kernel-early-access-mainline'
 EARLY_ACCESS_URL = 'https://pros.cs.purdue.edu/v5/_static/beta/beta-pros-mainline.json'
+BRANCHLINE_NAME = 'pros-branchline'
+BRANCHLINE_URL = 'https://pros.cs.purdue.edu/v5/_static/branchline/pros-branchline.json'
 
 """
 # TBD? Currently, EarlyAccess value is stored in config file
@@ -101,6 +103,12 @@ class Conductor(Config):
                 not isinstance(self.depots[EARLY_ACCESS_NAME], HttpDepot) or \
                 self.depots[EARLY_ACCESS_NAME].location != EARLY_ACCESS_URL:
             self.depots[EARLY_ACCESS_NAME] = HttpDepot(EARLY_ACCESS_NAME, EARLY_ACCESS_URL)
+            needs_saving = True
+        # add branchline depot as another remote depot
+        if BRANCHLINE_NAME not in self.depots or \
+                not isinstance(self.depots[BRANCHLINE_NAME], HttpDepot) or \
+                self.depots[BRANCHLINE_NAME].location != BRANCHLINE_URL:
+            self.depots[BRANCHLINE_NAME] = BranchlineDepot(BRANCHLINE_NAME, BRANCHLINE_URL)
             needs_saving = True
         if self.default_target is None:
             self.default_target = 'v5'
