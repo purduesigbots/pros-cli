@@ -71,7 +71,7 @@ def setup_autocomplete(shell, config_file):
         config_file = default_config_files[shell]
     config_file = os.path.expanduser(config_file)
 
-    if shell in ['bash', 'zsh']:
+    if shell in ('bash', 'zsh'):
         if not os.path.exists(config_file):
             raise click.UsageError(f"Config file {config_file} does not exist. Please specify a valid config file.")
 
@@ -87,21 +87,26 @@ def setup_autocomplete(shell, config_file):
             except subprocess.CalledProcessError as exc:
                 raise click.ClickException(f"Failed to write autocomplete script to {script_file}") from exc
 
-        # Source the autocomplete script in the config file
-        source_autocomplete = f". ~/.pros-complete.{shell}\n"
-        with open(config_file, 'r+') as f:
-            # Only append if the source command is not already in the file
-            if source_autocomplete not in f.readlines():
-                f.write("\n# PROS CLI autocomplete\n")
-                f.write(source_autocomplete)
+        source_autocomplete = f". {script_file}\n"
+        if ui.confirm(f"Add the autocomplete script to {config_file}?", default=True):
+            # Source the autocomplete script in the config file
+            with open(config_file, 'r+') as f:
+                # Only append if the source command is not already in the file
+                if source_autocomplete not in f.readlines():
+                    f.write("\n# PROS CLI autocomplete\n")
+                    f.write(source_autocomplete)
+        else:
+            ui.echo(f"Autocomplete script written to {script_file}. Add the following line to {config_file} then restart your shell to enable autocomplete:")
+            ui.echo(source_autocomplete)
+            return
     elif shell == 'fish':
         config_dir = os.path.dirname(config_file)
         if not os.path.exists(config_dir):
-            raise click.UsageError(f"Config directory {config_dir} does not exist. Please specify a valid config file.")
+            raise click.UsageError(f"Completions directory {config_dir} does not exist. Please specify a valid completion file.")
         with open(config_file, 'w') as f:
             try:
                 subprocess.run(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f, check=True)
             except subprocess.CalledProcessError as exc:
                 raise click.ClickException(f"Failed to write autocomplete script to {config_file}") from exc
 
-    ui.echo(f"Succesfully set up autocomplete for PROS CLI for {shell} in {config_file}. Restart your shell to apply changes.")
+    ui.echo(f"Succesfully set up autocomplete for {shell} in {config_file}. Restart your shell to apply changes.")
