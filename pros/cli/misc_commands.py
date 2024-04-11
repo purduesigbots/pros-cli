@@ -1,6 +1,8 @@
 import os
 import subprocess
 
+from click.shell_completion import CompletionItem, add_completion_class, ZshComplete
+
 import pros.common.ui as ui
 from pros.cli.common import *
 from pros.ga.analytics import analytics
@@ -45,8 +47,71 @@ def upgrade(force_check, no_install):
             ui.finalize('upgradeComplete', manager.perform_upgrade())
 
 
+# Modified from https://github.com/StephLin/click-pwsh/blob/main/click_pwsh/shell_completion.py#L11
+_SOURCE_POWERSHELL = r"""Register-ArgumentCompleter -Native -CommandName pros -ScriptBlock {
+    param($wordToComplete, $commandAst, $cursorPosition)
+    $env:COMP_WORDS = $commandAst
+    $env:COMP_WORDS = $env:COMP_WORDS.replace('\\', '/')
+    $incompleteCommand = $commandAst.ToString()
+
+    $myCursorPosition = $cursorPosition
+    if ($myCursorPosition -gt $incompleteCommand.Length) {
+        $myCursorPosition = $incompleteCommand.Length
+    }
+    $env:COMP_CWORD = @($incompleteCommand.substring(0, $myCursorPosition).Split(" ") | Where-Object { $_ -ne "" }).Length
+    if ( $wordToComplete.Length -gt 0) { $env:COMP_CWORD -= 1 }
+
+    $env:_PROS_COMPLETE = "powershell_complete"
+
+    pros | ForEach-Object {
+        $type, $value, $help = $_.Split(",", 3)
+        if ( ($type -eq "plain") -and ![string]::IsNullOrEmpty($value) ) {
+            [System.Management.Automation.CompletionResult]::new($value, $value, "ParameterValue", $value)
+        }
+        elseif ( ($type -eq "file") -or ($type -eq "dir") ) {
+            if ([string]::IsNullOrEmpty($wordToComplete)) {
+                $dir = "./"
+            }
+            else {
+                $dir = $wordToComplete.replace('\\', '/')
+            }
+            if ( (Test-Path -Path $dir) -and ((Get-Item $dir) -is [System.IO.DirectoryInfo]) ) {
+                [System.Management.Automation.CompletionResult]::new($dir, $dir, "ParameterValue", $dir)
+            }
+            Get-ChildItem -Path $dir | Resolve-Path -Relative | ForEach-Object {
+                $path = $_.ToString().replace('\\', '/').replace('Microsoft.PowerShell.Core/FileSystem::', '')
+                $isDir = $false
+                if ((Get-Item $path) -is [System.IO.DirectoryInfo]) {
+                    $path = $path + "/"
+                    $isDir = $true
+                }
+                if ( ($type -eq "file") -or ( ($type -eq "dir") -and $isDir ) ) {
+                    [System.Management.Automation.CompletionResult]::new($path, $path, "ParameterValue", $path)
+                }
+            }
+        }
+    }
+
+    $env:COMP_WORDS = $null | Out-Null
+    $env:COMP_CWORD = $null | Out-Null
+    $env:_PROS_COMPLETE = $null | Out-Null
+}
+"""
+
+
+@add_completion_class
+class PowerShellComplete(ZshComplete):
+    """Shell completion for PowerShell and Windows PowerShell."""
+
+    name = "powershell"
+    source_template = _SOURCE_POWERSHELL
+
+    def format_completion(self, item: CompletionItem) -> str:
+        return super().format_completion(item).replace("\n", ",")
+
+
 @misc_commands_cli.command()
-@click.argument('shell', type=click.Choice(['bash', 'zsh', 'fish']), required=True)
+@click.argument('shell', type=click.Choice(['bash', 'zsh', 'fish', 'pwsh', 'powershell']), required=True)
 @click.argument('config_file', type=click.Path(file_okay=True, dir_okay=False), default=None, required=False)
 @default_options
 def setup_autocomplete(shell, config_file):
@@ -64,8 +129,17 @@ def setup_autocomplete(shell, config_file):
     default_config_files = {
         'bash': '~/.bashrc',
         'zsh': '~/.zshrc',
-        'fish': '~/.config/fish/completions/pros.fish'
+        'fish': '~/.config/fish/completions/pros.fish',
+        'pwsh': None,
+        'powershell': None,
     }
+
+
+    if shell in ('pwsh', 'powershell') and config_file is None:
+        try:
+            default_config_files[shell] = subprocess.run(f'{shell} -c "echo $profile"', capture_output=True, check=True).stdout.decode().strip()
+        except subprocess.CalledProcessError as exc:
+            raise click.UsageError("Failed to determine the PowerShell profile path. Please specify a valid config file.") from exc
 
     if config_file is None:
         config_file = default_config_files[shell]
@@ -108,5 +182,23 @@ def setup_autocomplete(shell, config_file):
                 subprocess.run(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f, check=True)
             except subprocess.CalledProcessError as exc:
                 raise click.ClickException(f"Failed to write autocomplete script to {config_file}") from exc
+    elif shell in ('pwsh', 'powershell'):
+        # Write the autocomplete script to a PowerShell script file
+        script_file = os.path.join(os.path.dirname(config_file), "pros-complete.ps1")
+        with open(script_file, 'w') as f:
+            f.write(_SOURCE_POWERSHELL)
+
+        source_autocomplete = f"{script_file} | Invoke-Expression\n"
+        if ui.confirm(f"Add the autocomplete script to {config_file}?", default=True):
+            # Source the autocomplete script in the config file
+            with open(config_file, 'r+') as f:
+                # Only append if the source command is not already in the file
+                if source_autocomplete not in f.readlines():
+                    f.write("\n# PROS CLI autocomplete\n")
+                    f.write(source_autocomplete)
+        else:
+            ui.echo(f"Autocomplete script written to {script_file}. Add the following line to {config_file} then restart your shell to enable autocomplete:")
+            ui.echo(source_autocomplete)
+            return
 
     ui.echo(f"Succesfully set up autocomplete for {shell} in {config_file}. Restart your shell to apply changes.")
