@@ -113,8 +113,9 @@ class PowerShellComplete(ZshComplete):
 @misc_commands_cli.command()
 @click.argument('shell', type=click.Choice(['bash', 'zsh', 'fish', 'pwsh', 'powershell']), required=True)
 @click.argument('config_file', type=click.Path(file_okay=True, dir_okay=False), default=None, required=False)
+@click.option('--force', '-f', is_flag=True, default=False, help='Skip confirmation prompts')
 @default_options
-def setup_autocomplete(shell, config_file):
+def setup_autocomplete(shell, config_file, force):
     """
     Set up autocomplete for PROS CLI in the specified shell
 
@@ -133,7 +134,6 @@ def setup_autocomplete(shell, config_file):
         'pwsh': None,
         'powershell': None,
     }
-
 
     if shell in ('pwsh', 'powershell') and config_file is None:
         try:
@@ -163,7 +163,7 @@ def setup_autocomplete(shell, config_file):
                 raise click.ClickException(f"Failed to write autocomplete script to {script_file}") from exc
 
         source_autocomplete = f". {script_file}\n"
-        if ui.confirm(f"Add the autocomplete script to {config_file}?", default=True):
+        if force or ui.confirm(f"Add the autocomplete script to {config_file}?", default=True):
             # Source the autocomplete script in the config file
             with open(config_file, 'r+') as f:
                 # Only append if the source command is not already in the file
@@ -197,7 +197,7 @@ def setup_autocomplete(shell, config_file):
             f.write(_SOURCE_POWERSHELL)
 
         source_autocomplete = f"{script_file} | Invoke-Expression\n"
-        if ui.confirm(f"Add the autocomplete script to {config_file}?", default=True):
+        if force or ui.confirm(f"Add the autocomplete script to {config_file}?", default=True):
             # Source the autocomplete script in the config file
             with open(config_file, 'r+') as f:
                 # Only append if the source command is not already in the file
