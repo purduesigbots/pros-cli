@@ -137,7 +137,7 @@ def setup_autocomplete(shell, config_file, force):
 
     if shell in ('pwsh', 'powershell') and config_file is None:
         try:
-            profile_command = f'{shell} -c "echo $PROFILE"' if os.name == 'nt' else f"{shell} -c 'echo $PROFILE'"
+            profile_command = f'{shell} -NoLogo -NoProfile -Command "Write-Output $PROFILE"' if os.name == 'nt' else f"{shell} -NoLogo -NoProfile -Command 'Write-Output $PROFILE'"
             default_config_files[shell] = subprocess.run(profile_command, shell=True, capture_output=True, check=True).stdout.decode().strip()
         except subprocess.CalledProcessError as exc:
             raise click.UsageError("Failed to determine the PowerShell profile path. Please specify a valid config file.") from exc
@@ -192,7 +192,7 @@ def setup_autocomplete(shell, config_file, force):
             raise click.UsageError(f"Config directory {config_dir} does not exist. Please specify a valid config file.")
 
         # Write the autocomplete script to a PowerShell script file
-        script_file = os.path.join(os.path.dirname(config_file), "pros-complete.ps1")
+        script_file = os.path.join(config_dir, "pros-complete.ps1")
         with open(script_file, 'w') as f:
             f.write(_SOURCE_POWERSHELL)
 
