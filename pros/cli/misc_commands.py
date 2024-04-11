@@ -183,6 +183,13 @@ def setup_autocomplete(shell, config_file):
             except subprocess.CalledProcessError as exc:
                 raise click.ClickException(f"Failed to write autocomplete script to {config_file}") from exc
     elif shell in ('pwsh', 'powershell'):
+        if not os.path.exists(config_file):
+            raise click.UsageError(f"Config file {config_file} does not exist. Please specify a valid config file.")
+
+        config_dir = os.path.dirname(config_file)
+        if not os.path.exists(config_dir):
+            raise click.UsageError(f"Config directory {config_dir} does not exist. Please specify a valid config file.")
+
         # Write the autocomplete script to a PowerShell script file
         script_file = os.path.join(os.path.dirname(config_file), "pros-complete.ps1")
         with open(script_file, 'w') as f:
