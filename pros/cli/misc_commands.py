@@ -49,53 +49,84 @@ def upgrade(force_check, no_install):
 
 # Modified from https://github.com/StephLin/click-pwsh/blob/main/click_pwsh/shell_completion.py#L11
 _SOURCE_POWERSHELL = r"""Register-ArgumentCompleter -Native -CommandName pros -ScriptBlock {
-  param($wordToComplete, $commandAst, $cursorPosition)
-  $env:COMP_WORDS = $commandAst
-  $env:COMP_WORDS = $env:COMP_WORDS.replace('\\', '/')
-  $incompleteCommand = $commandAst.ToString()
+    param($wordToComplete, $commandAst, $cursorPosition)
+    $env:COMP_WORDS = $commandAst
+    $env:COMP_WORDS = $env:COMP_WORDS.replace('\\', '/')
+    $incompleteCommand = $commandAst.ToString()
 
-  $myCursorPosition = $cursorPosition
-  if ($myCursorPosition -gt $incompleteCommand.Length) {
-    $myCursorPosition = $incompleteCommand.Length
-  }
-  $env:COMP_CWORD = @($incompleteCommand.substring(0, $myCursorPosition).Split(" ") | Where-Object { $_ -ne "" }).Length
-  if ( $wordToComplete.Length -gt 0) { $env:COMP_CWORD -= 1 }
-
-  $env:_PROS_COMPLETE = "powershell_complete"
-
-  pros | ForEach-Object {
-    $type, $value, $help = $_.Split(",", 3)
-    if ( ($type -eq "plain") -and ![string]::IsNullOrEmpty($value) ) {
-      [System.Management.Automation.CompletionResult]::new($value, $value, "ParameterValue", $value)
+    $myCursorPosition = $cursorPosition
+    if ($myCursorPosition -gt $incompleteCommand.Length) {
+        $myCursorPosition = $incompleteCommand.Length
     }
-    elseif ( ($type -eq "file") -or ($type -eq "dir") ) {
-      if ([string]::IsNullOrEmpty($wordToComplete)) {
-        $dir = "./"
-      }
-      else {
-        $dir = $wordToComplete.replace('\\', '/')
-      }
-      if ( (Test-Path -Path $dir) -and ((Get-Item $dir) -is [System.IO.DirectoryInfo]) ) {
-        [System.Management.Automation.CompletionResult]::new($dir, $dir, "ParameterValue", $dir)
-      }
-      Get-ChildItem -Path $dir | Resolve-Path -Relative | ForEach-Object {
-        $path = $_.ToString().replace('\\', '/').replace('Microsoft.PowerShell.Core/FileSystem::', '')
-        $isDir = $false
-        if ((Get-Item $path) -is [System.IO.DirectoryInfo]) {
-          $path = $path + "/"
-          $isDir = $true
-        }
-        if ( ($type -eq "file") -or ( ($type -eq "dir") -and $isDir ) ) {
-          [System.Management.Automation.CompletionResult]::new($path, $path, "ParameterValue", $path)
-        }
-      }
-    }
-  }
+    $env:COMP_CWORD = @($incompleteCommand.substring(0, $myCursorPosition).Split(" ") | Where-Object { $_ -ne "" }).Length
+    if ( $wordToComplete.Length -gt 0) { $env:COMP_CWORD -= 1 }
 
-  $env:COMP_WORDS = $null | Out-Null
-  $env:COMP_CWORD = $null | Out-Null
-  $env:_PROS_COMPLETE = $null | Out-Null
+    $env:_PROS_COMPLETE = "powershell_complete"
+
+    pros | ForEach-Object {
+        $type, $value, $help = $_.Split(",", 3)
+        if ( ($type -eq "plain") -and ![string]::IsNullOrEmpty($value) ) {
+            [System.Management.Automation.CompletionResult]::new($value, $value, "ParameterValue", $value)
+        }
+        elseif ( ($type -eq "file") -or ($type -eq "dir") ) {
+            if ([string]::IsNullOrEmpty($wordToComplete)) {
+                $dir = "./"
+            }
+            else {
+                $dir = $wordToComplete.replace('\\', '/')
+            }
+            if ( (Test-Path -Path $dir) -and ((Get-Item $dir) -is [System.IO.DirectoryInfo]) ) {
+                [System.Management.Automation.CompletionResult]::new($dir, $dir, "ParameterValue", $dir)
+            }
+            Get-ChildItem -Path $dir | Resolve-Path -Relative | ForEach-Object {
+                $path = $_.ToString().replace('\\', '/').replace('Microsoft.PowerShell.Core/FileSystem::', '')
+                $isDir = $false
+                if ((Get-Item $path) -is [System.IO.DirectoryInfo]) {
+                    $path = $path + "/"
+                    $isDir = $true
+                }
+                if ( ($type -eq "file") -or ( ($type -eq "dir") -and $isDir ) ) {
+                    [System.Management.Automation.CompletionResult]::new($path, $path, "ParameterValue", $path)
+                }
+            }
+        }
+    }
+
+    $env:COMP_WORDS = $null | Out-Null
+    $env:COMP_CWORD = $null | Out-Null
+    $env:_PROS_COMPLETE = $null | Out-Null
 }
+"""
+
+
+_SOURCE_BASH = r"""_pros_completion() {
+    local IFS=$'\n'
+    local response
+
+    response=$(env COMP_WORDS="${COMP_WORDS[*]}" COMP_CWORD=$COMP_CWORD _PROS_COMPLETE=bash_complete $1)
+
+    for completion in $response; do
+        IFS=',' read type value <<< "$completion"
+
+        if [[ $type == 'dir' ]]; then
+            COMPREPLY=()
+            compopt -o dirnames
+        elif [[ $type == 'file' ]]; then
+            COMPREPLY=()
+            compopt -o default
+        elif [[ $type == 'plain' ]]; then
+            COMPREPLY+=($value)
+        fi
+    done
+
+    return 0
+}
+
+_pros_completion_setup() {
+    complete -o nosort -F _pros_completion pros
+}
+
+_pros_completion_setup;
 """
 
 
@@ -155,12 +186,16 @@ def setup_autocomplete(shell, config_file, force):
             raise click.UsageError(f"Config directory {config_dir} does not exist. Please specify a valid config file.")
 
         # Write the autocomplete script to a shell script file
-        script_file = os.path.join(config_dir, f".pros-complete.{shell}")
+        script_file = os.path.join(config_dir, f".pros-complete.{shell}").replace('\\', '/')
         with open(script_file, 'w') as f:
-            try:
-                subprocess.run(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f, check=True)
-            except subprocess.CalledProcessError as exc:
-                raise click.ClickException(f"Failed to write autocomplete script to {script_file}") from exc
+            if os.name == 'nt':
+                if shell == "bash":
+                    f.write(_SOURCE_BASH)
+            else:
+                try:
+                    subprocess.run(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f, check=True)
+                except subprocess.CalledProcessError as exc:
+                    raise click.ClickException(f"Failed to write autocomplete script to {script_file}") from exc
 
         source_autocomplete = f". {script_file}\n"
         if force or ui.confirm(f"Add the autocomplete script to {config_file}?", default=True):
