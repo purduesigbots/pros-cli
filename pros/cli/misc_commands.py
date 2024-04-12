@@ -47,22 +47,92 @@ def upgrade(force_check, no_install):
             ui.finalize('upgradeComplete', manager.perform_upgrade())
 
 
+_SOURCE_BASH = r"""_pros_completion() {
+    local IFS=$'\n'
+    local response
+    response=$(env COMP_WORDS="${COMP_WORDS[*]}" COMP_CWORD=$COMP_CWORD _PROS_COMPLETE=bash_complete $1)
+    for completion in $response; do
+        IFS=',' read type value <<< "$completion"
+        if [[ $type == 'dir' ]]; then
+            COMPREPLY=()
+            compopt -o dirnames
+        elif [[ $type == 'file' ]]; then
+            COMPREPLY=()
+            compopt -o default
+        elif [[ $type == 'plain' ]]; then
+            COMPREPLY+=($value)
+        fi
+    done
+    return 0
+}
+_pros_completion_setup() {
+    complete -o nosort -F _pros_completion pros
+}
+_pros_completion_setup;
+"""
+
+_SOURCE_ZSH = r"""_pros_completion() {
+    local -a completions
+    local -a completions_with_descriptions
+    local -a response
+    (( ! $+commands[pros] )) && return 1
+    response=("${(@f)$(env COMP_WORDS="${words[*]}" COMP_CWORD=$((CURRENT-1)) _PROS_COMPLETE=zsh_complete pros)}")
+    for type key descr in ${response}; do
+        if [[ "$type" == "plain" ]]; then
+            if [[ "$descr" == "_" ]]; then
+                completions+=("$key")
+            else
+                completions_with_descriptions+=("$key":"$descr")
+            fi
+        elif [[ "$type" == "dir" ]]; then
+            _path_files -/
+        elif [[ "$type" == "file" ]]; then
+            _path_files -f
+        fi
+    done
+    if [ -n "$completions_with_descriptions" ]; then
+        _describe -V unsorted completions_with_descriptions -U
+    fi
+    if [ -n "$completions" ]; then
+        compadd -U -V unsorted -a completions
+    fi
+}
+if [[ $zsh_eval_context[-1] == loadautofunc ]]; then
+    _pros_completion "$@"
+else
+    compdef _pros_completion pros
+fi
+"""
+
+_SOURCE_FISH = r"""function _pros_completion;
+    set -l response (env _PROS_COMPLETE=fish_complete COMP_WORDS=(commandline -cp) COMP_CWORD=(commandline -t) pros);
+    for completion in $response;
+        set -l metadata (string split "," $completion);
+        if test $metadata[1] = "dir";
+            __fish_complete_directories $metadata[2];
+        else if test $metadata[1] = "file";
+            __fish_complete_path $metadata[2];
+        else if test $metadata[1] = "plain";
+            echo $metadata[2];
+        end;
+    end;
+end;
+complete --no-files --command pros --arguments "(_pros_completion)";
+"""
+
 # Modified from https://github.com/StephLin/click-pwsh/blob/main/click_pwsh/shell_completion.py#L11
 _SOURCE_POWERSHELL = r"""Register-ArgumentCompleter -Native -CommandName pros -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
     $env:COMP_WORDS = $commandAst
     $env:COMP_WORDS = $env:COMP_WORDS.replace('\\', '/')
     $incompleteCommand = $commandAst.ToString()
-
     $myCursorPosition = $cursorPosition
     if ($myCursorPosition -gt $incompleteCommand.Length) {
         $myCursorPosition = $incompleteCommand.Length
     }
     $env:COMP_CWORD = @($incompleteCommand.substring(0, $myCursorPosition).Split(" ") | Where-Object { $_ -ne "" }).Length
     if ( $wordToComplete.Length -gt 0) { $env:COMP_CWORD -= 1 }
-
     $env:_PROS_COMPLETE = "powershell_complete"
-
     pros | ForEach-Object {
         $type, $value, $help = $_.Split(",", 3)
         if ( ($type -eq "plain") -and ![string]::IsNullOrEmpty($value) ) {
@@ -91,42 +161,10 @@ _SOURCE_POWERSHELL = r"""Register-ArgumentCompleter -Native -CommandName pros -S
             }
         }
     }
-
     $env:COMP_WORDS = $null | Out-Null
     $env:COMP_CWORD = $null | Out-Null
     $env:_PROS_COMPLETE = $null | Out-Null
 }
-"""
-
-
-_SOURCE_BASH = r"""_pros_completion() {
-    local IFS=$'\n'
-    local response
-
-    response=$(env COMP_WORDS="${COMP_WORDS[*]}" COMP_CWORD=$COMP_CWORD _PROS_COMPLETE=bash_complete $1)
-
-    for completion in $response; do
-        IFS=',' read type value <<< "$completion"
-
-        if [[ $type == 'dir' ]]; then
-            COMPREPLY=()
-            compopt -o dirnames
-        elif [[ $type == 'file' ]]; then
-            COMPREPLY=()
-            compopt -o default
-        elif [[ $type == 'plain' ]]; then
-            COMPREPLY+=($value)
-        fi
-    done
-
-    return 0
-}
-
-_pros_completion_setup() {
-    complete -o nosort -F _pros_completion pros
-}
-
-_pros_completion_setup;
 """
 
 
@@ -161,9 +199,17 @@ def setup_autocomplete(shell, config_file, force):
     default_config_files = {
         'bash': '~/.bashrc',
         'zsh': '~/.zshrc',
-        'fish': '~/.config/fish/completions/pros.fish',
+        'fish': '~/.config/fish/completions/',
         'pwsh': None,
         'powershell': None,
+    }
+
+    script_files = {
+        'bash': '.pros-complete.bash',
+        'zsh': '.pros-complete.zsh',
+        'fish': 'pros.fish',
+        'pwsh': 'pros-complete.ps1',
+        'powershell': 'pros-complete.ps1',
     }
 
     if shell in ('pwsh', 'powershell') and config_file is None:
@@ -175,29 +221,28 @@ def setup_autocomplete(shell, config_file, force):
 
     if config_file is None:
         config_file = default_config_files[shell]
-    config_file = os.path.expanduser(config_file)
+        ui.echo(f"Using default config file {config_file}. To specify a different config file, run 'pros setup-autocomplete {shell} CONFIG_FILE'.")
+    config_file = os.path.expanduser(config_file).replace('\\', '/')
 
-    if shell in ('bash', 'zsh'):
-        if not os.path.exists(config_file):
-            raise click.UsageError(f"Config file {config_file} does not exist. Please specify a valid config file.")
-
+    if shell in ('bash', 'zsh', 'pwsh', 'powershell'):
         config_dir = os.path.dirname(config_file)
         if not os.path.exists(config_dir):
             raise click.UsageError(f"Config directory {config_dir} does not exist. Please specify a valid config file.")
 
         # Write the autocomplete script to a shell script file
-        script_file = os.path.join(config_dir, f".pros-complete.{shell}").replace('\\', '/')
+        script_file = os.path.join(config_dir, script_files[shell]).replace('\\', '/')
         with open(script_file, 'w') as f:
-            if os.name == 'nt':
-                if shell == "bash":
-                    f.write(_SOURCE_BASH)
-            else:
-                try:
-                    subprocess.run(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f, check=True)
-                except subprocess.CalledProcessError as exc:
-                    raise click.ClickException(f"Failed to write autocomplete script to {script_file}") from exc
+            if shell == "bash":
+                f.write(_SOURCE_BASH)
+            elif shell == "zsh":
+                f.write(_SOURCE_ZSH)
+            elif shell in ('pwsh', 'powershell'):
+                f.write(_SOURCE_POWERSHELL)
 
-        source_autocomplete = f". {script_file}\n"
+        if shell in ('bash', 'zsh'):
+            source_autocomplete = f". {script_file}\n"
+        elif shell in ('pwsh', 'powershell'):
+            source_autocomplete = f"{script_file} | Invoke-Expression\n"
         if force or ui.confirm(f"Add the autocomplete script to {config_file}?", default=True):
             # Source the autocomplete script in the config file
             with open(config_file, 'r+') as f:
@@ -213,35 +258,10 @@ def setup_autocomplete(shell, config_file, force):
         config_dir = os.path.dirname(config_file)
         if not os.path.exists(config_dir):
             raise click.UsageError(f"Completions directory {config_dir} does not exist. Please specify a valid completion file.")
-        with open(config_file, 'w') as f:
-            try:
-                subprocess.run(f"_PROS_COMPLETE={shell}_source pros", shell=True, stdout=f, check=True)
-            except subprocess.CalledProcessError as exc:
-                raise click.ClickException(f"Failed to write autocomplete script to {config_file}") from exc
-    elif shell in ('pwsh', 'powershell'):
-        if not os.path.exists(config_file):
-            raise click.UsageError(f"Config file {config_file} does not exist. Please specify a valid config file.")
 
-        config_dir = os.path.dirname(config_file)
-        if not os.path.exists(config_dir):
-            raise click.UsageError(f"Config directory {config_dir} does not exist. Please specify a valid config file.")
-
-        # Write the autocomplete script to a PowerShell script file
-        script_file = os.path.join(config_dir, "pros-complete.ps1")
+        # Write the autocomplete script to a shell script file
+        script_file = os.path.join(config_dir, script_files[shell]).replace('\\', '/')
         with open(script_file, 'w') as f:
-            f.write(_SOURCE_POWERSHELL)
-
-        source_autocomplete = f"{script_file} | Invoke-Expression\n"
-        if force or ui.confirm(f"Add the autocomplete script to {config_file}?", default=True):
-            # Source the autocomplete script in the config file
-            with open(config_file, 'r+') as f:
-                # Only append if the source command is not already in the file
-                if source_autocomplete not in f.readlines():
-                    f.write("\n# PROS CLI autocomplete\n")
-                    f.write(source_autocomplete)
-        else:
-            ui.echo(f"Autocomplete script written to {script_file}. Add the following line to {config_file} then restart your shell to enable autocomplete:")
-            ui.echo(source_autocomplete)
-            return
+            f.write(_SOURCE_FISH)
 
     ui.echo(f"Succesfully set up autocomplete for {shell} in {config_file}. Restart your shell to apply changes.")
