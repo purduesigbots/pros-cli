@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import subprocess
 
 from click.shell_completion import CompletionItem, add_completion_class, ZshComplete
@@ -57,7 +58,8 @@ _SCRIPT_FILES = {
 
 
 def _get_shell_script(shell: str) -> str:
-    with open(f'{os.path.dirname(__file__)}/../autocomplete/{_SCRIPT_FILES[shell]}', 'r') as f:
+    script_file = Path(__file__).parent / '..' / 'autocomplete' / _SCRIPT_FILES[shell]
+    with script_file.open('r') as f:
         return f.read()
 
 
@@ -74,7 +76,7 @@ class PowerShellComplete(ZshComplete):
 
 @misc_commands_cli.command()
 @click.argument('shell', type=click.Choice(['bash', 'zsh', 'fish', 'pwsh', 'powershell']), required=True)
-@click.argument('config_file', type=click.Path(file_okay=True, dir_okay=False), default=None, required=False)
+@click.argument('config_file', type=click.Path(file_okay=True, dir_okay=True), default=None, required=False)
 @click.option('--force', '-f', is_flag=True, default=False, help='Skip confirmation prompts')
 @default_options
 def setup_autocomplete(shell, config_file, force):
@@ -106,21 +108,22 @@ def setup_autocomplete(shell, config_file, force):
 
     if config_file is None:
         config_file = default_config_files[shell]
-        ui.echo(f"Using default config file {config_file}. To specify a different config file, run 'pros setup-autocomplete {shell} CONFIG_FILE'.")
-    config_file = os.path.expanduser(config_file).replace('\\', '/')
+        ui.echo(f"Using default config file {config_file}. To specify a different config file, run 'pros setup-autocomplete {shell} CONFIG_FILE'.\n")
+    config_file = Path(config_file).resolve()
 
     if shell in ('bash', 'zsh', 'pwsh', 'powershell'):
-        config_dir = os.path.dirname(config_file)
-        if not os.path.exists(config_dir):
-            raise click.UsageError(f"Config directory {config_dir} does not exist. Please specify a valid config file.")
+        if config_file.is_dir():
+            raise click.UsageError(f"Config file {config_file} is a directory. Please specify a valid config file.")
+        if not config_file.exists():
+            raise click.UsageError(f"Config file {config_file} does not exist. Please specify a valid config file.")
 
         # Write the autocomplete script to a shell script file
-        script_file = os.path.join(config_dir, _SCRIPT_FILES[shell]).replace('\\', '/')
+        script_file = config_file.parent / _SCRIPT_FILES[shell]
         with open(script_file, 'w') as f:
             f.write(_get_shell_script(shell))
 
         if shell in ('bash', 'zsh'):
-            source_autocomplete = f". {script_file}\n"
+            source_autocomplete = f". {script_file.as_posix()}\n"
         elif shell in ('pwsh', 'powershell'):
             source_autocomplete = f"{script_file} | Invoke-Expression\n"
         if force or ui.confirm(f"Add the autocomplete script to {config_file}?", default=True):
@@ -131,16 +134,21 @@ def setup_autocomplete(shell, config_file, force):
                     f.write("\n# PROS CLI autocomplete\n")
                     f.write(source_autocomplete)
         else:
-            ui.echo(f"Autocomplete script written to {script_file}. Add the following line to {config_file} then restart your shell to enable autocomplete:")
+            ui.echo(f"Autocomplete script written to {script_file}. Add the following line to {config_file} then restart your shell to enable autocomplete:\n")
             ui.echo(source_autocomplete)
             return
     elif shell == 'fish':
-        config_dir = os.path.dirname(config_file)
-        if not os.path.exists(config_dir):
-            raise click.UsageError(f"Completions directory {config_dir} does not exist. Please specify a valid completion file.")
+        if config_file.is_file():
+            script_dir = config_file.parent
+            script_file = config_file
+        else:
+            script_dir = config_file
+            script_file = config_file / _SCRIPT_FILES[shell]
+
+        if not script_dir.exists():
+            raise click.UsageError(f"Completions directory {script_dir} does not exist. Please specify a valid completions file or directory.")
 
         # Write the autocomplete script to a shell script file
-        script_file = os.path.join(config_dir, _SCRIPT_FILES[shell]).replace('\\', '/')
         with open(script_file, 'w') as f:
             f.write(_get_shell_script(shell))
 
