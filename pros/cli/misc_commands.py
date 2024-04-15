@@ -57,7 +57,7 @@ _SCRIPT_FILES = {
 
 
 def _get_shell_script(shell: str) -> str:
-    with open(f'pros/autocomplete/{_SCRIPT_FILES[shell]}', 'r') as f:
+    with open(f'{os.path.dirname(__file__)}/../autocomplete/{_SCRIPT_FILES[shell]}', 'r') as f:
         return f.read()
 
 
