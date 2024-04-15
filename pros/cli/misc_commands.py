@@ -109,7 +109,7 @@ def setup_autocomplete(shell, config_file, force):
     if config_file is None:
         config_file = default_config_files[shell]
         ui.echo(f"Using default config file {config_file}. To specify a different config file, run 'pros setup-autocomplete {shell} CONFIG_FILE'.\n")
-    config_file = Path(config_file).resolve()
+    config_file = Path(config_file).expanduser().resolve()
 
     if shell in ('bash', 'zsh', 'pwsh', 'powershell'):
         if config_file.is_dir():
