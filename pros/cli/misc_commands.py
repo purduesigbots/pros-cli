@@ -104,7 +104,7 @@ def setup_autocomplete(shell, config_path, force):
     if shell in ('pwsh', 'powershell') and config_path is None:
         try:
             profile_command = f'{shell} -NoLogo -NoProfile -Command "Write-Output $PROFILE"' if os.name == 'nt' else f"{shell} -NoLogo -NoProfile -Command 'Write-Output $PROFILE'"
-            default_config_paths[shell] = subprocess.run(profile_command, shell=True, capture_output=True, check=True).stdout.decode().strip()
+            default_config_paths[shell] = subprocess.run(profile_command, shell=True, capture_output=True, check=True, text=True).stdout.strip()
         except subprocess.CalledProcessError as exc:
             raise click.UsageError("Failed to determine the PowerShell profile path. Please specify a valid config file.") from exc
 
