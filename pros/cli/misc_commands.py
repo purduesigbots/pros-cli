@@ -81,7 +81,7 @@ class PowerShellComplete(ZshComplete):
 @default_options
 def setup_autocomplete(shell, config_path, force):
     """
-    Set up autocomplete for PROS CLI in the specified shell
+    Set up autocomplete for PROS CLI
 
     SHELL: The shell to set up autocomplete for
 
