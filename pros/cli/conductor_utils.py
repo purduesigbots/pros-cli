@@ -17,6 +17,7 @@ from pros.ga.analytics import analytics
 from .common import default_options, template_query
 from .conductor import conductor
 
+BRANCHLINE_REGISTRY_URL = 'https://github.com/purduesigbots/pros-branchline'
 
 @conductor.command('create-template', context_settings={'allow_extra_args': True, 'ignore_unknown_options': True})
 @click.argument('path', type=click.Path(exists=True))
@@ -177,12 +178,13 @@ def purge_template(query: c.BaseTemplate, force):
             cond.purge_template(template)
 
 
-@conductor.command('publish-template')
+@conductor.command('publish-template', hidden=True)
 @click.argument('name')
 @click.argument('version')
 @click.argument('token')
+@click.argument('repository')
 @default_options
-def publish_template(name: str, version: str, token: str):
+def publish_template(name: str, version: str, repository: str, token: str):
     """
     Publish a template to branchline
 
@@ -194,8 +196,7 @@ def publish_template(name: str, version: str, token: str):
     """
 
     # modify the registry files
-    branchline_url = 'https://github.com/purduesigbots/pros-branchline'
-    subprocess.run(f'git clone {branchline_url}', shell=True)
+    subprocess.run(f'git clone {BRANCHLINE_REGISTRY_URL}', shell=True)
     subprocess.run(f'git -C pros-branchline checkout -b publish/{name}', shell=True)
     with open('pros-branchline/templates.json', 'r') as file:
         data = json.load(file)
@@ -204,18 +205,17 @@ def publish_template(name: str, version: str, token: str):
     exists = any([entry['name'] == name for entry in data])    
     
     if not exists: 
-        new_template = {'metadata': {'versions': version_file_name}, 'name': name}
+        new_template = {'metadata': {'versions': version_file_name}, 'name': name, 'target': 'v5'}
         data.append(new_template)
         with open('pros-branchline/templates.json', 'w') as file:
             json.dump(data, file, indent=2)
-        versions = [{'metadata': {'location': f'https://pros.cs.purdue.edu/v5/_static/releases/{name}@{version}.zip'}, 'version': version}]
+        versions = [{'metadata': {'location': f'https://pros.cs.purdue.edu/v5/_static/branchline/{name}/{name}@{version}.zip'}, 'version': version}]
         with open(version_file_name, 'w') as file:
             json.dump(versions, file, indent=2)
     else:
         with open(version_file_name,  'r') as file:
             existing_versions = json.load(file)
         for entry in existing_versions:
-            print(entry)
             if entry['version'] == version:
                 raise click.ClickException('Template version already published')
         new_version = {'metadata': {'location': f'https://pros.cs.purdue.edu/v5/_static/releases/{name}@{version}.zip'}, 'version': version}
@@ -228,8 +228,17 @@ def publish_template(name: str, version: str, token: str):
     subprocess.run(f'git -C pros-branchline push --set-upstream origin publish/{name}', shell=True)
     subprocess.run('rm -rf pros-branchline', shell=True)
 
-    title = 'Test branchline template submission'
-    body = 'This pull requested was generated from the pros-cli'
+    template_data = json.dumps({
+                "ref": "feature/template-build-workflow",
+                "inputs": {
+                    "repository": {repository},
+                    "name": {name},
+                    "version": {version}
+                }
+            })
+
+    title = f'NEW TEMPLATE SUBMISSION `{name}@{version}`' if not exists else f'TEMPLATE UPDATE REQUEST `{name}@{version}`'
+    body = f'This pull requested was generated from the pros-cli\n```\n{template_data}\n```'
     payload = {'base': 'main', 'head': f'publish/{name}', 'title': title, 'body': body}
     url = 'https://api.github.com/repos/purduesigbots/pros-branchline/pulls'
     headers = {'Authorization': f'Bearer {token}'}
