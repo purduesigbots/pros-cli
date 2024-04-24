@@ -17,7 +17,9 @@ from pros.ga.analytics import analytics
 from .common import default_options, template_query
 from .conductor import conductor
 
-BRANCHLINE_REGISTRY_URL = 'https://github.com/purduesigbots/pros-branchline'
+
+BRANCHLINE_REGISTRY_URL = 'https://raw.githubusercontent.com/purduesigbots/pros-branchline/HEAD/templates.json'
+BRANCHLINE_VERSIONS_URL_BASE = 'https://raw.githubusercontent.com/purduesigbots/pros-branchline/HEAD/templates'
 
 @conductor.command('create-template', context_settings={'allow_extra_args': True, 'ignore_unknown_options': True})
 @click.argument('path', type=click.Path(exists=True))
@@ -177,7 +179,6 @@ def purge_template(query: c.BaseTemplate, force):
         if isinstance(template, c.LocalTemplate):
             cond.purge_template(template)
 
-
 @conductor.command('publish-template', hidden=True)
 @click.argument('name')
 @click.argument('version')
@@ -185,16 +186,6 @@ def purge_template(query: c.BaseTemplate, force):
 @click.argument('repository')
 @default_options
 def publish_template(name: str, version: str, repository: str, token: str):
-    """
-    Publish a template to branchline
-
-    1. Update the branchline registry with template information
-    2. Push updated registry to pros-branchline
-    3. Make a PR on pros-branchline to be reviewed by pros admin
-
-    TODO: Error handling
-    """
-
     # modify the registry files
     subprocess.run(f'git clone {BRANCHLINE_REGISTRY_URL}', shell=True)
     subprocess.run(f'git -C pros-branchline checkout -b publish/{name}', shell=True)
@@ -246,4 +237,35 @@ def publish_template(name: str, version: str, repository: str, token: str):
     print(response)
 
     ui.echo("Published template");
+
+@conductor.command('get-branchline-templates')
+def get_branchline_templates():
+    """
+    Get templates list from branchline
+    """
+    import requests
+    response = requests.get(BRANCHLINE_REGISTRY_URL)
+    print(response.text)
+
+@conductor.command('get-branchline-template-versions')
+@click.argument('name')
+def get_branchline_template_versions(name: str):
+    """
+    Get branchline template versions
+    """
+    versions_url = f'{BRANCHLINE_VERSIONS_URL_BASE}/{name}.json'
+    versions = requests.get(versions_url).json()
+
+    templates = requests.get(BRANCHLINE_REGISTRY_URL).json()
+    
+    repository = ''
+    for entry in templates:
+        if entry['name'] == name:
+            repository = entry['repository']
+
+    readme_url = f'https://raw.githubusercontent.com/{repository}/HEAD/README.md'
+    print('README_URL:', readme_url)
+    readme = requests.get(readme_url).text
+    json_output = {'versions': versions, 'description': readme}
+    print(json.dumps(json_output))
 
