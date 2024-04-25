@@ -205,6 +205,7 @@ def publish_template(name: str, version: str, repository: str, token: str):
     exists = any([entry['name'] == name for entry in data])    
     
     if not exists: 
+        ui.echo('New template detected, publishing template to branchline...')
         new_template = {'metadata': {'versions': version_file_name}, 'name': name, 'target': 'v5'}
         data.append(new_template)
         with open('pros-branchline/templates.json', 'w') as file:
@@ -213,6 +214,7 @@ def publish_template(name: str, version: str, repository: str, token: str):
         with open(version_file_name, 'w') as file:
             json.dump(versions, file, indent=2)
     else:
+        ui.echo('Existing template detected, updating template on branchline...')
         with open(version_file_name,  'r') as file:
             existing_versions = json.load(file)
         for entry in existing_versions:
@@ -239,7 +241,7 @@ def publish_template(name: str, version: str, repository: str, token: str):
 
     title = f'NEW TEMPLATE SUBMISSION `{name}@{version}`' if not exists else f'TEMPLATE UPDATE REQUEST `{name}@{version}`'
     body = f'This pull requested was generated from the pros-cli\n```\n{template_data}\n```'
-    payload = {'base': 'main', 'head': f'publish/{name}', 'title': title, 'body': body}
+    payload = {'base': 'main', 'head': f'publish/{name}', 'title': title, 'body': body, 'new_template': not exists}
     url = 'https://api.github.com/repos/purduesigbots/pros-branchline/pulls'
     headers = {'Authorization': f'Bearer {token}'}
     response = requests.post(url, headers=headers, data=json.dumps(payload))
