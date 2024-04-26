@@ -18,6 +18,7 @@ from .common import default_options, template_query
 from .conductor import conductor
 
 
+BRANCHLINE_REGISTRY_GH_URL = 'https://github.com/purduesigbots/pros-branchline.git'
 BRANCHLINE_REGISTRY_URL = 'https://raw.githubusercontent.com/purduesigbots/pros-branchline/HEAD/templates.json'
 BRANCHLINE_VERSIONS_URL_BASE = 'https://raw.githubusercontent.com/purduesigbots/pros-branchline/HEAD/templates'
 
@@ -182,13 +183,14 @@ def purge_template(query: c.BaseTemplate, force):
 @conductor.command('publish-template', hidden=True)
 @click.argument('name')
 @click.argument('version')
-@click.argument('token')
 @click.argument('repository')
+@click.argument('token')
 @default_options
 def publish_template(name: str, version: str, repository: str, token: str):
     # modify the registry files
-    subprocess.run(f'git clone {BRANCHLINE_REGISTRY_URL}', shell=True)
+    subprocess.run(f'git clone {BRANCHLINE_REGISTRY_GH_URL}', shell=True)
     subprocess.run(f'git -C pros-branchline checkout -b publish/{name}', shell=True)
+
     with open('pros-branchline/templates.json', 'r') as file:
         data = json.load(file)
 
@@ -220,19 +222,24 @@ def publish_template(name: str, version: str, repository: str, token: str):
     subprocess.run(f'git -C pros-branchline commit -m \"publish {name}\"', shell=True)
     subprocess.run(f'git -C pros-branchline push --set-upstream origin publish/{name}', shell=True)
     subprocess.run('rm -rf pros-branchline', shell=True)
-
+    
+    print('before template data')
+    print('repository', repository)
+    print('name', name)
+    print('vesrion', version)
     template_data = json.dumps({
                 "ref": "feature/template-build-workflow",
                 "inputs": {
                     "repository": {repository},
                     "name": {name},
-                    "version": {version}
+                    "version": {version},
                 }
             })
+    print('after template data')
 
     title = f'NEW TEMPLATE SUBMISSION `{name}@{version}`' if not exists else f'TEMPLATE UPDATE REQUEST `{name}@{version}`'
     body = f'This pull requested was generated from the pros-cli\n```\n{template_data}\n```'
-    payload = {'base': 'main', 'head': f'publish/{name}', 'title': title, 'body': body, 'new_template': not exists}
+    payload = {'base': 'main', 'head': f'publish/{name}', 'title': title, 'body': body}
     url = 'https://api.github.com/repos/purduesigbots/pros-branchline/pulls'
     headers = {'Authorization': f'Bearer {token}'}
     response = requests.post(url, headers=headers, data=json.dumps(payload))
@@ -266,7 +273,6 @@ def get_branchline_template_versions(name: str):
             repository = entry['repository']
 
     readme_url = f'https://raw.githubusercontent.com/{repository}/HEAD/README.md'
-    print('README_URL:', readme_url)
     readme = requests.get(readme_url).text
     json_output = {'versions': versions, 'description': readme}
     print(json.dumps(json_output))
