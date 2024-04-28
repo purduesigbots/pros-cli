@@ -336,8 +336,16 @@ class Conductor(Config):
                                    force_user=kwargs.pop('force_user', False),
                                    remove_empty_directories=kwargs.pop('remove_empty_directories', False))
             ui.finalize('apply', f'Finished applying {template.identifier} to {project.location}')
+
+            # Apply liblvgl if upgrading to PROS 4
             if apply_liblvgl:
-                self.apply_template(project=project, identifier="liblvgl")
+                template = self.resolve_template(identifier="liblvgl", allow_online=download_ok, early_access=True)
+                if not isinstance(template, LocalTemplate):
+                    with ui.Notification():
+                        template = self.fetch_template(self.get_depot(template.metadata['origin']), template, **kwargs)
+                assert isinstance(template, LocalTemplate)
+                project.apply_template(template)
+                ui.finalize('apply', f'Finished applying {template.identifier} to {project.location}')
         elif valid_action != TemplateAction.AlreadyInstalled:
             raise dont_send(
                 InvalidTemplateException(f'Could not install {template.identifier} because it is {valid_action.name},'
