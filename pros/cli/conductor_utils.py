@@ -200,7 +200,7 @@ def publish_template(name: str, version: str, supported_kernels: str, repository
     
     if not exists: 
         ui.echo('New template detected, publishing template to branchline...')
-        new_template = {'metadata': {'versions': version_file_name}, 'name': name, 'target': 'v5'}
+        new_template = {'metadata': {'versions': version_file_name}, 'name': name, 'target': 'v5', 'repository': repository}
         data.append(new_template)
         with open('pros-branchline/pros-branchline.json', 'w') as file:
             json.dump(data, file, indent=2)
