@@ -19,7 +19,7 @@ from .conductor import conductor
 
 
 BRANCHLINE_REGISTRY_GH_URL = 'https://github.com/purduesigbots/pros-branchline.git'
-BRANCHLINE_REGISTRY_URL = 'https://raw.githubusercontent.com/purduesigbots/pros-branchline/HEAD/templates.json'
+BRANCHLINE_REGISTRY_URL = 'https://raw.githubusercontent.com/purduesigbots/pros-branchline/HEAD/pros-branchline.json'
 BRANCHLINE_VERSIONS_URL_BASE = 'https://raw.githubusercontent.com/purduesigbots/pros-branchline/HEAD/templates'
 
 @conductor.command('create-template', context_settings={'allow_extra_args': True, 'ignore_unknown_options': True})
@@ -183,15 +183,16 @@ def purge_template(query: c.BaseTemplate, force):
 @conductor.command('publish-template', hidden=True)
 @click.argument('name')
 @click.argument('version')
+@click.argument('supported-kernels')
 @click.argument('repository')
 @click.argument('token')
 @default_options
-def publish_template(name: str, version: str, repository: str, token: str):
+def publish_template(name: str, version: str, supported_kernels: str, repository: str, token: str):
     # modify the registry files
     subprocess.run(f'git clone {BRANCHLINE_REGISTRY_GH_URL}', shell=True)
     subprocess.run(f'git -C pros-branchline checkout -b publish/{name}', shell=True)
 
-    with open('pros-branchline/templates.json', 'r') as file:
+    with open('pros-branchline/pros-branchline.json', 'r') as file:
         data = json.load(file)
 
     version_file_name = f'pros-branchline/templates/{name}.json'
@@ -201,10 +202,10 @@ def publish_template(name: str, version: str, repository: str, token: str):
         ui.echo('New template detected, publishing template to branchline...')
         new_template = {'metadata': {'versions': version_file_name}, 'name': name, 'target': 'v5'}
         data.append(new_template)
-        with open('pros-branchline/templates.json', 'w') as file:
+        with open('pros-branchline/pros-branchline.json', 'w') as file:
             json.dump(data, file, indent=2)
-        versions = [{'metadata': {'location': f'https://pros.cs.purdue.edu/v5/_static/branchline/{name}/{name}@{version}.zip'}, 'version': version}]
-        with open(version_file_name, 'w') as file:
+        versions = [{'metadata': {'location': f'https://pros.cs.purdue.edu/v5/_static/branchline/{name}/{name}@{version}.zip'}, 'version': version, 'supported_kernels': supported_kernels}]
+        with open(version_file_name, 'w+') as file:
             json.dump(versions, file, indent=2)
     else:
         ui.echo('Existing template detected, updating template on branchline...')
@@ -213,7 +214,7 @@ def publish_template(name: str, version: str, repository: str, token: str):
         for entry in existing_versions:
             if entry['version'] == version:
                 raise click.ClickException('Template version already published')
-        new_version = {'metadata': {'location': f'https://pros.cs.purdue.edu/v5/_static/releases/{name}@{version}.zip'}, 'version': version}
+        new_version = {'metadata': {'location': f'https://pros.cs.purdue.edu/v5/_static/releases/{name}@{version}.zip'}, 'version': version, 'supported_kernels': supported_kernels}
         existing_versions.append(new_version)
         with open(version_file_name, 'w') as file:
             json.dump(existing_versions, file, indent=2)
@@ -222,20 +223,16 @@ def publish_template(name: str, version: str, repository: str, token: str):
     subprocess.run(f'git -C pros-branchline commit -m \"publish {name}\"', shell=True)
     subprocess.run(f'git -C pros-branchline push --set-upstream origin publish/{name}', shell=True)
     subprocess.run('rm -rf pros-branchline', shell=True)
-    
-    print('before template data')
-    print('repository', repository)
-    print('name', name)
-    print('vesrion', version)
-    template_data = json.dumps({
-                "ref": "feature/template-build-workflow",
-                "inputs": {
-                    "repository": {repository},
-                    "name": {name},
-                    "version": {version},
-                }
-            })
-    print('after template data')
+
+    new_template = 1 if not exists else 0
+    template_data = json.dumps({ 
+        'ref': 'feature/template-build-workflow', 
+        'inputs': {
+            'repository': repository,
+            'name': name,
+            'version': version,
+            'new_template': str(new_template)
+        }})
 
     title = f'NEW TEMPLATE SUBMISSION `{name}@{version}`' if not exists else f'TEMPLATE UPDATE REQUEST `{name}@{version}`'
     body = f'This pull requested was generated from the pros-cli\n```\n{template_data}\n```'
