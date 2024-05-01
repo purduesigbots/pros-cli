@@ -282,6 +282,8 @@ class Conductor(Config):
             raise dont_send(
                 InvalidTemplateException(f'Could not find a template satisfying {identifier} for {project.target}'))
 
+        apply_liblvgl = False  # flag to apply liblvgl if upgrading to PROS 4
+
         # warn and prompt user if upgrading to PROS 4 or downgrading to PROS 3
         if template.name == 'kernel':
             isProject = Project.find_project("")
@@ -294,6 +296,7 @@ class Conductor(Config):
                         if not confirm:
                             raise dont_send(
                                 InvalidTemplateException(f'Not upgrading'))
+                        apply_liblvgl = True
                     if template.version[0] == '3' and curr_proj.kernel[0] == '4':
                         confirm = ui.confirm(f'Warning! Downgrading project to PROS 3 will cause breaking changes. '
                                              f'Do you still want to downgrade?')
@@ -333,6 +336,16 @@ class Conductor(Config):
                                    force_user=kwargs.pop('force_user', False),
                                    remove_empty_directories=kwargs.pop('remove_empty_directories', False))
             ui.finalize('apply', f'Finished applying {template.identifier} to {project.location}')
+
+            # Apply liblvgl if upgrading to PROS 4
+            if apply_liblvgl:
+                template = self.resolve_template(identifier="liblvgl", allow_online=download_ok, early_access=True)
+                if not isinstance(template, LocalTemplate):
+                    with ui.Notification():
+                        template = self.fetch_template(self.get_depot(template.metadata['origin']), template, **kwargs)
+                assert isinstance(template, LocalTemplate)
+                project.apply_template(template)
+                ui.finalize('apply', f'Finished applying {template.identifier} to {project.location}')
         elif valid_action != TemplateAction.AlreadyInstalled:
             raise dont_send(
                 InvalidTemplateException(f'Could not install {template.identifier} because it is {valid_action.name},'
