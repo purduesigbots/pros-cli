@@ -159,7 +159,7 @@ def upgrade(ctx: click.Context, project: c.Project, query: c.BaseTemplate, **kwa
     """
     analytics.send("upgrade-project")
     if not query.name:
-        for template in project.templates.keys():
+        for template in tuple(project.templates.keys()):
             click.secho(f'Upgrading {template}', color='yellow')
             q = c.BaseTemplate.create_query(name=template, target=project.target,
                                             supported_kernels=project.templates['kernel'].version)
