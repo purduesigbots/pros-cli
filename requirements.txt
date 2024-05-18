@@ -1,5 +1,5 @@
 click>=8
-rich-click
+rich-click==1.7.4
 pyserial
 cachetools
 requests
