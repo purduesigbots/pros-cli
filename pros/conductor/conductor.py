@@ -107,7 +107,7 @@ class Conductor(Config):
             needs_saving = True
         if self.default_libraries is None:
             self.default_libraries = {
-                'v5': ['okapilib'],
+                'v5': ['okapilib', 'liblvgl'],
                 'cortex': []
             }
             needs_saving = True
@@ -385,6 +385,9 @@ class Conductor(Config):
 
             if kwargs['version'][0] == '>' or kwargs['version'][0] == '4':
                 libraries[proj.target].remove('okapilib')
+
+            if 'liblvgl' in libraries[proj.target] and kwargs['version'][0] != '>' and kwargs['version'][0] != '4':
+                libraries[proj.target].remove('liblvgl')
 
             for library in libraries[proj.target]:
                 try:
