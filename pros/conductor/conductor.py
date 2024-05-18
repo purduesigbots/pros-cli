@@ -282,6 +282,8 @@ class Conductor(Config):
             raise dont_send(
                 InvalidTemplateException(f'Could not find a template satisfying {identifier} for {project.target}'))
 
+        apply_liblvgl = False  # flag to apply liblvgl if upgrading to PROS 4
+
         # warn and prompt user if upgrading to PROS 4 or downgrading to PROS 3
         if template.name == 'kernel':
             isProject = Project.find_project("")
@@ -294,26 +296,14 @@ class Conductor(Config):
                         if not confirm:
                             raise dont_send(
                                 InvalidTemplateException(f'Not upgrading'))
+                        apply_liblvgl = True
                     if template.version[0] == '3' and curr_proj.kernel[0] == '4':
                         confirm = ui.confirm(f'Warning! Downgrading project to PROS 3 will cause breaking changes. '
                                              f'Do you still want to downgrade?')
                         if not confirm:
                             raise dont_send(
                                 InvalidTemplateException(f'Not downgrading'))
-            elif not project.use_early_access and template.version[0] == '3' and not self.warn_early_access:
-                confirm = ui.confirm(f'PROS 4 is now in early access. '
-                                     f'Please use the --early-access flag if you would like to use it.\n'
-                                     f'Do you want to use PROS 4 instead?')
-                self.warn_early_access = True
-                if confirm: # use pros 4
-                    project.use_early_access = True
-                    project.save()
-                    kwargs['version'] = '>=0'
-                    kwargs['early_access'] = True
-                    # Recall the function with early access enabled
-                    return self.apply_template(project, identifier, **kwargs)
-                    
-                self.save()
+
         if not isinstance(template, LocalTemplate):
             with ui.Notification():
                 template = self.fetch_template(self.get_depot(template.metadata['origin']), template, **kwargs)
@@ -333,6 +323,16 @@ class Conductor(Config):
                                    force_user=kwargs.pop('force_user', False),
                                    remove_empty_directories=kwargs.pop('remove_empty_directories', False))
             ui.finalize('apply', f'Finished applying {template.identifier} to {project.location}')
+
+            # Apply liblvgl if upgrading to PROS 4
+            if apply_liblvgl:
+                template = self.resolve_template(identifier="liblvgl", allow_online=download_ok, early_access=True)
+                if not isinstance(template, LocalTemplate):
+                    with ui.Notification():
+                        template = self.fetch_template(self.get_depot(template.metadata['origin']), template, **kwargs)
+                assert isinstance(template, LocalTemplate)
+                project.apply_template(template)
+                ui.finalize('apply', f'Finished applying {template.identifier} to {project.location}')
         elif valid_action != TemplateAction.AlreadyInstalled:
             raise dont_send(
                 InvalidTemplateException(f'Could not install {template.identifier} because it is {valid_action.name},'
@@ -358,22 +358,8 @@ class Conductor(Config):
         else:
             use_early_access = self.use_early_access
         kwargs["early_access"] = use_early_access
-        if kwargs["version_source"]: # If true, then the user has not specified a version
-            if not use_early_access and self.warn_early_access:
-                ui.echo(f"PROS 4 is now in early access. "
-                        f"If you would like to use it, use the --early-access flag.")
-            elif not use_early_access and not self.warn_early_access:
-                confirm = ui.confirm(f'PROS 4 is now in early access. '
-                                     f'Please use the --early-access flag if you would like to use it.\n'
-                                     f'Do you want to use PROS 4 instead?')
-                self.warn_early_access = True
-                if confirm:
-                    use_early_access = True
-                    kwargs['early_access'] = True
-            elif use_early_access:
-                ui.echo(f'Early access is enabled. Using PROS 4.')
-        elif use_early_access:
-            ui.echo(f'Early access is enabled.')
+        if use_early_access:
+            ui.echo(f'Early access is enabled. Experimental features have been applied.')
 
         if not is_pathname_valid(str(Path(path).absolute())):
             raise dont_send(ValueError('Project path contains invalid characters.'))
@@ -396,6 +382,9 @@ class Conductor(Config):
 
         if not no_default_libs:
             libraries = self.early_access_libraries if proj.use_early_access and (kwargs.get("version", ">").startswith("4") or kwargs.get("version", ">").startswith(">")) else self.default_libraries
+
+            if kwargs['version'][0] == '>' or kwargs['version'][0] == '4':
+                libraries[proj.target].remove('okapilib')
 
             for library in libraries[proj.target]:
                 try:
