@@ -5,6 +5,7 @@ from serial.tools import list_ports as list_ports
 
 from .base_port import BasePort, PortConnectionException, PortException
 from .direct_port import DirectPort
+from .ble_port import BluetoothPort
 # from .v5_wireless_port import V5WirelessPort
 
 

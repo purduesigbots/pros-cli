@@ -7,6 +7,7 @@ import pros.conductor as c
 from .common import *
 from pros.ga.analytics import analytics
 
+
 @pros_root
 def upload_cli():
     pass
@@ -20,16 +21,19 @@ def upload_cli():
 @project_option(required=False, allow_none=True)
 @click.option('--run-after/--no-run-after', 'run_after', default=None, help='Immediately run the uploaded program.',
               cls=PROSDeprecated, replacement='after')
-@click.option('--run-screen/--execute', 'run_screen', default=None, help='Display run program screen on the brain after upload.',
+@click.option('--run-screen/--execute', 'run_screen', default=None,
+              help='Display run program screen on the brain after upload.',
               cls=PROSDeprecated, replacement='after')
-@click.option('-af', '--after', type=click.Choice(['run','screen','none']), default=None, help='Action to perform on the brain after upload.', 
+@click.option('-af', '--after', type=click.Choice(['run', 'screen', 'none']), default=None,
+              help='Action to perform on the brain after upload.',
               cls=PROSOption, group='V5 Options')
 @click.option('--quirk', type=int, default=0)
 @click.option('--name', 'remote_name', type=str, default=None, required=False, help='Remote program name.',
               cls=PROSOption, group='V5 Options')
 @click.option('--slot', default=None, type=click.IntRange(min=1, max=8), help='Program slot on the GUI.',
               cls=PROSOption, group='V5 Options')
-@click.option('--icon', type=click.Choice(['pros','pizza','planet','alien','ufo','robot','clawbot','question','X','power']), default='pros',
+@click.option('--icon', type=click.Choice(
+    ['pros', 'pizza', 'planet', 'alien', 'ufo', 'robot', 'clawbot', 'question', 'X', 'power']), default='pros',
               help="Change Program's icon on the V5 Brain", cls=PROSOption, group='V5 Options')
 @click.option('--program-version', default=None, type=str, help='Specify version metadata for program.',
               cls=PROSOption, group='V5 Options', hidden=True)
@@ -37,11 +41,10 @@ def upload_cli():
               cls=PROSOption, group='V5 Options', hidden=True)
 @click.option('--compress-bin/--no-compress-bin', 'compress_bin', cls=PROSOption, group='V5 Options', default=True,
               help='Compress the program binary before uploading.')
-@click.option('--description', default="Made with PROS", type=str, cls=PROSOption, group='V5 Options', 
+@click.option('--description', default="Made with PROS", type=str, cls=PROSOption, group='V5 Options',
               help='Change the description displayed for the program.')
-@click.option('--name', default=None, type=str, cls=PROSOption, group='V5 Options', 
+@click.option('--name', default=None, type=str, cls=PROSOption, group='V5 Options',
               help='Change the name of the program.')
-
 @default_options
 def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwargs):
     """
@@ -56,7 +59,8 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     analytics.send("upload")
     import pros.serial.devices.vex as vex
     from pros.serial.ports import DirectPort
-    kwargs['ide_version'] = project.kernel if not project==None else "None"
+    from pros.serial.ports import BluetoothPort
+    kwargs['ide_version'] = project.kernel if not project == None else "None"
     kwargs['ide'] = 'PROS'
     if path is None or os.path.isdir(path):
         if project is None:
@@ -70,15 +74,13 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
 
         # apply upload_options as a template
         options = dict(**project.upload_options)
-        if 'port' in options and port is None:
-            port = options.get('port', None)
         if 'slot' in options and kwargs.get('slot', None) is None:
             kwargs.pop('slot')
         elif kwargs.get('slot', None) is None:
             kwargs['slot'] = 1
-        if 'icon' in options and kwargs.get('icon','pros') == 'pros':
+        if 'icon' in options and kwargs.get('icon', 'pros') == 'pros':
             kwargs.pop('icon')
-        if 'after' in options and kwargs.get('after','screen') is None:
+        if 'after' in options and kwargs.get('after', 'screen') is None:
             kwargs.pop('after')
 
         options.update(kwargs)
@@ -89,16 +91,16 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
         if 'remote_name' not in kwargs:
             kwargs['remote_name'] = project.name
     name_to_file = {
-        'pros' : 'USER902x.bmp',
-        'pizza' : 'USER003x.bmp',
-        'planet' : 'USER013x.bmp',
-        'alien' : 'USER027x.bmp',
-        'ufo' : 'USER029x.bmp',
-        'clawbot' : 'USER010x.bmp',
-        'robot' : 'USER011x.bmp',
-        'question' : 'USER002x.bmp',
-        'power' : 'USER012x.bmp',
-        'X' : 'USER001x.bmp'
+        'pros': 'USER902x.bmp',
+        'pizza': 'USER003x.bmp',
+        'planet': 'USER013x.bmp',
+        'alien': 'USER027x.bmp',
+        'ufo': 'USER029x.bmp',
+        'clawbot': 'USER010x.bmp',
+        'robot': 'USER011x.bmp',
+        'question': 'USER002x.bmp',
+        'power': 'USER012x.bmp',
+        'X': 'USER001x.bmp'
     }
     kwargs['icon'] = name_to_file[kwargs['icon']]
     if 'target' not in kwargs or kwargs['target'] is None:
@@ -111,28 +113,28 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     else:
         logger(__name__).debug(f"Invalid target provided: {kwargs['target']}")
         logger(__name__).debug('Target should be one of ("v5" or "cortex").')
-    if not port:
-        raise dont_send(click.UsageError('No port provided or located. Make sure to specify --target if needed.'))
+    # if not port:
+    #     raise dont_send(click.UsageError('No port provided or located. Make sure to specify --target if needed.'))
     if kwargs['target'] == 'v5':
-        kwargs['remote_name'] = kwargs['name'] if kwargs.get("name",None) else kwargs['remote_name']
+        kwargs['remote_name'] = kwargs['name'] if kwargs.get("name", None) else kwargs['remote_name']
         if kwargs['remote_name'] is None:
             kwargs['remote_name'] = os.path.splitext(os.path.basename(path))[0]
         kwargs['remote_name'] = kwargs['remote_name'].replace('@', '_')
         kwargs['slot'] -= 1
-        
+
         action_to_kwarg = {
-            'run' : vex.V5Device.FTCompleteOptions.RUN_IMMEDIATELY, 
-            'screen' : vex.V5Device.FTCompleteOptions.RUN_SCREEN, 
-            'none' : vex.V5Device.FTCompleteOptions.DONT_RUN
-            }    
+            'run': vex.V5Device.FTCompleteOptions.RUN_IMMEDIATELY,
+            'screen': vex.V5Device.FTCompleteOptions.RUN_SCREEN,
+            'none': vex.V5Device.FTCompleteOptions.DONT_RUN
+        }
         after_upload_default = 'screen'
-        #Determine which FTCompleteOption to assign to run_after
-        if kwargs['after']==None:
-            kwargs['after']=after_upload_default
+        # Determine which FTCompleteOption to assign to run_after
+        if kwargs['after'] == None:
+            kwargs['after'] = after_upload_default
             if kwargs['run_after']:
-                kwargs['after']='run'
-            elif kwargs['run_screen']==False and not kwargs['run_after']:
-                kwargs['after']='none'
+                kwargs['after'] = 'run'
+            elif kwargs['run_screen'] == False and not kwargs['run_after']:
+                kwargs['after'] = 'none'
         kwargs['run_after'] = action_to_kwarg[kwargs['after']]
         kwargs.pop('run_screen')
         kwargs.pop('after')
@@ -142,7 +144,8 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     logger(__name__).debug('Arguments: {}'.format(str(kwargs)))
     # Do the actual uploading!
     try:
-        ser = DirectPort(port)
+        ser = BluetoothPort(port)
+        # ser = DirectPort(port)
         device = None
         if kwargs['target'] == 'v5':
             device = vex.V5Device(ser)
@@ -156,6 +159,7 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     except Exception as e:
         logger(__name__).exception(e, exc_info=True)
         exit(1)
+
 
 @upload_cli.command('lsusb', aliases=['ls-usb', 'ls-devices', 'lsdev', 'list-usb', 'list-devices'])
 @click.option('--target', type=click.Choice(['v5', 'cortex']), default=None, required=False)
