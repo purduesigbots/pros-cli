@@ -107,7 +107,7 @@ class Conductor(Config):
             needs_saving = True
         if self.default_libraries is None:
             self.default_libraries = {
-                'v5': ['okapilib'],
+                'v5': ['okapilib', 'liblvgl'],
                 'cortex': []
             }
             needs_saving = True
@@ -383,10 +383,14 @@ class Conductor(Config):
         if not no_default_libs:
             libraries = self.early_access_libraries if proj.use_early_access and (kwargs.get("version", ">").startswith("4") or kwargs.get("version", ">").startswith(">")) else self.default_libraries
 
-            if kwargs['version'][0] == '>' or kwargs['version'][0] == '4':
-                libraries[proj.target].remove('okapilib')
-
+            version = kwargs['version'][0]
             for library in libraries[proj.target]:
+                if version == '>' or version == '4':
+                    if library == "okapilib":
+                        continue
+                if version != '>' and version != '4':
+                    if library == "liblvgl":
+                        continue
                 try:
                     # remove kernel version so that latest template satisfying query is correctly selected
                     if 'version' in kwargs:
