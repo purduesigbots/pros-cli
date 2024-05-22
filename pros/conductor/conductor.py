@@ -383,11 +383,12 @@ class Conductor(Config):
         if not no_default_libs:
             libraries = self.early_access_libraries if proj.use_early_access and (kwargs.get("version", ">").startswith("4") or kwargs.get("version", ">").startswith(">")) else self.default_libraries
 
+            version = kwargs['version'][0]
             for library in libraries[proj.target]:
-                if kwargs['version'][0] == '>' or kwargs['version'][0] == '4':
+                if version == '>' or version == '4':
                     if library == "okapilib":
                         continue
-                if kwargs['version'][0] != '>' and kwargs['version'][0] != '4':
+                if version != '>' and version != '4':
                     if library == "liblvgl":
                         continue
                 try:
