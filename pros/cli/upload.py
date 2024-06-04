@@ -25,8 +25,6 @@ def upload_cli():
 @click.option('-af', '--after', type=click.Choice(['run','screen','none']), default=None, help='Action to perform on the brain after upload.', 
               cls=PROSOption, group='V5 Options')
 @click.option('--quirk', type=int, default=0)
-@click.option('--name', 'remote_name', type=str, default=None, required=False, help='Remote program name.',
-              cls=PROSOption, group='V5 Options')
 @click.option('--slot', default=None, type=click.IntRange(min=1, max=8), help='Program slot on the GUI.',
               cls=PROSOption, group='V5 Options')
 @click.option('--icon', type=click.Choice(['pros','pizza','planet','alien','ufo','robot','clawbot','question','X','power']), default='pros',
