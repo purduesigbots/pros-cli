@@ -1,4 +1,3 @@
-[[ ${BASH_VERSINFO[0]} -ge 4 ]] || return 0
 _pros_completion() {
   local IFS=$'\n'
   local response
@@ -18,6 +17,10 @@ _pros_completion() {
   return 0
 }
 _pros_completion_setup() {
-  complete -o nosort -F _pros_completion pros
+  if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
+    complete -o nosort -F _pros_completion pros
+  else
+    complete -F _pros_completion pros
+  fi
 }
 _pros_completion_setup
