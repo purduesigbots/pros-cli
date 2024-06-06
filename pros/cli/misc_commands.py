@@ -48,6 +48,7 @@ def upgrade(force_check, no_install):
             ui.finalize('upgradeComplete', manager.perform_upgrade())
 
 
+# Script files for each shell
 _SCRIPT_FILES = {
     'bash': '.pros-complete.bash',
     'zsh': '.pros-complete.zsh',
@@ -58,13 +59,14 @@ _SCRIPT_FILES = {
 
 
 def _get_shell_script(shell: str) -> str:
+    """Get the shell script for the specified shell."""
     script_file = Path(__file__).parent.parent / 'autocomplete' / _SCRIPT_FILES[shell]
     with script_file.open('r') as f:
         return f.read()
 
 
 @add_completion_class
-class PowerShellComplete(ZshComplete):
+class PowerShellComplete(ZshComplete):  # Identical to ZshComplete except comma delimited instead of newline
     """Shell completion for PowerShell and Windows PowerShell."""
 
     name = "powershell"
@@ -93,7 +95,7 @@ def setup_autocomplete(shell, config_path, force):
 
     # https://click.palletsprojects.com/en/8.1.x/shell-completion/
 
-    default_config_paths = {
+    default_config_paths = {  # Default config paths for each shell
         'bash': '~/.bashrc',
         'zsh': '~/.zshrc',
         'fish': '~/.config/fish/completions/',
@@ -101,6 +103,7 @@ def setup_autocomplete(shell, config_path, force):
         'powershell': None,
     }
 
+    # Get the powershell profile path if not specified
     if shell in ('pwsh', 'powershell') and config_path is None:
         try:
             profile_command = f'{shell} -NoLogo -NoProfile -Command "Write-Output $PROFILE"' if os.name == 'nt' else f"{shell} -NoLogo -NoProfile -Command 'Write-Output $PROFILE'"
@@ -108,6 +111,7 @@ def setup_autocomplete(shell, config_path, force):
         except subprocess.CalledProcessError as exc:
             raise click.UsageError("Failed to determine the PowerShell profile path. Please specify a valid config file.") from exc
 
+    # Use default config path if not specified
     if config_path is None:
         config_path = default_config_paths[shell]
         ui.echo(f"Using default config path {config_path}. To specify a different config path, run 'pros setup-autocomplete {shell} [CONFIG_PATH]'.\n")
@@ -125,12 +129,12 @@ def setup_autocomplete(shell, config_path, force):
         with script_file.open('w') as f:
             f.write(_get_shell_script(shell))
 
+        # Source the autocomplete script in the config file
         if shell in ('bash', 'zsh'):
             source_autocomplete = f'. "{script_file.as_posix()}"\n'
         elif shell in ('pwsh', 'powershell'):
             source_autocomplete = f'"{script_file}" | Invoke-Expression\n'
         if force or ui.confirm(f"Add the autocomplete script to {config_path}?", default=True):
-            # Source the autocomplete script in the config file
             with config_path.open('r+') as f:
                 # Only append if the source command is not already in the file
                 if source_autocomplete not in f.readlines():
@@ -142,6 +146,7 @@ def setup_autocomplete(shell, config_path, force):
             ui.echo(source_autocomplete)
             return
     elif shell == 'fish':
+        # Check if the config path is a directory or file and set the script directory and file accordingly
         if config_path.is_file():
             script_dir = config_path.parent
             script_file = config_path
