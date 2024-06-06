@@ -126,9 +126,9 @@ def setup_autocomplete(shell, config_path, force):
             f.write(_get_shell_script(shell))
 
         if shell in ('bash', 'zsh'):
-            source_autocomplete = f". {script_file.as_posix()}\n"
+            source_autocomplete = f'. "{script_file.as_posix()}"\n'
         elif shell in ('pwsh', 'powershell'):
-            source_autocomplete = f"{script_file} | Invoke-Expression\n"
+            source_autocomplete = f'"{script_file}" | Invoke-Expression\n'
         if force or ui.confirm(f"Add the autocomplete script to {config_path}?", default=True):
             # Source the autocomplete script in the config file
             with config_path.open('r+') as f:
