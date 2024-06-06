@@ -85,8 +85,8 @@ class Conductor(Config):
         self.early_access_local_templates: Set[LocalTemplate] = set()
         self.depots: Dict[str, Depot] = {}
         self.default_target: str = 'v5'
-        self.default_libraries: Dict[str, List[str]] = None
-        self.early_access_libraries: Dict[str, List[str]] = None
+        self.pros_3_default_libraries: Dict[str, List[str]] = None
+        self.pros_4_default_libraries: Dict[str, List[str]] = None
         self.use_early_access = False
         self.warn_early_access = False
         super(Conductor, self).__init__(file)
@@ -105,29 +105,29 @@ class Conductor(Config):
         if self.default_target is None:
             self.default_target = 'v5'
             needs_saving = True
-        if self.default_libraries is None:
-            self.default_libraries = {
-                'v5': ['okapilib', 'liblvgl'],
+        if self.pros_3_default_libraries is None:
+            self.pros_3_default_libraries = {
+                'v5': ['okapilib'],
                 'cortex': []
             }
             needs_saving = True
-        if self.early_access_libraries is None or len(self.early_access_libraries['v5']) != 2:
-            self.early_access_libraries = {
-                'v5': ['liblvgl', 'okapilib'],
+        if self.pros_4_default_libraries is None:
+            self.pros_4_default_libraries = {
+                'v5': ['liblvgl'],
                 'cortex': []
             }
             needs_saving = True
-        if 'v5' not in self.default_libraries:
-            self.default_libraries['v5'] = []
+        if 'v5' not in self.pros_3_default_libraries:
+            self.pros_3_default_libraries['v5'] = ['okapilib']
             needs_saving = True
-        if 'cortex' not in self.default_libraries:
-            self.default_libraries['cortex'] = []
+        if 'cortex' not in self.pros_3_default_libraries:
+            self.pros_3_default_libraries['cortex'] = []
             needs_saving = True
-        if 'v5' not in self.early_access_libraries:
-            self.early_access_libraries['v5'] = []
+        if 'v5' not in self.pros_4_default_libraries:
+            self.pros_4_default_libraries['v5'] = ['liblvgl']
             needs_saving = True
-        if 'cortex' not in self.early_access_libraries:
-            self.early_access_libraries['cortex'] = []
+        if 'cortex' not in self.pros_4_default_libraries:
+            self.pros_4_default_libraries['cortex'] = []
             needs_saving = True
         if needs_saving:
             self.save()
@@ -381,16 +381,9 @@ class Conductor(Config):
         proj.save()
 
         if not no_default_libs:
-            libraries = self.early_access_libraries if proj.use_early_access and (kwargs.get("version", ">").startswith("4") or kwargs.get("version", ">").startswith(">")) else self.default_libraries
-
-            version = kwargs['version'][0]
+            major_version = proj.kernel[0]
+            libraries = self.pros_4_default_libraries if major_version == '4' else self.pros_3_default_libraries
             for library in libraries[proj.target]:
-                if version == '>' or version == '4':
-                    if library == "okapilib":
-                        continue
-                if version != '>' and version != '4':
-                    if library == "liblvgl":
-                        continue
                 try:
                     # remove kernel version so that latest template satisfying query is correctly selected
                     if 'version' in kwargs:
