@@ -120,7 +120,8 @@ def setup_autocomplete(shell, config_path, force):
             raise click.UsageError(f"Config file {config_path} does not exist. Please specify a valid config file.")
 
         # Write the autocomplete script to a shell script file
-        script_file = config_path.parent / _SCRIPT_FILES[shell]
+        script_file = Path(click.get_app_dir("PROS")) / "autocomplete" / _SCRIPT_FILES[shell]
+        script_file.parent.mkdir(exist_ok=True)
         with script_file.open('w') as f:
             f.write(_get_shell_script(shell))
 
