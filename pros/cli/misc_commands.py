@@ -50,8 +50,8 @@ def upgrade(force_check, no_install):
 
 # Script files for each shell
 _SCRIPT_FILES = {
-    'bash': '.pros-complete.bash',
-    'zsh': '.pros-complete.zsh',
+    'bash': 'pros-complete.bash',
+    'zsh': 'pros-complete.zsh',
     'fish': 'pros.fish',
     'pwsh': 'pros-complete.ps1',
     'powershell': 'pros-complete.ps1',
