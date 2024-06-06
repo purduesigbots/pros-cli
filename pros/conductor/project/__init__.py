@@ -34,7 +34,7 @@ class Project(Config):
 
         if defaults is None:
             defaults = {}
-        self.target: str = defaults.get('target', 'cortex').lower()  # VEX Hardware target (V5/Cortex)
+        self.target: str = defaults.get('target', 'v5').lower()  # VEX Hardware target (V5/Cortex)
         self.templates: Dict[str, Template] = defaults.get('templates', {})
         self.upload_options: Dict = defaults.get('upload_options', {})
         self.project_name: str = defaults.get('project_name', None)

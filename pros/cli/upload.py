@@ -25,8 +25,6 @@ def upload_cli():
 @click.option('-af', '--after', type=click.Choice(['run','screen','none']), default=None, help='Action to perform on the brain after upload.', 
               cls=PROSOption, group='V5 Options')
 @click.option('--quirk', type=int, default=0)
-@click.option('--name', 'remote_name', type=str, default=None, required=False, help='Remote program name.',
-              cls=PROSOption, group='V5 Options')
 @click.option('--slot', default=None, type=click.IntRange(min=1, max=8), help='Program slot on the GUI.',
               cls=PROSOption, group='V5 Options')
 @click.option('--icon', type=click.Choice(['pros','pizza','planet','alien','ufo','robot','clawbot','question','X','power']), default='pros',
@@ -39,7 +37,7 @@ def upload_cli():
               help='Compress the program binary before uploading.')
 @click.option('--description', default="Made with PROS", type=str, cls=PROSOption, group='V5 Options', 
               help='Change the description displayed for the program.')
-@click.option('--name', default=None, type=str, cls=PROSOption, group='V5 Options', 
+@click.option('--name', 'remote_name', default=None, type=str, cls=PROSOption, group='V5 Options',
               help='Change the name of the program.')
 
 @default_options
@@ -114,7 +112,7 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
     if not port:
         raise dont_send(click.UsageError('No port provided or located. Make sure to specify --target if needed.'))
     if kwargs['target'] == 'v5':
-        kwargs['remote_name'] = kwargs['name'] if kwargs.get("name",None) else kwargs['remote_name']
+        kwargs['remote_name'] = kwargs['name'] if kwargs.get('name',None) else kwargs['remote_name']
         if kwargs['remote_name'] is None:
             kwargs['remote_name'] = os.path.splitext(os.path.basename(path))[0]
         kwargs['remote_name'] = kwargs['remote_name'].replace('@', '_')
