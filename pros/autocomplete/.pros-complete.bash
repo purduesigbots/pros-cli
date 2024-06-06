@@ -1,3 +1,4 @@
+[[ ${BASH_VERSINFO[0]} -ge 4 ]] || return 0
 _pros_completion() {
   local IFS=$'\n'
   local response
