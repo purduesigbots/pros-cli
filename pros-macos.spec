@@ -15,7 +15,7 @@ a = Analysis(
     ['pros/cli/main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('pros/autocomplete/*', 'pros/autocomplete')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
