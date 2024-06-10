@@ -1,4 +1,5 @@
 import os
+import platform
 from pathlib import Path
 import subprocess
 
@@ -162,3 +163,37 @@ def setup_autocomplete(shell, config_path, force):
             f.write(_get_shell_script(shell))
 
     ui.echo(f"Succesfully set up autocomplete for {shell} in {config_path}. Restart your shell to apply changes.")
+
+
+@misc_commands_cli.command()
+@click.argument('exe_type', default='hot', type=click.Choice(['hot', 'cold', 'monolith']), required=True)
+@project_option()
+def stack_trace(exe_type, project):
+    """
+    Execute stack trace for data abort
+
+    exe_type: The type of executable to perform the stack trace
+
+    Example: pros stack_trace hot
+    """
+
+    exe_type_map = {
+        'hot': './bin/hot.package.elf',
+        'cold': './bin/cold.package.elf',
+        'monolith': './bin/monolith.elf'
+    }
+
+    monolith_path = project.location.joinpath(project.output)
+
+    if monolith_path.exists():
+        exe_path = exe_type_map['monolith']
+    else:
+        exe_path = exe_type_map[str(exe_type)]
+
+    ui.echo(f"Begin stack tracing on {exe_path}")
+    ui.echo("Enter the memory addresses copied from PROS terminal. Ctrl-C to exit.")
+
+    if platform.system() == 'Windows':
+        subprocess.run([f'%PROS_TOOLCHAIN%\\bin\\arm-none-eabi-addr2line', '-faps', '-e', exe_path], shell=True)
+    else:
+        subprocess.run(['arm-none-eabi-addr2line', '-faps', '-e', exe_path])
