@@ -1,10 +1,12 @@
 import codecs
 import os
 import signal
+import subprocess
 import sys
 import threading
 
 import colorama
+
 
 from pros.common.utils import logger
 from pros.serial import decode_bytes_to_str
@@ -165,12 +167,14 @@ else:
         'Sorry no implementation for your platform ({})'
         ' available.'.format(sys.platform))
 
-
 class Terminal(object):
     """This class is loosely based off of the pyserial miniterm"""
+    beginStackTrace = False
+    stackTraceFile = None
 
     def __init__(self, port_instance: StreamDevice, transformations=(),
-                 output_raw: bool = False, request_banner: bool = True):
+                 output_raw: bool = False, request_banner: bool = True,
+                 auto_stack_trace: bool = True, stack_trace_file: str = None):
         self.device = port_instance
         self.device.subscribe(b'sout')
         self.device.subscribe(b'serr')
@@ -183,6 +187,8 @@ class Terminal(object):
         self.output_raw = output_raw
         self.request_banner = request_banner
         self.no_sigint = True  # SIGINT flag
+        self.convert_stack_traces = auto_stack_trace
+        self.stack_trace_file = stack_trace_file
         signal.signal(signal.SIGINT, self.catch_sigint)  # SIGINT handler
         self.console = Console()
         self.console.output = colorama.AnsiToWin32(self.console.output).stream
@@ -224,7 +230,55 @@ class Terminal(object):
                 if data[0] == b'sout':
                     text = decode_bytes_to_str(data[1])
                 elif data[0] == b'serr':
-                    text = '{}{}{}'.format(colorama.Fore.RED, decode_bytes_to_str(data[1]), colorama.Style.RESET_ALL)
+                    #print(len(text))
+                    addr = "0x" + decode_bytes_to_str(data[1])[:7]
+
+                    convert_trace = (self.beginStackTrace and
+                                    addr.isalnum() and
+                                    addr[3] != 'x' and
+                                    self.convert_stack_traces and
+                                    ((os.name != 'nt') or os.environ.get('PROS_TOOLCHAIN')))
+
+                    if convert_trace:
+                        if os.name == 'nt' and os.environ.get('PROS_TOOLCHAIN'):
+                            addr2line_path = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'arm-none-eabi-addr2line')
+                        else:
+                            addr2line_path = 'arm-none-eabi-addr2line'
+
+                        def getTrace(s, path):
+                            if not os.path.exists(path):
+                                return ''
+                            temp = subprocess.run([addr2line_path, '-faps', '-e', path, s], capture_output=True).stdout.decode('utf-8')
+                            if (temp.find('?') != -1):
+                                return ''
+                            else:
+                                return temp[12: len(temp) - 2]
+                            
+                        trace = ' : {}{}{}'.format(
+                            getTrace(addr, "./bin/hot.package.elf"),
+                            getTrace(addr, "./bin/cold.package.elf"),
+                            getTrace(addr, "./bin/monolith.elf"))
+                        text = '{}{}{}{}{}{}'.format(colorama.Fore.RED, decode_bytes_to_str(data[1]), colorama.Style.RESET_ALL, colorama.Fore.WHITE, trace, colorama.Style.RESET_ALL)
+                        if(self.stack_trace_file):
+                            file.write(addr + trace + '\n')
+                    else:
+                        text = '{}{}{}'.format(colorama.Fore.RED, decode_bytes_to_str(data[1]), colorama.Style.RESET_ALL)
+
+                    if "BEGIN STACK TRACE" in text:
+                        self.beginStackTrace = True
+                        if(self.convert_stack_traces):
+                            text = '{}{}{}'.format(colorama.Fore.YELLOW, "BEGINNING STACK TRACE\n--------------------------------\n\n", colorama.Style.RESET_ALL)
+                        if(self.stack_trace_file):
+                            file = open(self.stack_trace_file, "w")
+
+                    if "END OF TRACE" in text:
+                        self.beginStackTrace = False
+                        if(self.convert_stack_traces):
+                            text = '{}{}{}'.format(colorama.Fore.YELLOW, "\n--------------------------------\nEND OF STACK TRACE\n\n", colorama.Style.RESET_ALL)
+                        if(self.stack_trace_file):
+                            file.close()
+                            file = None
+
                 elif data[0] == b'kdbg':
                     text = '{}\n\nKERNEL DEBUG:\t{}{}\n'.format(colorama.Back.GREEN + colorama.Style.BRIGHT,
                                                                 decode_bytes_to_str(data[1]),

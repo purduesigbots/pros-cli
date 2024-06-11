@@ -262,7 +262,6 @@ def resolve_v5_port(port: Optional[str], type: str, quiet: bool = False) -> Tupl
                                     show_default=False,
                                     type=click.Choice([p.description.split(' ')[-1] for p in ports]))
                 port = [p.device for p in ports if p.description.split(' ')[-1] == brain_id][0]
-
                 assert port in [p.device for p in ports]
             else:
                 return None, False

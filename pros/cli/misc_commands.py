@@ -162,3 +162,4 @@ def setup_autocomplete(shell, config_path, force):
             f.write(_get_shell_script(shell))
 
     ui.echo(f"Succesfully set up autocomplete for {shell} in {config_path}. Restart your shell to apply changes.")
+

@@ -129,6 +129,12 @@ class Conductor(Config):
         if 'cortex' not in self.pros_4_default_libraries:
             self.pros_4_default_libraries['cortex'] = []
             needs_saving = True
+        if 'v5' not in self.early_access_libraries:
+            self.early_access_libraries['v5'] = []
+            needs_saving = True
+        if 'cortex' not in self.early_access_libraries:
+            self.early_access_libraries['cortex'] = []
+            needs_saving = True
         if needs_saving:
             self.save()
         from pros.common.sentry import add_context
@@ -221,7 +227,6 @@ class Conductor(Config):
                         results.extend(online_results)
             logger(__name__).debug('Saving Conductor config after checking for remote updates')
             self.save()  # Save self since there may have been some updates from the depots
-
         if len(results) == 0 and not use_early_access:
             raise dont_send(
                         InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}'))
@@ -281,9 +286,9 @@ class Conductor(Config):
         if template is None:
             raise dont_send(
                 InvalidTemplateException(f'Could not find a template satisfying {identifier} for {project.target}'))
-
+            
         apply_liblvgl = False  # flag to apply liblvgl if upgrading to PROS 4
-
+        
         # warn and prompt user if upgrading to PROS 4 or downgrading to PROS 3
         if template.name == 'kernel':
             isProject = Project.find_project("")
@@ -303,7 +308,7 @@ class Conductor(Config):
                         if not confirm:
                             raise dont_send(
                                 InvalidTemplateException(f'Not downgrading'))
-
+                            
         if not isinstance(template, LocalTemplate):
             with ui.Notification():
                 template = self.fetch_template(self.get_depot(template.metadata['origin']), template, **kwargs)
@@ -333,6 +338,7 @@ class Conductor(Config):
                 assert isinstance(template, LocalTemplate)
                 project.apply_template(template)
                 ui.finalize('apply', f'Finished applying {template.identifier} to {project.location}')
+
         elif valid_action != TemplateAction.AlreadyInstalled:
             raise dont_send(
                 InvalidTemplateException(f'Could not install {template.identifier} because it is {valid_action.name},'
@@ -368,6 +374,7 @@ class Conductor(Config):
             raise dont_send(ValueError('Will not create a project in user home directory'))
         
         proj = Project(path=path, create=True, early_access=use_early_access)
+        
         if 'target' in kwargs:
             proj.target = kwargs['target']
         if 'project_name' in kwargs and kwargs['project_name'] and not kwargs['project_name'].isspace():
@@ -383,6 +390,7 @@ class Conductor(Config):
         if not no_default_libs:
             major_version = proj.kernel[0]
             libraries = self.pros_4_default_libraries if major_version == '4' else self.pros_3_default_libraries
+
             for library in libraries[proj.target]:
                 try:
                     # remove kernel version so that latest template satisfying query is correctly selected
