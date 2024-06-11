@@ -1,8 +1,11 @@
+import errno
 import os.path
 import shutil
 from enum import Enum
 from pathlib import Path
+import sys
 from typing import *
+import re
 
 import click
 from semantic_version import Spec, Version
@@ -27,6 +30,50 @@ class ReleaseChannel(Enum):
     Beta = 'beta'
 """
 
+def is_pathname_valid(pathname: str) -> bool:
+    '''
+    A more detailed check for path validity than regex.
+    https://stackoverflow.com/a/34102855/11177720
+    '''
+    try:
+        if not isinstance(pathname, str) or not pathname:
+            return False
+        
+        _, pathname = os.path.splitdrive(pathname)
+        
+        root_dirname = os.environ.get('HOMEDRIVE', 'C:') \
+            if sys.platform == 'win32' else os.path.sep
+        assert os.path.isdir(root_dirname)
+        
+        root_dirname = root_dirname.rstrip(os.path.sep) + os.path.sep
+        for pathname_part in pathname.split(os.path.sep):
+            try:
+                os.lstat(root_dirname + pathname_part)
+            except OSError as exc:
+                if hasattr(exc, 'winerror'):
+                    if exc.winerror == 123: # ERROR_INVALID_NAME, python doesn't have this constant
+                        return False
+                elif exc.errno in {errno.ENAMETOOLONG, errno.ERANGE}:
+                    return False
+        
+        # Check for emojis
+        # https://stackoverflow.com/a/62898106/11177720
+        ranges = [
+            (ord(u'\U0001F300'), ord(u"\U0001FAF6")), # 127744, 129782
+            (126980, 127569),
+            (169, 174),
+            (8205, 12953)
+        ]
+        for a_char in pathname:
+            char_code = ord(a_char)
+            for range_min, range_max in ranges:
+                if range_min <= char_code <= range_max:
+                    return False
+    except TypeError as exc:
+        return False
+    else:
+        return True
+
 class Conductor(Config):
     """
     Provides entrances for all conductor-related tasks (fetching, applying, creating new projects)
@@ -38,8 +85,8 @@ class Conductor(Config):
         self.early_access_local_templates: Set[LocalTemplate] = set()
         self.depots: Dict[str, Depot] = {}
         self.default_target: str = 'v5'
-        self.default_libraries: Dict[str, List[str]] = None
-        self.early_access_libraries: Dict[str, List[str]] = None
+        self.pros_3_default_libraries: Dict[str, List[str]] = None
+        self.pros_4_default_libraries: Dict[str, List[str]] = None
         self.use_early_access = False
         self.warn_early_access = False
         super(Conductor, self).__init__(file)
@@ -58,23 +105,29 @@ class Conductor(Config):
         if self.default_target is None:
             self.default_target = 'v5'
             needs_saving = True
-        if self.default_libraries is None:
-            self.default_libraries = {
+        if self.pros_3_default_libraries is None:
+            self.pros_3_default_libraries = {
                 'v5': ['okapilib'],
                 'cortex': []
             }
             needs_saving = True
-        if self.early_access_libraries is None or len(self.early_access_libraries['v5']) != 2:
-            self.early_access_libraries = {
-                'v5': ['liblvgl', 'okapilib'],
+        if self.pros_4_default_libraries is None:
+            self.pros_4_default_libraries = {
+                'v5': ['liblvgl'],
                 'cortex': []
             }
             needs_saving = True
-        if 'v5' not in self.default_libraries:
-            self.default_libraries['v5'] = []
+        if 'v5' not in self.pros_3_default_libraries:
+            self.pros_3_default_libraries['v5'] = ['okapilib']
             needs_saving = True
-        if 'cortex' not in self.default_libraries:
-            self.default_libraries['cortex'] = []
+        if 'cortex' not in self.pros_3_default_libraries:
+            self.pros_3_default_libraries['cortex'] = []
+            needs_saving = True
+        if 'v5' not in self.pros_4_default_libraries:
+            self.pros_4_default_libraries['v5'] = ['liblvgl']
+            needs_saving = True
+        if 'cortex' not in self.pros_4_default_libraries:
+            self.pros_4_default_libraries['cortex'] = []
             needs_saving = True
         if 'v5' not in self.early_access_libraries:
             self.early_access_libraries['v5'] = []
@@ -141,16 +194,20 @@ class Conductor(Config):
         results = list() if not unique else set()
         kernel_version = kwargs.get('kernel_version', None)
         if kwargs.get('early_access', None) is not None:
-            self.use_early_access = kwargs.get('early_access', False)
+            use_early_access = kwargs.get('early_access', False)
+        else:
+            use_early_access = self.use_early_access
         if isinstance(identifier, str):
             query = BaseTemplate.create_query(name=identifier, **kwargs)
         else:
             query = identifier
         if allow_offline:
-            if self.use_early_access:
-                offline_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.early_access_local_templates))
-            else:
-                offline_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))
+            offline_results = list()
+
+            if use_early_access:
+                offline_results.extend(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.early_access_local_templates))
+
+            offline_results.extend(filter(lambda t: t.satisfies(query, kernel_version=kernel_version), self.local_templates))
 
             if unique:
                 results.update(offline_results)
@@ -159,7 +216,7 @@ class Conductor(Config):
         if allow_online:
             for depot in self.depots.values():
                 # EarlyAccess depot will only be accessed when the --early-access flag is true
-                if depot.name != EARLY_ACCESS_NAME or (depot.name == EARLY_ACCESS_NAME and self.use_early_access):
+                if depot.name != EARLY_ACCESS_NAME or (depot.name == EARLY_ACCESS_NAME and use_early_access):
                     remote_templates = depot.get_remote_templates(force_check=force_refresh, **kwargs)
                     online_results = list(filter(lambda t: t.satisfies(query, kernel_version=kernel_version),
                                             remote_templates))
@@ -170,8 +227,7 @@ class Conductor(Config):
                         results.extend(online_results)
             logger(__name__).debug('Saving Conductor config after checking for remote updates')
             self.save()  # Save self since there may have been some updates from the depots
-        
-        if len(results) == 0 and (kernel_version.split('.')[0] == '3' and not self.use_early_access):
+        if len(results) == 0 and not use_early_access:
             raise dont_send(
                         InvalidTemplateException(f'{identifier.name} does not support kernel version {kernel_version}'))
             
@@ -230,7 +286,9 @@ class Conductor(Config):
         if template is None:
             raise dont_send(
                 InvalidTemplateException(f'Could not find a template satisfying {identifier} for {project.target}'))
-
+            
+        apply_liblvgl = False  # flag to apply liblvgl if upgrading to PROS 4
+        
         # warn and prompt user if upgrading to PROS 4 or downgrading to PROS 3
         if template.name == 'kernel':
             isProject = Project.find_project("")
@@ -243,25 +301,14 @@ class Conductor(Config):
                         if not confirm:
                             raise dont_send(
                                 InvalidTemplateException(f'Not upgrading'))
+                        apply_liblvgl = True
                     if template.version[0] == '3' and curr_proj.kernel[0] == '4':
                         confirm = ui.confirm(f'Warning! Downgrading project to PROS 3 will cause breaking changes. '
                                              f'Do you still want to downgrade?')
                         if not confirm:
                             raise dont_send(
                                 InvalidTemplateException(f'Not downgrading'))
-            elif not self.use_early_access and template.version[0] == '3' and not self.warn_early_access:
-                confirm = ui.confirm(f'PROS 4 is now in early access. '
-                                     f'Please use the --early-access flag if you would like to use it.\n'
-                                     f'Do you want to use PROS 4 instead?')
-                self.warn_early_access = True
-                if confirm: # use pros 4
-                    self.use_early_access = True
-                    kwargs['version'] = '>=0'
-                    self.save()
-                    # Recall the function with early access enabled
-                    return self.apply_template(project, identifier, **kwargs)
-                    
-                self.save()
+                            
         if not isinstance(template, LocalTemplate):
             with ui.Notification():
                 template = self.fetch_template(self.get_depot(template.metadata['origin']), template, **kwargs)
@@ -281,6 +328,17 @@ class Conductor(Config):
                                    force_user=kwargs.pop('force_user', False),
                                    remove_empty_directories=kwargs.pop('remove_empty_directories', False))
             ui.finalize('apply', f'Finished applying {template.identifier} to {project.location}')
+
+            # Apply liblvgl if upgrading to PROS 4
+            if apply_liblvgl:
+                template = self.resolve_template(identifier="liblvgl", allow_online=download_ok, early_access=True)
+                if not isinstance(template, LocalTemplate):
+                    with ui.Notification():
+                        template = self.fetch_template(self.get_depot(template.metadata['origin']), template, **kwargs)
+                assert isinstance(template, LocalTemplate)
+                project.apply_template(template)
+                ui.finalize('apply', f'Finished applying {template.identifier} to {project.location}')
+
         elif valid_action != TemplateAction.AlreadyInstalled:
             raise dont_send(
                 InvalidTemplateException(f'Could not install {template.identifier} because it is {valid_action.name},'
@@ -302,24 +360,21 @@ class Conductor(Config):
 
     def new_project(self, path: str, no_default_libs: bool = False, **kwargs) -> Project:
         if kwargs.get('early_access', None) is not None:
-            self.use_early_access = kwargs.get('early_access', False)
-        if kwargs["version_source"]: # If true, then the user has not specified a version
-            if not self.use_early_access and self.warn_early_access:
-                ui.echo(f"PROS 4 is now in early access. "
-                        f"If you would like to use it, use the --early-access flag.")
-            elif self.use_early_access:
-                ui.echo(f'Early access is enabled. Using PROS 4.')
-        elif self.use_early_access:
-            ui.echo(f'Early access is enabled.')
+            use_early_access = kwargs.get('early_access', False)
+        else:
+            use_early_access = self.use_early_access
+        kwargs["early_access"] = use_early_access
+        if use_early_access:
+            ui.echo(f'Early access is enabled. Experimental features have been applied.')
 
+        if not is_pathname_valid(str(Path(path).absolute())):
+            raise dont_send(ValueError('Project path contains invalid characters.'))
+        
         if Path(path).exists() and Path(path).samefile(os.path.expanduser('~')):
             raise dont_send(ValueError('Will not create a project in user home directory'))
-        for char in str(Path(path)):
-            if char in ['?', '<', '>', '*', '|', '^', '#', '%', '&', '$', '+', '!', '`', '\'', '=',
-                        '@', '\'', '{', '}', '[', ']', '(', ')', '~'] or ord(char) > 127:
-                raise dont_send(ValueError(f'Invalid character found in directory name: \'{char}\''))
-
-        proj = Project(path=path, create=True)
+        
+        proj = Project(path=path, create=True, early_access=use_early_access)
+        
         if 'target' in kwargs:
             proj.target = kwargs['target']
         if 'project_name' in kwargs and kwargs['project_name'] and not kwargs['project_name'].isspace():
@@ -333,7 +388,9 @@ class Conductor(Config):
         proj.save()
 
         if not no_default_libs:
-            libraries = self.early_access_libraries if self.use_early_access else self.default_libraries
+            major_version = proj.kernel[0]
+            libraries = self.pros_4_default_libraries if major_version == '4' else self.pros_3_default_libraries
+
             for library in libraries[proj.target]:
                 try:
                     # remove kernel version so that latest template satisfying query is correctly selected
