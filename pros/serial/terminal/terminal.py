@@ -173,7 +173,7 @@ class Terminal(object):
     stackTraceFile = None
 
     def __init__(self, port_instance: StreamDevice, transformations=(),
-                 output_raw: bool = False, request_banner: bool = True, 
+                 output_raw: bool = False, request_banner: bool = True,
                  auto_stack_trace: bool = True, stack_trace_file: str = None):
         self.device = port_instance
         self.device.subscribe(b'sout')
@@ -234,37 +234,36 @@ class Terminal(object):
                     addr = "0x" + decode_bytes_to_str(data[1])[:7]
 
                     convert_trace = (self.beginStackTrace and
-                                    addr.isalnum() and 
-                                    addr[3] != 'x' and 
-                                    self.convert_stack_traces and 
+                                    addr.isalnum() and
+                                    addr[3] != 'x' and
+                                    self.convert_stack_traces and
                                     ((os.name != 'nt') or os.environ.get('PROS_TOOLCHAIN')))
-                    
+
                     if convert_trace:
                         if os.name == 'nt' and os.environ.get('PROS_TOOLCHAIN'):
-                            addr2line_path = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'arm-none-eabi-addr2line.exe')
+                            addr2line_path = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'arm-none-eabi-addr2line')
                         else:
-                            addr2line_path = 'addr2line'
+                            addr2line_path = 'arm-none-eabi-addr2line'
 
                         def getTrace(s, path):
                             if not os.path.exists(path):
                                 return ''
-                            temp = subprocess.Popen([addr2line_path, '-faps', '-e', path, s],
-                                stdout=subprocess.PIPE,shell=True).communicate()[0].decode('utf-8')
+                            temp = subprocess.run([addr2line_path, '-faps', '-e', path, s], capture_output=True).stdout.decode('utf-8')
                             if (temp.find('?') != -1):
                                 return ''
                             else:
                                 return temp[12: len(temp) - 2]
                             
                         trace = ' : {}{}{}'.format(
-                            getTrace(addr, "bin/hot.package.elf"),
-                            getTrace(addr, "bin/cold.package.elf"),
-                            getTrace(addr, "bin/monolith.elf"))
+                            getTrace(addr, "./bin/hot.package.elf"),
+                            getTrace(addr, "./bin/cold.package.elf"),
+                            getTrace(addr, "./bin/monolith.elf"))
                         text = '{}{}{}{}{}{}'.format(colorama.Fore.RED, decode_bytes_to_str(data[1]), colorama.Style.RESET_ALL, colorama.Fore.WHITE, trace, colorama.Style.RESET_ALL)
-                        if(self.stack_trace_file): 
+                        if(self.stack_trace_file):
                             file.write(addr + trace + '\n')
                     else:
                         text = '{}{}{}'.format(colorama.Fore.RED, decode_bytes_to_str(data[1]), colorama.Style.RESET_ALL)
-                    
+
                     if "BEGIN STACK TRACE" in text:
                         self.beginStackTrace = True
                         if(self.convert_stack_traces):
@@ -279,7 +278,7 @@ class Terminal(object):
                         if(self.stack_trace_file):
                             file.close()
                             file = None
-                    
+
                 elif data[0] == b'kdbg':
                     text = '{}\n\nKERNEL DEBUG:\t{}{}\n'.format(colorama.Back.GREEN + colorama.Style.BRIGHT,
                                                                 decode_bytes_to_str(data[1]),
