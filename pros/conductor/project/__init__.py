@@ -16,7 +16,7 @@ from ..transaction import Transaction
 
 
 class Project(Config):
-    def __init__(self, path: str = '.', create: bool = False, raise_on_error: bool = True, defaults: dict = None):
+    def __init__(self, path: str = '.', create: bool = False, raise_on_error: bool = True, defaults: dict = None, early_access: bool = False):
         """
         Instantiates a PROS project configuration
         :param path: A path to the project, may be the actual project.pros file, any child directory of the project,
@@ -34,10 +34,11 @@ class Project(Config):
 
         if defaults is None:
             defaults = {}
-        self.target: str = defaults.get('target', 'cortex').lower()  # VEX Hardware target (V5/Cortex)
+        self.target: str = defaults.get('target', 'v5').lower()  # VEX Hardware target (V5/Cortex)
         self.templates: Dict[str, Template] = defaults.get('templates', {})
         self.upload_options: Dict = defaults.get('upload_options', {})
         self.project_name: str = defaults.get('project_name', None)
+        self.use_early_access = early_access
         super(Project, self).__init__(file, error_on_decode=raise_on_error)
         if 'kernel' in self.__dict__:
             # Add backwards compatibility with PROS CLI 2 projects by adding kernel as a pseudo-template
