@@ -7,7 +7,6 @@ import threading
 
 import colorama
 
-
 from pros.common.utils import logger
 from pros.serial import decode_bytes_to_str
 from pros.serial.devices import StreamDevice
@@ -167,6 +166,7 @@ else:
         'Sorry no implementation for your platform ({})'
         ' available.'.format(sys.platform))
 
+
 class Terminal(object):
     """This class is loosely based off of the pyserial miniterm"""
     beginStackTrace = False
@@ -217,6 +217,7 @@ class Terminal(object):
         self.transmitter_thread.join()
 
     def reader(self):
+        SEPARATOR = "\n--------------------------------\n"
         if self.request_banner:
             try:
                 self.device.write(b'pRb')
@@ -230,52 +231,72 @@ class Terminal(object):
                 if data[0] == b'sout':
                     text = decode_bytes_to_str(data[1])
                 elif data[0] == b'serr':
-                    #print(len(text))
+                    # print(len(text))
                     addr = "0x" + decode_bytes_to_str(data[1])[:7]
 
                     convert_trace = (self.beginStackTrace and
-                                    addr.isalnum() and
-                                    addr[3] != 'x' and
-                                    self.convert_stack_traces and
-                                    ((os.name != 'nt') or os.environ.get('PROS_TOOLCHAIN')))
+                                     addr.isalnum() and
+                                     addr[3] != 'x' and
+                                     self.convert_stack_traces and
+                                     ((os.name != 'nt') or os.environ.get('PROS_TOOLCHAIN')))
 
                     if convert_trace:
                         if os.name == 'nt' and os.environ.get('PROS_TOOLCHAIN'):
-                            addr2line_path = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin', 'arm-none-eabi-addr2line')
+                            addr2line_path = os.path.join(os.environ.get('PROS_TOOLCHAIN'), 'bin',
+                                                          'arm-none-eabi-addr2line')
                         else:
                             addr2line_path = 'arm-none-eabi-addr2line'
 
                         def getTrace(s, path):
                             if not os.path.exists(path):
                                 return ''
-                            temp = subprocess.run([addr2line_path, '-faps', '-e', path, s], capture_output=True).stdout.decode('utf-8')
+                            temp = subprocess.check_output([addr2line_path, '-faps', '-e', path, s]).decode('utf-8')
                             if (temp.find('?') != -1):
                                 return ''
                             else:
                                 return temp[12: len(temp) - 2]
-                            
+
                         trace = ' : {}{}{}'.format(
                             getTrace(addr, "./bin/hot.package.elf"),
                             getTrace(addr, "./bin/cold.package.elf"),
                             getTrace(addr, "./bin/monolith.elf"))
-                        text = '{}{}{}{}{}{}'.format(colorama.Fore.RED, decode_bytes_to_str(data[1]), colorama.Style.RESET_ALL, colorama.Fore.WHITE, trace, colorama.Style.RESET_ALL)
-                        if(self.stack_trace_file):
-                            file.write(addr + trace + '\n')
-                    else:
-                        text = '{}{}{}'.format(colorama.Fore.RED, decode_bytes_to_str(data[1]), colorama.Style.RESET_ALL)
+                        text = '{}{}{}{}{}{}'.format(colorama.Fore.RED, '\n' + addr,
+                                                     colorama.Style.RESET_ALL, colorama.Fore.YELLOW, trace,
+                                                     colorama.Style.RESET_ALL)
 
+                        if self.stack_trace_file:
+                            file.write(addr + trace + '\n')
+                    elif "DATA ABORT EXCEPTION" in decode_bytes_to_str(data[1]):
+                        DATA_ABORT_ANNON_STRING = "================================\n" \
+                                                  "    DATA ABORT EXCEPTION!!!     \n" \
+                                                  "================================\n" \
+                                                  "\n"
+                        text = '{}{}{}{}'.format(colorama.Style.BRIGHT, colorama.Fore.RED, DATA_ABORT_ANNON_STRING,
+                                                 colorama.Style.RESET_ALL)
+                    elif "CURRENT TASK:" in decode_bytes_to_str(data[1]):
+                        text = '{}{}{}{}'.format(colorama.Style.BRIGHT, colorama.Fore.RED,
+                                                 decode_bytes_to_str(data[1]) + SEPARATOR, colorama.Style.RESET_ALL)
+                    elif "REGISTERS AT ABORT" in decode_bytes_to_str(data[1]):
+                        REGISTERS_ANNON_STRING = "Registers At Exception:" + SEPARATOR
+                        text = '{}{}{}{}'.format(colorama.Style.BRIGHT, colorama.Fore.RED,
+                                                 '\n' + REGISTERS_ANNON_STRING, colorama.Style.RESET_ALL)
+                    elif not "0x" == decode_bytes_to_str(data[1]):
+                        text = '{}{}{}'.format(colorama.Fore.LIGHTWHITE_EX, decode_bytes_to_str(data[1]),
+                                               colorama.Style.RESET_ALL)
                     if "BEGIN STACK TRACE" in text:
                         self.beginStackTrace = True
-                        if(self.convert_stack_traces):
-                            text = '{}{}{}'.format(colorama.Fore.YELLOW, "BEGINNING STACK TRACE\n--------------------------------\n\n", colorama.Style.RESET_ALL)
-                        if(self.stack_trace_file):
+                        if self.convert_stack_traces:
+                            text = '{}{}{}'.format(colorama.Style.BRIGHT, colorama.Fore.RED,
+                                                   "BEGINNING STACK TRACE" + SEPARATOR, colorama.Style.RESET_ALL)
+                        if self.stack_trace_file:
                             file = open(self.stack_trace_file, "w")
 
                     if "END OF TRACE" in text:
                         self.beginStackTrace = False
-                        if(self.convert_stack_traces):
-                            text = '{}{}{}'.format(colorama.Fore.YELLOW, "\n--------------------------------\nEND OF STACK TRACE\n\n", colorama.Style.RESET_ALL)
-                        if(self.stack_trace_file):
+                        if self.convert_stack_traces:
+                            text = '{}{}{}'.format(colorama.Style.BRIGHT, colorama.Fore.RED,
+                                                   SEPARATOR + "END OF STACK TRACE\n\n", colorama.Style.RESET_ALL)
+                        if self.stack_trace_file:
                             file.close()
                             file = None
 
