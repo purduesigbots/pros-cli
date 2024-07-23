@@ -392,3 +392,4 @@ def reset(force: bool):
         os.remove(file)
 
     ui.echo("Conductor was reset")
+

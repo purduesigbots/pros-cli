@@ -30,6 +30,8 @@ def terminal_cli():
               help='Specify 2 ports for the "share" backend. The default option deterministically selects ports '
                    'based on the serial port name')
 @click.option('--banner/--no-banner', 'request_banner', default=True)
+@click.option('--raw-stack-trace', is_flag=True, default=True, help='Display stack traces as raw data. By default, the terminal will attempt to parse stack traces')
+@click.option('--stack-trace-file', type=str, default=None, help='Output stack traces to a file')
 @click.option('--output', nargs = 1, type=str, is_eager = True, help='Redirect terminal output to a file', default=None)
 
 def terminal(port: str, backend: str, **kwargs):
@@ -83,7 +85,29 @@ def terminal(port: str, backend: str, **kwargs):
         device = devices.RawStreamDevice(ser)
     else:
         device = devices.vex.V5UserDevice(ser)
-    term = Terminal(device, request_banner=kwargs.pop('request_banner', True))
+    term = Terminal(device, request_banner=kwargs.pop('request_banner', True), auto_stack_trace=(kwargs.pop('raw_stack_trace', False) or kwargs.pop('raw', False)), stack_trace_file=kwargs.pop('stack_trace_file', None))
+
+    class TerminalOutput(object):
+        def __init__(self, file):
+            self.terminal = sys.stdout
+            self.log = open(file, 'a')
+        def write(self, data):
+            self.terminal.write(data)
+            self.log.write(data) 
+        def flush(self):
+            pass
+        def end(self):
+            self.log.close()
+
+    output = None
+    if kwargs.get('output', None):
+        output_file = kwargs['output']
+        output = TerminalOutput(f'{output_file}')
+        term.console.output = output
+        sys.stdout = output
+        logger(__name__).info(f'Redirecting Terminal Output to File: {output_file}')
+    else:
+        sys.stdout = sys.__stdout__
 
     class TerminalOutput(object):
         def __init__(self, file):
