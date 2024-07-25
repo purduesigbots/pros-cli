@@ -92,4 +92,4 @@ jobs:
       uses: actions/upload-artifact@v3.1.0
       with:
         name: ${{ matrix.os }}-${{needs.update_build_number.outputs.output1}}
-        path: dist/*
+        path: dist/pros/*
