@@ -1,99 +1,143 @@
-import sys
-import time
+import asyncio
+
+import click
+import simplepyble as ble
+
 from typing import *
-import os
+import time
 
-import simplepyble
-
-from pros.common import dont_send, logger
-from pros.serial.ports.exceptions import (ConnectionRefusedException,
-                                          PortNotFoundException)
-
-from .base_port import BasePort, PortConnectionException
+from pros.common import logger
+from pros.serial.ports.exceptions import ConnectionRefusedException, PortNotFoundException
+from base_port import BasePort, PortConnectionException
 
 MAX_PACKET_SIZE = 244
 
+V5_SERVICE = "0x08590f7e_db05_467e_8757_72f6faeb13d5"
 
-class SuppressStdout:
-    def __enter__(self):
-        with open(os.devnull, 'w') as devnull:
-            self.orig_stdout_fno = os.dup(sys.stdout.fileno())
-            os.dup2(devnull.fileno(), 1)
+CHARACTERISTIC_SYSTEM_TX = "0x08590f7e_db05_467e_8757_72f6faeb1306"
+CHARACTERISTIC_SYSTEM_RX = "0x08590f7e_db05_467e_8757_72f6faeb13f5"
 
-    def __exit__(self, *args):
-        os.dup2(self.orig_stdout_fno, 1)
+CHARACTERISTIC_USER_TX = "0x08590f7e_db05_467e_8757_72f6faeb1316"
+CHARACTERISTIC_USER_RX = "0x08590f7e_db05_467e_8757_72f6faeb1326"
+
+CHARACTERISTIC_PAIRING = "0x08590f7e_db05_467e_8757_72f6faeb13e5"
+
+UNPAIRED_MAGIC = 0xdeadface
 
 
-class BluetoothPort(BasePort):
+async def find_device(scan_time: time, max_devices_count: int) -> list[ble.Peripheral]:
+    devices = []
+    adapters: List[ble.Adapter] = ble.Adapter.get_adapters()
 
-    def __init__(self, port_name: str, **kwargs):
+    if len(adapters) == 0:
+        print("No adapters found")
+        return None
+    adapter = adapters[0]
 
-        self.UUIDs = {
-            "SERVICE": "08590f7e-db05-467e-8757-72f6faeb13d5",
-            "DATA_TX": "08590f7e-db05-467e-8757-72f6faeb1306",
-            "DATA_RX": "08590f7e-db05-467e-8757-72f6faeb13f5",
-            "USER_TX": "08590f7e-db05-467e-8757-72f6faeb1316",
-            "USER_RX": "08590f7e-db05-467e-8757-72f6faeb1326",
-            "PAIRING": "08590f7e-db05-467e-8757-72f6faeb13e5",
-        }
-        self.devices = []
+    def device_found_or_updated_callback(peripheral: ble.Peripheral):
+        logger(__name__).debug(f"Discovered device: {peripheral}")
+        if V5_SERVICE in peripheral.address() and peripheral.is_connectable():
+            devices.append(peripheral)
+            if len(devices) >= max_devices_count:
+                adapter.stop_scan()
 
-        print("scanning for 5 seconds, please wait...")
-        adapters = simplepyble.Adapter.get_adapters()
+    adapter.set_callback_on_scan_start(lambda: logger(__name__).info("Scanning started"))
+    adapter.set_callback_on_scan_found(device_found_or_updated_callback)
+    adapter.set_callback_on_scan_updated(device_found_or_updated_callback)
+    adapter.set_callback_on_scan_stop(lambda: logger(__name__).info("Scanning complete"))
 
-        if len(adapters) == 0:
-            print("No adapters found")
-            exit()
-        adapter = adapters[0]
+    # exit when max_devices_count is reached or scan_time is reached
+    adapter.scan_for(scan_time)
 
-        adapter.set_callback_on_scan_found(self.scan_found_callback)
+    # sort devices by signal strength(strongest to weakest)
+    devices = sorted(devices, key=lambda device: device.rssi(), reverse=True)
+    print(f"Discovered {len(devices)} devices: {devices}")
 
-        # Scan for 5 seconds
-        # with SuppressStdout():
-        adapter.scan_start()
-        print("Scanning...", end='')
-        while len(self.devices) == 0:
-            time.sleep(0.5)
-            print(".", end='', flush=True)
-        print("")
-        adapter.scan_stop()
-        peripherals = adapter.scan_get_results()
+    logger(__name__).info(f"Discovered {len(devices)} devices: {devices}")
 
-        peripherals = [peripheral for peripheral in peripherals if "VEX_V5" in peripheral.identifier()]
-        peripherals = sorted(peripherals, key=lambda peripheral: peripheral.rssi())
+    return devices
 
-        self.peripheral = peripherals[0]
 
-        self.peripheral.connect()
+class BlePort(BasePort):
+    def __init__(self, name: str, peripheral: ble.Peripheral):
+        self.name = name
+        self.peripheral = peripheral
 
-        magic = self.peripheral.read(self.UUIDs["SERVICE"], self.UUIDs["PAIRING"])
-        if int.from_bytes(magic, "big") != 0xdeadface:
-            print("No V5 Devices Found")
-            exit()
-
-        self.peripheral.write_request(self.UUIDs["SERVICE"], self.UUIDs["PAIRING"], bytes([0xff, 0xff, 0xff, 0xff]))
-
-        # Send pairing code
-        pairing_bytes = bytes(int(c) for c in "4600")
-
-        self.peripheral.write_request(self.UUIDs["SERVICE"], self.UUIDs["PAIRING"], pairing_bytes)
-        print("Sent pairing code")
-
-        cresp = bytes([])
-        while cresp != pairing_bytes:
-            cresp = self.peripheral.read(self.UUIDs["SERVICE"], self.UUIDs["PAIRING"])
-
-        self.peripheral.notify(self.UUIDs["SERVICE"], self.UUIDs["DATA_TX"], self.handle_notification)
-
+        self.pairing()
         self.buffer: bytearray = bytearray()
 
-    def scan_found_callback(self, peripheral):
-        if "VEX_V5" in peripheral.identifier():
-            self.devices.append(peripheral.identifier())
+        self.peripheral.notify(V5_SERVICE, CHARACTERISTIC_SYSTEM_TX, self.on_notify)
 
-    def handle_notification(self, data):
-        # print("Notification received: ", data)
+    @staticmethod
+    async def create_ble_port(self, peripheral: ble.Peripheral):
+        system_rx_validate = False
+        system_tx_validate = False
+        user_rx_validate = False
+        user_tx_validate = False
+        pairing_validate = False
+
+        for service in peripheral.services():
+            for characteristic in service.characteristics():
+                service_id = service.uuid()
+                if service_id == V5_SERVICE:
+                    character_id = characteristic.uuid()
+                    if character_id == CHARACTERISTIC_SYSTEM_RX:
+                        system_rx_validate = True
+                    elif character_id == CHARACTERISTIC_SYSTEM_TX:
+                        system_tx_validate = True
+                    elif character_id == CHARACTERISTIC_USER_RX:
+                        user_rx_validate = True
+                    elif character_id == CHARACTERISTIC_USER_TX:
+                        user_tx_validate = True
+                    elif character_id == CHARACTERISTIC_PAIRING:
+                        pairing_validate = True
+
+        if not system_rx_validate or \
+                not system_tx_validate or \
+                not user_rx_validate or \
+                not user_tx_validate or \
+                not pairing_validate:
+            raise PortConnectionException(f"Could not find all required characteristics on {peripheral.identifier()}")
+
+        return BlePort(peripheral.identifier(), peripheral)
+
+    async def pairing(self):
+        if not await self.peripheral.is_connected():
+            await self.peripheral.connect()
+            magic = self.peripheral.read(V5_SERVICE, CHARACTERISTIC_PAIRING)
+            if int.from_bytes(magic, "big") != UNPAIRED_MAGIC:
+                logger(__name__).warning("Unable to pair with peripheral")
+                exit()
+            else:
+                self.peripheral.write_request(V5_SERVICE, CHARACTERISTIC_PAIRING,
+                                              bytes([0xff, 0xff, 0xff, 0xff]))
+
+                # Request pairing code from user
+                code = click.prompt("Enter the pairing code(4 digits): ", type=int)
+                pairing_code = bytes(code)
+                self.peripheral.write_request(V5_SERVICE, CHARACTERISTIC_PAIRING, pairing_code)
+
+                # Wait for peripheral to send acknowledgement
+                read_ack = self.peripheral.read(V5_SERVICE, CHARACTERISTIC_PAIRING)
+                if read_ack != pairing_code:
+                    logger(__name__).warning("Pairing failed")
+                    exit()
+
+                logger(__name__).info("Pairing successful")
+
+        else:
+            raise ConnectionRefusedException(self.name, Exception("Peripheral is already connected"))
+
+    def on_notify(self, data: bytes):
         self.buffer.extend(data)
+
+    def write(self, data: bytes):
+        if self.peripheral.is_paired():
+            raise PortNotFoundException(self.name, Exception("Peripheral is not paired"))
+
+        for i in range(0, len(data), MAX_PACKET_SIZE):
+            self.peripheral.write_command(V5_SERVICE, CHARACTERISTIC_SYSTEM_RX,
+                                          data[i:min(len(data), i + MAX_PACKET_SIZE)])
 
     def read(self, n_bytes: int = 0) -> bytes:
         if n_bytes <= 0:
@@ -108,27 +152,21 @@ class BluetoothPort(BasePort):
                 msg, self.buffer = bytes(self.buffer[:n_bytes]), self.buffer[n_bytes:]
             return msg
 
-    def write(self, data: Union[str, bytes]):
-        # for line in traceback.format_stack():
-        #     print(line.strip())
-        if isinstance(data, str):
-            data = data.encode(encoding='ascii')
-        else:
-            data = bytes(data)
-        for i in range(0, len(data), MAX_PACKET_SIZE):
-            # print(len(data[i:min(len(data), i+MAX_PACKET_SIZE)]))
-            self.peripheral.write_command(self.UUIDs["SERVICE"], self.UUIDs["DATA_RX"],
-                                          data[i:min(len(data), i + MAX_PACKET_SIZE)])
-            # time.sleep(0.3)
-        # self.peripheral.write_command(self.UUIDs["SERVICE"], self.UUIDs["DATA_RX"], bytes([0x00]))
+    def read_all(self) -> bytes:
+        return self.read()
 
     def destroy(self):
-        logger(__name__).debug(f'Destroying {self.__class__.__name__} to {self.serial.name}')
+        logger(__name__).debug(f'Destroying {self.__class__.__str__} to {self.name}')
         self.peripheral.disconnect()
+        pass
 
     @property
     def name(self) -> str:
-        return self.serial.portstr
+        return self.name
 
     def __str__(self):
         return str("Bluetooth Port")
+
+if __name__ == "__main__":
+    asyncio.run(find_device(5000, 2))
+    pass
