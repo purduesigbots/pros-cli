@@ -168,5 +168,6 @@ class BlePort(BasePort):
         return str("Bluetooth Port")
 
 if __name__ == "__main__":
+    #test this first
     asyncio.run(find_device(5000, 2))
     pass
