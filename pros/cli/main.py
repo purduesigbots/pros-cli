@@ -42,7 +42,8 @@ root_sources = [
     'v5_utils',
     'misc_commands',  # misc_commands must be after upload so that "pros u" is an alias for upload, not upgrade
     'interactive',
-    'user_script'
+    'user_script',
+    'branchline',
 ]
 
 if getattr(sys, 'frozen', False):
