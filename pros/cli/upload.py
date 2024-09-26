@@ -116,6 +116,7 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
         if kwargs['remote_name'] is None:
             kwargs['remote_name'] = os.path.splitext(os.path.basename(path))[0]
         kwargs['remote_name'] = kwargs['remote_name'].replace('@', '_')
+        kwargs['slot'] = kwargs['slot'] or 1
         kwargs['slot'] -= 1
         
         action_to_kwarg = {
@@ -146,11 +147,11 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
             device = vex.V5Device(ser)
         elif kwargs['target'] == 'cortex':
             device = vex.CortexDevice(ser).get_connected_device()
-        if project is not None:
-            device.upload_project(project, **kwargs)
-        else:
+        if os.path.isfile(path):
             with click.open_file(path, mode='rb') as pf:
                 device.write_program(pf, **kwargs)
+        else:
+            device.upload_project(project, **kwargs)
     except Exception as e:
         logger(__name__).exception(e, exc_info=True)
         exit(1)
@@ -201,7 +202,7 @@ def ls_usb(target):
 @upload_cli.command('upload-terminal', aliases=['ut'], hidden=True)
 @shadow_command(upload)
 @click.pass_context
-def make_upload_terminal(ctx, **upload_kwargs):
+def upload_terminal(ctx, **upload_kwargs):
     analytics.send("upload-terminal")
     from .terminal import terminal
     ctx.invoke(upload, **upload_kwargs)
