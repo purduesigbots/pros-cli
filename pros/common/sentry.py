@@ -1,6 +1,8 @@
 from typing import *
 
 import click
+import os
+import sys
 
 import pros.common.ui as ui
 
@@ -99,8 +101,16 @@ def add_context(obj: object, override_handlers: bool = True, key: str = None) ->
 
     from sentry_sdk import configure_scope
     with configure_scope() as scope:
-        scope.set_extra((key or obj.__class__.__qualname__), jsonpickle.pickler.Pickler(unpicklable=False).flatten(obj))
-
+        try:
+            scope.set_extra((key or obj.__class__.__qualname__), jsonpickle.pickler.Pickler(unpicklable=False).flatten(obj))
+        except:
+            if ui.confirm("Malformed depot detected, do you want to reset conductor.pros? This will remove all depots and templates. You will be unable to create a new PROS project if you do not have internet connection."):   
+                file = os.path.join(click.get_app_dir('PROS'), 'conductor.pros')
+                if os.path.exists(file):
+                    os.remove(file)
+                    ui.echo("Conductor was reset")
+                    sys.exit()
+                    
     if override_handlers:
         jsonpickle.handlers.unregister(BaseTemplate)
 

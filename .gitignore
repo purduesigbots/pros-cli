@@ -12,6 +12,7 @@ out/
 *.zip
 *_pros_capture.png
 
-venv/
+*venv/
+.DS_Store
 
 *.pyc
