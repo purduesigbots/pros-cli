@@ -377,7 +377,8 @@ class Conductor(Config):
         if 'version' in kwargs:
             if kwargs['version'] == 'latest':
                 kwargs['version'] = '>=0'
-            self.apply_template(proj, identifier='kernel', **kwargs)
+            if not no_default_libs:
+                self.apply_template(proj, identifier='kernel', **kwargs)
         proj.save()
 
         if not no_default_libs:
