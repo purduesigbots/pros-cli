@@ -237,7 +237,7 @@ def new_project(ctx: click.Context, path: str, target: str, version: str,
         ui.echo('New PROS Project was created:', output_machine=False)
         ctx.invoke(info_project, project=project)
 
-        if compile_after or build_cache:
+        if (compile_after or build_cache) and not no_default_libs:
             with ui.Notification():
                 ui.echo('Building project...')
                 exit_code = project.compile([], scan_build=build_cache)
