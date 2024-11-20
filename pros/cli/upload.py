@@ -76,6 +76,8 @@ def upload(path: Optional[str], project: Optional[c.Project], port: str, **kwarg
             kwargs['slot'] = 1
         if 'icon' in options and kwargs.get('icon','pros') == 'pros':
             kwargs.pop('icon')
+        if 'description' in options and kwargs.get('description','Made with PROS') == 'Made with PROS':
+            kwargs.pop('description')
         if 'after' in options and kwargs.get('after','screen') is None:
             kwargs.pop('after')
 
