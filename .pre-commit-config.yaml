@@ -1,0 +1,35 @@
+default_language_version:
+  python: python3.12
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.4
+    hooks:
+      - id: ruff
+        args: [--fix, --config=ruff.toml]
+      - id: ruff-format
+        args: [--config=ruff.toml]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-vcs-permalinks
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-ast
+      - id: trailing-whitespace
+      - id: requirements-txt-fixer
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.15.0
+    hooks:
+      - id: mypy
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+        require_serial: true
+        args: [--rcfile=.pylintrc, --output-format=colorized, -rn, -sn]

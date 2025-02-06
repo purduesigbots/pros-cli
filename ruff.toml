@@ -1,0 +1,13 @@
+line-length = 120
+target-version = "py312"
+
+[lint]
+
+select = ["ALL"]
+fixable = ["ALL"]
+
+ignore = ["D203", "D213", "COM812", "ISC001"]
+
+[format]
+
+quote-style = "double"
