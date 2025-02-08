@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "setuptools.build_meta"
-requires = ["setuptools"]
+requires = ["setuptools>=64"]
 
 [project]
 authors = [{name = "Purdue ACM SIGBots", email = "pros_development@cs.purdue.edu"}]
@@ -9,7 +9,7 @@ classifiers = [
   "Environment :: Console",
   "Intended Audience :: Education",
   "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
-  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Software Development :: Embedded Systems"
 ]
 dependencies = [
@@ -20,7 +20,7 @@ keywords = ["pros", "cli", "vex", "robotics"]
 license = {file = "LICENSE"}
 name = "pros-cli"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 version = "4.0.0"
 
 [project.scripts]
