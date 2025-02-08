@@ -1,0 +1,33 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools"]
+
+[project]
+authors = [{name = "Purdue ACM SIGBots", email = "pros_development@cs.purdue.edu"}]
+classifiers = [
+  "Development Status :: 1 - Planning",
+  "Environment :: Console",
+  "Intended Audience :: Education",
+  "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Embedded Systems"
+]
+dependencies = [
+  "rich-click"
+]
+description = "Command Line Interface for managing PROS projects"
+keywords = ["pros", "cli", "vex", "robotics"]
+license = {file = "LICENSE"}
+name = "pros-cli"
+readme = "README.md"
+requires-python = ">=3.12"
+version = "4.0.0"
+
+[project.scripts]
+pros = "pros.__main__:pros"
+
+[project.urls]
+Documentation = "https://pros.cs.purdue.edu/v5/pros-4/index.html"
+Homepage = "https://pros.cs.purdue.edu/"
+Issues = "https://github.com/purduesigbots/pros-cli/issues"
+Repository = "https://github.com/purduesigbots/pros-cli"
