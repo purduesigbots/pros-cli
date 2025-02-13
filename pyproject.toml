@@ -32,7 +32,7 @@ dev = [
 ]
 
 [project.scripts]
-pros = "pros.__main__:pros"
+pros = "pros.__init__:pros"
 
 [project.urls]
 Documentation = "https://pros.cs.purdue.edu/v5/pros-4/index.html"
