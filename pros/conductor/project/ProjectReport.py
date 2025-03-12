@@ -17,8 +17,10 @@ class ProjectReport(object):
             f' ({self.project["name"]})' if self.project["name"] else ''
         s += '\n'
         rows = [t.values() for t in self.project["templates"]]
-        headers = [h.capitalize() for h in self.project["templates"][0].keys()]
+        
+        headers = [h.capitalize() for h in self.project["templates"][0].keys()]if self.project["templates"] else []
         s += tabulate.tabulate(rows, headers=headers)
+
         return s
 
     def __getstate__(self):

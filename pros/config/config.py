@@ -25,7 +25,7 @@ class Config(object):
         if file:
             # If the file already exists, update this new config with the values in the file
             if os.path.isfile(file):
-                with open(file, 'r') as f:
+                with open(file, 'r', encoding ='utf-8') as f:
                     try:
                         result = jsonpickle.decode(f.read())
                         if isinstance(result, dict):

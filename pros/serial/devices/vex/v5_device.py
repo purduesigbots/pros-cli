@@ -585,7 +585,14 @@ class V5Device(VEXDevice, SystemDevice):
         if compress and self.status['system_version'] in Spec('>=1.0.5'):
             logger(__name__).info('Closing gzip file')
             file.close()
-        self.ft_complete(options=run_after)
+        # The time to write the file to flash isn't exactly linear with the file size,
+        # but it's okay even if we slightly underestimate as long as we get a response back
+        # on one of the 3 tries of ft_complete.
+        # The point is to set our timeout window so we aren't waiting too long for a response
+        # that will never happen if, for example, the brain turned off.
+        ft_timeout = max(file_len/200000, 1.0)
+        logger(__name__).debug(f'Setting file transfer timeout as {ft_timeout:.2f} seconds')
+        self.ft_complete(options=run_after, timeout=ft_timeout)
 
     @with_download_channel
     def capture_screen(self) -> Tuple[List[List[int]], int, int]:
@@ -688,12 +695,12 @@ class V5Device(VEXDevice, SystemDevice):
         return rx
 
     @retries
-    def ft_complete(self, options: FTCompleteOptions = FTCompleteOptions.DONT_RUN):
+    def ft_complete(self, options: FTCompleteOptions = FTCompleteOptions.DONT_RUN, timeout: float = 1.0):
         logger(__name__).debug('Sending ext 0x12 command')
         if isinstance(options, bool):
             options = self.FTCompleteOptions.RUN_IMMEDIATELY if options else self.FTCompleteOptions.DONT_RUN
         tx_payload = struct.pack("<B", options.value)
-        ret = self._txrx_ext_packet(0x12, tx_payload, 0, timeout=self.default_timeout * 10)
+        ret = self._txrx_ext_packet(0x12, tx_payload, 0, timeout=timeout)
         logger(__name__).debug('Completed ext 0x12 command')
         return ret
 
