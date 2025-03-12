@@ -10,7 +10,7 @@ jobs:
     outputs:
       output1: ${{ steps.step1.outputs.test }}
     steps:
-      - uses: actions/checkout@v3.1.0
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Update Build Number
@@ -30,12 +30,12 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-    - uses: actions/checkout@v3.1.0
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
     
     - name: Setup Python
-      uses: actions/setup-python@v4.3.0
+      uses: actions/setup-python@v5
       with:
         python-version: 3.9
         cache: 'pip'
@@ -56,7 +56,7 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
 
     - name: Upload Wheel
-      uses: actions/upload-artifact@v3.1.0
+      uses: actions/upload-artifact@v4
       with:
         name: pros-cli-wheel-${{needs.update_build_number.outputs.output1}}
         path: dist/*
@@ -89,7 +89,7 @@ jobs:
             mv intercept-c++ pros
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3.1.0
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.os }}-${{needs.update_build_number.outputs.output1}}
         path: dist/pros/*
