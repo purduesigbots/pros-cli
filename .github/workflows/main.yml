@@ -6,7 +6,7 @@ on:
 
 jobs:
   update_build_number:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       output1: ${{ steps.step1.outputs.test }}
     steps:
