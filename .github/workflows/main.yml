@@ -6,7 +6,7 @@ on:
 
 jobs:
   update_build_number:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       output1: ${{ steps.step1.outputs.test }}
     steps:
@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-22.04, windows-latest, macos-latest]
 
     steps:
     - uses: actions/checkout@v4
@@ -53,14 +53,14 @@ jobs:
     
     - name: Build Wheel
       run: python3 setup.py bdist_wheel
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-22.04'
 
     - name: Upload Wheel
       uses: actions/upload-artifact@v4
       with:
         name: pros-cli-wheel-${{needs.update_build_number.outputs.output1}}
         path: dist/*
-      if: matrix.os == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-22.04'
       
     - name: Run Pyinstaller
       run: |
