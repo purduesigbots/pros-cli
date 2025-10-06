@@ -13,7 +13,7 @@ classifiers = [
   "Topic :: Software Development :: Embedded Systems"
 ]
 dependencies = [
-  "rich-click"
+  "rich-click", "requests"
 ]
 description = "Command Line Interface for managing PROS projects"
 keywords = ["pros", "cli", "vex", "robotics"]
