@@ -33,8 +33,14 @@ int_str = Union[int, str]
 
 def find_v5_ports(p_type: str):
     def filter_vex_ports(p):
-        return p.vid is not None and p.vid in [0x2888, 0x0501] or \
-               p.name is not None and ('VEX' in p.name or 'V5' in p.name)
+        return (
+            p.vid is not None and p.pid is not None and (
+                (p.vid, p.pid) in {(0x2888, 0x0501), (0x2888, 0x0800)}
+            )
+        ) or (
+            p.name is not None and ('VEX' in p.name or 'V5' in p.name)
+        )
+
 
     def filter_v5_ports(p, locations, names):
         return (p.location is not None and any([p.location.endswith(l) for l in locations])) or \
