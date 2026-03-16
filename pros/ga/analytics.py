@@ -33,9 +33,43 @@ class Analytics():
         self.uID = self.cli_config.ga['u_id']
         self.pendingRequests = []
 
+        self._connectivity_checked = False
+        self._connecitivty_ok = True
+
+    def _check_connectivity(self) -> bool:
+        """
+        Quickly test connectivity to the analytics endpoint.
+
+        If it fails, automatically disable analytics (like --no-analytics)
+        for this and subsequent commands, and persist that choice.
+        """
+        if self._connectivity_checked:
+            return self._connectivity_ok
+
+        self._connectivity_checked = True
+        try:
+            r = requests.head(url, timeout=1.0)
+            self._connectivity_ok = r.ok
+        except Exception:
+            self._connectivity_ok = False
+
+        if not self._connectivity_ok:
+            from pros.cli.common import logger
+            logger(__name__).warning(
+                "Analytics server not reachable. Disabling analytics for this and future commands.",
+                extra={'sentry': False},
+            )
+            self.set_use(False)
+
+        return self._connectivity_ok
+
     def send(self,action):
         if not self.useAnalytics or self.sent:
             return
+
+        if not self._check_connectivity():
+            return
+            
         self.sent=True # Prevent Send from being called multiple times
         try:
             #Payload to be sent to GA, idk what some of them are but it works
