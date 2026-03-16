@@ -332,15 +332,16 @@ def info_project(project: c.Project, ls_upgrades):
 @conductor.command('add-depot')
 @click.argument('name')
 @click.argument('url')
+@click.option('--early-access/--disable-early-access', '--early/--disable-early', '-ea/-dea', 'early_access', '--beta/--disable-beta', is_flag=True, default=False, help="Add a depot as beta. Templates on this depot will be stored in early_access_local_templates, requiring --early-access to apply them.")
 @default_options
-def add_depot(name: str, url: str):
+def add_depot(name: str, url: str, early_access: bool):
     """
     Add a depot
 
     Visit https://pros.cs.purdue.edu/v5/cli/conductor.html to learn more
     """
     _conductor = c.Conductor()
-    _conductor.add_depot(name, url)
+    _conductor.add_depot(name, url, early_access=early_access)
 
     ui.echo(f"Added depot {name} from {url}")
 

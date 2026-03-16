@@ -12,10 +12,10 @@ from ..templates import BaseTemplate, ExternalTemplate
 
 
 class HttpDepot(Depot):
-    def __init__(self, name: str, location: str):
+    def __init__(self, name: str, location: str, early_access: bool = False):
         # Note: If update_frequency = timedelta(minutes=1) isn't included as a parameter,
         # the beta depot won't be saved in conductor.json correctly
-        super().__init__(name, location, config_schema={}, update_frequency = timedelta(minutes=1))
+        super().__init__(name, location, config={"early_access": beta}, config_schema={}, update_frequency = timedelta(minutes=1))
 
     def fetch_template(self, template: BaseTemplate, destination: str, **kwargs):
         import requests
