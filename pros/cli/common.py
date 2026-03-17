@@ -211,13 +211,12 @@ def project_option(arg_name='project', required: bool = True, default: str = '.'
 def shadow_command(command: click.Command):
     def wrapper(f: Union[click.Command, Callable]):
         if isinstance(f, click.Command):
-            f.params.extend(p for p in command.params if p.name not in [p.name for p in command.params])
+            f.params.extend(p for p in command.params if p.name not in [p.name for p in f.params])
         else:
             if not hasattr(f, '__click_params__'):
                 f.__click_params__ = []
-            f.__click_params__.extend(p for p in command.params if p.name not in [p.name for p in f.__click_params__])
+            f.__click_params__.extend(p for p in command.params[::-1] if p.name not in [p.name for p in f.__click_params__])
         return f
-
     return wrapper
 
 
