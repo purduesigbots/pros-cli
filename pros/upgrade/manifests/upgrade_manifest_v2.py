@@ -2,7 +2,6 @@ import sys
 from enum import Enum
 from typing import *
 
-from importlib.metadata import distributions
 
 from pros.common import logger
 from .upgrade_manifest_v1 import UpgradeManifestV1
@@ -51,6 +50,11 @@ class UpgradeManifestV2(UpgradeManifestV1):
                     self._platform = PlatformsV2.MacOS
         else:
             try:
+                try:
+                    from importlib.metadata import distributions
+                except ImportError:
+                    from importlib_metadata import distributions  # type: ignore
+
                 for dist in distributions():
                     name = (dist.metadata.get("Name") or "").lower()
                     if name.startswith("pros-cli"):
