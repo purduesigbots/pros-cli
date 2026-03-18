@@ -27,19 +27,30 @@ def get_version():
     except:
         pass
     try:
-        import pkg_resources
+        from importlib.metadata import distributions
     except ImportError:
         pass
     else:
         import pros.cli.main
         module = pros.cli.main.__name__
-        for dist in pkg_resources.working_set:
-            scripts = dist.get_entry_map().get('console_scripts') or {}
-            for script_name, entry_point in iter(scripts.items()):
-                if entry_point.module_name == module:
-                    ver = dist.version
-                    if ver is not None:
-                        return ver
+        for dist in distributions():
+            for entry_point in dist.entry_points:
+                try:
+                    entry_points = dist.entry_points
+                except Exception:
+                    continue
+                if entry_point.group == "console_scripts":
+                    ep_module = getattr(entry_point, "module", None)
+                    if ep_module is None:
+                        value = getattr(entry_point, "value", "") or ""
+                        ep_module = value.split(":", 1)[0] if value else None
+                    if ep_module == module:
+                        try:
+                             version = dist.version
+                        except Exception:
+                            continue
+                        if version is not None:
+                            return version
     raise RuntimeError('Could not determine version')
 
 

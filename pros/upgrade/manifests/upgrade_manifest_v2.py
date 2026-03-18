@@ -2,6 +2,7 @@ import sys
 from enum import Enum
 from typing import *
 
+
 from pros.common import logger
 from .upgrade_manifest_v1 import UpgradeManifestV1
 from ..instructions import UpgradeInstruction, UpgradeResult, NothingInstruction
@@ -27,7 +28,6 @@ class UpgradeManifestV2(UpgradeManifestV1):
         self.platform_instructions: Dict[PlatformsV2, UpgradeInstruction] = {}
 
         self._platform: 'PlatformsV2' = None
-
         self._last_file: Optional[str] = None
 
     @property
@@ -50,11 +50,17 @@ class UpgradeManifestV2(UpgradeManifestV1):
                     self._platform = PlatformsV2.MacOS
         else:
             try:
-                from pip._vendor import pkg_resources
-                results = [p for p in pkg_resources.working_set if p.project_name.startswith('pros-cli')]
-                if any(results):
-                    self._platform = PlatformsV2.Pip
-            except ImportError:
+                try:
+                    from importlib.metadata import distributions
+                except ImportError:
+                    from importlib_metadata import distributions  # type: ignore
+
+                for dist in distributions():
+                    name = (dist.metadata.get("Name") or "").lower()
+                    if name.startswith("pros-cli"):
+                        self._platform = PlatformsV2.Pip
+                        break
+            except Exception:
                 pass
         if not self._platform:
             self._platform = PlatformsV2.Unknown
@@ -65,7 +71,9 @@ class UpgradeManifestV2(UpgradeManifestV1):
         return True
 
     def perform_upgrade(self) -> UpgradeResult:
-        instructions: UpgradeInstruction = self.platform_instructions.get(self.platform, NothingInstruction())
+        instructions: UpgradeInstruction = self.platform_instructions.get(
+            self.platform, NothingInstruction()
+        )
         logger(__name__).debug(self.__dict__)
         logger(__name__).debug(f'Platform: {self.platform}')
         logger(__name__).debug(instructions.__dict__)
