@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, windows-latest, macos-latest]
+        os: [ubuntu-22.04, ubuntu-22.04-arm, windows-latest, windows-11-arm, macos-latest]
 
     steps:
     - uses: actions/checkout@v4
@@ -53,14 +53,14 @@ jobs:
     
     - name: Build Wheel
       run: python3 setup.py bdist_wheel
-      if: matrix.os == 'ubuntu-22.04'
+      if: matrix.os == 'ubuntu-22.04' || matrix.os == 'ubuntu-22.04-arm'
 
     - name: Upload Wheel
       uses: actions/upload-artifact@v4
       with:
         name: pros-cli-wheel-${{needs.update_build_number.outputs.output1}}
         path: dist/*
-      if: matrix.os == 'ubuntu-22.04'
+      if: matrix.os == 'ubuntu-22.04' || matrix.os == 'ubuntu-22.04-arm'
       
     - name: Run Pyinstaller
       run: |
